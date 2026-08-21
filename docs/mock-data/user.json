@@ -1,0 +1,14 @@
+{
+  "id": "usr_98412",
+  "name": "Esteban",
+  "email": "esteban@celaest.com",
+  "avatarUrl": null,
+  "proficiencyLevel": "B1",
+  "learningTarget": "B2 - Upper Intermediate",
+  "careerGoal": "Programming, AI & System Architecture",
+  "speakingConfidence": "Medium",
+  "dailyCadenceMinutes": 20,
+  "learningStyle": "Conversation-First",
+  "isLocalVaultEncrypted": true,
+  "createdAt": "2026-05-18T10:00:00Z"
+}

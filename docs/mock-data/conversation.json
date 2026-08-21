@@ -1,0 +1,34 @@
+{
+  "sessionId": "cs_88301",
+  "topic": "Remote Work & System Architecture",
+  "status": "Active",
+  "messages": [
+    {
+      "id": "msg_001",
+      "sender": "ai",
+      "text": "Tell me about yourself.",
+      "timestamp": "10:42 AM",
+      "audioUrl": null
+    },
+    {
+      "id": "msg_002",
+      "sender": "user",
+      "text": "Well, I'm Esteban. I'm 24 years old and I'm a developer. I love building things and solving problems.",
+      "timestamp": "10:43 AM",
+      "audioUrl": null
+    },
+    {
+      "id": "msg_003",
+      "sender": "ai",
+      "text": "Why do you want to become a software engineer?",
+      "timestamp": "10:43 AM",
+      "audioUrl": null
+    }
+  ],
+  "suggestedPills": [
+    "Your weekend",
+    "A challenge you faced",
+    "Something you learned",
+    "Anything on your mind"
+  ]
+}

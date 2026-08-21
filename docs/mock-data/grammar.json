@@ -1,0 +1,14 @@
+{
+  "queue": [
+    {
+      "id": "card_001",
+      "category": "Auxiliary Verbs",
+      "userSaid": "He don't like coffee.",
+      "correctWay": "He doesn't like coffee.",
+      "ruleExplainer": "In English, we use 'doesn't' (does not) with he, she, or it. We use 'don't' with I, you, we, or they.",
+      "mentorTip": "Focus on the subject first, then choose the correct auxiliary verb.",
+      "spanishTranslation": "A él no le gusta el café.",
+      "status": "To Review"
+    }
+  ]
+}

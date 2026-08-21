@@ -1,0 +1,29 @@
+{
+  "greeting": "Good afternoon, Esteban.",
+  "todayFocus": {
+    "title": "Business Meeting",
+    "estimatedMinutes": 25,
+    "practiceItems": ["Present Perfect", "Vocabulary", "Confidence"]
+  },
+  "mentorNote": "Yesterday you hesitated using Present Perfect. We'll practice it naturally today in our conversation.",
+  "journeySteps": [
+    {
+      "date": "May 17",
+      "label": "Yesterday",
+      "status": "completed",
+      "description": "We talked about remote work and team collaboration."
+    },
+    {
+      "date": "May 18",
+      "label": "Today",
+      "status": "active",
+      "description": "Business Meeting - Your next conversation"
+    },
+    {
+      "date": "May 19",
+      "label": "Tomorrow",
+      "status": "upcoming",
+      "description": "Travel Scenario - Airport & Hotels"
+    }
+  ]
+}

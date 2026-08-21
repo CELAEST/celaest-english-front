@@ -1,0 +1,345 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ==========================================================================
+     1. BACKGROUND & SURFACE TOKENS (Deep Space & Dark Glass)
+     ========================================================================== */
+  --bg-app: #03030E;                /* Exact Deep Space Base Matching Graphic Asset */
+  --bg-sidebar: #06060e;            /* Left Navigation Background */
+  --surface-0: #080814;            /* Base Canvas Container */
+  --surface-1: #0c0c1c;            /* Standard Card Surface */
+  --surface-2: #101024;            /* Inset Card / Hovered Surface */
+  --surface-3: #16162e;            /* Active Selected Card */
+  
+  /* Dark Glassmorphism */
+  --glass-bg: rgba(12, 12, 28, 0.65);
+  --glass-bg-hover: rgba(18, 18, 38, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  --glass-border-active: rgba(120, 80, 240, 0.4);
+  --glass-blur: 20px;
+
+  /* ==========================================================================
+     2. PRIMARY BRAND ACCENTS (Glowing Electric Violet & Indigo)
+     ========================================================================== */
+  --accent-violet-500: #7048e8;     /* Primary Action Button & Orb Core */
+  --accent-violet-600: #6038e0;     /* Button Hover / Active state */
+  --accent-violet-400: #8868f8;     /* Highlight / Selection Ring */
+  --accent-violet-light: #b89cff;   /* Soft Lavender Text / Icons */
+  --accent-violet-glow: rgba(112, 72, 232, 0.45);
+  --accent-violet-subtle: rgba(112, 72, 232, 0.12);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #7850e8 0%, #5830e8 100%);
+  --gradient-glow-orb: radial-gradient(circle, rgba(136, 104, 248, 0.8) 0%, rgba(96, 56, 224, 0.3) 50%, rgba(4, 4, 10, 0) 75%);
+  --gradient-glass-card: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  /* ==========================================================================
+     3. SEMANTIC STATUS & LEARNING STATE TOKENS
+     ========================================================================== */
+  --status-success: #10b981;        /* Mint: Mastered, 100% Local, Correct */
+  --status-success-glow: rgba(16, 185, 129, 0.25);
+  --status-warning: #f59e0b;        /* Amber: Review Later, Hesitation */
+  --status-danger: #ef4444;         /* Soft Coral Red: Mistake Highlight */
+  --status-danger-subtle: rgba(239, 68, 68, 0.15);
+  --status-info: #3b82f6;           /* Cyan/Blue: Knowledge Graph Node */
+
+  /* ==========================================================================
+     4. TYPOGRAPHY COLOR TOKENS
+     ========================================================================== */
+  --text-primary: #ffffff;          /* High Contrast Titles & Headlines */
+  --text-secondary: #94a3b8;        /* Muted Paragraphs & Labels */
+  --text-tertiary: #64748b;         /* Footers, Captions, Disabled */
+  --text-accent: #c4b5fd;            /* Glowing lavender highlight text */
+
+  /* ==========================================================================
+     5. SPACING & RADIUS TOKENS
+     ========================================================================== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* ==========================================================================
+     6. ELEVATION & MOTION TOKENS
+     ========================================================================== */
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  --shadow-orb-glow: 0 0 60px 20px rgba(112, 72, 232, 0.35);
+  --shadow-button-glow: 0 4px 20px 0 rgba(112, 72, 232, 0.5);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 450ms;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html, body, #root {
+  height: 100%;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+/* Custom Glassmorphism Utility Class */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-spring);
+}
+
+.glass-panel:hover {
+  border-color: var(--glass-border-hover);
+}
+
+.glass-panel-active {
+  border-color: var(--glass-border-active);
+  box-shadow: 0 0 20px rgba(112, 72, 232, 0.2);
+}
+
+/* Premium gradient hairline border: brighter at the top, fading downward.
+   Uses a masked pseudo-element so the 1px edge respects the border radius.
+   The gradient is supplied per-element via the --edge custom property. */
+.edge {
+  position: relative;
+}
+.edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--edge, rgba(255, 255, 255, 0.08));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Serif Quote / Reflection Typography */
+.font-serif-quote {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* 360-Degree Radial Vignette Image Mask for Zero Bounding Box Lines */
+.blend-graphic-edges {
+  mask-image: radial-gradient(ellipse 85% 68% at 50% 42%, black 40%, rgba(0, 0, 0, 0.5) 62%, transparent 85%);
+  -webkit-mask-image: -webkit-radial-gradient(ellipse 85% 68% at 50% 42%, black 40%, rgba(0, 0, 0, 0.5) 62%, transparent 85%);
+}
+
+/* Right-Biased Radial Vignette for Questions Step Orb (Right-Anchored, Dissolves Left/Top/Bottom) */
+.blend-graphic-edges-right {
+  mask-image: radial-gradient(ellipse 90% 80% at 70% 45%, black 30%, rgba(0, 0, 0, 0.5) 55%, transparent 80%);
+  -webkit-mask-image: -webkit-radial-gradient(ellipse 90% 80% at 70% 45%, black 30%, rgba(0, 0, 0, 0.5) 55%, transparent 80%);
+}
+
+/* Ultra-subtle custom scrollbar for dark theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Chat typing indicator dot bounce animation */
+@keyframes chatDotBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Ultra-Soft Step Transition Animation (Soft Focus + Fade-in + Gentle Scale Slide) */
+@keyframes stepFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-step-transition {
+  animation: stepFadeInUp 520ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+  will-change: opacity, transform, filter;
+}
+
+/* Subtle, Gentle Soundwave ScaleY Animations (Moderate Extension "sube un breve") */
+@keyframes soundwaveScale1 {
+  0%, 100% { transform: scaleY(0.8); }
+  50% { transform: scaleY(1.2); }
+}
+@keyframes soundwaveScale2 {
+  0%, 100% { transform: scaleY(0.85); }
+  50% { transform: scaleY(1.22); }
+}
+@keyframes soundwaveScale3 {
+  0%, 100% { transform: scaleY(0.88); }
+  50% { transform: scaleY(1.18); }
+}
+@keyframes soundwaveScale4 {
+  0%, 100% { transform: scaleY(0.85); }
+  50% { transform: scaleY(1.22); }
+}
+@keyframes soundwaveScale5 {
+  0%, 100% { transform: scaleY(0.8); }
+  50% { transform: scaleY(1.2); }
+}
+
+.animate-wave-1 { animation: soundwaveScale1 0.75s ease-in-out infinite; transform-origin: center; }
+.animate-wave-2 { animation: soundwaveScale2 0.6s ease-in-out infinite; transform-origin: center; }
+.animate-wave-3 { animation: soundwaveScale3 0.85s ease-in-out infinite; transform-origin: center; }
+.animate-wave-4 { animation: soundwaveScale4 0.65s ease-in-out infinite; transform-origin: center; }
+.animate-wave-5 { animation: soundwaveScale5 0.7s ease-in-out infinite; transform-origin: center; }
+
+/* ── Memory Module Premium Animations ── */
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes softPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(162, 127, 243, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(162, 127, 243, 0.7);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes carouselSlideNext {
+  0% {
+    opacity: 0;
+    transform: translate3d(28px, 0, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes carouselSlidePrev {
+  0% {
+    opacity: 0;
+    transform: translate3d(-28px, 0, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes peekFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+

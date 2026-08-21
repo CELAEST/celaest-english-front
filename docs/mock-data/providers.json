@@ -1,0 +1,27 @@
+[
+  {
+    "id": "openai",
+    "name": "OpenAI (GPT-4o & Realtime)",
+    "type": "cloud",
+    "isConfigured": true,
+    "status": "Active",
+    "latencyMs": 180
+  },
+  {
+    "id": "anthropic",
+    "name": "Anthropic (Claude 3.5 Sonnet)",
+    "type": "cloud",
+    "isConfigured": false,
+    "status": "Available",
+    "latencyMs": null
+  },
+  {
+    "id": "ollama",
+    "name": "Local Ollama (Offline Mode)",
+    "type": "local",
+    "endpoint": "http://localhost:11434",
+    "isConfigured": true,
+    "status": "Ready",
+    "latencyMs": 45
+  }
+]

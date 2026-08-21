@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sess_101",
+    "date": "2026-05-17",
+    "topic": "Remote Work & Collaboration",
+    "durationMinutes": 18,
+    "correctionsCount": 3,
+    "fluencyScore": 84
+  },
+  {
+    "id": "sess_100",
+    "date": "2026-05-16",
+    "topic": "System Architecture & API Design",
+    "durationMinutes": 22,
+    "correctionsCount": 5,
+    "fluencyScore": 79
+  }
+]

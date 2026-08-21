@@ -1,0 +1,12 @@
+{
+  "streakDays": 12,
+  "scores": {
+    "grammar": 82,
+    "vocabulary": 74,
+    "speaking": 81
+  },
+  "weeklyProgress": {
+    "speakingGrowth": "+14%",
+    "wordsLearned": 48
+  }
+}

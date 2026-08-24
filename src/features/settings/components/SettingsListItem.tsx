@@ -22,10 +22,10 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
       className="w-full flex items-center justify-between px-4 sm:px-5 lg:px-6 py-3.5 sm:py-4 hover:bg-white/[0.02] transition-all duration-300 cursor-pointer group"
     >
       {/* Left: Icon + Text */}
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#A27FF3] shrink-0 group-hover:border-[#A27FF3]/30 transition-colors duration-300">
+      <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+        <span className="text-[#8F7CC7] group-hover:text-[#A27FF3] group-hover:drop-shadow-[0_0_7px_rgba(162,127,243,0.65)] transition-all duration-300 shrink-0">
           {icon}
-        </div>
+        </span>
         <div className="flex flex-col items-start min-w-0">
           <span className="text-[13px] sm:text-sm font-medium text-[#f8f8f8] leading-tight tracking-wide">
             {title}

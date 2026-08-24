@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
-import { X, Volume2, Mic, SlidersHorizontal } from "lucide-react";
+import React from "react";
+import { Volume2, Mic, SlidersHorizontal } from "lucide-react";
+import { AppModal } from "../../../design-system/components/Modal/AppModal";
 
 export interface ConversationAudioSettingsModalProps {
   isOpen: boolean;
@@ -16,20 +17,6 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
   onSetSpeechRate,
   micVolume = 0,
 }) => {
-  // Close on Escape key press
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const speedOptions = [
     { label: "0.75x Slow", value: 0.75, desc: "Easy to follow, high clarity" },
     { label: "0.90x Relaxed", value: 0.9, desc: "Slightly relaxed, natural" },
@@ -38,45 +25,29 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
   ];
 
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Audio & Mic Settings"
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="sm"
+      title="Audio & Mic Settings"
+      subtitle="Configure interviewer voice and microphone"
+      ariaLabel="Audio & Mic Settings"
+      icon={<SlidersHorizontal className="w-5 h-5" />}
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#7048E8] to-[#A27FF3] text-white text-xs font-semibold transition-all shadow-lg shadow-[#7048E8]/30 hover:opacity-90 active:scale-[0.99] cursor-pointer"
+        >
+          Save &amp; Done
+        </button>
+      }
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border border-white/[0.1] bg-[#070814] p-6 shadow-2xl space-y-5 animate-[scaleUp_0.3s_ease-out] relative"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-violet-950/40 border border-violet-500/30 flex items-center justify-center text-violet-400">
-              <SlidersHorizontal className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Audio & Mic Settings</h3>
-              <p className="text-xs text-neutral-400">Configure interviewer voice and microphone</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-1.5 rounded-xl text-neutral-400 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+      <div className="space-y-5">
         {/* Section 1: AI Speech Rate */}
         <div className="space-y-2.5">
-          <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-            <Volume2 className="w-3.5 h-3.5 text-violet-400" />
+          <label className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase text-[#999a9b]">
+            <Volume2 className="w-3.5 h-3.5 text-[#A27FF3]" />
             <span>AI Voice Speed</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -85,17 +56,24 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
               return (
                 <button
                   key={opt.value}
+                  type="button"
                   onClick={() => onSetSpeechRate(opt.value)}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${
                     isSelected
-                      ? "bg-violet-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10"
+                      ? "bg-violet-600/20 border-violet-500/70 text-white shadow-lg shadow-violet-500/10"
                       : "bg-white/[0.02] border-white/[0.06] text-neutral-400 hover:bg-white/[0.05] hover:text-white"
                   }`}
                 >
-                  <span className={`text-xs font-semibold block ${isSelected ? "text-violet-300" : "text-white"}`}>
+                  <span
+                    className={`text-xs font-semibold block ${
+                      isSelected ? "text-violet-300" : "text-white"
+                    }`}
+                  >
                     {opt.label}
                   </span>
-                  <span className="text-[10px] text-neutral-400 block mt-0.5">{opt.desc}</span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5">
+                    {opt.desc}
+                  </span>
                 </button>
               );
             })}
@@ -105,11 +83,11 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
         {/* Section 2: Live Mic Volume Indicator */}
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-neutral-300 flex items-center gap-1.5">
-              <Mic className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="flex items-center gap-2 text-[#999a9b]">
+              <Mic className="w-3.5 h-3.5 text-[#4ade80]" />
               <span>Microphone Input Level</span>
             </span>
-            <span className="text-[10px] text-emerald-400 font-mono">
+            <span className="text-[10px] text-[#4ade80] font-mono">
               {micVolume > 5 ? "Receiving audio" : "Ready"}
             </span>
           </div>
@@ -120,15 +98,7 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
             />
           </div>
         </div>
-
-        {/* Footer Done Button */}
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all shadow-lg cursor-pointer"
-        >
-          Save & Done
-        </button>
       </div>
-    </div>
+    </AppModal>
   );
 };

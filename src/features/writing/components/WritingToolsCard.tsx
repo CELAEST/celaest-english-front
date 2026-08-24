@@ -7,12 +7,12 @@ export interface WritingToolsCardProps {
   onExpand?: () => void;
 }
 
-export const WritingToolsCard: React.FC<WritingToolsCardProps> = ({
+export const WritingToolsCard: React.FC<WritingToolsCardProps> = React.memo(function WritingToolsCard({
   onImprove,
   onSimplify,
   onShorten,
   onExpand,
-}) => {
+}) {
   const tools = [
     {
       id: 'improve',
@@ -72,13 +72,22 @@ export const WritingToolsCard: React.FC<WritingToolsCardProps> = ({
         {tools.map((tool) => (
           <button
             key={tool.id}
+            type="button"
             onClick={tool.onClick}
-            className="flex flex-col items-center justify-center space-y-1.5 p-2 rounded-2xl group cursor-pointer"
+            disabled={!tool.onClick}
+            aria-label={tool.label}
+            className="flex flex-col items-center justify-center space-y-1.5 p-2 rounded-2xl group cursor-pointer disabled:cursor-default"
           >
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#080914] border border-[#111220] flex items-center justify-center text-[#f8f8f8] group-hover:border-[#A27FF3] group-hover:bg-[#111220] group-hover:scale-110 active:scale-90 transition-all duration-200 shadow-md">
+            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#080914] border flex items-center justify-center text-[#f8f8f8] shadow-md transition-all duration-200 ${
+              tool.onClick
+                ? 'border-[#111220] group-hover:border-[#A27FF3] group-hover:bg-[#111220] group-hover:scale-110 active:scale-90'
+                : 'border-[#111220] opacity-40'
+            }`}>
               {tool.icon}
             </div>
-            <span className="text-[11px] text-[#8a8a9e] font-light group-hover:text-[#f8f8f8] transition-colors">
+            <span className={`text-[11px] font-light transition-colors ${
+              tool.onClick ? 'text-[#8a8a9e] group-hover:text-[#f8f8f8]' : 'text-[#8a8a9e]/50'
+            }`}>
               {tool.label}
             </span>
           </button>
@@ -86,4 +95,4 @@ export const WritingToolsCard: React.FC<WritingToolsCardProps> = ({
       </div>
     </div>
   );
-};
+});

@@ -28,9 +28,10 @@ Every file and feature must strictly adhere to the top-level architecture define
 - **Data Encryption**: User DNA and local memory state must be stored using `ISecureVault` (AES-GCM 256-bit encryption).
 - **Audio Lifecycle**: Revoke all Web Audio Object URLs (`URL.revokeObjectURL`) upon unmount.
 
-### 4. Design System Supremacy
+### 4. Design System & Visual Asset Supremacy
 - **Colors**: Strictly consume CSS variable tokens (`var(--bg-app)`, `var(--surface-1)`, `var(--accent-violet-500)`) from `docs/04_DESIGN_SYSTEM.md`. Zero hardcoded hex colors or unapproved inline styles.
 - **Theme**: Deep Cosmic Dark (`#04040A`), Glassmorphism (`rgba(12, 12, 28, 0.65)` with `blur(20px)`), and glowing violet energy accents (`#7048E8`).
+- **Asset Rendering Integrity (Zero Shadows on Images)**: NEVER add artificial CSS `drop-shadow`, `shadow-`, or blur filters directly to PNG/SVG/Orb images or asset icons. Always preserve the clean, native transparent rendering of the asset graphic itself.
 
 ---
 

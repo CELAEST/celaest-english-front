@@ -25,6 +25,7 @@ import { SpecificErrorItem } from "../services/interviewEngineService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
 import { sanitizeFeedbackTone } from "../services/coreAiEvaluatorService";
+import { AppModal } from "../../../design-system/components/Modal/AppModal";
 
 const WAVEFORM_BARS = [
   3, 4, 6, 14, 20, 12, 6, 4, 4, 8, 18, 24, 22, 16, 10, 6, 4, 6, 12, 20, 24, 22, 14, 8, 6, 4, 10, 18,
@@ -303,60 +304,32 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
   };
 
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Evaluación de Desempeño"
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xl animate-[fadeIn_0.3s_ease-out]"
+    <AppModal
+      size="lg"
+      title="Evaluación de Desempeño"
+      subtitle="Análisis lingüístico, precisión gramatical y estrategia"
+      ariaLabel="Evaluación de Desempeño"
+      onClose={onClose}
+      icon={
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L20.66 7V17L12 22L3.34 17V7L12 2Z" stroke="url(#hdr_grad)" strokeWidth="1.75" fill="url(#hdr_fill)" fillOpacity="0.2" />
+          <circle cx="12" cy="12" r="3.5" stroke="#A27FF3" strokeWidth="1.5" />
+          <path d="M12 6V8.5M12 15.5V18M6.5 9L8.5 10.5M15.5 13.5L17.5 15M6.5 15L8.5 13.5M15.5 10.5L17.5 9" stroke="#9d7cf0" strokeWidth="1.25" strokeLinecap="round" />
+          <defs>
+            <linearGradient id="hdr_grad" x1="3.34" y1="2" x2="20.66" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#A27FF3" />
+              <stop offset="1" stopColor="#674ee6" />
+            </linearGradient>
+            <linearGradient id="hdr_fill" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#A27FF3" />
+              <stop offset="1" stopColor="#3b1d7d" />
+            </linearGradient>
+          </defs>
+        </svg>
+      }
+      bodyClassName="p-5 lg:p-7"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#18152e] bg-[#05060c] shadow-2xl shadow-black/80 relative animate-[scaleUp_0.35s_ease-out]"
-      >
-        
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#18152e] p-5 lg:px-7 shrink-0 bg-[#070611]">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141028] border border-[#251d48] shadow-inner text-[#A27FF3]">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L20.66 7V17L12 22L3.34 17V7L12 2Z" stroke="url(#hdr_grad)" strokeWidth="1.75" fill="url(#hdr_fill)" fillOpacity="0.2" />
-                <circle cx="12" cy="12" r="3.5" stroke="#A27FF3" strokeWidth="1.5" />
-                <path d="M12 6V8.5M12 15.5V18M6.5 9L8.5 10.5M15.5 13.5L17.5 15M6.5 15L8.5 13.5M15.5 10.5L17.5 9" stroke="#9d7cf0" strokeWidth="1.25" strokeLinecap="round" />
-                <defs>
-                  <linearGradient id="hdr_grad" x1="3.34" y1="2" x2="20.66" y2="22" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#A27FF3" />
-                    <stop offset="1" stopColor="#674ee6" />
-                  </linearGradient>
-                  <linearGradient id="hdr_fill" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#A27FF3" />
-                    <stop offset="1" stopColor="#3b1d7d" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </span>
-            <div>
-              <h2 className="text-[17px] font-medium text-white tracking-tight">Evaluación de Desempeño</h2>
-              <p className="text-[13px] font-normal text-[#8a8a9e]">
-                Análisis lingüístico, precisión gramatical y estrategia
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#141028] text-[#8a8a9e] transition-colors hover:bg-[#1f1a3a] hover:text-white border border-[#251d48] cursor-pointer"
-          >
-            <X className="h-4.5 w-4.5" />
-          </button>
-        </div>
-
-        {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-5 lg:p-7 custom-scrollbar">
-          <div className="mx-auto max-w-4xl space-y-5">
+      <div className="mx-auto max-w-4xl space-y-5">
 
             {/* Master Executive Scorecard & Competencies Hub */}
             <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl">
@@ -915,8 +888,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+    </AppModal>
   );
 };

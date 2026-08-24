@@ -8,10 +8,10 @@ export interface WritingProgressCardProps {
 }
 
 export const WritingProgressCard: React.FC<WritingProgressCardProps> = ({
-  progressPercentage = 65,
-  wordCount = 142,
+  progressPercentage = 0,
+  wordCount = 0,
   maxWords = 220,
-  timeSpentMinutes = 7,
+  timeSpentMinutes,
 }) => {
   return (
     <div className="bg-[#05060c] border border-[#111220] hover:border-[#1a1a35] transition-colors duration-300 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col space-y-4 shrink-0 animate-[slideInRight_0.45s_ease-out_0.1s_both]">
@@ -61,13 +61,15 @@ export const WritingProgressCard: React.FC<WritingProgressCardProps> = ({
             </span>
           </div>
 
-          {/* Time Stat */}
-          <div className="flex flex-col">
-            <span className="text-xs text-[#8a8a9e] font-light">Time</span>
-            <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">
-              {timeSpentMinutes} min
-            </span>
-          </div>
+          {/* Time Stat (only when real data is provided) */}
+          {typeof timeSpentMinutes === 'number' && (
+            <div className="flex flex-col">
+              <span className="text-xs text-[#8a8a9e] font-light">Time</span>
+              <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">
+                {timeSpentMinutes} min
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

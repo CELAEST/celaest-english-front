@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { QuizQuestion, GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
 
@@ -22,7 +22,7 @@ export interface ReadingCompletionQuizProps {
   onSkip?: (() => void) | undefined;
 }
 
-export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
+export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React.memo(({
   articleId = "",
   articleTitle,
   articleContent,
@@ -46,7 +46,6 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
-    // If questions are already cached in memory, zero network calls!
     if (cachedQuiz?.questions && cachedQuiz.questions.length > 0) {
       setQuestions(cachedQuiz.questions);
       setLoading(false);
@@ -78,18 +77,18 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
     return () => {
       active = false;
     };
-  }, [articleId, articleTitle, cachedQuiz]);
+  }, [articleId, articleTitle, articleContent, keywords, cefrLevel, cachedQuiz, onGetQuiz]);
 
   const currentQ = questions[currentIdx];
 
-  const handleSelectOption = (idx: number) => {
+  const handleSelectOption = useCallback((idx: number) => {
     if (isAnswered || !currentQ) return;
     setSelectedOption(idx);
     setIsAnswered(true);
     setUserAnswers((prev) => ({ ...prev, [currentIdx]: idx }));
-  };
+  }, [isAnswered, currentQ, currentIdx]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx((prev) => prev + 1);
       setSelectedOption(null);
@@ -97,19 +96,46 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
     } else {
       setIsCompleted(true);
     }
-  };
+  }, [currentIdx, questions.length]);
 
-  const calculatedScore = questions.reduce((acc, q, idx) => {
-    return acc + (userAnswers[idx] === q.correctIndex ? 1 : 0);
-  }, 0);
+  const calculatedScore = useMemo(() => {
+    return questions.reduce((acc, q, idx) => {
+      return acc + (userAnswers[idx] === q.correctIndex ? 1 : 0);
+    }, 0);
+  }, [questions, userAnswers]);
 
   if (loading) {
     return (
-      <div className="w-full max-w-[560px] min-h-[300px] flex flex-col items-center justify-center space-y-4 text-center animate-[fadeIn_0.3s_ease-out_both]">
-        <div className="w-9 h-9 rounded-full border-2 border-[#7048E8] border-t-transparent animate-spin shadow-[0_0_20px_rgba(112,72,232,0.4)]" />
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm text-white font-light">Checking comprehension...</p>
-          <p className="text-xs text-[#8a8a9e]">Formulating 3 contextual questions</p>
+      <div
+        role="status"
+        aria-live="polite"
+        className="w-full max-w-[600px] flex flex-col space-y-5 animate-pulse select-none"
+      >
+        {/* Top Meta Bar Skeleton */}
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+          <div className="h-3.5 w-36 rounded bg-white/[0.08]" />
+          <div className="h-4 w-10 rounded-full bg-white/[0.04]" />
+        </div>
+
+        {/* Question Headline Skeleton */}
+        <div className="flex flex-col space-y-2 mt-1">
+          <div className="h-5 w-full rounded bg-white/[0.07]" />
+          <div className="h-5 w-3/4 rounded bg-white/[0.05]" />
+        </div>
+
+        {/* 4 Option Skeletons */}
+        <div className="flex flex-col space-y-2.5 mt-1">
+          {[0.08, 0.06, 0.05, 0.04].map((opacity, i) => (
+            <div
+              key={i}
+              className="w-full p-4 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5"
+            >
+              <div className="w-6 h-6 rounded-full shrink-0" style={{ backgroundColor: `rgba(255,255,255,${opacity})` }} />
+              <div className="flex-1 flex flex-col space-y-1.5">
+                <div className="h-3.5 rounded" style={{ width: `${70 - i * 8}%`, backgroundColor: `rgba(255,255,255,${opacity})` }} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -135,6 +161,7 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
         </div>
 
         <button
+          type="button"
           onClick={() => onFinishQuiz(calculatedScore)}
           className="px-8 py-3 rounded-2xl bg-[#7048E8] hover:bg-[#8264C3] text-white text-sm font-medium transition-all duration-200 cursor-pointer shadow-[0_0_25px_rgba(112,72,232,0.4)] hover:scale-105 active:scale-95"
         >
@@ -149,6 +176,7 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
       <div className="w-full max-w-[560px] flex flex-col items-center justify-center space-y-4 text-center py-6">
         <p className="text-sm text-white font-light">Comprehension check is complete.</p>
         <button
+          type="button"
           onClick={() => onFinishQuiz(3)}
           className="px-6 py-2.5 bg-[#7048E8] text-white rounded-xl text-xs font-semibold cursor-pointer"
         >
@@ -173,6 +201,7 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
 
         {onSkip && !isAnswered && (
           <button
+            type="button"
             onClick={onSkip}
             className="text-xs text-[#8a8a9e] hover:text-white transition-colors cursor-pointer"
           >
@@ -187,7 +216,11 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
       </h3>
 
       {/* Options List */}
-      <div className="flex flex-col space-y-2.5">
+      <div
+        role="radiogroup"
+        aria-label={`Question ${currentIdx + 1} options`}
+        className="flex flex-col space-y-2.5"
+      >
         {currentQ.options.map((opt, optIdx) => {
           let stateStyle =
             "bg-white/[0.02] border-white/[0.08] text-white/90 hover:border-[#7048E8]/70 hover:bg-white/[0.04]";
@@ -205,6 +238,9 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
 
           return (
             <button
+              type="button"
+              role="radio"
+              aria-checked={selectedOption === optIdx}
               key={optIdx}
               onClick={() => handleSelectOption(optIdx)}
               disabled={isAnswered}
@@ -229,8 +265,12 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
 
       {/* Explanation Callout */}
       {isAnswered && (
-        <div className="mt-4 p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-xs text-[#a5a6c2] leading-relaxed animate-[fadeIn_0.3s_ease-out_both] flex items-start space-x-3">
-          <span className="text-[#A27FF3] text-sm shrink-0 mt-0.5">✦</span>
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-4 p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-xs text-[#a5a6c2] leading-relaxed animate-[fadeIn_0.3s_ease-out_both] flex items-start space-x-3"
+        >
+          <span className="text-[#A27FF3] text-sm shrink-0 mt-0.5" aria-hidden="true">✦</span>
           <div className="flex flex-col space-y-0.5">
             <span className="font-semibold text-white">
               {selectedOption === currentQ.correctIndex ? "Correct Answer" : "Explanation"}
@@ -244,6 +284,7 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
       {isAnswered && (
         <div className="mt-5 flex justify-end">
           <button
+            type="button"
             onClick={handleNext}
             className="px-6 py-2.5 rounded-xl bg-[#7048E8] hover:bg-[#8264C3] text-white text-xs font-semibold transition-all duration-200 cursor-pointer shadow-[0_0_20px_rgba(112,72,232,0.45)] hover:scale-105 active:scale-95"
           >
@@ -253,4 +294,6 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = ({
       )}
     </div>
   );
-};
+});
+
+ReadingCompletionQuiz.displayName = "ReadingCompletionQuiz";

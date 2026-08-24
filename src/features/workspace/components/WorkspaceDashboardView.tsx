@@ -8,6 +8,7 @@ import { WritingPracticeView } from "../../writing";
 import { ReadingPracticeView } from "../../reading";
 import { MemoryView } from "../../memory";
 import { SettingsView } from "../../settings";
+import { LabView } from "../../lab";
 import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 
 export interface WorkspaceDashboardViewProps {
@@ -91,6 +92,15 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
         {activeTab === "memory" && (
           <div key="memory" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <MemoryView
+              onBackToWorkspace={() => handleSelectNav("workspace")}
+            />
+          </div>
+        )}
+
+        {/* Route Canvas: LAB (Interactive UI & Icon Sandbox) */}
+        {activeTab === "lab" && (
+          <div key="lab" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
+            <LabView
               onBackToWorkspace={() => handleSelectNav("workspace")}
             />
           </div>

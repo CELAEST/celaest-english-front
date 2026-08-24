@@ -8,16 +8,16 @@ export interface MemoryCard {
   category: string; // 'SPEAKING' | 'WRITING' | 'READING' | 'GRAMMAR' | 'VOCABULARY'
   userSaid: string;
   betterWay: string;
-  translationSpanish?: string;
+  translationSpanish?: string | undefined;
   errorWord: string;
   correctWord: string;
   grammarExplanation: string;
   cefrLevel: string;
-  audioUrl?: string;
-  bookmarked?: boolean;
-  intervalDays?: number;
-  repetitions?: number;
-  easeFactor?: number;
-  nextReviewAt?: string;
-  createdAt?: string;
+  audioUrl?: string | undefined;
+  bookmarked?: boolean | undefined;
+  intervalDays?: number | undefined;
+  repetitions?: number | undefined;
+  easeFactor?: number | undefined;
+  nextReviewAt?: string | undefined;
+  createdAt?: string | undefined;
 }

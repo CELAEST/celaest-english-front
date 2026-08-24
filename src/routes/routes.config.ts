@@ -12,6 +12,7 @@ export const ROUTES = {
   MEMORY: '/memory',
   SETTINGS: '/settings',
   ONBOARDING: '/onboarding',
+  LAB: '/lab',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

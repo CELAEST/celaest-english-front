@@ -24,5 +24,6 @@ export const QUERY_KEYS = {
   },
   settings: {
     profile: ["settings", "profile"] as const,
+    providers: ["settings", "ai-providers"] as const,
   },
 };

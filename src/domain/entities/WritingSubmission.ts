@@ -25,6 +25,10 @@ export interface WritingSubmission {
   extractedCardsCount?: number;
   feedback: {
     summary: string;
+    /** Things the writer did well (AI-evaluated) */
+    strengths?: string[];
+    /** Problems detected in the writing (AI-evaluated) */
+    issues?: string[];
     improvements: string[];
     extractedErrors?: ExtractedWritingError[];
     createdCardIDs?: string[];

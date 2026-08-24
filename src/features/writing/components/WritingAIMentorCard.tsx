@@ -3,11 +3,14 @@ import React from 'react';
 export interface WritingAIMentorCardProps {
   statusText?: string;
   isActive?: boolean;
+  /** When false the waveform stays static (saves constant repaints) */
+  animated?: boolean;
 }
 
-export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = ({
+export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.memo(({
   statusText = "You're communicating clearly. I'll review your writing and help you make it even stronger.",
   isActive = true,
+  animated = true,
 }) => {
   return (
     <div className="bg-[#05060c] border border-[#111220] hover:border-[#1a1a35] transition-colors duration-300 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col space-y-3 shrink-0 animate-[slideInRight_0.45s_ease-out_both]">
@@ -27,21 +30,21 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = ({
       </p>
 
       {/* Compact Purple Equalizer Waveform Animation */}
-      <div className="w-full h-8 flex items-center justify-center gap-[3px] pt-1">
+      <div className="w-full h-8 flex items-center justify-center gap-[3px] pt-1" aria-hidden="true">
         {Array.from({ length: 45 }).map((_, i) => {
           const h = Math.sin(i * 0.4) * 0.4 + 0.6;
           const px = `${Math.max(3, h * 20)}px`;
           return (
             <span
               key={i}
-              className="animate-pulse"
+              className={animated ? 'animate-pulse' : ''}
               style={{
                 display: 'block',
                 width: '1.5px',
                 height: px,
                 borderRadius: '1px',
-                backgroundColor: 'rgba(162,127,243,0.7)',
-                boxShadow: '0 0 6px rgba(162,127,243,0.5)',
+                backgroundColor: animated ? 'rgba(162,127,243,0.7)' : 'rgba(162,127,243,0.28)',
+                boxShadow: animated ? '0 0 6px rgba(162,127,243,0.5)' : 'none',
                 animationDuration: `${1.2 + (i % 5) * 0.2}s`,
               }}
             />
@@ -50,4 +53,4 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = ({
       </div>
     </div>
   );
-};
+});

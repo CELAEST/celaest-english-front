@@ -19,14 +19,14 @@ export const WorkspaceHeroSection: React.FC<WorkspaceHeroSectionProps> = ({
         <span className="w-1.5 h-1.5 rounded-full bg-[#9375E6] shadow-[0_0_8px_#9375E6] animate-pulse" />
       </div>
 
-      {/* Main Headline — Thin & Elegant Serif Typography */}
+      {/* Main Headline — Unified Serif Typography */}
       <h1
-        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[52px] font-serif font-light text-white tracking-normal leading-[1.12] animate-[fadeSlideUp_0.6s_ease-out_both]"
+        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[52px] font-serif font-normal text-white tracking-normal leading-[1.12] animate-[fadeSlideUp_0.6s_ease-out_both]"
         style={{ animationDelay: '100ms' }}
       >
         I’ve been thinking <br />
         about our last <br />
-        <span className="font-serif italic text-[#B197FF] font-light tracking-normal">
+        <span className="italic text-[#B197FF]">
           conversation.
         </span>
       </h1>

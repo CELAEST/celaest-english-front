@@ -1,33 +1,40 @@
 import React from "react";
 import { SettingsLearningSection } from "./SettingsLearningSection";
 import { SettingsPersonalSection } from "./SettingsPersonalSection";
+import { SettingsAiProvidersSection } from "./SettingsAiProvidersSection";
 import { SettingsAIMentorCard } from "./SettingsAIMentorCard";
-import { SettingsLearningSummaryCard } from "./SettingsLearningSummaryCard";
 import { SettingsQuickActionsCard } from "./SettingsQuickActionsCard";
 import { SettingsFooterMessage } from "./SettingsFooterMessage";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
 export interface SettingsViewProps {
-  userName?: string;
-  onBackToWorkspace?: () => void;
+  userName?: string | undefined;
+  onBackToWorkspace?: (() => void) | undefined;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   userName = "Esteban",
-  onBackToWorkspace,
 }) => {
-  const { displayName, streakDays, currentFocus, currentLevel } = useSettingsProfile(userName);
+  const { displayName } = useSettingsProfile(userName);
   return (
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-4">
       {/* ─── Header: Title + Orb + Back Button (Fixed Top Section) ─── */}
       <div className="relative flex items-center justify-between mb-4 sm:mb-6 pt-2 sm:pt-4 shrink-0 z-20">
-        <div className="flex flex-col z-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-sans font-medium text-white leading-tight tracking-tight flex items-center gap-2">
-            Settings
-            <span className="text-[#A27FF3] text-lg sm:text-xl align-top">✦</span>
+        <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">
+          {/* Category Tag */}
+          <span className="text-[10.5px] sm:text-[11px] font-sans font-bold tracking-[0.22em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both]">
+            YOUR SETTINGS
+          </span>
+
+          {/* Title */}
+          <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-[34px] font-sans text-[#f8f8f8] font-light tracking-wide leading-tight animate-[fadeSlideUp_0.5s_ease-out_0.08s_both]">
+            Make Lingua{" "}
+            <span className="text-[#A27FF3] font-light">yours.</span>
           </h1>
-          <p className="text-xs sm:text-sm lg:text-[15px] text-[#999a9b] font-light mt-1">
-            Adapt Lingua to you. Your goals, your way.
+
+          {/* Subtitle */}
+          <p className="text-xs sm:text-sm text-[#999a9b] font-light tracking-wide pt-0.5 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both]">
+            Your goals, your mentors, your way.
           </p>
         </div>
 
@@ -39,24 +46,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full h-full object-contain"
           />
         </div>
-
-        {/* Back Button (Far Right) */}
-        <button
-          type="button"
-          onClick={onBackToWorkspace}
-          className="flex items-center gap-2 px-4 py-1.5 sm:py-2 rounded-full border border-[#111220] bg-[#05060c] text-xs sm:text-sm text-[#999a9b] hover:text-[#f8f8f8] hover:border-[#A27FF3]/40 transition-all duration-300 cursor-pointer shadow-lg backdrop-blur-xl group shrink-0 z-10"
-        >
-          <span className="font-light">Back to Workspace</span>
-          <svg
-            className="w-4 h-4 text-[#999a9b] group-hover:text-[#A27FF3] group-hover:translate-x-0.5 transition-all duration-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.8}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-          </svg>
-        </button>
       </div>
 
       {/* ─── Two-Column Content Canvas: Page NEVER scrolls, columns scroll independently ─── */}
@@ -64,6 +53,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         {/* LEFT COLUMN: Settings Lists (Scrolls internally if height constrained, no scrollbar) */}
         <div className="flex-1 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-6 sm:gap-8 pr-1 py-1">
+          <SettingsAiProvidersSection />
           <SettingsLearningSection />
           <SettingsPersonalSection userName={displayName} />
         </div>
@@ -71,11 +61,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* RIGHT COLUMN: Sidebar Cards Stack (Scrolls internally if height constrained, no scrollbar) */}
         <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-4 sm:gap-5 pr-1 py-1">
           <SettingsAIMentorCard />
-          <SettingsLearningSummaryCard
-            streakDays={streakDays}
-            currentFocus={currentFocus}
-            currentLevel={currentLevel}
-          />
           <SettingsQuickActionsCard />
           <SettingsFooterMessage />
         </div>

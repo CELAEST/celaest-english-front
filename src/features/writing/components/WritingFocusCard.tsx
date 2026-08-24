@@ -5,10 +5,10 @@ export interface WritingFocusCardProps {
   focusDescription?: string;
 }
 
-export const WritingFocusCard: React.FC<WritingFocusCardProps> = ({
+export const WritingFocusCard: React.FC<WritingFocusCardProps> = React.memo(function WritingFocusCard({
   focusTarget = 'Professional tone',
   focusDescription = 'Maintain a clear, polite and professional tone.',
-}) => {
+}) {
   return (
     <div className="bg-[#05060c] border border-[#111220] hover:border-[#1a1a35] transition-colors duration-300 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col space-y-3.5 shrink-0 animate-[slideInRight_0.45s_ease-out_0.2s_both]">
       {/* Title */}
@@ -30,4 +30,4 @@ export const WritingFocusCard: React.FC<WritingFocusCardProps> = ({
       </p>
     </div>
   );
-};
+});

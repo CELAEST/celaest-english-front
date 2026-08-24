@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { WordLookup, GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
@@ -10,14 +10,14 @@ const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
 
 /**
  * Calculates ideal words per page based on viewport height to ensure:
- * - Small screens: zero text clipping & zero scroll (22-26 words)
- * - Large screens: zero giant empty voids (46-60 words)
+ * - Small screens: zero text clipping & zero scroll (28 words)
+ * - Large screens: balanced rich text fill (60-85 words)
  */
 function getTargetWordsForHeight(height: number): number {
   if (height < 700) return 28;   // Small screens: ~4-5 lines
   if (height < 820) return 42;   // Medium laptops: ~5-6 lines
-  if (height < 980) return 60;   // Desktop 1080p: ~7-8 lines (rich and balanced)
-  return 85;                     // Large 1440p/4K monitors: ~9-11 lines (glorious fill!)
+  if (height < 980) return 60;   // Desktop 1080p: ~7-8 lines
+  return 85;                     // Large 1440p/4K monitors: ~9-11 lines
 }
 
 /**
@@ -49,22 +49,64 @@ function paginateText(fullText: string, targetWordsPerPage: number): string[] {
 export const useReadingArticles = (level: string = "B1") => {
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
+  const saveStorageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [articles, setArticles] = useState<ReadingArticle[]>([]);
   const [currentArticle, setCurrentArticle] = useState<ReadingArticle | null>(null);
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [sessionSeconds, setSessionSeconds] = useState<number>(0);
   const [viewportHeight, setViewportHeight] = useState<number>(
     typeof window !== "undefined" ? window.innerHeight : 800
   );
 
-  // Real-time viewport height listener for responsive pagination
+  // Live session reading timer: tracks real elapsed seconds while reading actively
   useEffect(() => {
+    if (!currentArticle || isGenerating || isCompleted) return;
+
+    const timer = setInterval(() => {
+      setSessionSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentArticle?.id, isGenerating, isCompleted]);
+
+  // Reset session timer when article changes
+  useEffect(() => {
+    setSessionSeconds(0);
+  }, [currentArticle?.id]);
+
+  // Debounced storage persistence to avoid main-thread jank on rapid lookups
+  const persistArticlesDebounced = useCallback((updatedArticles: ReadingArticle[]) => {
+    if (saveStorageTimerRef.current) {
+      clearTimeout(saveStorageTimerRef.current);
+    }
+    saveStorageTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(READING_CACHE_KEY, JSON.stringify(updatedArticles));
+      } catch (e) {
+        console.warn("Failed to persist reading cache to localStorage", e);
+      }
+    }, 400);
+  }, []);
+
+  // Debounced viewport height listener (150ms) to prevent continuous re-pagination calculations
+  useEffect(() => {
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const handleResize = () => {
-      setViewportHeight(window.innerHeight);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        setViewportHeight(window.innerHeight);
+      }, 150);
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (saveStorageTimerRef.current) clearTimeout(saveStorageTimerRef.current);
+    };
   }, []);
 
   // TanStack Query: Fetch articles with 10 minutes stale time
@@ -76,6 +118,7 @@ export const useReadingArticles = (level: string = "B1") => {
     refetchOnMount: false,
   });
 
+  // Initial load from localStorage
   useEffect(() => {
     const activeId = localStorage.getItem(ACTIVE_ARTICLE_ID_KEY);
 
@@ -94,6 +137,7 @@ export const useReadingArticles = (level: string = "B1") => {
     }
   }, []);
 
+  // Merge remote fetched articles with local cache
   useEffect(() => {
     if (fetchedArticles && fetchedArticles.length > 0) {
       const activeId = localStorage.getItem(ACTIVE_ARTICLE_ID_KEY);
@@ -121,9 +165,7 @@ export const useReadingArticles = (level: string = "B1") => {
           return;
         }
       }
-      if (!currentArticle) {
-        setCurrentArticle(fetchedArticles[0]);
-      }
+      setCurrentArticle((prev) => prev || fetchedArticles[0]);
     }
   }, [fetchedArticles]);
 
@@ -142,25 +184,64 @@ export const useReadingArticles = (level: string = "B1") => {
   const progressPercentage = Math.min(100, Math.round(((currentPageIndex + 1) / totalPages) * 100));
   const currentPageContent = dynamicPages[currentPageIndex] || dynamicPages[0] || fullContent;
 
-  const nextPage = async () => {
-    if (currentPageIndex < totalPages - 1) {
-      setCurrentPageIndex((prev) => prev + 1);
-    } else {
+  // Real Exact Word Counts & Session Telemetry
+  const totalWords = useMemo(() => {
+    if (!fullContent) return 0;
+    return fullContent.trim().split(/\s+/).filter(Boolean).length;
+  }, [fullContent]);
+
+  const readWords = useMemo(() => {
+    if (!dynamicPages.length) return 0;
+    if (isCompleted) return totalWords;
+    let count = 0;
+    for (let i = 0; i <= currentPageIndex && i < dynamicPages.length; i++) {
+      count += dynamicPages[i].trim().split(/\s+/).filter(Boolean).length;
+    }
+    return Math.min(count, totalWords);
+  }, [dynamicPages, currentPageIndex, isCompleted, totalWords]);
+
+  const estimatedMinutesTotal = useMemo(() => {
+    if (currentArticle?.readTimeMin && currentArticle.readTimeMin > 0) {
+      return currentArticle.readTimeMin;
+    }
+    return Math.max(1, Math.ceil(totalWords / 160));
+  }, [currentArticle?.readTimeMin, totalWords]);
+
+  const estimatedMinutesRemaining = useMemo(() => {
+    if (isCompleted) return 0;
+    const remainingWords = Math.max(0, totalWords - readWords);
+    return Math.max(1, Math.ceil(remainingWords / 160));
+  }, [isCompleted, totalWords, readWords]);
+
+  const actualReadingTimeMin = useMemo(() => {
+    const minutes = Math.round(sessionSeconds / 60);
+    return Math.max(1, minutes === 0 ? 1 : minutes);
+  }, [sessionSeconds]);
+
+  const nextPage = useCallback(() => {
+    setCurrentPageIndex((prev) => {
+      if (prev < totalPages - 1) {
+        return prev + 1;
+      }
       setIsCompleted(true);
-    }
-  };
+      return prev;
+    });
+  }, [totalPages]);
 
-  const prevPage = () => {
-    if (isCompleted) {
-      setIsCompleted(false);
-    } else if (currentPageIndex > 0) {
-      setCurrentPageIndex((prev) => prev - 1);
-    }
-  };
+  const prevPage = useCallback(() => {
+    setIsCompleted((completed) => {
+      if (completed) {
+        return false;
+      }
+      setCurrentPageIndex((prev) => Math.max(0, prev - 1));
+      return false;
+    });
+  }, []);
 
-  const generateNextArticle = async (category: string = "BUSINESS") => {
+  const generateNextArticle = useCallback(async (category: string = "BUSINESS") => {
     setIsCompleted(false);
     setIsGenerating(true);
+    setSessionSeconds(0);
     try {
       const newArticle = await apiReadingRepository.generateArticle(category, level);
 
@@ -187,20 +268,9 @@ export const useReadingArticles = (level: string = "B1") => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [level]);
 
-  const selectArticle = (article: ReadingArticle) => {
-    setCurrentArticle(article);
-    setCurrentPageIndex(0);
-    setIsCompleted(false);
-    try {
-      localStorage.setItem(ACTIVE_ARTICLE_ID_KEY, article.id);
-    } catch (e) {
-      console.warn("Failed to save active article ID", e);
-    }
-  };
-
-  const instantWordLookup = async (word: string): Promise<WordLookup> => {
+  const instantWordLookup = useCallback(async (word: string): Promise<WordLookup> => {
     const cleanWord = word.toLowerCase().replace(/[^a-z'-]/g, "").replace(/^-+|-+$/g, "");
     if (!cleanWord) {
       return {
@@ -247,18 +317,36 @@ export const useReadingArticles = (level: string = "B1") => {
     const lookupPromise = (async () => {
       try {
         const lookupResult = await apiReadingRepository.lookupWord(cleanWord);
-        if (currentArticle) {
-          if (!currentArticle.vocabularyMap) currentArticle.vocabularyMap = {};
-          currentArticle.vocabularyMap[cleanWord] = lookupResult;
-          setArticles((prev) => {
-            try {
-              localStorage.setItem(READING_CACHE_KEY, JSON.stringify(prev));
-            } catch (e) {
-              console.warn("Failed to update vocabulary cache", e);
+
+        // Immutable state updates
+        setCurrentArticle((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            vocabularyMap: {
+              ...(prev.vocabularyMap || {}),
+              [cleanWord]: lookupResult,
+            },
+          };
+        });
+
+        setArticles((prev) => {
+          const updated = prev.map((art) => {
+            if (art.id === currentArticle?.id) {
+              return {
+                ...art,
+                vocabularyMap: {
+                  ...(art.vocabularyMap || {}),
+                  [cleanWord]: lookupResult,
+                },
+              };
             }
-            return [...prev];
+            return art;
           });
-        }
+          persistArticlesDebounced(updated);
+          return updated;
+        });
+
         return lookupResult;
       } catch (err) {
         return {
@@ -277,14 +365,14 @@ export const useReadingArticles = (level: string = "B1") => {
 
     inFlightLookupsRef.current.set(cleanWord, lookupPromise);
     return lookupPromise;
-  };
+  }, [currentArticle?.id, currentArticle?.vocabularyMap, articles, level, persistArticlesDebounced]);
 
-  const getOrFetchQuiz = async (
+  const getOrFetchQuiz = useCallback(async (
     articleId: string,
     title: string,
     content: string,
     keywords: string[] = [],
-    level: string = "B1"
+    quizLevel: string = "B1"
   ): Promise<GenerateQuizResponse> => {
     // 1. Check if currentArticle already has the quiz cached in memory
     if (
@@ -315,9 +403,17 @@ export const useReadingArticles = (level: string = "B1") => {
           title,
           content,
           keywords,
-          level
+          quizLevel
         );
         if (res && res.questions && res.questions.length > 0) {
+          // Immutable state updates
+          setCurrentArticle((prev) => {
+            if (prev && (prev.id === articleId || prev.title === title)) {
+              return { ...prev, quiz: res };
+            }
+            return prev;
+          });
+
           setArticles((prev) => {
             const updated = prev.map((art) => {
               if (art.id === articleId || art.title === title) {
@@ -325,17 +421,9 @@ export const useReadingArticles = (level: string = "B1") => {
               }
               return art;
             });
-            try {
-              localStorage.setItem(READING_CACHE_KEY, JSON.stringify(updated));
-            } catch (e) {
-              console.warn("Failed to persist quiz cache", e);
-            }
+            persistArticlesDebounced(updated);
             return updated;
           });
-
-          if (currentArticle && (currentArticle.id === articleId || currentArticle.title === title)) {
-            currentArticle.quiz = res;
-          }
         }
         return res;
       } finally {
@@ -345,11 +433,7 @@ export const useReadingArticles = (level: string = "B1") => {
 
     inFlightQuizRef.current.set(cacheKey, quizPromise);
     return quizPromise;
-  };
-
-  const isVocabularyReady = Boolean(
-    currentArticle?.vocabularyMap && Object.keys(currentArticle.vocabularyMap).length > 0
-  );
+  }, [currentArticle, articles, persistArticlesDebounced]);
 
   return {
     articles,
@@ -358,18 +442,19 @@ export const useReadingArticles = (level: string = "B1") => {
     totalPages,
     progressPercentage,
     currentPageContent,
+    fullContent,
+    totalWords,
+    readWords,
+    estimatedMinutesTotal,
+    estimatedMinutesRemaining,
+    actualReadingTimeMin,
     isLoading: isQueryLoading && articles.length === 0,
     isGenerating,
     isCompleted,
-    isVocabularyReady,
-    setIsCompleted,
     nextPage,
     prevPage,
     generateNextArticle,
-    selectArticle,
     instantWordLookup,
     getOrFetchQuiz,
-    setCurrentArticle,
-    setCurrentPageIndex,
   };
 };

@@ -1,15 +1,14 @@
 import React from "react";
+import { SparkleMark } from "./SettingsBespokeIcons";
 
 export const SettingsFooterMessage: React.FC = () => {
   return (
     <div className="rounded-3xl border border-[#111220] bg-[#05060c] p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
-      {/* Message with Star */}
+      {/* Message with Sparkle */}
       <div className="flex items-start gap-3">
-        {/* Purple Star Icon */}
-        <div className="shrink-0 mt-0.5">
-          <svg className="w-5 h-5 text-[#A27FF3]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.8 5.6 21.2 8 14l-6-4.8h7.6L12 2z" />
-          </svg>
+        {/* Gradient Sparkle */}
+        <div className="shrink-0 mt-0.5 drop-shadow-[0_0_8px_rgba(162,127,243,0.5)]">
+          <SparkleMark className="w-5 h-5" />
         </div>
 
         <div className="flex flex-col min-w-0">
@@ -22,12 +21,17 @@ export const SettingsFooterMessage: React.FC = () => {
         </div>
       </div>
 
-      {/* Purple Progress Bar */}
-      <div className="mt-4 w-full h-1 rounded-full bg-[#111220] overflow-hidden">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-[#7048E8] to-[#A27FF3] shadow-[0_0_10px_rgba(162,127,243,0.5)]"
-          style={{ width: "85%" }}
-        />
+      {/* Vault integrity strip — a true statement, not decoration */}
+      <div className="mt-4 flex items-center justify-between mb-2">
+        <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-[#8F7CC7]">
+          Vault integrity
+        </span>
+        <span className="text-[10px] font-mono text-[#66667c] tracking-wide">
+          AES-256 · GCM
+        </span>
+      </div>
+      <div className="w-full h-1 rounded-full bg-[#111220] overflow-hidden">
+        <div className="h-full w-full rounded-full bg-gradient-to-r from-[#7048E8] to-[#A27FF3] shadow-[0_0_10px_rgba(162,127,243,0.5)] animate-[borderGleamFlow_4s_ease-in-out_infinite] bg-[length:250%_250%]" />
       </div>
     </div>
   );

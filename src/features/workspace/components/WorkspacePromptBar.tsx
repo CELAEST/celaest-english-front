@@ -20,34 +20,18 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
     {
       id: 'weekend',
       label: 'Your weekend',
-      icon: (
-        <svg className="w-3.5 h-3.5 text-[#8E90A6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
-        </svg>
-      ),
     },
     {
       id: 'challenge',
       label: 'A challenge you faced',
-      icon: (
-        <svg className="w-3.5 h-3.5 text-[#8E90A6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.779V4.5l-3.114.778a9 9 0 01-6.086-.71l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
-        </svg>
-      ),
     },
     {
       id: 'learned',
       label: 'Something you learned',
-      icon: (
-        <svg className="w-3.5 h-3.5 text-[#8E90A6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.516 0c.85.493 1.508 1.333 1.508 2.316V18" />
-        </svg>
-      ),
     },
     {
       id: 'mind',
       label: 'Anything on your mind',
-      icon: <span className="text-xs font-mono text-[#8E90A6] tracking-tighter">···</span>,
     },
   ];
 
@@ -167,12 +151,9 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
             <button
               key={topic.id}
               onClick={() => onSubmitPrompt && onSubmitPrompt(topic.label)}
-              className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#080811] border border-[#141622] text-[11.5px] sm:text-xs text-[#8E90A6] hover:text-white hover:border-[#7048E8]/50 hover:bg-[#0D0E1A] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer font-light shrink-0 whitespace-nowrap group shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#080811] border border-[#141622] text-[11.5px] sm:text-xs text-[#8E90A6] hover:text-white hover:border-[#7048E8]/50 hover:bg-[#0D0E1A] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer font-light shrink-0 whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
               style={{ animationDelay: `${550 + i * 60}ms` }}
             >
-              <span className="flex items-center justify-center transition-colors group-hover:text-white">
-                {topic.icon}
-              </span>
               <span>{topic.label}</span>
             </button>
           ))}

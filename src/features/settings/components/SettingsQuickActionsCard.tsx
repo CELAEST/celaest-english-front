@@ -1,61 +1,128 @@
-import React from "react";
+import React, { useState } from "react";
+import { Check } from "lucide-react";
+import { vaultMaintenance } from "../services/vaultMaintenance";
+import { ExportVaultIcon, PurgeVaultIcon } from "./SettingsBespokeIcons";
 
-/* ─── SVG Icons ──────────────────────────────────────── */
-const ExportIcon = () => (
-  <svg className="w-4 h-4 text-[#A27FF3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-  </svg>
-);
-
-const ResetIcon = () => (
-  <svg className="w-4 h-4 text-[#A27FF3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-  </svg>
-);
-
-const FeedbackIcon = () => (
-  <svg className="w-4 h-4 text-[#A27FF3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-  </svg>
-);
-
-const RestoreIcon = () => (
-  <svg className="w-4 h-4 text-[#A27FF3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-  </svg>
-);
+type QuickActionState = "idle" | "working" | "done";
 
 interface QuickActionBtnProps {
   icon: React.ReactNode;
   label: string;
-  onClick?: () => void;
+  hint: string;
+  state: QuickActionState;
+  danger?: boolean;
+  onClick: () => void;
 }
 
-const QuickActionBtn: React.FC<QuickActionBtnProps> = ({ icon, label, onClick }) => (
+const QuickActionBtn: React.FC<QuickActionBtnProps> = ({
+  icon,
+  label,
+  hint,
+  state,
+  danger,
+  onClick,
+}) => (
   <button
     type="button"
     onClick={onClick}
-    className="flex items-center gap-2.5 px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-xs sm:text-[13px] text-[#999a9b] hover:text-[#f8f8f8] hover:border-[#A27FF3]/30 hover:bg-white/[0.06] transition-all duration-300 cursor-pointer font-light"
+    aria-busy={state === "working"}
+    className={`group relative flex flex-col items-start gap-1.5 px-4 py-3.5 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 ${
+      danger
+        ? "border-[#2a1215] bg-gradient-to-b from-[#170a0d]/80 to-[#100609]/50 hover:border-[#ef4444]/45 hover:shadow-[0_10px_28px_rgba(239,68,68,0.13)]"
+        : "border-white/[0.06] bg-white/[0.03] hover:border-[#A27FF3]/40 hover:bg-white/[0.05] hover:shadow-[0_10px_28px_rgba(112,72,232,0.14)]"
+    }`}
   >
-    {icon}
-    <span className="truncate">{label}</span>
+    <span
+      className={`flex items-center gap-2 text-xs font-medium tracking-wide transition-colors duration-300 ${
+        state === "done"
+          ? "text-[#4ade80]"
+          : danger
+            ? "text-[#f0a2a2] group-hover:text-[#fca5a5]"
+            : "text-[#b9b4cc] group-hover:text-[#f8f8f8]"
+      }`}
+    >
+      {icon}
+      {state === "done" ? "Done" : label}
+      {state === "done" && <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
+    </span>
+    <span
+      className={`text-[10.5px] font-light leading-relaxed transition-colors duration-300 ${
+        state === "done"
+          ? "text-[#4ade80]/70"
+          : "text-[#66667c] group-hover:text-[#8a8a9e]"
+      }`}
+    >
+      {state === "done"
+        ? "Completed successfully"
+        : state === "working"
+          ? "Working…"
+          : hint}
+    </span>
   </button>
 );
 
 export const SettingsQuickActionsCard: React.FC = () => {
+  const [exportState, setExportState] = useState<QuickActionState>("idle");
+  const [purgeState, setPurgeState] = useState<QuickActionState>("idle");
+
+  const handleExport = async () => {
+    setExportState("working");
+    try {
+      const data = await vaultMaintenance.exportAll();
+      vaultMaintenance.downloadExport(data);
+      setExportState("done");
+    } catch (err) {
+      console.warn("Vault export failed", err);
+    } finally {
+      setTimeout(() => setExportState("idle"), 2500);
+    }
+  };
+
+  const handlePurge = () => {
+    const confirmed = window.confirm(
+      "Purge the local encrypted vault? Your AI provider keys and stored learning data will be removed from this device. This cannot be undone."
+    );
+    if (!confirmed) return;
+    setPurgeState("working");
+    const purged = vaultMaintenance.purgeAll();
+    window.dispatchEvent(new CustomEvent("celaest:vault-purged", { detail: { purged } }));
+    setPurgeState("done");
+    setTimeout(() => setPurgeState("idle"), 2500);
+  };
+
   return (
     <div className="rounded-3xl border border-[#111220] bg-[#05060c] p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
       {/* Header */}
-      <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">
-        Quick actions
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">
+          Privacy &amp; Data
+        </span>
+        <span className="text-[10px] tracking-wider uppercase font-semibold text-[#A27FF3] drop-shadow-[0_0_8px_rgba(162,127,243,0.45)]">
+          AES-GCM Vault
+        </span>
+      </div>
 
-      {/* 2x2 Grid */}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
-        <QuickActionBtn icon={<ExportIcon />} label="Export my data" />
-        <QuickActionBtn icon={<ResetIcon />} label="Reset progress" />
-        <QuickActionBtn icon={<FeedbackIcon />} label="Give feedback" />
-        <QuickActionBtn icon={<RestoreIcon />} label="Restore purchases" />
+      {/* Actions Grid */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+        <QuickActionBtn
+          icon={
+            <ExportVaultIcon className="w-5 h-5 text-[#A27FF3] drop-shadow-[0_0_6px_rgba(162,127,243,0.45)]" />
+          }
+          label="Export my data"
+          hint="Download an encrypted copy of your vault."
+          state={exportState}
+          onClick={handleExport}
+        />
+        <QuickActionBtn
+          icon={
+            <PurgeVaultIcon className="w-5 h-5 text-[#f0a2a2] drop-shadow-[0_0_6px_rgba(239,68,68,0.35)]" />
+          }
+          label="Purge vault"
+          hint="Erase all local data from this device."
+          state={purgeState}
+          danger
+          onClick={handlePurge}
+        />
       </div>
     </div>
   );

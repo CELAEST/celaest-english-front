@@ -28,7 +28,7 @@ export default {
         display: ['Outfit', '"Plus Jakarta Sans"', 'sans-serif'],
         sora: ['Sora', '"Plus Jakarta Sans"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
-        serif: ['Playfair Display', 'Georgia', 'serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
       },
       boxShadow: {
         'button-glow': 'var(--shadow-button-glow)',

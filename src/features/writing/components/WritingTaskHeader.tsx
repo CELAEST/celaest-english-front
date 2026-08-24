@@ -7,12 +7,12 @@ export interface WritingTaskHeaderProps {
   timeLimit?: string;
 }
 
-export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = ({
+export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(function WritingTaskHeader({
   category = 'WRITING TASK',
   title = 'Write an email to a client',
   description = 'Use a professional tone and explain a project update.',
   timeLimit = '18 min',
-}) => {
+}) {
   return (
     <div className="w-full flex items-start justify-between select-none mb-3 sm:mb-4 pt-1 shrink-0">
       <div className="flex flex-col space-y-1">
@@ -42,4 +42,4 @@ export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = ({
       </div>
     </div>
   );
-};
+});

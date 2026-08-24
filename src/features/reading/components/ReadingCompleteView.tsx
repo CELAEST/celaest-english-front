@@ -1,6 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ReadingCompletionQuiz } from "./ReadingCompletionQuiz";
 import { GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
+import {
+  ReadingSuccessIcon,
+  ComprehensionQuizIcon,
+  NextReadingArrowIcon,
+  ChronometerIcon,
+  LexiconWordCountIcon,
+  CefrGraduatedTierIcon,
+  ReturnArrowIcon,
+} from "./ReadingBespokeIcons";
 
 export interface ReadingCompleteViewProps {
   articleId?: string | undefined;
@@ -20,9 +29,10 @@ export interface ReadingCompleteViewProps {
       ) => Promise<GenerateQuizResponse>)
     | undefined;
   onNextReading: () => void;
+  onReviewReading?: () => void;
 }
 
-export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = ({
+export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.memo(({
   articleId,
   articleTitle,
   articleContent,
@@ -32,9 +42,16 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = ({
   cachedQuiz,
   onGetQuiz,
   onNextReading,
+  onReviewReading,
 }) => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
+
+  const wordCount = useMemo(() => {
+    if (!articleContent) return 0;
+    const words = articleContent.trim().split(/\s+/).filter(Boolean);
+    return words.length;
+  }, [articleContent]);
 
   if (showQuiz) {
     return (
@@ -58,142 +75,139 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = ({
   }
 
   return (
-    <div className="w-full max-w-[560px] my-auto flex flex-col items-center justify-center space-y-4 sm:space-y-6 select-none animate-[fadeSlideUp_0.4s_ease-out_both] overflow-visible">
-      {/* Top Section: Standalone Bespoke Check Icon & Elegant Typography */}
-      <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-2 pt-1 shrink-0">
-        {/* Custom Standalone Glow Checkmark */}
-        <div className="flex items-center justify-center mb-0.5 animate-[fadeIn_0.5s_ease-out_both]">
-          <svg
-            className="w-10 h-10 sm:w-11 sm:h-11 text-[#22c55e] filter drop-shadow-[0_0_16px_rgba(34,197,94,0.7)]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+    <div className="w-full max-w-lg lg:max-w-xl mx-auto my-auto flex flex-col items-center justify-between space-y-6 sm:space-y-8 select-none animate-[fadeSlideUp_0.45s_ease-out_both] overflow-visible py-3 sm:py-6">
+      {/* 1. Header Section */}
+      <div className="flex flex-col items-center text-center space-y-2.5 pt-1 shrink-0">
+        <div className="flex items-center justify-center mb-1">
+          <ReadingSuccessIcon />
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-light text-white tracking-wide leading-tight">
-          Reading complete
+        <h2 className="text-2xl sm:text-3xl md:text-[32px] font-sans font-light text-white tracking-tight leading-tight">
+          Reading Complete
         </h2>
 
-        <p className="text-xs sm:text-sm text-[#8e90a6] font-light max-w-sm leading-relaxed px-2">
-          Great job! You&apos;ve finished this reading.
-          <br />
-          Ready to test your comprehension or start the next one?
+        <p className="text-xs sm:text-sm text-[#9b9cb4] font-light max-w-sm sm:max-w-md leading-relaxed px-2">
+          You have completed this chapter. Test your comprehension with a quick assessment or continue to the next reading.
         </p>
 
-        {/* Clean Typography Action / Quiz Score (Zero Card Container) */}
-        <div className="pt-1.5">
+        {/* Assessment Action Trigger */}
+        <div className="pt-2">
           {quizScore !== null ? (
-            <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm font-light text-white/90 animate-[fadeIn_0.3s_ease-out_both] select-none py-1">
+            <div className="inline-flex items-center space-x-2.5 text-xs sm:text-sm font-medium text-white/90 animate-[fadeIn_0.3s_ease-out_both] select-none py-2 px-5 rounded-full bg-emerald-500/10 border border-emerald-500/25 shadow-[0_0_16px_rgba(10,185,129,0.15)]">
               <svg
-                className="w-4 h-4 text-[#22c55e] filter drop-shadow-[0_0_10px_rgba(34,197,94,0.8)] shrink-0"
+                className="w-4 h-4 text-emerald-400 shrink-0"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={2.2}
+                strokeWidth={2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span className="tracking-wide">
-                Comprehension Quiz:{" "}
-                <span className="font-semibold text-[#4ade80] filter drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">
+              <span className="tracking-wide text-xs font-normal">
+                Comprehension Assessment:{" "}
+                <span className="font-semibold text-emerald-400">
                   {quizScore}/3 correct
                 </span>
               </span>
             </div>
           ) : (
-            <button
-              onClick={() => setShowQuiz(true)}
-              className="inline-flex items-center space-x-2 text-xs sm:text-sm font-light text-[#A27FF3] hover:text-white transition-all duration-300 cursor-pointer group py-1 select-none"
-            >
-              <span className="text-[#A27FF3] text-sm group-hover:scale-110 group-hover:text-white transition-transform filter drop-shadow-[0_0_8px_rgba(162,127,243,0.8)]">
-                ✦
-              </span>
-              <span className="tracking-wide font-normal">
-                Take Comprehension Quiz <span className="text-[#8e90a6] text-xs font-light">(3 Questions)</span>
-              </span>
-              <span className="text-[#A27FF3] group-hover:translate-x-1.5 group-hover:text-white transition-transform text-xs font-semibold">
-                →
-              </span>
-            </button>
+            <div className="relative inline-flex p-[1px] rounded-full overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-[0_4px_24px_rgba(112,72,232,0.18)]">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/[0.08] via-[#8B5CF6]/60 to-white/[0.08] animate-border-gleam" />
+
+              <button
+                type="button"
+                onClick={() => setShowQuiz(true)}
+                className="relative rounded-full px-5 py-2.5 bg-[#080814]/95 backdrop-blur-xl flex items-center space-x-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] select-none group-hover:bg-[#0c0c20]/95"
+              >
+                <ComprehensionQuizIcon />
+                <span className="text-white font-medium tracking-tight">
+                  Take Comprehension Quiz
+                </span>
+                <span className="text-[#a5a6c2] text-xs font-light tracking-wide">
+                  · 3 questions
+                </span>
+                <svg
+                  className="w-3.5 h-3.5 text-[#C4B5FD] group-hover:translate-x-1 transition-transform duration-200 ml-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Center Interactive "Next reading" Button with Micro-Sparkles */}
-      <div className="flex flex-col items-center space-y-2 shrink-0">
-        <div className="flex items-center space-x-5">
-          <span className="text-[#A27FF3]/50 text-xs animate-pulse">✦</span>
-          <span className="text-[#A27FF3] text-sm animate-pulse delay-100">✧</span>
+      {/* 2. Center Primary Directional Action + Review Trigger */}
+      <div className="flex flex-col items-center space-y-3 shrink-0 py-1">
+        <button
+          type="button"
+          onClick={onNextReading}
+          aria-label="Start next reading"
+          className="w-16 h-16 sm:w-18 sm:h-18 rounded-full border border-[#3b2b73] bg-[#070814] hover:border-[#A27FF3] hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(112,72,232,0.35)] flex items-center justify-center cursor-pointer group"
+        >
+          <NextReadingArrowIcon />
+        </button>
 
-          <button
-            onClick={onNextReading}
-            aria-label="Start next reading"
-            className="w-14 h-14 sm:w-15 sm:h-15 rounded-full border border-[#261d5c] bg-[#05060d] hover:border-[#A27FF3] hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_35px_rgba(112,72,232,0.35)] flex items-center justify-center cursor-pointer group"
-          >
-            <svg
-              className="w-6 h-6 text-white group-hover:translate-x-1 transition-transform"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </button>
-
-          <span className="text-[#A27FF3] text-sm animate-pulse delay-150">✧</span>
-          <span className="text-[#A27FF3]/50 text-xs animate-pulse delay-200">✦</span>
-        </div>
-
-        <span className="text-xs sm:text-sm font-medium text-white/90 tracking-wide">
+        <span className="text-xs sm:text-sm font-semibold text-white/95 tracking-wide">
           Next reading
         </span>
+
+        {onReviewReading && (
+          <button
+            type="button"
+            onClick={onReviewReading}
+            className="group inline-flex items-center space-x-1.5 text-xs text-[#7e8096] hover:text-white transition-colors duration-200 cursor-pointer pt-1"
+          >
+            <ReturnArrowIcon />
+            <span className="font-light tracking-wide">Re-read article</span>
+          </button>
+        )}
       </div>
 
-      {/* Clean, Flat WHAT YOU DID Summary */}
-      <div className="w-full pt-3 pb-1 border-t border-white/[0.06] flex flex-col items-center space-y-2 shrink-0">
+      {/* 3. Pure Naked Telemetry Grid */}
+      <div className="w-full pt-2 flex flex-col items-center space-y-3 shrink-0">
         <span className="text-[10px] font-semibold tracking-[0.25em] text-[#6b6c84] uppercase">
-          WHAT YOU DID
+          SESSION TELEMETRY
         </span>
 
-        <div className="w-full grid grid-cols-3 text-center">
+        <div className="w-full grid grid-cols-3 text-center items-center py-2 px-1">
           {/* Stat 1: Reading Time */}
-          <div className="flex flex-col items-center space-y-0.5">
-            <span className="text-sm sm:text-base font-medium text-white">
+          <div className="flex flex-col items-center space-y-1.5 group">
+            <ChronometerIcon />
+            <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
               {readingTimeMin} min
             </span>
-            <span className="text-[10px] sm:text-[11px] text-[#6b6c84] font-light">
-              Reading time
+            <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
+              Reading Time
             </span>
           </div>
 
-          {/* Stat 2: Words read */}
-          <div className="flex flex-col items-center space-y-0.5 border-x border-white/[0.06]">
-            <span className="text-sm sm:text-base font-medium text-white">
-              180 words
+          {/* Stat 2: Dynamic Words read */}
+          <div className="flex flex-col items-center space-y-1.5 border-x border-white/[0.08] group">
+            <LexiconWordCountIcon />
+            <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
+              {wordCount} words
             </span>
-            <span className="text-[10px] sm:text-[11px] text-[#6b6c84] font-light">
+            <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
               Completed
             </span>
           </div>
 
           {/* Stat 3: CEFR Level */}
-          <div className="flex flex-col items-center space-y-0.5">
-            <span className="text-sm sm:text-base font-medium text-white">
+          <div className="flex flex-col items-center space-y-1.5 group">
+            <CefrGraduatedTierIcon />
+            <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
               {cefrLevel || "B1"}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-[#6b6c84] font-light">
+            <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
               CEFR Level
             </span>
           </div>
@@ -201,4 +215,6 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ReadingCompleteView.displayName = "ReadingCompleteView";

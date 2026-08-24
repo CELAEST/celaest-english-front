@@ -25,6 +25,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     { id: 'interview', icon: <MicIcon />, label: 'Interview' },
     { id: 'reading', icon: <BookReadingIcon />, label: 'Reading' },
     { id: 'writing', icon: <DocumentPracticeIcon />, label: 'Writing' },
+    { id: 'lab', icon: <LabFlaskIcon />, label: 'Design Lab' },
     { id: 'settings', icon: <SettingsIcon />, label: 'Settings' },
   ];
 
@@ -216,6 +217,12 @@ const MemoryBrainIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M16 8h0" />
     <path d="M8 16h0" />
     <path d="M16 16h0" />
+  </svg>
+);
+
+const LabFlaskIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M10 2v7.31M14 2v7.31M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0" />
   </svg>
 );
 

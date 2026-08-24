@@ -71,6 +71,28 @@
   --shadow-orb-glow: 0 0 60px 20px rgba(112, 72, 232, 0.35);
   --shadow-button-glow: 0 4px 20px 0 rgba(112, 72, 232, 0.5);
 
+  /* Premium Card Elevation — canonical layered shadow (Reading dialect):
+     ambient depth + faint violet bloom + 1px top sheen */
+  --card-bg: rgba(12, 12, 28, 0.65);
+  --card-bg-hover: rgba(17, 17, 36, 0.72);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --card-border-hover: rgba(162, 127, 243, 0.28);
+  --card-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(162, 127, 243, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --card-shadow-hover:
+    0 32px 72px rgba(0, 0, 0, 0.85),
+    0 0 52px rgba(162, 127, 243, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --card-edge-accent: linear-gradient(
+    160deg,
+    rgba(162, 127, 243, 0.45),
+    rgba(162, 127, 243, 0.12) 35%,
+    rgba(162, 127, 243, 0.04) 70%,
+    rgba(255, 255, 255, 0.04)
+  );
+
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 450ms;

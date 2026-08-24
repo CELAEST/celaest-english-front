@@ -4,6 +4,7 @@ import { ReadingGenerationStatesShowcase } from './ReadingGenerationStatesShowca
 import { QuantumProgressGauge } from './QuantumProgressGauge';
 import { BespokeIconsShowcase } from './BespokeIconsShowcase';
 import { ReadingNavigationVariants } from './ReadingNavigationVariants';
+import { CardShowcase } from './CardShowcase';
 import { ProgressRing } from '../../../design-system/components/ProgressRing/ProgressRing';
 
 export interface LabViewProps {
@@ -101,6 +102,19 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
             </p>
           </div>
           <BespokeIconsShowcase />
+        </div>
+
+        {/* Section 5: Premium Card System */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide">
+              5. Premium Card System (design-system)
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Canonical card primitive: variants, interactive states and accessibility. Every feature card must converge here.
+            </p>
+          </div>
+          <CardShowcase />
         </div>
       </div>
     </div>

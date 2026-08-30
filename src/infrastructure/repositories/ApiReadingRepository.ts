@@ -1,4 +1,8 @@
-import { IReadingRepository, WordLookup, GenerateQuizResponse } from "../../domain/repositories/IReadingRepository";
+import {
+  IReadingRepository,
+  WordLookup,
+  GenerateQuizResponse,
+} from "../../domain/repositories/IReadingRepository";
 import { ReadingArticle } from "../../domain/entities/ReadingArticle";
 import { HttpClient } from "../http/HttpClient";
 
@@ -7,7 +11,11 @@ export class ApiReadingRepository implements IReadingRepository {
     return HttpClient.get<ReadingArticle[]>(`/reading/articles?level=${level}`);
   }
 
-  async generateArticle(category: string = "BUSINESS", level: string = "B1", topic?: string): Promise<ReadingArticle> {
+  async generateArticle(
+    category: string = "BUSINESS",
+    level: string = "B1",
+    topic?: string,
+  ): Promise<ReadingArticle> {
     return HttpClient.post<ReadingArticle>("/reading/generate", {
       category,
       cefrLevel: level,
@@ -22,7 +30,13 @@ export class ApiReadingRepository implements IReadingRepository {
     });
   }
 
-  async generateQuiz(articleId: string, title: string, content: string, keywords: string[], level: string = "B1"): Promise<GenerateQuizResponse> {
+  async generateQuiz(
+    articleId: string,
+    title: string,
+    content: string,
+    keywords: string[],
+    level: string = "B1",
+  ): Promise<GenerateQuizResponse> {
     return HttpClient.post<GenerateQuizResponse>("/reading/quiz", {
       articleId,
       title,

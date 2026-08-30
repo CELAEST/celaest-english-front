@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 
 export class SanitizerService {
   /**
@@ -6,10 +6,24 @@ export class SanitizerService {
    * to prevent XSS attacks.
    */
   public static sanitize(dirtyText: string): string {
-    if (!dirtyText) return '';
+    if (!dirtyText) return "";
     return DOMPurify.sanitize(dirtyText, {
-      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'span', 'code', 'pre', 'ul', 'ol', 'li', 'br'],
-      ALLOWED_ATTR: ['href', 'target', 'class', 'rel', 'id'],
+      ALLOWED_TAGS: [
+        "b",
+        "i",
+        "em",
+        "strong",
+        "a",
+        "p",
+        "span",
+        "code",
+        "pre",
+        "ul",
+        "ol",
+        "li",
+        "br",
+      ],
+      ALLOWED_ATTR: ["href", "target", "class", "rel", "id"],
     });
   }
 
@@ -17,7 +31,7 @@ export class SanitizerService {
    * Strips all HTML tags and returns plain text.
    */
   public static sanitizeToPlainText(dirtyText: string): string {
-    if (!dirtyText) return '';
+    if (!dirtyText) return "";
     return DOMPurify.sanitize(dirtyText, { ALLOWED_TAGS: [] }).trim();
   }
 }

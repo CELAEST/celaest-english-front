@@ -1,44 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export interface WorkspacePromptBarProps {
   onSubmitPrompt?: ((prompt: string) => void) | undefined;
 }
 
 export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmitPrompt }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && onSubmitPrompt) {
       onSubmitPrompt(inputValue.trim());
-      setInputValue('');
+      setInputValue("");
     }
   };
 
   const topicSuggestions = [
     {
-      id: 'weekend',
-      label: 'Your weekend',
+      id: "weekend",
+      label: "Your weekend",
     },
     {
-      id: 'challenge',
-      label: 'A challenge you faced',
+      id: "challenge",
+      label: "A challenge you faced",
     },
     {
-      id: 'learned',
-      label: 'Something you learned',
+      id: "learned",
+      label: "Something you learned",
     },
     {
-      id: 'mind',
-      label: 'Anything on your mind',
+      id: "mind",
+      label: "Anything on your mind",
     },
   ];
 
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 select-none pt-2 pb-1 z-20">
       {/* Question Header */}
-      <div className="flex flex-col items-center text-center space-y-1.5 animate-[fadeSlideUp_0.5s_ease-out_both]" style={{ animationDelay: '300ms' }}>
+      <div
+        className="flex flex-col items-center text-center space-y-1.5 animate-[fadeSlideUp_0.5s_ease-out_both]"
+        style={{ animationDelay: "300ms" }}
+      >
         <span className="text-[10px] font-semibold tracking-[0.25em] text-[#A78BFA] uppercase">
           I’M LISTENING.
         </span>
@@ -51,7 +54,7 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-xl flex items-center gap-3 pl-2 pr-2.5 py-1.5 rounded-full bg-[#090714]/80 backdrop-blur-xl border border-[#2A1D4E]/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] shadow-[0_0_20px_rgba(112,72,232,0.12)] focus-within:border-[#8B5CF6]/80 focus-within:shadow-[0_0_25px_rgba(139,92,246,0.3)] transition-all duration-300 relative group animate-[fadeSlideUp_0.5s_ease-out_both]"
-        style={{ animationDelay: '420ms' }}
+        style={{ animationDelay: "420ms" }}
       >
         {/* Left Voice Capsule Wrapper */}
         <div className="relative flex items-center justify-center p-0.5 rounded-full bg-[#110C27] border border-[#352563]/60 shadow-[0_0_12px_rgba(139,92,246,0.2)] shrink-0">
@@ -64,7 +67,7 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
             {/* Slender Glowing Ring SVG */}
             <svg
               className={`w-10 h-10 transition-transform duration-700 ${
-                isListening ? 'animate-[spin_4s_linear_infinite]' : ''
+                isListening ? "animate-[spin_4s_linear_infinite]" : ""
               }`}
               viewBox="0 0 40 40"
               fill="none"
@@ -80,7 +83,13 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
               {/* Slender Ring */}
               <circle cx="20" cy="20" r="16.5" stroke="url(#cleanGlow)" strokeWidth="1.8" />
               {/* Top Specular Arc */}
-              <path d="M14 4.8 C 17 4.2, 23 4.2, 26 4.8" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.85" />
+              <path
+                d="M14 4.8 C 17 4.2, 23 4.2, 26 4.8"
+                stroke="#FFFFFF"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.85"
+              />
             </svg>
 
             {/* 5 Waveform Bars */}
@@ -88,31 +97,31 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
               {/* Bar 1: Left Dot */}
               <span
                 className={`w-0.5 rounded-full bg-[#C4B5FD] transition-all ${
-                  isListening ? 'h-2 animate-wave-1' : 'h-1'
+                  isListening ? "h-2 animate-wave-1" : "h-1"
                 }`}
               />
               {/* Bar 2: Left Medium */}
               <span
                 className={`w-0.5 rounded-full bg-[#A78BFA] transition-all ${
-                  isListening ? 'h-3 animate-wave-2' : 'h-2.5'
+                  isListening ? "h-3 animate-wave-2" : "h-2.5"
                 }`}
               />
               {/* Bar 3: Prominent Tall Center Bar */}
               <span
                 className={`w-0.5 rounded-full bg-gradient-to-b from-[#DDD6FE] to-[#7048E8] transition-all ${
-                  isListening ? 'h-5 animate-wave-3' : 'h-5'
+                  isListening ? "h-5 animate-wave-3" : "h-5"
                 }`}
               />
               {/* Bar 4: Right Medium */}
               <span
                 className={`w-0.5 rounded-full bg-[#A78BFA] transition-all ${
-                  isListening ? 'h-3 animate-wave-4' : 'h-2.5'
+                  isListening ? "h-3 animate-wave-4" : "h-2.5"
                 }`}
               />
               {/* Bar 5: Right Dot */}
               <span
                 className={`w-0.5 rounded-full bg-[#8B5CF6] transition-all ${
-                  isListening ? 'h-2 animate-wave-5' : 'h-1'
+                  isListening ? "h-2 animate-wave-5" : "h-1"
                 }`}
               />
             </div>
@@ -134,14 +143,27 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
           aria-label="Send prompt"
           className="w-9 h-9 rounded-full bg-[#120D2B] border border-[#7048E8]/60 text-white flex items-center justify-center hover:bg-[#7048E8]/30 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer shrink-0 shadow-[0_0_12px_rgba(112,72,232,0.35)]"
         >
-          <svg className="w-4 h-4 text-white transition-transform duration-300 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          <svg
+            className="w-4 h-4 text-white transition-transform duration-300 group-hover:translate-x-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.8}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+            />
           </svg>
         </button>
       </form>
 
       {/* Quick Topic Chips */}
-      <div className="flex flex-col items-center space-y-2.5 pt-0.5 w-full animate-[fadeSlideUp_0.5s_ease-out_both]" style={{ animationDelay: '520ms' }}>
+      <div
+        className="flex flex-col items-center space-y-2.5 pt-0.5 w-full animate-[fadeSlideUp_0.5s_ease-out_both]"
+        style={{ animationDelay: "520ms" }}
+      >
         <span className="text-[9.5px] font-semibold tracking-[0.22em] text-[#8E90A6] uppercase">
           YOU CAN ALSO TALK ABOUT
         </span>

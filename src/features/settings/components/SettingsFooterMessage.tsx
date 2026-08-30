@@ -26,9 +26,7 @@ export const SettingsFooterMessage: React.FC = () => {
         <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-[#8F7CC7]">
           Vault integrity
         </span>
-        <span className="text-[10px] font-mono text-[#66667c] tracking-wide">
-          AES-256 · GCM
-        </span>
+        <span className="text-[10px] font-mono text-[#66667c] tracking-wide">AES-256 · GCM</span>
       </div>
       <div className="w-full h-1 rounded-full bg-[#111220] overflow-hidden">
         <div className="h-full w-full rounded-full bg-gradient-to-r from-[#7048E8] to-[#A27FF3] shadow-[0_0_10px_rgba(162,127,243,0.5)] animate-[borderGleamFlow_4s_ease-in-out_infinite] bg-[length:250%_250%]" />

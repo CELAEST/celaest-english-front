@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card } from '../../../design-system/components/Card/Card';
-import { Trophy, BookOpen, TrendingUp } from 'lucide-react';
+import React from "react";
+import { Card } from "../../../design-system/components/Card/Card";
+import { Trophy, BookOpen, TrendingUp } from "lucide-react";
 
 /**
  * Lab showcase: canonical premium Card primitive (design-system).
@@ -36,7 +36,7 @@ export const CardShowcase: React.FC = () => {
           tabIndex={0}
           onClick={() => undefined}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click();
+            if (e.key === "Enter" || e.key === " ") e.currentTarget.click();
           }}
         >
           <div className="flex items-center gap-2 mb-2">

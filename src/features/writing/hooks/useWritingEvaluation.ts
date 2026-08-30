@@ -19,7 +19,7 @@ export const useWritingEvaluation = () => {
         params.taskCategory,
         params.title,
         params.content,
-        params.taskDescription
+        params.taskDescription,
       );
     },
     onSuccess: (result) => {

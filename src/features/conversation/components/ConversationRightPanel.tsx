@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { SpecificErrorItem } from "../services/interviewEngineService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
+
+const SPEED_OPTIONS = [
+  { label: "0.75x Slow", value: 0.75 },
+  { label: "0.90x Relaxed", value: 0.9 },
+  { label: "1.00x Normal", value: 1.0 },
+  { label: "1.20x Fast", value: 1.2 },
+];
 
 export interface ConversationRightPanelProps {
   currentRound?: number;
@@ -24,7 +31,7 @@ export interface ConversationRightPanelProps {
   onOpenAnalysisModal?: () => void;
 }
 
-export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
+const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   currentRound = 1,
   currentQuestion = 1,
   totalQuestions = 5,
@@ -48,19 +55,18 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [allSavedNotice, setAllSavedNotice] = useState(false);
 
-  const dashArray = Array.from({ length: totalQuestions });
+  const dashArray = useMemo(() => Array.from({ length: totalQuestions }), [totalQuestions]);
   const progressPercentage = Math.min(100, (speakingSeconds / 60) * 100);
   const formattedQuestionIndex = currentQuestion.toString().padStart(2, "0");
 
-  const speedOptions = [
-    { label: "0.75x Slow", value: 0.75 },
-    { label: "0.90x Relaxed", value: 0.9 },
-    { label: "1.00x Normal", value: 1.0 },
-    { label: "1.20x Fast", value: 1.2 },
-  ];
 
   const handleSaveAll = async () => {
-    if (!turnFeedback?.unclearOrErrorWords || turnFeedback.unclearOrErrorWords.length === 0 || !onSaveAllErrors) return;
+    if (
+      !turnFeedback?.unclearOrErrorWords ||
+      turnFeedback.unclearOrErrorWords.length === 0 ||
+      !onSaveAllErrors
+    )
+      return;
     setIsSavingAll(true);
     await onSaveAllErrors();
     setIsSavingAll(false);
@@ -84,11 +90,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {/* Bespoke Detailed Neural Intelligence Core Vector (Naked, no background container) */}
-            <svg
-              className="w-4 h-4 text-[#A27FF3] shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg className="w-4 h-4 text-[#A27FF3] shrink-0" viewBox="0 0 24 24" fill="none">
               {/* Outer precise orbital ring */}
               <circle
                 cx="12"
@@ -116,9 +118,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               <circle cx="12" cy="12" r="1.4" fill="#FFFFFF" />
             </svg>
 
-            <span className="text-white font-medium text-sm tracking-wide">
-              AI Interviewer
-            </span>
+            <span className="text-white font-medium text-sm tracking-wide">AI Interviewer</span>
           </div>
 
           {/* Clean HUD Typography for Live Session (Zero ping/pulse animation) + Integrated Close button */}
@@ -160,8 +160,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
         <div className="flex items-center justify-between pt-0.5">
           <div className="flex items-center space-x-2">
             <span className="font-mono text-xs font-semibold text-[#A27FF3] tracking-wider">
-              {formattedQuestionIndex} /{" "}
-              {totalQuestions.toString().padStart(2, "0")}
+              {formattedQuestionIndex} / {totalQuestions.toString().padStart(2, "0")}
             </span>
             <span className="text-white/20 text-xs">·</span>
             <span className="text-white/80 text-xs font-light tracking-wide truncate max-w-[140px]">
@@ -246,11 +245,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
         {/* AI Voice Speed Controls */}
         <div className="w-full flex items-center justify-between pt-3 border-t border-white/[0.06] mt-3 text-xs">
           <div className="flex items-center space-x-1.5 text-white/50 font-light">
-            <svg
-              className="w-3.5 h-3.5 text-[#A27FF3] shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg className="w-3.5 h-3.5 text-[#A27FF3] shrink-0" viewBox="0 0 24 24" fill="none">
               <path
                 d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"
                 stroke="currentColor"
@@ -283,7 +278,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
 
             {showSpeedSelector && (
               <div className="absolute right-0 bottom-8 w-36 bg-[#0c0d1c] border border-white/[0.1] rounded-xl p-1 shadow-2xl z-30 flex flex-col space-y-0.5 backdrop-blur-xl">
-                {speedOptions.map((opt) => (
+                {SPEED_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => {
@@ -324,9 +319,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"
             />
           </svg>
-          <span className="font-medium text-[10px] tracking-wider uppercase">
-            Controls
-          </span>
+          <span className="font-medium text-[10px] tracking-wider uppercase">Controls</span>
         </div>
 
         {/* Repeat Question (Normal) */}
@@ -354,9 +347,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               strokeLinejoin="round"
             />
           </svg>
-          <span className="font-light text-white/70 group-hover:text-white">
-            Repeat question
-          </span>
+          <span className="font-light text-white/70 group-hover:text-white">Repeat question</span>
         </button>
 
         {/* Repeat Question (Slow) */}
@@ -369,19 +360,8 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
             viewBox="0 0 24 24"
             fill="none"
           >
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              stroke="currentColor"
-              strokeWidth="1.75"
-            />
-            <path
-              d="M12 7v5l3 2"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-            />
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
+            <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
             <path
               d="M7 16c1.5-1 3.5-1 5 0s3.5 1 5 0"
               stroke="currentColor"
@@ -413,13 +393,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               strokeWidth="1.5"
               strokeLinecap="round"
             />
-            <circle
-              cx="12"
-              cy="12"
-              r="7"
-              stroke="currentColor"
-              strokeWidth="1.75"
-            />
+            <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.75" />
             <path
               d="M12 8v4l2.5 2.5"
               stroke="currentColor"
@@ -427,9 +401,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               strokeLinecap="round"
             />
           </svg>
-          <span className="font-light text-white/70 group-hover:text-white">
-            +15s Take my time
-          </span>
+          <span className="font-light text-white/70 group-hover:text-white">+15s Take my time</span>
         </button>
 
         <button
@@ -449,16 +421,9 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               strokeWidth="1.75"
               strokeLinejoin="round"
             />
-            <path
-              d="M19 5v14"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+            <path d="M19 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <span className="font-light text-white/70 group-hover:text-white">
-            Next question
-          </span>
+          <span className="font-light text-white/70 group-hover:text-white">Next question</span>
         </button>
 
         <button
@@ -493,9 +458,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               strokeWidth="1.5"
             />
           </svg>
-          <span className="font-light text-white/70 group-hover:text-white">
-            Pause / Resume
-          </span>
+          <span className="font-light text-white/70 group-hover:text-white">Pause / Resume</span>
         </button>
 
         <button
@@ -597,11 +560,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </div>
         </button>
@@ -617,9 +576,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
           <div
             onClick={onOpenAnalysisModal}
             className={`flex items-center justify-between border-b border-white/[0.05] pb-2.5 ${
-              onOpenAnalysisModal
-                ? "cursor-pointer group hover:opacity-90 transition-opacity"
-                : ""
+              onOpenAnalysisModal ? "cursor-pointer group hover:opacity-90 transition-opacity" : ""
             }`}
           >
             <div className="flex items-center space-x-1.5">
@@ -657,11 +614,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 5l7 7-7 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               )}
             </div>
@@ -671,15 +624,11 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
           <div
             onClick={onOpenAnalysisModal}
             className={`grid grid-cols-3 gap-2 text-center py-1 rounded-xl transition-all ${
-              onOpenAnalysisModal
-                ? "cursor-pointer hover:bg-white/[0.03] active:scale-[0.99]"
-                : ""
+              onOpenAnalysisModal ? "cursor-pointer hover:bg-white/[0.03] active:scale-[0.99]" : ""
             }`}
           >
             <div className="flex flex-col space-y-0.5">
-              <span className="text-white/40 text-[9px] uppercase tracking-wider">
-                Grammar
-              </span>
+              <span className="text-white/40 text-[9px] uppercase tracking-wider">Grammar</span>
               <span
                 className={`text-xs font-mono font-medium ${getScoreColor(
                   turnFeedback.grammarScore,
@@ -689,9 +638,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               </span>
             </div>
             <div className="flex flex-col space-y-0.5 border-l border-white/[0.05]">
-              <span className="text-white/40 text-[9px] uppercase tracking-wider">
-                Vocabulary
-              </span>
+              <span className="text-white/40 text-[9px] uppercase tracking-wider">Vocabulary</span>
               <span
                 className={`text-xs font-mono font-medium ${getScoreColor(
                   turnFeedback.vocabularyScore,
@@ -701,9 +648,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
               </span>
             </div>
             <div className="flex flex-col space-y-0.5 border-l border-white/[0.05]">
-              <span className="text-white/40 text-[9px] uppercase tracking-wider">
-                Clarity
-              </span>
+              <span className="text-white/40 text-[9px] uppercase tracking-wider">Clarity</span>
               <span
                 className={`text-xs font-mono font-medium ${getScoreColor(
                   turnFeedback.clarityScore,
@@ -749,16 +694,13 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
           )}
 
           {/* Detected Errors List - Clickable to open modal */}
-          {turnFeedback.unclearOrErrorWords &&
-          turnFeedback.unclearOrErrorWords.length > 0 ? (
+          {turnFeedback.unclearOrErrorWords && turnFeedback.unclearOrErrorWords.length > 0 ? (
             <div className="flex flex-col space-y-3 pt-1">
               <div className="flex items-center justify-between border-t border-white/[0.05] pt-2">
                 <div
                   onClick={onOpenAnalysisModal}
                   className={`flex items-center space-x-1.5 ${
-                    onOpenAnalysisModal
-                      ? "cursor-pointer group hover:opacity-80"
-                      : ""
+                    onOpenAnalysisModal ? "cursor-pointer group hover:opacity-80" : ""
                   }`}
                 >
                   <svg
@@ -766,13 +708,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
                     viewBox="0 0 24 24"
                     fill="none"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="9"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                    />
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
                     <path
                       d="M12 8v4M12 16h.01"
                       stroke="currentColor"
@@ -811,7 +747,7 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
                         <span className="text-rose-400/80 font-mono text-[11px] line-through">
                           {errItem.errorWord}
                         </span>
-                        <span className="text-white/30 text-xs">→</span>
+                        <span className="text-white/30 text-xs"></span>
                         <span className="text-emerald-400 font-mono text-[12px] font-medium">
                           {errItem.correctWord}
                         </span>
@@ -938,3 +874,5 @@ export const ConversationRightPanel: React.FC<ConversationRightPanelProps> = ({
     </div>
   );
 };
+
+export const ConversationRightPanel = React.memo(ConversationRightPanelInner);

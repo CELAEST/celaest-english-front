@@ -1,9 +1,5 @@
 import { UserProfile, UpdateSettingsPayload } from "../entities/UserProfile";
-import {
-  AiProvider,
-  ConfigureAiProviderPayload,
-  ProviderTestResult,
-} from "../entities/AiProvider";
+import { AiProvider, ConfigureAiProviderPayload, ProviderTestResult } from "../entities/AiProvider";
 
 export interface ISettingsRepository {
   getProfile(): Promise<UserProfile>;

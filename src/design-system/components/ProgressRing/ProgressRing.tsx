@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface ProgressRingProps {
   value: number; // 0 to 100
@@ -13,7 +13,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   size = 80,
   strokeWidth = 6,
   label,
-  color = '#7048e8',
+  color = "#7048e8",
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -21,7 +21,10 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   const strokeDashoffset = circumference - (clampedValue / 100) * circumference;
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="transform -rotate-90">
         {/* Background Track */}
         <circle
@@ -44,7 +47,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           strokeLinecap="round"
           fill="transparent"
           style={{
-            transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: "stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         />
       </svg>

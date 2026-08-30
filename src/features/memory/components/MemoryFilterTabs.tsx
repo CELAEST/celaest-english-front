@@ -8,13 +8,8 @@ export interface MemoryFilterTabsProps {
   onTabChange?: ((index: number) => void) | undefined;
 }
 
-export const MemoryFilterTabs: React.FC<MemoryFilterTabsProps> = ({
-  activeTab = 0,
-  speakingCount = 0,
-  readingCount = 0,
-  writingCount = 0,
-  onTabChange,
-}) => {
+export const MemoryFilterTabs: React.FC<MemoryFilterTabsProps> = React.memo(
+  ({ activeTab = 0, speakingCount = 0, readingCount = 0, writingCount = 0, onTabChange }) => {
   const tabs = [
     { id: "SPEAKING", label: "Speaking", count: speakingCount },
     { id: "READING", label: "Reading", count: readingCount },
@@ -69,4 +64,4 @@ export const MemoryFilterTabs: React.FC<MemoryFilterTabsProps> = ({
       </div>
     </div>
   );
-};
+});

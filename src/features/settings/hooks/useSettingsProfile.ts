@@ -2,17 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserProfile, UpdateSettingsPayload } from "../../../domain/entities/UserProfile";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
+import { logger } from "../../../shared/utils/logger";
 
 export const useSettingsProfile = (initialUserName: string = "Esteban") => {
   const queryClient = useQueryClient();
 
-  const { data: profile = null, isLoading, error } = useQuery<UserProfile | null>({
+  const {
+    data: profile = null,
+    isLoading,
+    error,
+  } = useQuery<UserProfile | null>({
     queryKey: QUERY_KEYS.settings.profile,
     queryFn: async () => {
       try {
         return await apiSettingsRepository.getProfile();
       } catch (err) {
-        console.warn("Backend API offline or unreachable, using fallback profile", err);
+        logger.warn("Backend API offline or unreachable, using fallback profile", err);
         return null;
       }
     },
@@ -24,6 +29,7 @@ export const useSettingsProfile = (initialUserName: string = "Esteban") => {
     mutationFn: (payload: UpdateSettingsPayload) => apiSettingsRepository.updateSettings(payload),
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(QUERY_KEYS.settings.profile, updatedProfile);
+      queryClient.invalidateQueries({ queryKey: ["reading"] });
     },
   });
 

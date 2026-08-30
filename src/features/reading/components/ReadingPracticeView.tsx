@@ -11,16 +11,23 @@ import { ReadingPreparingView } from "./ReadingPreparingView";
 import { ReadingCompleteView } from "./ReadingCompleteView";
 import { ReturnArrowIcon } from "./ReadingBespokeIcons";
 import { useReadingArticles } from "../hooks/useReadingArticles";
+import { useReadingAudioNarrator } from "../hooks/useReadingAudioNarrator";
+import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { logger } from "../../../shared/utils/logger";
 
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
 }
 
-export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
-  onBackToWorkspace,
-}) => {
+export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBackToWorkspace }) => {
+  const { profile, isLoading: isProfileLoading } = useSettingsProfile();
+  const userLevel = React.useMemo(() => {
+    if (!profile?.cefrLevel) return isProfileLoading ? undefined : "B1";
+    return profile.cefrLevel.split(" ")[0].trim().toUpperCase();
+  }, [profile?.cefrLevel, isProfileLoading]);
+
   const {
     currentArticle,
     currentPageIndex,
@@ -40,13 +47,20 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     generateNextArticle,
     getOrFetchQuiz,
     instantWordLookup,
-  } = useReadingArticles();
+  } = useReadingArticles(userLevel);
+
+  const {
+    isPlaying: isPlayingAudio,
+    isPaused: isPausedAudio,
+    currentWordIndex: activeKaraokeWordIndex,
+    playbackRate: audioPlaybackRate,
+    togglePlay: toggleAudioPlay,
+    cyclePlaybackRate: cycleAudioRate,
+  } = useReadingAudioNarrator(currentPageContent);
 
   const articleCategory = currentArticle?.category || "BUSINESS";
   const articleReadTime = `${currentArticle?.readTimeMin || Math.max(1, Math.ceil(totalWords / 160))} MIN READ`;
-  const articleTitle =
-    currentArticle?.title ||
-    "Navigating Cross-Functional Communication in Tech";
+  const articleTitle = currentArticle?.title || "Navigating Cross-Functional Communication in Tech";
   const articleSubtitle =
     currentArticle?.excerpt ||
     "Effective collaboration across product, design, and engineering teams requires clear terminology and active listening.";
@@ -79,23 +93,28 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     generateNextArticle(articleCategory);
   }, [generateNextArticle, articleCategory]);
 
-  const handleAddToMemory = useCallback(async (wordData: WordLookup) => {
-    try {
-      await apiMemoryRepository.createCard({
-        category: "READING",
-        userSaid: wordData.exampleSentence || `Using '${wordData.word}' in professional context.`,
-        betterWay: wordData.word,
-        translationSpanish: wordData.spanishTranslation,
-        errorWord: wordData.word,
-        correctWord: wordData.word,
-        grammarExplanation: wordData.definition || `Vocabulary term: ${wordData.word} (${wordData.partOfSpeech || 'vocabulary'})`,
-        cefrLevel: wordData.cefrLevel || currentArticle?.cefrLevel || "B1",
-        audioUrl: wordData.audioUrl,
-      });
-    } catch (err) {
-      console.warn("Failed to persist word to memory bank", err);
-    }
-  }, [currentArticle?.cefrLevel]);
+  const handleAddToMemory = useCallback(
+    async (wordData: WordLookup) => {
+      try {
+        await apiMemoryRepository.createCard({
+          category: "READING",
+          userSaid: wordData.exampleSentence || `Using '${wordData.word}' in professional context.`,
+          betterWay: wordData.word,
+          translationSpanish: wordData.spanishTranslation,
+          errorWord: wordData.word,
+          correctWord: wordData.word,
+          grammarExplanation:
+            wordData.definition ||
+            `Vocabulary term: ${wordData.word} (${wordData.partOfSpeech || "vocabulary"})`,
+          cefrLevel: wordData.cefrLevel || currentArticle?.cefrLevel || "B1",
+          audioUrl: wordData.audioUrl,
+        });
+      } catch (err) {
+        logger.warn("Failed to persist word to memory bank", err);
+      }
+    },
+    [currentArticle],
+  );
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col select-none z-10 animate-[fadeIn_0.5s_ease-out_both] overflow-hidden">
@@ -121,34 +140,34 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
           className="flex-1 w-full flex flex-col h-full min-h-0 overflow-hidden xl:pl-4 2xl:pl-8"
         >
           {/* Top Centered Cosmic Orb Hero */}
-          {!isSpecialView && (
-            <ReadingHeader hideCenterOrb={isSpecialView} />
-          )}
+          {!isSpecialView && <ReadingHeader hideCenterOrb={isSpecialView} />}
 
           {/* Content wrapper: fills vertical space */}
           <div
             className={`flex flex-col w-full max-w-[620px] mx-auto flex-1 min-h-0 ${
-              isSpecialView
-                ? "items-center justify-center"
-                : "items-start justify-between"
+              isSpecialView ? "items-center justify-center" : "items-start justify-between"
             }`}
           >
             {/* Article Header only shown when reading active */}
             {!isSpecialView && (
               <ReadingArticleHeader
                 category={articleCategory}
+                cefrLevel={currentArticle?.cefrLevel || userLevel}
                 readTime={articleReadTime}
                 title={articleTitle}
                 subtitle={articleSubtitle}
+                isPlayingAudio={isPlayingAudio}
+                isPausedAudio={isPausedAudio}
+                playbackRate={audioPlaybackRate}
+                onToggleAudio={toggleAudioPlay}
+                onCycleAudioRate={cycleAudioRate}
               />
             )}
 
             {/* Central Reader / Completion / Loading Switcher */}
             <div
-              className={`w-full flex-1 min-h-0 flex flex-col overflow-hidden ${
-                isSpecialView
-                  ? "items-center justify-center"
-                  : "items-start justify-start"
+              className={`w-full flex-1 min-h-0 flex flex-col overflow-visible ${
+                isSpecialView ? "items-center justify-center" : "items-start justify-start"
               }`}
             >
               {isLoading ? (
@@ -193,8 +212,10 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
               ) : (
                 <ReadingArticleReader
                   content={currentPageContent}
+                  articlePhrasalVerbs={currentArticle?.phrasalVerbs}
                   onLookupWord={instantWordLookup}
                   onAddToMemory={handleAddToMemory}
+                  activeKaraokeWordIndex={activeKaraokeWordIndex}
                 />
               )}
             </div>
@@ -204,9 +225,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
               <ReadingBottomBar
                 progressPercentage={isCompleted ? 100 : progressPercentage}
                 readTimeRemaining={
-                  isCompleted
-                    ? "Completed"
-                    : `${estimatedMinutesRemaining} min read`
+                  isCompleted ? "Completed" : `${estimatedMinutesRemaining} min read`
                 }
                 currentPage={isCompleted ? totalPages : currentPageIndex + 1}
                 totalPages={totalPages}
@@ -231,11 +250,17 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
             totalWords={totalWords}
           />
           <ReadingFocusCard
-            focusTarget={currentArticle?.keywords?.[0] || currentArticle?.category || "Professional Vocabulary"}
+            focusTarget={
+              currentArticle?.keywords?.[0] || currentArticle?.category || "Professional Vocabulary"
+            }
             focusDescription="I'll highlight and clarify key terminology and concepts as you read."
           />
           <ReadingConfidenceCard
-            confidenceLevel={currentArticle?.cefrLevel === "C1" || currentArticle?.cefrLevel === "C2" ? "Mastery" : "High"}
+            confidenceLevel={
+              currentArticle?.cefrLevel === "C1" || currentArticle?.cefrLevel === "C2"
+                ? "Mastery"
+                : "High"
+            }
             confidenceDescription="You're understanding complex ideas and key technical terms well."
           />
         </aside>

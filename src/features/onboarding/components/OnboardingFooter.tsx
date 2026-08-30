@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface OnboardingFooterProps {
   onSkip?: () => void;
@@ -23,10 +23,10 @@ export const OnboardingFooter: React.FC<OnboardingFooterProps> = ({ onSkip }) =>
       </button>
 
       <div className="text-center tracking-wide">
-        Press{' '}
+        Press{" "}
         <kbd className="px-1.5 py-0.5 bg-[#161628] border border-[#353552] rounded text-[#E2E2F8] font-mono text-[9px] sm:text-[10px] font-medium shadow-sm">
           ESC
-        </kbd>{' '}
+        </kbd>{" "}
         to skip onboarding
       </div>
     </footer>

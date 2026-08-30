@@ -9,6 +9,6 @@ export interface InterviewSession {
   totalQuestions: number;
   currentQuestion: number;
   remainingSeconds: number;
-  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+  status: "ACTIVE" | "PAUSED" | "COMPLETED";
   createdAt?: string;
 }

@@ -5,6 +5,6 @@ export interface IWritingRepository {
     taskCategory: string,
     title: string,
     content: string,
-    taskDescription?: string
+    taskDescription?: string,
   ): Promise<WritingSubmission>;
 }

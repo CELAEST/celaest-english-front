@@ -76,7 +76,7 @@ export const AppModal: React.FC<AppModalProps> = ({
   const handleTabTrap = (e: React.KeyboardEvent) => {
     if (e.key !== "Tab" || !panelRef.current) return;
     const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     if (focusables.length === 0) return;
     const first = focusables[0];
@@ -127,13 +127,14 @@ export const AppModal: React.FC<AppModalProps> = ({
                 </span>
               )}
               <div className="flex flex-col min-w-0">
-                <h2 id={titleId} className="text-[16px] font-medium text-[#f8f8f8] tracking-tight leading-tight truncate">
+                <h2
+                  id={titleId}
+                  className="text-[16px] font-medium text-[#f8f8f8] tracking-tight leading-tight truncate"
+                >
                   {title}
                 </h2>
                 {subtitle && (
-                  <p className="text-xs font-light text-[#8a8a9e] truncate mt-0.5">
-                    {subtitle}
-                  </p>
+                  <p className="text-xs font-light text-[#8a8a9e] truncate mt-0.5">{subtitle}</p>
                 )}
               </div>
             </div>
@@ -149,7 +150,9 @@ export const AppModal: React.FC<AppModalProps> = ({
         )}
 
         {/* Body */}
-        <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 sm:p-6 ${bodyClassName}`}>
+        <div
+          className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 sm:p-6 ${bodyClassName}`}
+        >
           {children}
         </div>
 

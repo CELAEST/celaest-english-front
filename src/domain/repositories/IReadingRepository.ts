@@ -39,5 +39,11 @@ export interface IReadingRepository {
   getArticles(level?: string): Promise<ReadingArticle[]>;
   generateArticle(category?: string, level?: string, topic?: string): Promise<ReadingArticle>;
   lookupWord(word: string, context?: string): Promise<WordLookup>;
-  generateQuiz(articleId: string, title: string, content: string, keywords: string[], level?: string): Promise<GenerateQuizResponse>;
+  generateQuiz(
+    articleId: string,
+    title: string,
+    content: string,
+    keywords: string[],
+    level?: string,
+  ): Promise<GenerateQuizResponse>;
 }

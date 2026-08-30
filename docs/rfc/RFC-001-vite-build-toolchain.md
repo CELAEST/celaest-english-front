@@ -2,13 +2,13 @@
 
 > **Status**: Approved  
 > **Author**: Staff Software Engineer & Frontend Architect  
-> **Date**: 2026-07-29  
+> **Date**: 2026-07-29
 
 ---
 
 ## 1. Context & Problem Statement
 
-Lingua requires instant HMR (Hot Module Replacement), sub-millisecond cold start times, native ES Modules execution during development, and minimal production bundle size for Web Audio and Canvas rendering. 
+Lingua requires instant HMR (Hot Module Replacement), sub-millisecond cold start times, native ES Modules execution during development, and minimal production bundle size for Web Audio and Canvas rendering.
 
 We need a modern build toolchain that does not overhead the browser thread or block Web Audio Worklet compilation.
 

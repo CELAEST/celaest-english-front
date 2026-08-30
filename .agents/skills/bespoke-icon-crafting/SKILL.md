@@ -15,6 +15,7 @@ This skill defines the rigorous geometric, optical, and semantic standards requi
 ## 1. Core Geometric Principles
 
 ### 1.1 Fixed Coordinate Grid & ViewBox
+
 - Always design on a standardized, integer-based coordinate grid:
   - **Micro / Inline Nodes:** `viewBox="0 0 16 16"` or `viewBox="0 0 20 20"` (e.g. timeline pills, badges).
   - **Standard UI Icons:** `viewBox="0 0 24 24"` or `viewBox="0 0 28 28"` (e.g. sidebar navigation, toolbar buttons).
@@ -22,6 +23,7 @@ This skill defines the rigorous geometric, optical, and semantic standards requi
 - Maintain a consistent **Safe Area Padding** (1.5px – 3px) from the viewBox boundary to prevent clipping when transformed or scaled.
 
 ### 1.2 Unified Stroke Weight & Consistency
+
 - **Rule of Single Weight:** All strokes within an icon suite must share a uniform primary thickness:
   - `48x48` Hero: `1.5px` to `1.8px` primary stroke, `1.2px` secondary.
   - `24x24` Standard: `1.75px` stroke.
@@ -29,6 +31,7 @@ This skill defines the rigorous geometric, optical, and semantic standards requi
 - **Terminals & Joins:** Strictly enforce `strokeLinecap="round"` and `strokeLinejoin="round"` to guarantee smooth, continuous contour geometry.
 
 ### 1.3 Keyline Proportions & Visual Volume
+
 - Different geometric shapes require optical sizing compensation:
   - **Circles:** Sized slightly larger than squares (e.g., 20px circle vs 18px square) to match visual weight.
   - **Triangles / Asymmetric Glyphs:** Center of gravity must be optically shifted, not just mathematically centered in the viewBox.
@@ -55,12 +58,15 @@ This skill defines the rigorous geometric, optical, and semantic standards requi
 ## 4. Crafting Specific Semantic Metaphors
 
 ### 🧬 Linguistic DNA / Synaptic Personalization
+
 - **Avoid:** Clunky hourglasses with heavy corner rings and boxy crosses.
 - **Use:** Continuous, organic double-helix sine waves with evenly distributed horizontal hydrogen bond lines and luminous terminal nodes.
 
 ### 📖 Reading Codex / Lexicon Knowledge
+
 - **Avoid:** Thick cartoon books with wavy lines and exclamation rays.
 - **Use:** Precision open architectural codex with clean 3D perspective spine, crisp horizontal paragraph etchings, and subtle page bevel curves.
 
 ### 🎯 Topic Radar / Calibration Target
+
 - **Use:** Concentric circular rings with precision 4-point crosshair ticks and a solid focal nucleus.

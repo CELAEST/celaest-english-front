@@ -12,7 +12,7 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             retry: 1,
           },
         },
-      })
+      }),
   );
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

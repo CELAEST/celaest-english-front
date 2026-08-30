@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 
+const SPEED_OPTIONS = [
+  { label: "0.75x", value: 0.75 },
+  { label: "0.85x", value: 0.85 },
+  { label: "0.95x", value: 0.95 },
+  { label: "1.00x", value: 1.0 },
+  { label: "1.15x", value: 1.15 },
+];
+
 export interface ResponsiveInterviewHUDProps {
   currentRound?: number;
   currentQuestion?: number;
@@ -28,14 +36,6 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
   hasFeedback = false,
 }) => {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-
-  const speedOptions = [
-    { label: "0.75x", value: 0.75 },
-    { label: "0.85x", value: 0.85 },
-    { label: "0.95x", value: 0.95 },
-    { label: "1.00x", value: 1.0 },
-    { label: "1.15x", value: 1.15 },
-  ];
 
   return (
     <nav
@@ -130,7 +130,7 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
                 onClick={() => setShowSpeedMenu(false)}
               />
               <div className="absolute right-0 top-full mt-2 w-24 bg-[#080914] border border-white/10 rounded-xl p-1 shadow-2xl z-50 animate-[fadeSlideDown_0.15s_ease-out]">
-                {speedOptions.map((opt) => (
+                {SPEED_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -175,7 +175,14 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
               />
               <circle cx="12" cy="12" r="1.6" fill="#FFFBEB" />
               <defs>
-                <linearGradient id="feedbackGoldGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="feedbackGoldGrad"
+                  x1="2"
+                  y1="2"
+                  x2="22"
+                  y2="22"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop stopColor="#FF7A00" />
                   <stop offset="0.5" stopColor="#FFAA00" />
                   <stop offset="1" stopColor="#FFD600" />
@@ -235,8 +242,26 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
             {/* Right sidebar split rail */}
             <line x1="14.5" y1="3.5" x2="14.5" y2="20.5" strokeWidth="1.5" />
             {/* Stacked floating card tiles inside the sidebar */}
-            <rect x="16.5" y="6.5" width="3" height="4.5" rx="0.8" fill="currentColor" stroke="none" fillOpacity="0.75" />
-            <rect x="16.5" y="13" width="3" height="4.5" rx="0.8" fill="currentColor" stroke="none" fillOpacity="0.35" />
+            <rect
+              x="16.5"
+              y="6.5"
+              width="3"
+              height="4.5"
+              rx="0.8"
+              fill="currentColor"
+              stroke="none"
+              fillOpacity="0.75"
+            />
+            <rect
+              x="16.5"
+              y="13"
+              width="3"
+              height="4.5"
+              rx="0.8"
+              fill="currentColor"
+              stroke="none"
+              fillOpacity="0.35"
+            />
           </svg>
         </button>
       </div>

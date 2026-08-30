@@ -1,39 +1,65 @@
-import React from 'react';
-import { useOnboardingFlow } from '../hooks/useOnboardingFlow';
-import { OnboardingWelcomeStep } from './OnboardingWelcomeStep';
-import { OnboardingQuestionsStep } from './OnboardingQuestionsStep';
-import { OnboardingDnaAnalysisStep } from './OnboardingDnaAnalysisStep';
-import { OnboardingFirstConversationStep } from './OnboardingFirstConversationStep';
-import { OnboardingReadyStep } from './OnboardingReadyStep';
-import { OnboardingFooter } from './OnboardingFooter';
+import React from "react";
+import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
+import { OnboardingWelcomeStep } from "./OnboardingWelcomeStep";
+import { OnboardingAuthStep } from "./OnboardingAuthStep";
+import { OnboardingQuestionsStep } from "./OnboardingQuestionsStep";
+import { OnboardingDnaAnalysisStep } from "./OnboardingDnaAnalysisStep";
+import { OnboardingFirstConversationStep } from "./OnboardingFirstConversationStep";
+import { OnboardingReadyStep } from "./OnboardingReadyStep";
+import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
+import { logger } from "../../../shared/utils/logger";
 
 export interface OnboardingViewProps {
   onFinish?: () => void;
 }
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
-  const { step, nextStep, prevStep } = useOnboardingFlow();
+  const {
+    step,
+    nextStep,
+    prevStep,
+    openAuth,
+    learnerProfile,
+    updateLearnerProfile,
+  } = useOnboardingFlow();
 
-  const handleStartLearning = () => {
+  const { updateProfileSettings } = useCurrentUser();
+
+  const handleStartLearning = async () => {
+    try {
+      await updateProfileSettings({
+        name: learnerProfile.name || "Learner",
+        cefrLevel: learnerProfile.cefrLevel,
+        dailyFocus: learnerProfile.dailyFocus,
+        learningGoal: learnerProfile.learningGoal,
+        preferenceStyle: learnerProfile.preferenceStyle,
+        profession: learnerProfile.profession,
+      });
+    } catch (e) {
+      logger.warn("[OnboardingView] Error saving profile settings on finish", e);
+    }
+    localStorage.setItem("lingua_onboarding_completed", "true");
     if (onFinish) onFinish();
-    else console.log('Onboarding complete — Start Learning');
+    else logger.info("Onboarding complete — Start Learning");
   };
+
+  const isCenteredHeroLayout = step === "welcome" || step === "auth";
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#03030E] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
-      {/* 🌟 Persistent Right-Side Background Orb — Only rendered for question/flow steps (step !== 'welcome') so image NEVER moves between steps */}
-      {step !== 'welcome' && (
+      {/* 🌟 Persistent Right-Side Background Orb — Only for question/assessment steps */}
+      {!isCenteredHeroLayout && (
         <div
           className="absolute top-0 right-0 w-[88%] h-full bg-cover bg-no-repeat pointer-events-none z-0 opacity-90 blend-graphic-edges-right"
           style={{
             backgroundImage: "url('/assets/orb_questions_bg.png')",
-            backgroundPosition: 'calc(50% + 130px) center',
+            backgroundPosition: "calc(50% + 130px) center",
           }}
         />
       )}
 
-      {/* 🌟 Persistent L I N G U A Header — Rendered outside key={step} so it NEVER re-renders, jumps, or animates on step changes */}
-      {step !== 'welcome' && (
+      {/* 🌟 Persistent L I N G U A Header */}
+      {!isCenteredHeroLayout && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1280px] px-5 sm:px-10 lg:px-16 pt-5 sm:pt-7 z-30 pointer-events-none select-none">
           <span className="text-[11px] sm:text-xs font-semibold tracking-[0.25em] text-[#7750a7] uppercase">
             L I N G U A
@@ -41,25 +67,66 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
         </div>
       )}
 
-      {/* Main Content Area — Smooth Animated Step Transitions (key={step} re-triggers animate-step-transition on every step change) */}
+      {/* Main Content Area — Smooth Animated Step Transitions */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center overflow-hidden min-h-0 pt-0">
-        <div key={step} className="w-full h-full flex flex-col items-center justify-center animate-step-transition">
-          {step === 'welcome' && <OnboardingWelcomeStep onBegin={nextStep} />}
-          {step === 'questions' && <OnboardingQuestionsStep onNext={nextStep} onPrev={prevStep} />}
-          {step === 'dna-analysis' && (
-            <OnboardingDnaAnalysisStep onNext={nextStep} onPrev={prevStep} />
+        <div
+          key={step}
+          className="w-full h-full flex flex-col items-center justify-center animate-step-transition"
+        >
+          {step === "auth" && (
+            <OnboardingAuthStep
+              onSuccess={(authUser) => {
+                if (authUser?.name) {
+                  updateLearnerProfile({ name: authUser.name, email: authUser.email });
+                }
+                // If user is already completed, route immediately to dashboard
+                const isAlreadyCompleted = localStorage.getItem("lingua_onboarding_completed") === "true";
+                if (isAlreadyCompleted && authUser?.onboardingCompleted !== false) {
+                  if (onFinish) {
+                    onFinish();
+                    return;
+                  }
+                }
+                nextStep(); // moves to 'welcome' (Your AI Language Mentor -> Begin)
+              }}
+              onBackToWelcome={openAuth}
+            />
           )}
-          {step === 'first-conversation' && (
-            <OnboardingFirstConversationStep onNext={nextStep} onPrev={prevStep} />
+          {step === "welcome" && (
+            <OnboardingWelcomeStep onBegin={nextStep} onOpenLogin={openAuth} />
           )}
-          {step === 'ready' && (
-            <OnboardingReadyStep onStartLearning={handleStartLearning} onPrev={prevStep} />
+          {step === "questions" && (
+            <OnboardingQuestionsStep
+              profile={learnerProfile}
+              onUpdateProfile={updateLearnerProfile}
+              onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === "dna-analysis" && (
+            <OnboardingDnaAnalysisStep
+              profile={learnerProfile}
+              onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === "first-conversation" && (
+            <OnboardingFirstConversationStep
+              profile={learnerProfile}
+              onUpdateProfile={updateLearnerProfile}
+              onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === "ready" && (
+            <OnboardingReadyStep
+              profile={learnerProfile}
+              onStartLearning={handleStartLearning}
+              onPrev={prevStep}
+            />
           )}
         </div>
       </main>
-
-      {/* Footer Controls — Welcome Step Only */}
-      {step === 'welcome' && <OnboardingFooter />}
     </div>
   );
 };

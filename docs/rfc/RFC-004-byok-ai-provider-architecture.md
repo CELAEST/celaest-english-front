@@ -2,7 +2,7 @@
 
 > **Status**: Approved  
 > **Author**: Staff Software Engineer & AI Product Designer  
-> **Date**: 2026-07-29  
+> **Date**: 2026-07-29
 
 ---
 
@@ -15,6 +15,7 @@ Users have different preferences for AI model providers (OpenAI GPT-4o / Realtim
 ## 2. Decision
 
 We implement a **BYOK (Bring Your Own Key) Multi-Provider AI Architecture**:
+
 - The application includes an abstraction layer `IAiProviderAdapter`.
 - API keys are encrypted client-side using `ISecureVault` (AES-GCM 256-bit).
 - Support for OpenAI, Anthropic, DeepSeek, and Local Ollama out of the box.

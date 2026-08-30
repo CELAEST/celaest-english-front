@@ -1,11 +1,11 @@
-import React from 'react';
-import { LabHeader } from './LabHeader';
-import { ReadingGenerationStatesShowcase } from './ReadingGenerationStatesShowcase';
-import { QuantumProgressGauge } from './QuantumProgressGauge';
-import { BespokeIconsShowcase } from './BespokeIconsShowcase';
-import { ReadingNavigationVariants } from './ReadingNavigationVariants';
-import { CardShowcase } from './CardShowcase';
-import { ProgressRing } from '../../../design-system/components/ProgressRing/ProgressRing';
+import React from "react";
+import { LabHeader } from "./LabHeader";
+import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
+import { QuantumProgressGauge } from "./QuantumProgressGauge";
+import { BespokeIconsShowcase } from "./BespokeIconsShowcase";
+import { ReadingNavigationVariants } from "./ReadingNavigationVariants";
+import { CardShowcase } from "./CardShowcase";
+import { ProgressRing } from "../../../design-system/components/ProgressRing/ProgressRing";
 
 export interface LabViewProps {
   onBackToWorkspace?: (() => void) | undefined;
@@ -28,7 +28,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Inspect and calibrate the 3 AI preparation states with orbital ring, nexus centerpiece icons, and timeline progress bar.
+              Inspect and calibrate the 3 AI preparation states with orbital ring, nexus centerpiece
+              icons, and timeline progress bar.
             </p>
           </div>
           <ReadingGenerationStatesShowcase defaultStep={1} />
@@ -41,14 +42,15 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               2. Bespoke Quantum Gauge vs. Standard Progress Ring
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Comparing the custom neural linguistic matrix gauge against basic circular progress rings.
+              Comparing the custom neural linguistic matrix gauge against basic circular progress
+              rings.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
             <div className="flex flex-col">
               <span className="text-xs font-mono uppercase text-[#A27FF3] tracking-widest mb-2 block font-medium">
-                ★ Bespoke Custom Quantum Gauge
+                Bespoke Custom Quantum Gauge
               </span>
               <QuantumProgressGauge
                 value={72}
@@ -71,7 +73,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
                   color="#7048E8"
                 />
                 <p className="text-xs text-[#6b6c82] mt-6 text-center max-w-xs">
-                  Simple SVG stroke without outer neural ticks or bespoke central linguistic matrix emblem.
+                  Simple SVG stroke without outer neural ticks or bespoke central linguistic matrix
+                  emblem.
                 </p>
               </div>
             </div>
@@ -98,7 +101,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               4. Complete Bespoke Iconography Catalogue
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              All 15+ custom vector assets organized by category — from holographic nexus centerpieces to micro step nodes.
+              All 15+ custom vector assets organized by category — from holographic nexus
+              centerpieces to micro step nodes.
             </p>
           </div>
           <BespokeIconsShowcase />
@@ -111,7 +115,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               5. Premium Card System (design-system)
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Canonical card primitive: variants, interactive states and accessibility. Every feature card must converge here.
+              Canonical card primitive: variants, interactive states and accessibility. Every
+              feature card must converge here.
             </p>
           </div>
           <CardShowcase />

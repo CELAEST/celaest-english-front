@@ -14,9 +14,9 @@ type IconProps = {
   className?: string;
 };
 
-const ACCENT = "#A27FF3";
+const ACCENT = "currentColor";
 
-/* ─── LEARNING ──────────────────────────────────────────────────────────── */
+/*  LEARNING  */
 
 /** Aspirational target with a dart landing dead-center. */
 export const GoalTargetIcon: React.FC<IconProps> = ({ className }) => (
@@ -59,7 +59,12 @@ export const LevelSummitIcon: React.FC<IconProps> = ({ className }) => (
 /** Studio faders — the mixing desk of your learning. */
 export const TuningFadersIcon: React.FC<IconProps> = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path d="M7 4.5v15M12 4.5v15M17 4.5v15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path
+      d="M7 4.5v15M12 4.5v15M17 4.5v15"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
     <path d="M4.8 14.5h4.4" stroke={ACCENT} strokeWidth="2.4" strokeLinecap="round" />
     <path d="M9.8 8.5h4.4" stroke={ACCENT} strokeWidth="2.4" strokeLinecap="round" />
     <path d="M14.8 12h4.4" stroke={ACCENT} strokeWidth="2.4" strokeLinecap="round" />
@@ -76,7 +81,7 @@ export const FocusChronoIcon: React.FC<IconProps> = ({ className }) => (
   </svg>
 );
 
-/* ─── PERSONAL ──────────────────────────────────────────────────────────── */
+/*  PERSONAL  */
 
 /** Presence bust with a live signal dot. */
 export const ProfilePresenceIcon: React.FC<IconProps> = ({ className }) => (
@@ -102,7 +107,12 @@ export const NotificationJewelIcon: React.FC<IconProps> = ({ className }) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <path d="M10.3 21a2 2 0 0 0 3.4 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path
+      d="M10.3 21a2 2 0 0 0 3.4 0"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
     <circle cx="17.6" cy="5" r="1.7" fill={ACCENT} stroke="#05060c" strokeWidth="1.4" />
   </svg>
 );
@@ -136,7 +146,7 @@ export const AboutOrbitIcon: React.FC<IconProps> = ({ className }) => (
   </svg>
 );
 
-/* ─── PRIVACY & DATA ACTIONS ────────────────────────────────────────────── */
+/*  PRIVACY & DATA ACTIONS  */
 
 /** Download flow into a tray — export reads instantly at any size. */
 export const ExportVaultIcon: React.FC<IconProps> = ({ className }) => (
@@ -165,12 +175,7 @@ export const ExportVaultIcon: React.FC<IconProps> = ({ className }) => (
  */
 export const PurgeVaultIcon: React.FC<IconProps> = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M4.9 6.9h14.2"
-      stroke="#F87171"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
+    <path d="M4.9 6.9h14.2" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round" />
     <path
       d="M9.6 6.9V5.5A1.6 1.6 0 0 1 11.2 3.9h1.6a1.6 1.6 0 0 1 1.6 1.6v1.4"
       stroke="currentColor"
@@ -194,7 +199,7 @@ export const PurgeVaultIcon: React.FC<IconProps> = ({ className }) => (
   </svg>
 );
 
-/* ─── SIGNATURE MARKS ───────────────────────────────────────────────────── */
+/*  SIGNATURE MARKS  */
 
 /** Mentor presence — gradient ring, capsule eyes, quiet intelligence. */
 export const MentorPresenceMark: React.FC<IconProps> = ({ className }) => {
@@ -215,13 +220,7 @@ export const MentorPresenceMark: React.FC<IconProps> = ({ className }) => {
         </radialGradient>
       </defs>
       <circle cx="12" cy="12" r="10.4" fill={`url(#${coreId})`} />
-      <circle
-        cx="12"
-        cy="12"
-        r="10.4"
-        stroke={`url(#${ringId})`}
-        strokeWidth="1.5"
-      />
+      <circle cx="12" cy="12" r="10.4" stroke={`url(#${ringId})`} strokeWidth="1.5" />
       <circle cx="12" cy="12" r="7.6" stroke="#A27FF3" strokeWidth="0.6" opacity="0.25" />
       <rect x="8.6" y="9.4" width="2.1" height="5.2" rx="1.05" fill="#D9CCFF" />
       <rect x="13.3" y="9.4" width="2.1" height="5.2" rx="1.05" fill="#D9CCFF" />

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
 export interface WritingEditorProps {
   initialContent?: string;
@@ -9,18 +9,18 @@ export interface WritingEditorProps {
 }
 
 const FONT_SIZES = [
-  { label: 'Small', className: 'text-[15px] sm:text-base' },
-  { label: 'Medium', className: 'text-base sm:text-lg' },
-  { label: 'Large', className: 'text-lg sm:text-xl' },
+  { label: "Small", className: "text-[15px] sm:text-base" },
+  { label: "Medium", className: "text-base sm:text-lg" },
+  { label: "Large", className: "text-lg sm:text-xl" },
 ] as const;
 
 const FOCUS_RING =
-  'rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A27FF3]/70';
+  "rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A27FF3]/70";
 
 const countWords = (text: string): number => text.trim().split(/\s+/).filter(Boolean).length;
 
 export const WritingEditor: React.FC<WritingEditorProps> = ({
-  initialContent = '',
+  initialContent = "",
   onChangeContent,
   minWords = 80,
   maxWords = 180,
@@ -36,6 +36,10 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
   const lastEditRef = useRef<number>(0);
   const clearTimerRef = useRef<number | null>(null);
 
+  // Navigation availability mirrored in state so render never reads refs
+  const [canUndo, setCanUndo] = useState<boolean>(false);
+  const [canRedo, setCanRedo] = useState<boolean>(false);
+
   useEffect(() => {
     return () => {
       if (clearTimerRef.current) window.clearTimeout(clearTimerRef.current);
@@ -45,8 +49,11 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
   const wordCount = countWords(content);
   const inRange = wordCount >= minWords && wordCount <= maxWords;
   const overRange = wordCount > maxWords;
-  const canUndo = historyIndexRef.current > 0;
-  const canRedo = historyIndexRef.current < historyRef.current.length - 1;
+
+  const syncHistoryNavState = () => {
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+  };
 
   const commitChange = (next: string) => {
     setContent(next);
@@ -67,18 +74,21 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
       historyIndexRef.current = history.length - 1;
     }
     lastEditRef.current = now;
+    syncHistoryNavState();
   };
 
   const undo = () => {
     if (historyIndexRef.current <= 0) return;
     historyIndexRef.current -= 1;
     commitChange(historyRef.current[historyIndexRef.current]);
+    syncHistoryNavState();
   };
 
   const redo = () => {
     if (historyIndexRef.current >= historyRef.current.length - 1) return;
     historyIndexRef.current += 1;
     commitChange(historyRef.current[historyIndexRef.current]);
+    syncHistoryNavState();
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -94,18 +104,18 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
     }
     if (clearTimerRef.current) window.clearTimeout(clearTimerRef.current);
     setConfirmingClear(false);
-    pushHistory('');
-    commitChange('');
+    pushHistory("");
+    commitChange("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const key = e.key.toLowerCase();
-    if (key === 'z' && !e.shiftKey) {
+    if (key === "z" && !e.shiftKey) {
       e.preventDefault();
       undo();
-    } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+    } else if ((key === "z" && e.shiftKey) || key === "y") {
       e.preventDefault();
       redo();
     }
@@ -131,7 +141,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
               aria-label="Show a different writing task"
               className={`flex items-center gap-1.5 text-sm font-medium hover:text-[#f8f8f8] transition-colors ${FOCUS_RING}`}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M21 12a9 9 0 1 1-2.64-6.36" />
                 <polyline points="21 3 21 9 15 9" />
               </svg>
@@ -157,7 +176,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             role="status"
             aria-live="polite"
             className={`flex items-center gap-1.5 text-xs tabular-nums transition-colors ${
-              overRange ? 'text-[#d8667a]' : inRange ? 'text-[#55c9a4]' : 'text-[#8a8a9e]'
+              overRange ? "text-[#d8667a]" : inRange ? "text-[#55c9a4]" : "text-[#8a8a9e]"
             }`}
           >
             <span className="font-medium">{wordCount}</span>
@@ -172,12 +191,12 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            aria-label={confirmingClear ? 'Confirm: clear all text' : 'Clear all text'}
+            aria-label={confirmingClear ? "Confirm: clear all text" : "Clear all text"}
             className={`text-xs font-light transition-colors px-1 ${
-              confirmingClear ? 'text-[#d8667a]' : 'hover:text-[#f8f8f8]'
+              confirmingClear ? "text-[#d8667a]" : "hover:text-[#f8f8f8]"
             } ${FOCUS_RING}`}
           >
-            {confirmingClear ? 'Sure?' : 'Clear'}
+            {confirmingClear ? "Sure?" : "Clear"}
           </button>
 
           <button
@@ -188,7 +207,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             aria-keyshortcuts="Control+Z"
             className={`hover:text-[#f8f8f8] transition-colors p-0.5 disabled:opacity-40 disabled:pointer-events-none ${FOCUS_RING}`}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M9 14L4 9l5-5" />
               <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
             </svg>
@@ -202,7 +230,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             aria-keyshortcuts="Control+Shift+Z"
             className={`hover:text-[#f8f8f8] transition-colors p-0.5 disabled:opacity-40 disabled:pointer-events-none ${FOCUS_RING}`}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M15 14l5-5-5-5" />
               <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
             </svg>

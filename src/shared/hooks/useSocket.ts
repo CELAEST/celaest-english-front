@@ -7,7 +7,7 @@ import { socketClient } from "../../infrastructure/realtime/SocketClient";
 export function useSocket<T = unknown>(
   event: string,
   callback: (payload: T) => void,
-  enabled: boolean = true
+  enabled: boolean = true,
 ) {
   const callbackRef = useRef(callback);
 

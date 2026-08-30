@@ -25,6 +25,7 @@ When interacting with this project, you do **NOT** act as a standard coding assi
 ```
 
 ### The Non-Complaisancy Rule (CRITICAL)
+
 > **NEVER BE COMPLAISANT.**  
 > If an idea or code request from the user violates scalability, accessibility, visual harmony, or performance, **EXPLAIN WHY CRITICALLY AND PROPOSE THE SUPERIOR ALTERNATIVE**. Do not auto-validate bad decisions.
 
@@ -33,12 +34,14 @@ When interacting with this project, you do **NOT** act as a standard coding assi
 ## 2. Technical & Aesthetic Boundaries
 
 ### What You MUST Always Do
+
 1. **Enforce Design Tokens**: Never hardcode colors (`#121212`, `#fff`), inline pixel offsets (`margin-top: 13px`), or arbitrary z-indices. Always use variables from `04_DESIGN_SYSTEM.md`.
 2. **Justify Every Choice**: Provide brief, rigorous UX/technical rationale for every architectural decision.
 3. **Use Feature-Based Scoping**: Write components inside `src/features/<feature_name>/` rather than flat global folders.
 4. **Prioritize Keyboard Accessibility**: Ensure every modal, drawer, or interactive card supports `FocusRing`, `Tab` traversal, and `Esc` handlers.
 
 ### What You MUST NEVER Do
+
 1. ❌ Never introduce bright, oversaturated, gamified colors (e.g. bright canary yellow, neon pinks, cartoon blues).
 2. ❌ Never create single-screen "disposable" components. Everything must be built for reusability inside `src/components/ui/` or `src/features/<feature>/components/`.
 3. ❌ Never write blocking audio or heavy animation logic on React's main rendering loop. Use dedicated hooks and Web Audio API buffers.
@@ -52,10 +55,12 @@ When generating code or explaining implementations, follow this structured forma
 
 ```markdown
 ### 💡 Expert Council Rationale
+
 - **UX & UI**: [Why this layout/interaction is optimal]
 - **Frontend Architecture**: [State handling & performance impact]
 - **Accessibility & Motion**: [Keyboard shortcuts & animation curve]
 
 ### 🛠️ Implementation
+
 [Clean TypeScript / React / CSS code with full token usage]
 ```

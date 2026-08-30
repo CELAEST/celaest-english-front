@@ -11,10 +11,7 @@ interface SettingsProviderStatusChipProps {
   status: string;
 }
 
-const STATUS_META: Record<
-  string,
-  { label: string; text: string; live?: boolean }
-> = {
+const STATUS_META: Record<string, { label: string; text: string; live?: boolean }> = {
   active: {
     label: "Active",
     text: "text-[#4ade80]",
@@ -35,9 +32,9 @@ const STATUS_META: Record<
   },
 };
 
-export const SettingsProviderStatusChip: React.FC<
-  SettingsProviderStatusChipProps
-> = ({ status }) => {
+export const SettingsProviderStatusChip: React.FC<SettingsProviderStatusChipProps> = ({
+  status,
+}) => {
   const meta = STATUS_META[status] ?? STATUS_META.available;
   return (
     <span
@@ -56,8 +53,8 @@ export const SettingsProviderLatencyChip: React.FC<{
 }> = ({ latencyMs }) => {
   if (latencyMs === null) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[#77778c]">
-      <Zap className="w-3 h-3 text-[#A27FF3]/80" fill="currentColor" />
+    <span className="inline-flex items-center gap-1 text-[#8a8a9e]">
+      <Zap className="w-3 h-3 text-[#8a8a9e]" fill="currentColor" />
       <span className="text-[10.5px] font-mono leading-none">{latencyMs} ms</span>
     </span>
   );
@@ -70,23 +67,26 @@ export interface SettingsProviderTestButtonProps {
   disabled?: boolean;
 }
 
-export const SettingsProviderTestButton: React.FC<
-  SettingsProviderTestButtonProps
-> = ({ onClick, isTesting, result, disabled }) => (
+export const SettingsProviderTestButton: React.FC<SettingsProviderTestButtonProps> = ({
+  onClick,
+  isTesting,
+  result,
+  disabled,
+}) => (
   <div className="flex items-center gap-2.5 flex-wrap">
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || isTesting}
-      className="group relative flex items-center gap-2 px-4 py-2 rounded-xl border border-[#231956] bg-[#0a0817] text-xs text-[#c4b5fd] hover:border-[#A27FF3]/60 hover:text-white hover:shadow-[0_0_18px_rgba(112,72,232,0.2)] active:scale-[0.97] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-    >
-      {isTesting ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-      ) : (
-        <Zap className="w-3.5 h-3.5 text-[#A27FF3] transition-transform duration-300 group-hover:scale-110" />
-      )}
-      {isTesting ? "Testing…" : "Test connection"}
-    </button>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled || isTesting}
+        className="group relative flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.02] text-xs text-[#d4d4e8] hover:border-white/25 hover:bg-white/[0.05] hover:text-white active:scale-[0.97] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+      >
+        {isTesting ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Zap className="w-3.5 h-3.5 text-[#cfcfe6] transition-transform duration-300 group-hover:scale-110" />
+        )}
+        {isTesting ? "Testing…" : "Test connection"}
+      </button>
     {result && (
       <span
         className={`inline-flex items-center gap-1.5 text-[10.5px] font-mono leading-none animate-[fadeIn_0.25s_ease-out_both] ${

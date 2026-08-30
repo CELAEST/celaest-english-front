@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface OnboardingGenericStepProps {
   onNext: () => void;
@@ -16,7 +16,8 @@ export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ on
             <span className="text-slate-300">I'll be your AI Mentor.</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 font-light leading-relaxed">
-            Before I can create your personalized learning journey, I want to understand what you need and how you learn best.
+            Before I can create your personalized learning journey, I want to understand what you
+            need and how you learn best.
           </p>
         </div>
 
@@ -42,7 +43,12 @@ export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ on
             className="px-5 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors flex items-center cursor-pointer"
           >
             <svg className="w-3.5 h-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Back
           </button>
@@ -53,7 +59,12 @@ export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ on
           >
             <span>Next</span>
             <svg className="w-3.5 h-3.5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
         </div>

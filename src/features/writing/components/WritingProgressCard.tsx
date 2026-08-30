@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface WritingProgressCardProps {
   progressPercentage?: number;
@@ -16,7 +16,9 @@ export const WritingProgressCard: React.FC<WritingProgressCardProps> = ({
   return (
     <div className="bg-[#05060c] border border-[#111220] hover:border-[#1a1a35] transition-colors duration-300 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col space-y-4 shrink-0 animate-[slideInRight_0.45s_ease-out_0.1s_both]">
       {/* Title */}
-      <span className="text-[#f8f8f8] font-medium text-sm sm:text-base tracking-wide">Writing progress</span>
+      <span className="text-[#f8f8f8] font-medium text-sm sm:text-base tracking-wide">
+        Writing progress
+      </span>
 
       {/* Progress Ring and Stats Grid */}
       <div className="flex items-center space-x-6">
@@ -24,14 +26,7 @@ export const WritingProgressCard: React.FC<WritingProgressCardProps> = ({
         <div className="w-24 h-24 sm:w-28 sm:h-28 relative flex items-center justify-center shrink-0">
           <svg className="w-full h-full -rotate-90 p-1" viewBox="0 0 100 100">
             {/* Background Track */}
-            <circle
-              cx="50"
-              cy="50"
-              r="42"
-              fill="none"
-              stroke="#111220"
-              strokeWidth="5"
-            />
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#111220" strokeWidth="5" />
             {/* Active Progress Stroke in #A27FF3 */}
             <circle
               cx="50"
@@ -62,7 +57,7 @@ export const WritingProgressCard: React.FC<WritingProgressCardProps> = ({
           </div>
 
           {/* Time Stat (only when real data is provided) */}
-          {typeof timeSpentMinutes === 'number' && (
+          {typeof timeSpentMinutes === "number" && (
             <div className="flex flex-col">
               <span className="text-xs text-[#8a8a9e] font-light">Time</span>
               <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">

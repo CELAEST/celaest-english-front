@@ -1,17 +1,36 @@
-import React from 'react';
-import { cn } from '@shared/utils/cn';
+import React from "react";
+import { cn } from "@shared/utils/cn";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary-glass' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary-glass" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
-export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'md',
+const baseStyles =
+  "inline-flex items-center justify-center font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-violet-400 focus:ring-offset-2 focus:ring-offset-bg-app disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+
+const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
+  primary:
+    "bg-gradient-primary text-white shadow-button-glow hover:shadow-[0_6px_28px_0_rgba(112,72,232,0.65)] hover:brightness-110",
+  "secondary-glass":
+    "bg-glass-bg border border-glass-border text-text-primary backdrop-blur-glass hover:bg-glass-bg-hover hover:border-glass-border-hover",
+  ghost: "bg-transparent text-text-secondary hover:text-text-primary hover:bg-white/5",
+  danger:
+    "bg-status-danger/20 border border-status-danger/40 text-status-danger hover:bg-status-danger/30",
+};
+
+const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
+  sm: "px-3 py-1.5 text-xs gap-1.5 min-h-[32px]",
+  md: "px-5 py-2.5 text-sm gap-2 min-h-[42px]",
+  lg: "px-7 py-3.5 text-base gap-2.5 min-h-[52px]",
+};
+
+const ButtonComponent: React.FC<ButtonProps> = ({
+  variant = "primary",
+  size = "md",
   isLoading = false,
   leftIcon,
   rightIcon,
@@ -20,26 +39,6 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-violet-400 focus:ring-offset-2 focus:ring-offset-bg-app disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]';
-
-  const variants = {
-    primary:
-      'bg-gradient-primary text-white shadow-button-glow hover:shadow-[0_6px_28px_0_rgba(112,72,232,0.65)] hover:brightness-110',
-    'secondary-glass':
-      'bg-glass-bg border border-glass-border text-text-primary backdrop-blur-glass hover:bg-glass-bg-hover hover:border-glass-border-hover',
-    ghost:
-      'bg-transparent text-text-secondary hover:text-text-primary hover:bg-white/5',
-    danger:
-      'bg-status-danger/20 border border-status-danger/40 text-status-danger hover:bg-status-danger/30',
-  };
-
-  const sizes = {
-    sm: 'px-3 py-1.5 text-xs gap-1.5 min-h-[32px]',
-    md: 'px-5 py-2.5 text-sm gap-2 min-h-[42px]',
-    lg: 'px-7 py-3.5 text-base gap-2.5 min-h-[52px]',
-  };
-
   return (
     <button
       className={cn(baseStyles, variants[variant], sizes[size], className)}
@@ -53,7 +52,14 @@ export const Button: React.FC<ButtonProps> = ({
           fill="none"
           viewBox="0 0 24 24"
         >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
           <path
             className="opacity-75"
             fill="currentColor"
@@ -68,3 +74,5 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+export const Button = React.memo(ButtonComponent);

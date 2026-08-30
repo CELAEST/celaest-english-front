@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface MemoryCardNavProps {
   currentCard?: number;
@@ -22,7 +22,15 @@ export const MemoryCardNav: React.FC<MemoryCardNavProps> = ({
         aria-label="Back to cards"
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#231956] text-white hover:bg-white/[0.08] hover:border-[#A27FF3]/60 hover:scale-110 active:scale-90 transition-all duration-200 cursor-pointer shadow-md"
       >
-        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
@@ -44,7 +52,9 @@ export const MemoryCardNav: React.FC<MemoryCardNavProps> = ({
           <span
             key={i}
             className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-              i < currentCard ? 'bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.6)]' : 'bg-white/[0.08]'
+              i < currentCard
+                ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.6)]"
+                : "bg-white/[0.08]"
             }`}
           />
         ))}
@@ -56,7 +66,15 @@ export const MemoryCardNav: React.FC<MemoryCardNavProps> = ({
         aria-label="Next card"
         className="flex h-10 w-10 items-center justify-center rounded-full border border-[#231956] text-white hover:bg-white/[0.08] hover:border-[#A27FF3]/60 hover:scale-110 active:scale-90 transition-all duration-200 cursor-pointer shadow-md"
       >
-        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <line x1="5" y1="12" x2="19" y2="12" />
           <polyline points="12 5 19 12 12 19" />
         </svg>

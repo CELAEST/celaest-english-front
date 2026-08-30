@@ -2,31 +2,34 @@
 
 > **Document Type**: Project Constitution  
 > **Status**: Approved & Binding  
-> **Target Audience**: All AI Agents, Software Architects, Designers, and Engineers  
+> **Target Audience**: All AI Agents, Software Architects, Designers, and Engineers
 
 ---
 
 ## 1. Core Purpose
 
-**Lingua** is an adaptive, AI-driven language mastery platform engineered for high-performing professionals and lifelong learners. 
+**Lingua** is an adaptive, AI-driven language mastery platform engineered for high-performing professionals and lifelong learners.
 
-We are **NOT** building a gamified app with cartoon badges, streak animations, or repetitive multiple-choice quizzes (e.g., Duolingo). 
+We are **NOT** building a gamified app with cartoon badges, streak animations, or repetitive multiple-choice quizzes (e.g., Duolingo).
 
 Our purpose is to create an **intelligent, hyper-personalized mentor system** that:
+
 1. **Learns how each specific user learns.**
 2. **Dynamically adapts its teaching methodology, cadence, and content** in real time.
-3. **Delivers a calm, deep-work environment** inspired by premier professional tools (*Apple, Linear, Raycast, OpenAI, Arc Browser, Notion, Warp, Cursor, Stripe, Vercel*).
+3. **Delivers a calm, deep-work environment** inspired by premier professional tools (_Apple, Linear, Raycast, OpenAI, Arc Browser, Notion, Warp, Cursor, Stripe, Vercel_).
 
 ---
 
 ## 2. Product Identity & Philosophy
 
 ### Fundamental Paradigm
-> *"The AI does not simply teach English. The AI learns how the user learns."*
+
+> _"The AI does not simply teach English. The AI learns how the user learns."_
 
 Every interface element, backend signal, state transition, and feedback loop must serve this fundamental paradigm.
 
 ### Aesthetic Tone
+
 - **Atmosphere**: Deep cosmic dark space (`#04040A` base background) with glowing energy spheres, subtle violet radial lighting (`#7048E8`), and dark glassmorphic panels (`rgba(12, 12, 24, 0.65)`).
 - **Feeling**: Calm, high-tech, confident, premium, effortless.
 - **Visuals**: Spacious layout, high-contrast typography (Inter / SF Pro + Serif quote accents), micro-animations (spring physics), precision borders (`rgba(255, 255, 255, 0.07)`).
@@ -37,7 +40,7 @@ Every interface element, backend signal, state transition, and feedback loop mus
 
 - ❌ **No Toyish Gamification**: No cartoon mascots, infantile sound effects, celebratory confetti, or juvenile streaks.
 - ❌ **No Cluttered Interfaces**: No visual noise, no persistent bright yellow banners, no intrusive popups.
-- ❌ **No Static Curriculum**: Never force a user through a rigid linear lesson path (e.g., "Lesson 1 -> Lesson 2"). Everything is dynamically mapped to the user's *Learning DNA*.
+- ❌ **No Static Curriculum**: Never force a user through a rigid linear lesson path (e.g., "Lesson 1 -> Lesson 2"). Everything is dynamically mapped to the user's _Learning DNA_.
 - ❌ **No Ad-Hoc Components**: Never build single-use, screen-isolated UI code. Everything belongs to the Design System.
 - ❌ **No Complaisant AI Behavior**: The AI mentor must never give superficial praise. It provides precise, actionable feedback on tone, vocabulary, and grammar.
 

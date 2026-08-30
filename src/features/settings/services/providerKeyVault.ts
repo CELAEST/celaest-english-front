@@ -30,23 +30,24 @@ export const providerKeyVault = {
     return Boolean(entry?.apiKey);
   },
 
+  async getKey(providerId: AiProviderId): Promise<string | null> {
+    const entry = await EncryptedLocalStorageVault.getItem<{
+      apiKey: string;
+    }>(`${KEY_PREFIX}${providerId}`);
+    return entry?.apiKey ?? null;
+  },
+
   async removeKey(providerId: AiProviderId): Promise<void> {
     EncryptedLocalStorageVault.removeItem(`${KEY_PREFIX}${providerId}`);
   },
 
-  async saveConfig(
-    providerId: AiProviderId,
-    config: StoredProviderConfig
-  ): Promise<void> {
-    await EncryptedLocalStorageVault.setItem(
-      `${CONFIG_PREFIX}${providerId}`,
-      config
-    );
+  async saveConfig(providerId: AiProviderId, config: StoredProviderConfig): Promise<void> {
+    await EncryptedLocalStorageVault.setItem(`${CONFIG_PREFIX}${providerId}`, config);
   },
 
   async getConfig(providerId: AiProviderId): Promise<StoredProviderConfig | null> {
     return EncryptedLocalStorageVault.getItem<StoredProviderConfig>(
-      `${CONFIG_PREFIX}${providerId}`
+      `${CONFIG_PREFIX}${providerId}`,
     );
   },
 };

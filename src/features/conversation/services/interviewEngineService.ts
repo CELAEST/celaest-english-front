@@ -54,13 +54,14 @@ export const INTERVIEW_ROLES_BANK: Record<string, InterviewRoleData> = {
       // --- ROUND 1: CORE PRODUCT LEADERSHIP ---
       {
         id: 1,
-        question: "Tell me about yourself and why you are interested in this Product Manager position.",
+        question:
+          "Tell me about yourself and why you are interested in this Product Manager position.",
         category: "WARMUP",
         starHint: "Highlight your key accomplishments, product mindset, and what motivates you.",
         expectedKeywords: ["experience", "roadmap", "user-centric", "cross-functional", "impact"],
         round: 1,
       },
-         ],
+    ],
   },
 };
 

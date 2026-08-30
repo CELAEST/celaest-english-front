@@ -1,5 +1,15 @@
 import React from "react";
-import { siClaude, siDeepseek, siGooglegemini, siOllama } from "simple-icons";
+import {
+  siClaude,
+  siDeepseek,
+  siGooglegemini,
+  siOllama,
+  siPerplexity,
+  siOpenrouter,
+  siHuggingface,
+  siQwen,
+  siMeta,
+} from "simple-icons";
 import { AiProviderId } from "../../../domain/entities/AiProvider";
 
 /**
@@ -28,6 +38,8 @@ interface ProviderMarkSource {
    * official marks so they stay crisp at 19px (e.g. the Ollama llama).
    */
   fatten?: number;
+  /** Override the default 24×24 viewBox for marks authored at another scale. */
+  viewBox?: string;
 }
 
 const PROVIDER_MARKS: Record<AiProviderId, ProviderMarkSource> = {
@@ -57,9 +69,42 @@ const PROVIDER_MARKS: Record<AiProviderId, ProviderMarkSource> = {
     path: siOllama.path,
     fatten: 0.55,
   },
+  grok: {
+    // Official Grok mark (xAI) — stylized "G"/black-hole. xAI does not ship in
+    // simple-icons, so the canonical 16×16 path is pinned here verbatim.
+    title: "Grok (xAI)",
+    hex: "FFFFFF",
+    path: "M0.58392448,14.9254204 L0.8326,14.66295 C2.004465,13.42985 3.1678,12.2082 2.45814,10.48105 C1.50813,8.1701 2.061355,5.4619 3.820575,3.70057 C5.6495,1.8709 8.3431,1.40957 10.59295,2.336505 C11.0907,2.52161 11.5245,2.785025 11.86295,3.02993 L9.98425,3.89849 C8.235,3.163775 6.23115,3.66355 5.0081,4.88809 C3.354105,6.5426 3.019895,9.4117 4.95835,11.2656 L-0.335,15.99995 C-0.066496,15.62975 0.2538896,15.275934 0.58392448,14.9254204 Z M14.0391,2.288155 L16.33165,0 L16.20795,0.172288 C14.4658,2.574355 13.6153,3.749045 14.29795,6.6879 C14.76445,8.68415 14.261,10.90255 12.63545,12.53005 C10.5861,14.58325 7.3066,15.0403 4.6059,13.19215 L6.48885,12.3193 C8.2125,12.99705 10.0983,12.69945 11.4536,11.34255 C12.80895,9.9856 13.1133,8.00925 12.4321,6.3647 C12.30265,6.05285 11.9144,5.97455 11.64275,6.1753 L6.102,10.27035 L14.0391,2.288155 Z",
+    viewBox: "-0.335 0 16.66665 16",
+  },
+  perplexity: {
+    title: siPerplexity.title,
+    hex: siPerplexity.hex,
+    path: siPerplexity.path,
+  },
+  openrouter: {
+    title: siOpenrouter.title,
+    hex: siOpenrouter.hex,
+    path: siOpenrouter.path,
+  },
+  huggingface: {
+    title: siHuggingface.title,
+    hex: siHuggingface.hex,
+    path: siHuggingface.path,
+  },
+  qwen: {
+    title: siQwen.title,
+    hex: siQwen.hex,
+    path: siQwen.path,
+  },
+  meta: {
+    title: siMeta.title,
+    hex: siMeta.hex,
+    path: siMeta.path,
+  },
 };
 
-/* ─── Brand color adaptation for the deep-space canvas ──────────────────── */
+/*  Brand color adaptation for the deep-space canvas  */
 
 const luminanceOf = (hex: string): number => {
   const r = parseInt(hex.slice(0, 2), 16) / 255;
@@ -69,8 +114,7 @@ const luminanceOf = (hex: string): number => {
 };
 
 /** Dark brand marks become light so they stay visible; hues stay authentic. */
-const displayColorFor = (hex: string): string =>
-  luminanceOf(hex) < 0.35 ? "#ECECF2" : `#${hex}`;
+const displayColorFor = (hex: string): string => (luminanceOf(hex) < 0.35 ? "#ECECF2" : `#${hex}`);
 
 const rgbaFromHex = (hex: string, alpha: number): string => {
   const r = parseInt(hex.slice(0, 2), 16);
@@ -79,7 +123,7 @@ const rgbaFromHex = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-/* ─── Official Mark ─────────────────────────────────────────────────────── */
+/*  Official Mark  */
 
 const OfficialMark: React.FC<{ source: ProviderMarkSource; className?: string }> = ({
   source,
@@ -87,33 +131,28 @@ const OfficialMark: React.FC<{ source: ProviderMarkSource; className?: string }>
 }) => {
   const displayColor = displayColorFor(source.hex);
   return (
-    <svg
-      viewBox="0 0 24 24"
-      role="img"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
+    <svg viewBox={source.viewBox ?? "0 0 24 24"} role="img" aria-hidden="true" focusable="false" className={className}>
       <path
         d={source.path}
         fill={displayColor}
         stroke={source.fatten ? displayColor : undefined}
         strokeWidth={source.fatten}
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
   );
 };
 
-/* ─── Tile ──────────────────────────────────────────────────────────────── */
+/*  Bare Mark — icon only, no tile / border / background  */
 
-export interface ProviderIconTileProps {
+export interface ProviderMarkProps {
   providerId: AiProviderId;
   isActive?: boolean;
   size?: "md" | "lg";
 }
 
-export const ProviderIconTile: React.FC<ProviderIconTileProps> = ({
+export const ProviderMark: React.FC<ProviderMarkProps> = ({
   providerId,
   isActive = false,
   size = "md",
@@ -122,35 +161,19 @@ export const ProviderIconTile: React.FC<ProviderIconTileProps> = ({
   // Dark brand hexes (e.g. Ollama's pure black) get their light display
   // color for the aura, otherwise the glow would be invisible.
   const auraHex = luminanceOf(source.hex) < 0.35 ? "ECECF2" : source.hex;
-  const glow = rgbaFromHex(auraHex, 0.26);
-  const sizeCls =
-    size === "lg" ? "w-12 h-12 sm:w-14 sm:h-14" : "w-9 h-9 sm:w-10 sm:h-10";
-  const iconCls = size === "lg" ? "w-6 h-6 sm:w-7 sm:h-7" : "w-[19px] h-[19px]";
+  const iconCls = size === "lg" ? "w-7 h-7 sm:w-8 sm:h-8" : "w-[19px] h-[19px] sm:w-5 sm:h-5";
 
   return (
     <span
-      className={`relative flex items-center justify-center shrink-0 rounded-xl transition-all duration-500 ${sizeCls}`}
-      style={{
-        background: isActive
-          ? `linear-gradient(145deg, ${glow}, rgba(255,255,255,0.03))`
-          : "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015))",
-        border: `1px solid ${
-          isActive ? "rgba(162,127,243,0.45)" : "rgba(255,255,255,0.07)"
-        }`,
-        boxShadow: isActive
-          ? `0 0 20px ${glow}, inset 0 0 12px rgba(162,127,243,0.08)`
-          : undefined,
-      }}
+      className={`relative inline-flex items-center justify-center shrink-0 transition-all duration-500 ${iconCls}`}
+      style={
+        isActive
+          ? { filter: `drop-shadow(0 0 10px ${rgbaFromHex(auraHex, 0.5)})` }
+          : undefined
+      }
       aria-label={source.title}
     >
-      {/* Ambient brand aura (active only) */}
-      {isActive && (
-        <span
-          className="absolute inset-0 rounded-xl pointer-events-none animate-[softPulse_3s_ease-in-out_infinite]"
-          style={{ boxShadow: `0 0 26px ${glow}` }}
-        />
-      )}
-      <OfficialMark source={source} className={`${iconCls} relative z-10`} />
+      <OfficialMark source={source} className="w-full h-full" />
     </span>
   );
 };

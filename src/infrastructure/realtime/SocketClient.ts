@@ -1,12 +1,15 @@
 /**
  * Socket Client - celaest-english-back
- * Single global WebSocket client with automatic reconnection, keepalive ping, and visibility management
+ * Single global WebSocket client with automatic reconnection, keepalive ping, and visibility management.
+ *
+ * Auth note: the token is sent as the FIRST message after the connection opens,
+ * never as a WebSocket sub-protocol (sub-protocols leak tokens into proxy/CDN/WAF logs).
  */
 
-const getWsUrl = () => {
-  const apiUrl = (import.meta as any).env?.VITE_API_URL || "http://localhost:8080/api/v1";
-  return apiUrl.replace(/^http/, "ws") + "/ws";
-};
+import { ENV } from "../../shared/constants/env";
+import { logger } from "../../shared/utils/logger";
+
+const getWsUrl = () => ENV.apiUrl.replace(/^http/, "ws") + "/ws";
 
 type Listener = (payload: unknown) => void;
 
@@ -16,8 +19,8 @@ class SocketClient {
   private token: string | null = null;
   private reconnectAttempts = 0;
   private maxReconnectDelay = 30000;
-  private reconnectTimeout: any = null;
-  private pingInterval: any = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
   private isIntentionalDisconnect = false;
 
   connect(token?: string): void {
@@ -35,15 +38,20 @@ class SocketClient {
 
     try {
       const url = getWsUrl();
-      // Pass JWT as WebSocket sub-protocol header if present
-      this.ws = this.token ? new WebSocket(url, [this.token]) : new WebSocket(url);
+      this.ws = new WebSocket(url);
     } catch (e: unknown) {
+      logger.warn("WebSocket connection could not be created:", e);
       this.handleReconnect();
       return;
     }
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;
+
+      if (this.token) {
+        // Authenticate via first message instead of leaking the JWT in headers.
+        this.ws?.send(JSON.stringify({ type: "auth", token: this.token }));
+      }
 
       // Keepalive ping every 30 seconds
       this.pingInterval = setInterval(() => {
@@ -53,13 +61,21 @@ class SocketClient {
       }, 30000);
     };
 
+    this.ws.onerror = () => {
+      logger.warn("WebSocket error observed.");
+    };
+
     this.ws.onmessage = (event) => {
       try {
-        const rawData = JSON.parse(event.data);
+        const rawData = JSON.parse(event.data) as {
+          type?: string;
+          event?: string;
+          payload?: unknown;
+        };
         const type = rawData.type || rawData.event;
         const payload = rawData.payload ?? rawData;
 
-        const handlers = this.listeners.get(type);
+        const handlers = this.listeners.get(type ?? "");
         if (handlers) {
           handlers.forEach((fn) => fn(payload));
         }

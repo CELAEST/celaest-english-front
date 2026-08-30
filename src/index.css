@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,13 +8,13 @@
   /* ==========================================================================
      1. BACKGROUND & SURFACE TOKENS (Deep Space & Dark Glass)
      ========================================================================== */
-  --bg-app: #03030E;                /* Exact Deep Space Base Matching Graphic Asset */
-  --bg-sidebar: #06060e;            /* Left Navigation Background */
-  --surface-0: #080814;            /* Base Canvas Container */
-  --surface-1: #0c0c1c;            /* Standard Card Surface */
-  --surface-2: #101024;            /* Inset Card / Hovered Surface */
-  --surface-3: #16162e;            /* Active Selected Card */
-  
+  --bg-app: #03030e; /* Exact Deep Space Base Matching Graphic Asset */
+  --bg-sidebar: #06060e; /* Left Navigation Background */
+  --surface-0: #080814; /* Base Canvas Container */
+  --surface-1: #0c0c1c; /* Standard Card Surface */
+  --surface-2: #101024; /* Inset Card / Hovered Surface */
+  --surface-3: #16162e; /* Active Selected Card */
+
   /* Dark Glassmorphism */
   --glass-bg: rgba(12, 12, 28, 0.65);
   --glass-bg-hover: rgba(18, 18, 38, 0.75);
@@ -25,35 +26,44 @@
   /* ==========================================================================
      2. PRIMARY BRAND ACCENTS (Glowing Electric Violet & Indigo)
      ========================================================================== */
-  --accent-violet-500: #7048e8;     /* Primary Action Button & Orb Core */
-  --accent-violet-600: #6038e0;     /* Button Hover / Active state */
-  --accent-violet-400: #8868f8;     /* Highlight / Selection Ring */
-  --accent-violet-light: #b89cff;   /* Soft Lavender Text / Icons */
+  --accent-violet-500: #7048e8; /* Primary Action Button & Orb Core */
+  --accent-violet-600: #6038e0; /* Button Hover / Active state */
+  --accent-violet-400: #8868f8; /* Highlight / Selection Ring */
+  --accent-violet-light: #b89cff; /* Soft Lavender Text / Icons */
   --accent-violet-glow: rgba(112, 72, 232, 0.45);
   --accent-violet-subtle: rgba(112, 72, 232, 0.12);
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #7850e8 0%, #5830e8 100%);
-  --gradient-glow-orb: radial-gradient(circle, rgba(136, 104, 248, 0.8) 0%, rgba(96, 56, 224, 0.3) 50%, rgba(4, 4, 10, 0) 75%);
-  --gradient-glass-card: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  --gradient-glow-orb: radial-gradient(
+    circle,
+    rgba(136, 104, 248, 0.8) 0%,
+    rgba(96, 56, 224, 0.3) 50%,
+    rgba(4, 4, 10, 0) 75%
+  );
+  --gradient-glass-card: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
 
   /* ==========================================================================
      3. SEMANTIC STATUS & LEARNING STATE TOKENS
      ========================================================================== */
-  --status-success: #10b981;        /* Mint: Mastered, 100% Local, Correct */
+  --status-success: #10b981; /* Mint: Mastered, 100% Local, Correct */
   --status-success-glow: rgba(16, 185, 129, 0.25);
-  --status-warning: #f59e0b;        /* Amber: Review Later, Hesitation */
-  --status-danger: #ef4444;         /* Soft Coral Red: Mistake Highlight */
+  --status-warning: #f59e0b; /* Amber: Review Later, Hesitation */
+  --status-danger: #ef4444; /* Soft Coral Red: Mistake Highlight */
   --status-danger-subtle: rgba(239, 68, 68, 0.15);
-  --status-info: #3b82f6;           /* Cyan/Blue: Knowledge Graph Node */
+  --status-info: #3b82f6; /* Cyan/Blue: Knowledge Graph Node */
 
   /* ==========================================================================
      4. TYPOGRAPHY COLOR TOKENS
      ========================================================================== */
-  --text-primary: #ffffff;          /* High Contrast Titles & Headlines */
-  --text-secondary: #94a3b8;        /* Muted Paragraphs & Labels */
-  --text-tertiary: #64748b;         /* Footers, Captions, Disabled */
-  --text-accent: #c4b5fd;            /* Glowing lavender highlight text */
+  --text-primary: #ffffff; /* High Contrast Titles & Headlines */
+  --text-secondary: #94a3b8; /* Muted Paragraphs & Labels */
+  --text-tertiary: #64748b; /* Footers, Captions, Disabled */
+  --text-accent: #c4b5fd; /* Glowing lavender highlight text */
 
   /* ==========================================================================
      5. SPACING & RADIUS TOKENS
@@ -78,12 +88,10 @@
   --card-border: rgba(255, 255, 255, 0.05);
   --card-border-hover: rgba(162, 127, 243, 0.28);
   --card-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.8),
-    0 0 40px rgba(162, 127, 243, 0.06),
+    0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(162, 127, 243, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --card-shadow-hover:
-    0 32px 72px rgba(0, 0, 0, 0.85),
-    0 0 52px rgba(162, 127, 243, 0.11),
+    0 32px 72px rgba(0, 0, 0, 0.85), 0 0 52px rgba(162, 127, 243, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
   --card-edge-accent: linear-gradient(
     160deg,
@@ -99,14 +107,21 @@
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   max-height: 100dvh;
   margin: 0;
   padding: 0;
   background-color: var(--bg-app);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Satoshi",
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   overflow: hidden;
 }
 
@@ -116,7 +131,9 @@ html, body, #root {
   backdrop-filter: blur(var(--glass-blur)) saturate(180%);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-card);
-  transition: border-color var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-spring);
+  transition:
+    border-color var(--duration-normal) var(--ease-spring),
+    box-shadow var(--duration-normal) var(--ease-spring);
 }
 
 .glass-panel:hover {
@@ -151,19 +168,75 @@ html, body, #root {
 
 /* Serif Quote / Reflection Typography */
 .font-serif-quote {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: "Fraunces", Georgia, serif;
+  font-variation-settings: "opsz" 60, "SOFT" 40, "WONK" 0;
+}
+
+/* ── Display typography (Fraunces variable) ── */
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 0;
+  letter-spacing: -0.015em;
+}
+
+.font-display-accent {
+  font-weight: 640;
+  font-style: normal;
+  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 1;
+}
+
+/* ── Bespoke icon micro-interactions (hover: icons draw themselves, pearls pulse) ── */
+.group:hover .icon-draw {
+  stroke-dasharray: 1;
+  animation: iconDraw 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes iconDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.group:hover .icon-pearl {
+  animation: pearlPulse 1s ease-in-out infinite;
+}
+@keyframes pearlPulse {
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* 360-Degree Radial Vignette Image Mask for Zero Bounding Box Lines */
 .blend-graphic-edges {
-  mask-image: radial-gradient(ellipse 85% 68% at 50% 42%, black 40%, rgba(0, 0, 0, 0.5) 62%, transparent 85%);
-  -webkit-mask-image: -webkit-radial-gradient(ellipse 85% 68% at 50% 42%, black 40%, rgba(0, 0, 0, 0.5) 62%, transparent 85%);
+  mask-image: radial-gradient(
+    ellipse 85% 68% at 50% 42%,
+    black 40%,
+    rgba(0, 0, 0, 0.5) 62%,
+    transparent 85%
+  );
+  -webkit-mask-image: -webkit-radial-gradient(
+    ellipse 85% 68% at 50% 42%,
+    black 40%,
+    rgba(0, 0, 0, 0.5) 62%,
+    transparent 85%
+  );
 }
 
 /* Right-Biased Radial Vignette for Questions Step Orb (Right-Anchored, Dissolves Left/Top/Bottom) */
 .blend-graphic-edges-right {
-  mask-image: radial-gradient(ellipse 90% 80% at 70% 45%, black 30%, rgba(0, 0, 0, 0.5) 55%, transparent 80%);
-  -webkit-mask-image: -webkit-radial-gradient(ellipse 90% 80% at 70% 45%, black 30%, rgba(0, 0, 0, 0.5) 55%, transparent 80%);
+  mask-image: radial-gradient(
+    ellipse 90% 80% at 70% 45%,
+    black 30%,
+    rgba(0, 0, 0, 0.5) 55%,
+    transparent 80%
+  );
+  -webkit-mask-image: -webkit-radial-gradient(
+    ellipse 90% 80% at 70% 45%,
+    black 30%,
+    rgba(0, 0, 0, 0.5) 55%,
+    transparent 80%
+  );
 }
 
 /* Ultra-subtle custom scrollbar for dark theme */
@@ -195,7 +268,9 @@ html, body, #root {
 
 /* Chat typing indicator dot bounce animation */
 @keyframes chatDotBounce {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
     opacity: 0.6;
   }
@@ -226,31 +301,71 @@ html, body, #root {
 
 /* Subtle, Gentle Soundwave ScaleY Animations (Moderate Extension "sube un breve") */
 @keyframes soundwaveScale1 {
-  0%, 100% { transform: scaleY(0.8); }
-  50% { transform: scaleY(1.2); }
+  0%,
+  100% {
+    transform: scaleY(0.8);
+  }
+  50% {
+    transform: scaleY(1.2);
+  }
 }
 @keyframes soundwaveScale2 {
-  0%, 100% { transform: scaleY(0.85); }
-  50% { transform: scaleY(1.22); }
+  0%,
+  100% {
+    transform: scaleY(0.85);
+  }
+  50% {
+    transform: scaleY(1.22);
+  }
 }
 @keyframes soundwaveScale3 {
-  0%, 100% { transform: scaleY(0.88); }
-  50% { transform: scaleY(1.18); }
+  0%,
+  100% {
+    transform: scaleY(0.88);
+  }
+  50% {
+    transform: scaleY(1.18);
+  }
 }
 @keyframes soundwaveScale4 {
-  0%, 100% { transform: scaleY(0.85); }
-  50% { transform: scaleY(1.22); }
+  0%,
+  100% {
+    transform: scaleY(0.85);
+  }
+  50% {
+    transform: scaleY(1.22);
+  }
 }
 @keyframes soundwaveScale5 {
-  0%, 100% { transform: scaleY(0.8); }
-  50% { transform: scaleY(1.2); }
+  0%,
+  100% {
+    transform: scaleY(0.8);
+  }
+  50% {
+    transform: scaleY(1.2);
+  }
 }
 
-.animate-wave-1 { animation: soundwaveScale1 0.75s ease-in-out infinite; transform-origin: center; }
-.animate-wave-2 { animation: soundwaveScale2 0.6s ease-in-out infinite; transform-origin: center; }
-.animate-wave-3 { animation: soundwaveScale3 0.85s ease-in-out infinite; transform-origin: center; }
-.animate-wave-4 { animation: soundwaveScale4 0.65s ease-in-out infinite; transform-origin: center; }
-.animate-wave-5 { animation: soundwaveScale5 0.7s ease-in-out infinite; transform-origin: center; }
+.animate-wave-1 {
+  animation: soundwaveScale1 0.75s ease-in-out infinite;
+  transform-origin: center;
+}
+.animate-wave-2 {
+  animation: soundwaveScale2 0.6s ease-in-out infinite;
+  transform-origin: center;
+}
+.animate-wave-3 {
+  animation: soundwaveScale3 0.85s ease-in-out infinite;
+  transform-origin: center;
+}
+.animate-wave-4 {
+  animation: soundwaveScale4 0.65s ease-in-out infinite;
+  transform-origin: center;
+}
+.animate-wave-5 {
+  animation: soundwaveScale5 0.7s ease-in-out infinite;
+  transform-origin: center;
+}
 
 /* ── Memory Module Premium Animations ── */
 
@@ -266,8 +381,12 @@ html, body, #root {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
@@ -315,7 +434,8 @@ html, body, #root {
 }
 
 @keyframes softPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(162, 127, 243, 0.4);
   }
   50% {
@@ -368,7 +488,8 @@ html, body, #root {
 }
 
 @keyframes floatSlow {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) scale(1);
   }
   50% {
@@ -393,4 +514,19 @@ html, body, #root {
   animation: borderGleamFlow 6s ease-in-out infinite;
 }
 
-
+/* Universal Autofill Clean Reset: 100% Transparent, Zero Dark Inset Box, Pure White Text */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  transition: background-color 9999999s ease-in-out 0s !important;
+}

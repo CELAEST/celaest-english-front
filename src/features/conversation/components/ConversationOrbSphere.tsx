@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface ConversationOrbSphereProps {
   size?: number;
@@ -34,7 +34,7 @@ export const ConversationOrbSphere: React.FC<ConversationOrbSphereProps> = ({
         height={size}
         viewBox="0 0 280 280"
         fill="none"
-        className={`relative z-10 ${isAnimated ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
+        className={`relative z-10 ${isAnimated ? "animate-[pulse_3s_ease-in-out_infinite]" : ""}`}
       >
         <defs>
           {/* Radial Gradient for 3D Sphere Volume Shading */}
@@ -93,7 +93,7 @@ export const ConversationOrbSphere: React.FC<ConversationOrbSphereProps> = ({
             strokeLinecap="round"
             opacity={0.75 + (idx % 3) * 0.1}
             filter="url(#sphereGlowFilter)"
-            className={isAnimated ? 'transition-all duration-1000' : ''}
+            className={isAnimated ? "transition-all duration-1000" : ""}
           />
         ))}
 

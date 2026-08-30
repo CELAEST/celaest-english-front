@@ -30,6 +30,8 @@ export const memoryApi = {
   },
 
   toggleBookmark: (cardId: string): Promise<{ cardId: string; bookmarked: boolean }> => {
-    return HttpClient.post<{ cardId: string; bookmarked: boolean }>(`/memory/cards/${cardId}/bookmark`);
+    return HttpClient.post<{ cardId: string; bookmarked: boolean }>(
+      `/memory/cards/${cardId}/bookmark`,
+    );
   },
 };

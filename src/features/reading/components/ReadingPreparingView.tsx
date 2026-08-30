@@ -85,14 +85,7 @@ export const ReadingPreparingView: React.FC = React.memo(() => {
             />
 
             {/* Inner Stable Track Ring */}
-            <circle
-              cx="80"
-              cy="80"
-              r="64"
-              stroke="#121324"
-              strokeWidth="3.5"
-              fill="none"
-            />
+            <circle cx="80" cy="80" r="64" stroke="#121324" strokeWidth="3.5" fill="none" />
 
             {/* Sweeping Luminous Orbital Arc */}
             <circle
@@ -103,9 +96,7 @@ export const ReadingPreparingView: React.FC = React.memo(() => {
               strokeWidth="4"
               fill="none"
               strokeDasharray="402.12"
-              strokeDashoffset={
-                currentStep === 1 ? "260" : currentStep === 2 ? "120" : "15"
-              }
+              strokeDashoffset={currentStep === 1 ? "260" : currentStep === 2 ? "120" : "15"}
               strokeLinecap="round"
               className="transition-all duration-1000 ease-out"
             />
@@ -153,12 +144,7 @@ export const ReadingPreparingView: React.FC = React.memo(() => {
           <div
             className="absolute left-[16.66%] top-[14px] h-[2px] bg-[#7048E8] transition-all duration-700 ease-out z-0 -translate-y-1/2 shadow-[0_0_8px_rgba(112,72,232,0.8)]"
             style={{
-              width:
-                currentStep === 1
-                  ? "0%"
-                  : currentStep === 2
-                  ? "33.33%"
-                  : "66.66%",
+              width: currentStep === 1 ? "0%" : currentStep === 2 ? "33.33%" : "66.66%",
             }}
           />
 

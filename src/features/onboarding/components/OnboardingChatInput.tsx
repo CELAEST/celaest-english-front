@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export interface OnboardingChatInputProps {
   onSend: (message: string) => void;
@@ -9,15 +9,15 @@ export interface OnboardingChatInputProps {
 export const OnboardingChatInput: React.FC<OnboardingChatInputProps> = ({
   onSend,
   onPrev,
-  placeholder = 'Type your answer...',
+  placeholder = "Type your answer...",
 }) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!value.trim()) return;
     onSend(value.trim());
-    setValue('');
+    setValue("");
   };
 
   return (
@@ -28,8 +28,18 @@ export const OnboardingChatInput: React.FC<OnboardingChatInputProps> = ({
         className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#13102B] border border-[#2A244D] text-[#A699CD] hover:text-white hover:border-[#4B3B82] transition-all shrink-0 cursor-pointer shadow-[0_0_15px_rgba(0,0,0,0.4)]"
         aria-label="Back"
       >
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        <svg
+          className="w-4 h-4 sm:w-5 sm:h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
         </svg>
       </button>
 
@@ -49,7 +59,12 @@ export const OnboardingChatInput: React.FC<OnboardingChatInputProps> = ({
           aria-label="Send message"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.2}
+              d="M5 10l7-7m0 0l7 7m-7-7v18"
+            />
           </svg>
         </button>
       </form>

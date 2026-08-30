@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface OnboardingStepProgressProps {
   currentStep: number;
@@ -11,7 +11,7 @@ export const OnboardingStepProgress: React.FC<OnboardingStepProgressProps> = ({
   currentStep,
   totalSteps,
   percentage,
-  className = 'mb-6 sm:mb-10',
+  className = "mb-6 sm:mb-10",
 }) => {
   const formattedCurrent = currentStep < 10 ? `0${currentStep}` : `${currentStep}`;
   const formattedTotal = totalSteps < 10 ? `0${totalSteps}` : `${totalSteps}`;

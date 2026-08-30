@@ -1,8 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  ConversationRightPanel,
-  ConversationRightPanelProps,
-} from "./ConversationRightPanel";
+import { ConversationRightPanel, ConversationRightPanelProps } from "./ConversationRightPanel";
 
 export interface SessionCardsSidenavProps {
   isOpen: boolean;
@@ -10,7 +7,7 @@ export interface SessionCardsSidenavProps {
   panelProps: ConversationRightPanelProps;
 }
 
-export const SessionCardsSidenav: React.FC<SessionCardsSidenavProps> = ({
+const SessionCardsSidenavInner: React.FC<SessionCardsSidenavProps> = ({
   isOpen,
   onClose,
   panelProps,
@@ -46,3 +43,5 @@ export const SessionCardsSidenav: React.FC<SessionCardsSidenavProps> = ({
     </div>
   );
 };
+
+export const SessionCardsSidenav = React.memo(SessionCardsSidenavInner);

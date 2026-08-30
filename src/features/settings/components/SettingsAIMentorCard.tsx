@@ -4,9 +4,7 @@ import { MentorPresenceMark } from "./SettingsBespokeIcons";
 
 /* Deterministic living waveform — no re-render jitter, breathing cadence. */
 const WAVEFORM_HEIGHTS = Array.from({ length: 42 }, (_, i) =>
-  Math.round(
-    Math.max(3, Math.abs(Math.sin(i * 0.52)) * 9 + Math.sin(i * 0.19) * 3 + 2.5)
-  )
+  Math.round(Math.max(3, Math.abs(Math.sin(i * 0.52)) * 9 + Math.sin(i * 0.19) * 3 + 2.5)),
 );
 
 export interface SettingsAIMentorCardProps {

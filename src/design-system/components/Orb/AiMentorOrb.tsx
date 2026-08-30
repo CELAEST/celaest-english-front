@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { OrbitalTrajectories } from './OrbitalTrajectories';
+import React, { useEffect, useRef } from "react";
+import { OrbitalTrajectories } from "./OrbitalTrajectories";
 
-export type OrbState = 'Idle' | 'Listening' | 'Thinking' | 'Speaking';
+export type OrbState = "Idle" | "Listening" | "Thinking" | "Speaking";
 
 export interface AiMentorOrbProps {
   state?: OrbState;
@@ -11,24 +11,24 @@ export interface AiMentorOrbProps {
 }
 
 export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
-  state = 'Idle',
+  state = "Idle",
   size = 320,
   showOrbits = true,
-  className = '',
+  className = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationFrameId: number;
     let time = 0;
 
     const render = () => {
-      time += state === 'Thinking' ? 0.035 : state === 'Listening' ? 0.025 : 0.015;
+      time += state === "Thinking" ? 0.035 : state === "Listening" ? 0.025 : 0.015;
       ctx.clearRect(0, 0, size, size);
 
       const centerX = size / 2;
@@ -42,23 +42,23 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
         radius * 0.3,
         centerX,
         centerY,
-        size / 2
+        size / 2,
       );
 
-      let glowColor1 = 'rgba(124, 58, 237, 0.45)';
-      let glowColor2 = 'rgba(59, 130, 246, 0.25)';
+      let glowColor1 = "rgba(124, 58, 237, 0.45)";
+      let glowColor2 = "rgba(59, 130, 246, 0.25)";
 
-      if (state === 'Thinking') {
-        glowColor1 = 'rgba(168, 85, 247, 0.6)';
-        glowColor2 = 'rgba(99, 102, 241, 0.4)';
-      } else if (state === 'Listening') {
-        glowColor1 = 'rgba(99, 102, 241, 0.55)';
-        glowColor2 = 'rgba(56, 189, 248, 0.35)';
+      if (state === "Thinking") {
+        glowColor1 = "rgba(168, 85, 247, 0.6)";
+        glowColor2 = "rgba(99, 102, 241, 0.4)";
+      } else if (state === "Listening") {
+        glowColor1 = "rgba(99, 102, 241, 0.55)";
+        glowColor2 = "rgba(56, 189, 248, 0.35)";
       }
 
       glowGrad.addColorStop(0, glowColor1);
       glowGrad.addColorStop(0.55, glowColor2);
-      glowGrad.addColorStop(1, 'rgba(4, 4, 10, 0)');
+      glowGrad.addColorStop(1, "rgba(4, 4, 10, 0)");
 
       ctx.fillStyle = glowGrad;
       ctx.beginPath();
@@ -72,14 +72,14 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
         radius * 0.05,
         centerX,
         centerY,
-        radius
+        radius,
       );
 
-      coreGrad.addColorStop(0, '#F3E8FF'); // Specular highlight
-      coreGrad.addColorStop(0.15, '#C084FC'); // High Lavender
-      coreGrad.addColorStop(0.4, '#7C3AED'); // Rich Electric Violet
-      coreGrad.addColorStop(0.75, '#1E1B4B'); // Deep Indigo Body
-      coreGrad.addColorStop(1, '#0B081A'); // Rim Edge Shadow
+      coreGrad.addColorStop(0, "#F3E8FF"); // Specular highlight
+      coreGrad.addColorStop(0.15, "#C084FC"); // High Lavender
+      coreGrad.addColorStop(0.4, "#7C3AED"); // Rich Electric Violet
+      coreGrad.addColorStop(0.75, "#1E1B4B"); // Deep Indigo Body
+      coreGrad.addColorStop(1, "#0B081A"); // Rim Edge Shadow
 
       ctx.save();
       ctx.beginPath();
@@ -90,7 +90,7 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
 
       // 3. Inner Bioluminescent Contour Waves (Matching reference)
       ctx.lineWidth = 1.2;
-      const speed = state === 'Thinking' ? 2.2 : state === 'Listening' ? 1.6 : 1.0;
+      const speed = state === "Thinking" ? 2.2 : state === "Listening" ? 1.6 : 1.0;
 
       for (let i = -3; i <= 3; i++) {
         ctx.beginPath();
@@ -100,8 +100,7 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
         for (let x = centerX - radius; x <= centerX + radius; x += 3) {
           const dx = Math.abs(x - centerX);
           const distNorm = Math.max(0, 1 - dx / radius);
-          const wave =
-            Math.sin(x * 0.035 + time * speed + i * 0.7) * 12 * Math.pow(distNorm, 1.2);
+          const wave = Math.sin(x * 0.035 + time * speed + i * 0.7) * 12 * Math.pow(distNorm, 1.2);
 
           if (x === centerX - radius) {
             ctx.moveTo(x, yBase + wave);
@@ -118,7 +117,7 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
         const py = centerY + Math.cos(time * 0.7 + p) * (radius * 0.6);
         const pSize = (Math.sin(time * 2 + p) + 1.4) * 1.1;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
         ctx.beginPath();
         ctx.arc(px, py, pSize, 0, Math.PI * 2);
         ctx.fill();
@@ -130,7 +129,7 @@ export const AiMentorOrb: React.FC<AiMentorOrbProps> = ({
       const pulse = Math.sin(time * 2) * 2.5;
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius + 2 + pulse, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
+      ctx.strokeStyle = "rgba(192, 132, 252, 0.45)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 

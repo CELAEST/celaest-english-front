@@ -1,5 +1,6 @@
 import React from "react";
 import { SettingsListItem } from "./SettingsListItem";
+import { SettingsSection } from "./SettingsSection";
 import {
   ProfilePresenceIcon,
   NotificationJewelIcon,
@@ -17,14 +18,8 @@ export const SettingsPersonalSection: React.FC<SettingsPersonalSectionProps> = (
   onItemClick,
 }) => {
   return (
-    <div className="flex flex-col">
-      {/* Section Label */}
-      <span className="text-[11px] sm:text-xs font-semibold tracking-[0.18em] uppercase text-[#A27FF3]/80 mb-2 sm:mb-3 px-1">
-        PERSONAL
-      </span>
-
-      {/* Card Container */}
-      <div className="rounded-3xl border border-[#111220] bg-[#05060c] shadow-2xl backdrop-blur-xl overflow-hidden divide-y divide-[#111220]/70">
+    <SettingsSection label="PERSONAL">
+      <div className="divide-y divide-white/[0.06]">
         <SettingsListItem
           icon={<ProfilePresenceIcon className="w-5 h-5" />}
           title="Profile"
@@ -54,7 +49,6 @@ export const SettingsPersonalSection: React.FC<SettingsPersonalSectionProps> = (
           onClick={() => onItemClick?.("about")}
         />
       </div>
-    </div>
+    </SettingsSection>
   );
 };
-

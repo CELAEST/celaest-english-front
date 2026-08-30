@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export const WritingHeader: React.FC = React.memo(function WritingHeader() {
   return (

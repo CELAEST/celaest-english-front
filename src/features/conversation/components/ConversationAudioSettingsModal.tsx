@@ -1,13 +1,13 @@
 import React from "react";
 import { Volume2, Mic, SlidersHorizontal } from "lucide-react";
 import { AppModal } from "../../../design-system/components/Modal/AppModal";
+import { useMicVolume } from "../hooks/micVolumeStore";
 
 export interface ConversationAudioSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   speechRate: number;
   onSetSpeechRate: (rate: number) => void;
-  micVolume?: number;
 }
 
 export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsModalProps> = ({
@@ -15,8 +15,8 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
   onClose,
   speechRate,
   onSetSpeechRate,
-  micVolume = 0,
 }) => {
+  const micVolume = useMicVolume();
   const speedOptions = [
     { label: "0.75x Slow", value: 0.75, desc: "Easy to follow, high clarity" },
     { label: "0.90x Relaxed", value: 0.9, desc: "Slightly relaxed, natural" },
@@ -71,9 +71,7 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
                   >
                     {opt.label}
                   </span>
-                  <span className="text-[10px] text-neutral-400 block mt-0.5">
-                    {opt.desc}
-                  </span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5">{opt.desc}</span>
                 </button>
               );
             })}

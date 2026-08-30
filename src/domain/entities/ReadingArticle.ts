@@ -12,5 +12,6 @@ export interface ReadingArticle {
   totalPages?: number;
   vocabularyMap?: Record<string, WordLookup>;
   keywords: string[];
+  phrasalVerbs?: string[];
   quiz?: GenerateQuizResponse;
 }

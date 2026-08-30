@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface WeeklyProgressCardProps {
   speakingProgress?: number | undefined;
@@ -9,7 +9,7 @@ export interface WeeklyProgressCardProps {
 
 export const WeeklyProgressCard: React.FC<WeeklyProgressCardProps> = ({
   speakingProgress = 75,
-  speakingChange = '+14%',
+  speakingChange = "+14%",
   vocabularyProgress = 65,
   overallPercentage = 82,
 }) => {
@@ -19,8 +19,18 @@ export const WeeklyProgressCard: React.FC<WeeklyProgressCardProps> = ({
       <div className="flex-1 space-y-4 pr-5">
         {/* Top: Icon + Label */}
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-[#8B5CF6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+          <svg
+            className="w-4 h-4 text-[#8B5CF6]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"
+            />
           </svg>
           <span className="text-xs font-light text-[#9E9EB6]">Progress This Week</span>
         </div>
@@ -70,7 +80,7 @@ export const WeeklyProgressCard: React.FC<WeeklyProgressCardProps> = ({
             strokeLinecap="round"
             stroke="currentColor"
             fill="none"
-            style={{ filter: 'drop-shadow(0px 0px 6px rgba(139, 92, 246, 0.8))' }}
+            style={{ filter: "drop-shadow(0px 0px 6px rgba(139, 92, 246, 0.8))" }}
             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
           />
         </svg>

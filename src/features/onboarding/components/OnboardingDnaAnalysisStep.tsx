@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { OnboardingStepProgress } from './OnboardingStepProgress';
-import { OnboardingDnaCard } from './OnboardingDnaCard';
+import React, { useState, useEffect } from "react";
+import { OnboardingStepProgress } from "./OnboardingStepProgress";
+import { OnboardingDnaCard } from "./OnboardingDnaCard";
+import { LearnerProfileData } from "../types";
 
 export interface OnboardingDnaAnalysisStepProps {
+  profile: LearnerProfileData;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -14,6 +16,7 @@ export interface DnaItem {
 }
 
 export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps> = ({
+  profile,
   onNext,
   onPrev,
 }) => {
@@ -21,40 +24,39 @@ export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps>
 
   const dnaItems: DnaItem[] = [
     {
-      id: 'career',
-      title: 'Career goal detected',
-      subtitle: 'You want to grow in Programming and AI.',
+      id: "career",
+      title: "Career focus calibrated",
+      subtitle: `Targeted for: ${profile.profession || "Software & Technology"}`,
     },
     {
-      id: 'topics',
-      title: 'Preferred topics',
-      subtitle: 'Programming • AI • Automation',
+      id: "goal",
+      title: "Primary goal configured",
+      subtitle: profile.learningGoal || "Tech Career & AI",
     },
     {
-      id: 'confidence',
-      title: 'Speaking confidence',
-      subtitle: 'Medium',
+      id: "style",
+      title: "Learning methodology",
+      subtitle: profile.preferenceStyle || "Conversation First",
     },
     {
-      id: 'practice',
-      title: 'Daily practice',
-      subtitle: '20 minutes',
+      id: "practice",
+      title: "Daily commitment",
+      subtitle: `${profile.dailyFocus || "20 min"} active daily practice`,
     },
     {
-      id: 'style',
-      title: 'Learning style',
-      subtitle: 'Conversation-first learner',
+      id: "mesh",
+      title: "CEFR Diagnostic Mesh",
+      subtitle: "Initializing speech & syntax evaluator",
     },
     {
-      id: 'roadmap',
-      title: 'Personalized roadmap',
-      subtitle: 'Strategy created just for you',
+      id: "roadmap",
+      title: "Personalized path ready",
+      subtitle: "Preparing quick conversational assessment",
     },
   ];
 
   const isFinished = completedIndices.length === dnaItems.length;
 
-  // Progressive analysis animation effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCompletedIndices((prev) => {
@@ -64,18 +66,17 @@ export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps>
         clearInterval(timer);
         return prev;
       });
-    }, 600);
+    }, 450);
 
     return () => clearInterval(timer);
   }, [dnaItems.length]);
 
-  /** Skip animation only completes the items locally without advancing to the next step */
   const handleSkip = () => {
     setCompletedIndices(dnaItems.map((_, i) => i));
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col mx-auto overflow-hidden">
+    <div className="relative w-full h-full flex flex-col mx-auto select-none overflow-hidden">
       {/* Left-Side Content Panel */}
       <div className="relative z-20 flex flex-col justify-between h-full w-full max-w-[1280px] mx-auto px-5 sm:px-10 lg:px-16 py-3 sm:py-5 overflow-hidden">
         {/* Top Spacer matching persistent LINGUA Header height */}
@@ -88,25 +89,23 @@ export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps>
             currentStep={2}
             totalSteps={4}
             percentage={50}
-            className="mb-3 sm:mb-5"
+            className="mb-3 sm:mb-4"
           />
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl md:text-[36px] lg:text-[42px] font-light tracking-tight text-white leading-[1.12] mb-2 sm:mb-2.5 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.12s_both]">
-            Building your<br />
-            <span className="text-[#A27FF3] font-light">
-              Learning DNA.
-            </span>
+          <h1 className="text-2xl sm:text-3xl md:text-[36px] font-light tracking-tight text-white leading-[1.12] mb-1.5 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.12s_both]">
+            Synthesizing your
+            <br />
+            <span className="text-[#A27FF3] font-light">Learning Profile.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-[#999a9b] font-light leading-relaxed mb-3 sm:mb-4 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.18s_both]">
-            I'm analyzing your answers to understand how you learn.<br />
-            This only takes a few seconds.
+          <p className="text-xs sm:text-sm text-[#999a9b] font-light leading-relaxed mb-3 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.18s_both]">
+            Adapting curriculum, vocabulary modules, and AI mentor tone.
           </p>
 
-          {/* 6 DNA Checklist Cards */}
-          <div className="space-y-1.5 sm:space-y-2 max-w-md mb-4 sm:mb-5 overflow-y-auto custom-scrollbar max-h-[230px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-none pr-1.5 animate-[fadeSlideUp_0.5s_ease-out_0.24s_both]">
+          {/* 6 Clean DNA Items */}
+          <div className="space-y-1.5 max-w-md mb-3 overflow-y-auto custom-scrollbar max-h-[240px] sm:max-h-[280px] pr-1 animate-[fadeSlideUp_0.5s_ease-out_0.24s_both]">
             {dnaItems.map((item, index) => {
               const isChecked = completedIndices.includes(index);
               return (
@@ -120,41 +119,35 @@ export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps>
             })}
           </div>
 
-          {/* Bottom Actions:
-              - While animating: 'Skip animation' button
-              - When finished/skipped: 'Back' button (identical to Step 1 Questions)
-          */}
+          {/* Bottom Actions */}
           <div className="flex items-center justify-between max-w-md pt-1 animate-[fadeSlideUp_0.45s_ease-out_0.3s_both]">
             {!isFinished ? (
-              /* Skip Animation Button (Only skips animation locally, does NOT advance step) */
               <button
                 onClick={handleSkip}
                 className="flex items-center text-xs sm:text-sm font-light text-[#8E8EB3] hover:text-white hover:scale-105 transition-all cursor-pointer group"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#262640] flex items-center justify-center mr-2.5 group-hover:border-[#555580] transition-colors">
-                  <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9999C2]" fill="currentColor" viewBox="0 0 24 24">
+                <div className="w-6 h-6 rounded-full border border-[#262640] flex items-center justify-center mr-2 group-hover:border-[#555580] transition-colors">
+                  <svg className="w-3 h-3 text-[#9999C2]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                   </svg>
                 </div>
                 <span>Skip animation</span>
               </button>
             ) : (
-              /* Back Button (Identical styling as Step 1 Questions: arrow + 'Back') */
               <button
                 onClick={onPrev}
-                className="flex items-center text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-1 transition-all cursor-pointer"
+                className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
               >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 <span>Back</span>
               </button>
             )}
 
-            {/* Continue Button */}
             <button
               onClick={onNext}
-              className="group inline-flex items-center justify-center px-8 sm:px-12 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-white transition-all duration-300 rounded-full bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] shadow-[0_0_25px_rgba(99,102,241,0.4)] hover:shadow-[0_0_35px_rgba(124,58,237,0.7)] hover:scale-105 active:scale-95 cursor-pointer"
+              className="group inline-flex items-center justify-center px-8 sm:px-12 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-all duration-300 rounded-full bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.7)] hover:scale-105 active:scale-95 cursor-pointer"
             >
               <span>Continue</span>
               <svg className="w-3.5 h-3.5 ml-2 transition-transform duration-300 transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

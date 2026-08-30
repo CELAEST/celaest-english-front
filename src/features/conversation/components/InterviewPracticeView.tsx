@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ConversationRightPanel } from "./ConversationRightPanel";
 import { ConversationOrbHero } from "./ConversationOrbHero";
 import { ConversationPromptArea } from "./ConversationPromptArea";
@@ -34,7 +34,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     remainingSeconds,
     speakingSeconds,
     speechRate,
-    micVolume,
     userTranscript,
     turnFeedback,
     savedErrorIds,
@@ -88,11 +87,11 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     showControlsDrawer,
   ]);
 
-  const handleEndSession = () => {
+  const handleEndSession = useCallback(() => {
     if (onBackToWorkspace) {
       onBackToWorkspace();
     }
-  };
+  }, [onBackToWorkspace]);
 
   const getStatusTitle = () => {
     if (isAiSpeaking) return "Interviewer speaking...";
@@ -105,26 +104,48 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     return "Ready for your answer";
   };
 
-  const panelProps = {
-    currentRound,
-    currentQuestion: currentQuestionIndex,
-    totalQuestions,
-    remainingSeconds,
-    speakingSeconds,
-    roleName,
-    speechRate,
-    turnFeedback,
-    savedErrorIds,
-    onSetSpeechRate: setSpeechRate,
-    onSkipQuestion: skipQuestion,
-    onRepeatQuestion: repeatQuestion,
-    onPauseInterview: toggleListening,
-    onEndInterview: handleEndSession,
-    onTakeTime: takeTime,
-    onSaveSpecificError: saveSpecificErrorToMemory,
-    onSaveAllErrors: saveAllErrorsToMemory,
-    onOpenAnalysisModal: () => setShowAnalysisModal(true),
-  };
+  const panelProps = useMemo(
+    () => ({
+      currentRound,
+      currentQuestion: currentQuestionIndex,
+      totalQuestions,
+      remainingSeconds,
+      speakingSeconds,
+      roleName,
+      speechRate,
+      turnFeedback,
+      savedErrorIds,
+      onSetSpeechRate: setSpeechRate,
+      onSkipQuestion: skipQuestion,
+      onRepeatQuestion: repeatQuestion,
+      onPauseInterview: toggleListening,
+      onEndInterview: handleEndSession,
+      onTakeTime: takeTime,
+      onSaveSpecificError: saveSpecificErrorToMemory,
+      onSaveAllErrors: saveAllErrorsToMemory,
+      onOpenAnalysisModal: () => setShowAnalysisModal(true),
+    }),
+    [
+      currentRound,
+      currentQuestionIndex,
+      totalQuestions,
+      remainingSeconds,
+      speakingSeconds,
+      roleName,
+      speechRate,
+      turnFeedback,
+      savedErrorIds,
+      setSpeechRate,
+      skipQuestion,
+      repeatQuestion,
+      toggleListening,
+      handleEndSession,
+      takeTime,
+      saveSpecificErrorToMemory,
+      saveAllErrorsToMemory,
+      setShowAnalysisModal,
+    ],
+  );
 
   return (
     <div className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 animate-[fadeIn_0.4s_ease-out_both] p-1 sm:p-2">
@@ -178,7 +199,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             <ConversationWaveformSpectrum
               isListening={isListening || isAiSpeaking}
               animated={isListening || isAiSpeaking}
-              micVolume={micVolume}
             />
           </div>
 
@@ -236,7 +256,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         onClose={() => setShowAudioSettings(false)}
         speechRate={speechRate}
         onSetSpeechRate={setSpeechRate}
-        micVolume={micVolume}
       />
     </div>
   );

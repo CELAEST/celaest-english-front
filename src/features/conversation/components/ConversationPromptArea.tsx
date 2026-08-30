@@ -59,9 +59,7 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
           autoCapitalize="sentences"
           autoComplete="off"
           autoCorrect="off"
-          onChange={(e) =>
-            onTranscriptChange && onTranscriptChange(e.target.value)
-          }
+          onChange={(e) => onTranscriptChange && onTranscriptChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();

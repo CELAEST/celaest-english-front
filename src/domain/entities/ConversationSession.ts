@@ -1,6 +1,6 @@
 export interface ConversationMessage {
   id: string;
-  sender: 'ai' | 'user';
+  sender: "ai" | "user";
   text: string;
   timestamp: string;
   audioUrl?: string | null;
@@ -9,7 +9,7 @@ export interface ConversationMessage {
 export interface ConversationSession {
   sessionId: string;
   topic: string;
-  status: 'Idle' | 'Active' | 'Ended';
+  status: "Idle" | "Active" | "Ended";
   messages: ConversationMessage[];
   suggestedPills: string[];
 }

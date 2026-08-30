@@ -41,8 +41,8 @@ Your goal is to evaluate a candidate's spoken English response during a job inte
      * userSaidContext: Exact snippet where the mistake happened.
      * errorWord: The problematic word or phrase.
      * correctWord: The native, professional replacement.
-     * explanation: Clear linguistic explanation in Spanish of WHY the original sounds awkward or ungrammatical.
-     * translationSpanish: Concise, high-yield grammar rule or memory reminder in Spanish (e.g. "Recuerda: 'actual' significa real o verdadero, no actualmente"). DO NOT duplicate or repeat the explanation text here, and NEVER include emojis like 💡.
+     * explanation: Clear linguistic explanation in Spanish of WHY the original was incorrect, awkward, or ungrammatical, explaining the syntax/grammar rule.
+     * translationSpanish: The accurate, natural Spanish translation of the entire corrected sentence ('betterWay') (e.g., if betterWay is "I really like fast-growth environments", translationSpanish MUST BE "Realmente me gustan los entornos de rápido crecimiento"). Never put grammar rules in translationSpanish.
      * cefrLevel: A1, A2, B1, B2, C1.
 
 4. BESPOKE MODEL ANSWER:
@@ -61,7 +61,7 @@ You must ALWAYS respond with a strictly valid JSON object matching the Comprehen
   public static createUserPrompt(
     userSpokenText: string,
     question: InterviewQuestionItem,
-    roleName: string = "Product Manager"
+    roleName: string = "Product Manager",
   ): string {
     return JSON.stringify({
       role: roleName,

@@ -1,10 +1,10 @@
 import React, { useMemo } from "react";
+import { useMicVolume } from "../hooks/micVolumeStore";
 
 export interface ConversationWaveformSpectrumProps {
   bars?: number;
   animated?: boolean;
   isListening?: boolean;
-  micVolume?: number; // 0 to 1
 }
 
 // Deterministic pseudo-random helper so render matches consistently
@@ -13,16 +13,18 @@ function seeded(i: number) {
   return x - Math.floor(x);
 }
 
-export const ConversationWaveformSpectrum: React.FC<
-  ConversationWaveformSpectrumProps
-> = ({ bars = 75, animated = true, isListening = true, micVolume = 0 }) => {
+export const ConversationWaveformSpectrum: React.FC<ConversationWaveformSpectrumProps> = ({
+  bars = 75,
+  animated = true,
+  isListening = true,
+}) => {
+  const micVolume = useMicVolume();
   const data = useMemo(() => {
     const center = (bars - 1) / 2;
     return Array.from({ length: bars }, (_, i) => {
       const dist = Math.abs(i - center) / center;
       const envelope = 0.32 + 0.68 * Math.pow(1 - dist, 0.85);
-      const noise =
-        0.5 * seeded(i) + 0.3 * seeded(i * 3.1) + 0.2 * seeded(i * 7.7);
+      const noise = 0.5 * seeded(i) + 0.3 * seeded(i * 3.1) + 0.2 * seeded(i * 7.7);
       const spike = seeded(i * 2.3) > 0.82 ? 0.4 : 0;
       const raw = envelope * (0.45 + 0.55 * noise) + spike;
       const h = Math.max(0.12, Math.min(1, raw));
@@ -60,10 +62,7 @@ export const ConversationWaveformSpectrum: React.FC<
       {/* Bars */}
       <div className="relative flex items-center justify-center gap-[2.5px] sm:gap-[3px] md:gap-[3.5px] lg:gap-[4px] w-full h-full">
         {data.map(({ h }, i) => {
-          const dynamicHeight = Math.min(
-            44,
-            Math.max(3.5, h * 32 * volumeMultiplier)
-          );
+          const dynamicHeight = Math.min(44, Math.max(3.5, h * 32 * volumeMultiplier));
           const px = `${dynamicHeight.toFixed(2)}px`;
           const baseOpacity = isListening ? 0.32 + h * 0.68 : 0.15 + h * 0.35;
           const opacity = Math.min(1, baseOpacity + micVolume * 0.4).toFixed(3);
@@ -83,9 +82,7 @@ export const ConversationWaveformSpectrum: React.FC<
                 borderRadius: "2px",
                 backgroundColor: `rgba(162,127,243,${opacity})`,
                 boxShadow:
-                  isListening || micVolume > 0.05
-                    ? `0 0 ${glow}px rgba(162,127,243,0.7)`
-                    : "none",
+                  isListening || micVolume > 0.05 ? `0 0 ${glow}px rgba(162,127,243,0.7)` : "none",
                 transformOrigin: "center",
                 animationDuration: `${dur}s`,
                 animationDelay: `${delay}s`,

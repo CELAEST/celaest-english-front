@@ -4,15 +4,15 @@
  */
 
 export const ROUTES = {
-  HOME: '/',
-  WORKSPACE: '/workspace',
-  READING: '/reading',
-  WRITING: '/writing',
-  INTERVIEW: '/interview',
-  MEMORY: '/memory',
-  SETTINGS: '/settings',
-  ONBOARDING: '/onboarding',
-  LAB: '/lab',
+  HOME: "/",
+  WORKSPACE: "/workspace",
+  READING: "/reading",
+  WRITING: "/writing",
+  INTERVIEW: "/interview",
+  MEMORY: "/memory",
+  SETTINGS: "/settings",
+  ONBOARDING: "/onboarding",
+  LAB: "/lab",
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

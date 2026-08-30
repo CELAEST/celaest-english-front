@@ -22,9 +22,10 @@ export const conversationApi = {
   },
 
   connectAudioStream: (sessionId: string, onSpectrumFrame: (bars: number[]) => void): WebSocket => {
-    return HttpClient.connectWebSocket(`/ws/interview/${sessionId}/audio`, (data) => {
-      if (data.type === "spectrum_data" && data.bars) {
-        onSpectrumFrame(data.bars);
+    return HttpClient.connectWebSocket(`/ws/interview/${sessionId}/audio`, (data: unknown) => {
+      const payload = data as { type?: string; bars?: number[] };
+      if (payload?.type === "spectrum_data" && Array.isArray(payload.bars)) {
+        onSpectrumFrame(payload.bars);
       }
     });
   },

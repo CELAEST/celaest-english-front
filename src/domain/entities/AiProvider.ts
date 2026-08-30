@@ -3,15 +3,22 @@
  * Pure business model for BYOK multi-provider configuration (RFC-004)
  */
 
-export type AiProviderId = "openai" | "anthropic" | "gemini" | "deepseek" | "ollama";
+export type AiProviderId =
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "deepseek"
+  | "ollama"
+  | "grok"
+  | "perplexity"
+  | "openrouter"
+  | "huggingface"
+  | "qwen"
+  | "meta";
 
 export type AiProviderType = "cloud" | "local";
 
-export type AiProviderStatus =
-  | "active"
-  | "configured"
-  | "available"
-  | "unreachable";
+export type AiProviderStatus = "active" | "configured" | "available" | "unreachable";
 
 export interface AiProviderModel {
   id: string;

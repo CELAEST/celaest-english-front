@@ -2,7 +2,7 @@
 
 > **Status**: Approved  
 > **Author**: Staff Software Engineer & Frontend Architect  
-> **Date**: 2026-07-29  
+> **Date**: 2026-07-29
 
 ---
 

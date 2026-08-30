@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export interface OrbitalNode {
   id: string;
@@ -13,7 +13,7 @@ export interface OrbitalTrajectoriesProps {
 
 export const OrbitalTrajectories: React.FC<OrbitalTrajectoriesProps> = ({
   size = 420,
-  className = '',
+  className = "",
 }) => {
   return (
     <div
@@ -65,19 +65,34 @@ export const OrbitalTrajectories: React.FC<OrbitalTrajectoriesProps> = ({
 
         {/* Node 1: Left Point ("Remembers every conversation") */}
         <g transform="translate(85, 240)">
-          <circle r="5" fill="#A78BFA" filter="url(#nodeDotGlow)" className="animate-ping opacity-60" />
+          <circle
+            r="5"
+            fill="#A78BFA"
+            filter="url(#nodeDotGlow)"
+            className="animate-ping opacity-60"
+          />
           <circle r="3.5" fill="#DDD6FE" />
         </g>
 
         {/* Node 2: Top Right Point ("Learns how you learn") */}
         <g transform="translate(370, 75)">
-          <circle r="5" fill="#A78BFA" filter="url(#nodeDotGlow)" className="animate-ping opacity-60" />
+          <circle
+            r="5"
+            fill="#A78BFA"
+            filter="url(#nodeDotGlow)"
+            className="animate-ping opacity-60"
+          />
           <circle r="3.5" fill="#DDD6FE" />
         </g>
 
         {/* Node 3: Bottom Right Point ("Adapts every day") */}
         <g transform="translate(365, 325)">
-          <circle r="5" fill="#A78BFA" filter="url(#nodeDotGlow)" className="animate-ping opacity-60" />
+          <circle
+            r="5"
+            fill="#A78BFA"
+            filter="url(#nodeDotGlow)"
+            className="animate-ping opacity-60"
+          />
           <circle r="3.5" fill="#DDD6FE" />
         </g>
       </svg>
@@ -86,20 +101,32 @@ export const OrbitalTrajectories: React.FC<OrbitalTrajectoriesProps> = ({
       <div className="absolute inset-0 pointer-events-auto">
         {/* Left Node Text */}
         <div className="absolute top-[225px] left-[-70px] text-right max-w-[130px]">
-          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">Remembers</span>
-          <span className="block text-[12px] text-slate-500 font-light leading-tight">every conversation</span>
+          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">
+            Remembers
+          </span>
+          <span className="block text-[12px] text-slate-500 font-light leading-tight">
+            every conversation
+          </span>
         </div>
 
         {/* Top Right Node Text */}
         <div className="absolute top-[60px] right-[5px] text-left max-w-[130px]">
-          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">Learns</span>
-          <span className="block text-[12px] text-slate-500 font-light leading-tight">how you learn</span>
+          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">
+            Learns
+          </span>
+          <span className="block text-[12px] text-slate-500 font-light leading-tight">
+            how you learn
+          </span>
         </div>
 
         {/* Bottom Right Node Text */}
         <div className="absolute top-[310px] right-[10px] text-left max-w-[130px]">
-          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">Adapts</span>
-          <span className="block text-[12px] text-slate-500 font-light leading-tight">every day</span>
+          <span className="block text-[13px] font-normal text-slate-300 tracking-normal">
+            Adapts
+          </span>
+          <span className="block text-[12px] text-slate-500 font-light leading-tight">
+            every day
+          </span>
         </div>
       </div>
     </div>

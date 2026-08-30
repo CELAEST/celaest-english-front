@@ -4,7 +4,11 @@
  * and question relevance analyzer. Delivers 100% honest, high-fidelity educational feedback.
  */
 
-import { SpecificErrorItem, TurnEvaluationFeedback, InterviewQuestionItem } from "./interviewEngineService";
+import {
+  SpecificErrorItem,
+  TurnEvaluationFeedback,
+  InterviewQuestionItem,
+} from "./interviewEngineService";
 
 export class AiLinguisticEvaluator {
   /**
@@ -12,7 +16,7 @@ export class AiLinguisticEvaluator {
    */
   public static evaluate(
     rawText: string,
-    currentQuestion: InterviewQuestionItem
+    currentQuestion: InterviewQuestionItem,
   ): TurnEvaluationFeedback {
     const text = rawText.trim();
 
@@ -32,14 +36,17 @@ export class AiLinguisticEvaluator {
             correctWord: "Speak audibly into the microphone",
             userSaidContext: "No clear audio captured",
             betterWay: "Speak in a clear, steady voice close to your mic.",
-            explanation: "The microphone did not detect clear vocal audio. Ensure mic permissions are enabled.",
-            translationSpanish: "El micrófono no captó tu voz. Habla con claridad frente al micrófono.",
+            explanation:
+              "The microphone did not detect clear vocal audio. Ensure mic permissions are enabled.",
+            translationSpanish:
+              "El micrófono no captó tu voz. Habla con claridad frente al micrófono.",
             cefrLevel: "A1",
             savedToMemory: false,
           },
         ],
         keyStrengths: ["Interview session is active"],
-        tipsForNextTurn: "Speak directly into your microphone at a steady pace and use the STAR method.",
+        tipsForNextTurn:
+          "Speak directly into your microphone at a steady pace and use the STAR method.",
       };
     }
 
@@ -59,8 +66,10 @@ export class AiLinguisticEvaluator {
         correctWord: "for me, it is / my guiding principle is",
         userSaidContext: "for me is in this principle",
         betterWay: "For me, it is a core principle to maintain team organization.",
-        explanation: "In English, every clause must have an explicit subject. You cannot omit 'it' after 'for me' ('for me, it is...'). In a professional interview, say 'My guiding principle is...'.",
-        translationSpanish: "Traducción literal del español ('para mí es...'). En inglés se requiere el pronombre 'it' ('for me, it is').",
+        explanation:
+          "In English, every clause must have an explicit subject. You cannot omit 'it' after 'for me' ('for me, it is...'). In a professional interview, say 'My guiding principle is...'.",
+        translationSpanish:
+          "Traducción literal del español ('para mí es...'). En inglés se requiere el pronombre 'it' ('for me, it is').",
         cefrLevel: "B1",
         savedToMemory: false,
       });
@@ -75,8 +84,10 @@ export class AiLinguisticEvaluator {
         correctWord: "incoming feature requests / requests we receive",
         userSaidContext: "the request for us",
         betterWay: "handling incoming requests from stakeholders",
-        explanation: "'The request for us' is unnatural phrasing. In product management, refer to 'incoming feature requests' or 'requests from our stakeholders'.",
-        translationSpanish: "'The request for us' suena poco natural; en inglés profesional se dice 'incoming requests' o 'requests we receive'.",
+        explanation:
+          "'The request for us' is unnatural phrasing. In product management, refer to 'incoming feature requests' or 'requests from our stakeholders'.",
+        translationSpanish:
+          "'The request for us' suena poco natural; en inglés profesional se dice 'incoming requests' o 'requests we receive'.",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -91,8 +102,10 @@ export class AiLinguisticEvaluator {
         correctWord: "and applying best practices / adhering to best practices",
         userSaidContext: "and good practice",
         betterWay: "and applying industry best practices",
-        explanation: "Use an active gerund phrase like 'applying best practices' or 'establishing best practices' rather than just the noun phrase.",
-        translationSpanish: "Falta el verbo/gerundio: 'and applying best practices' (y aplicar las mejores prácticas).",
+        explanation:
+          "Use an active gerund phrase like 'applying best practices' or 'establishing best practices' rather than just the noun phrase.",
+        translationSpanish:
+          "Falta el verbo/gerundio: 'and applying best practices' (y aplicar las mejores prácticas).",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -107,8 +120,10 @@ export class AiLinguisticEvaluator {
         correctWord: "my team / our team / our workflow",
         userSaidContext: "that my thing can have",
         betterWay: "so that my team can stay structured and productive",
-        explanation: "Using 'thing' in a professional interview sounds informal and imprecise. Did you mean 'my team' or 'our workflow'?",
-        translationSpanish: "Usar 'thing' (cosa) en una entrevista resta formalidad; lo adecuado es 'my team' (mi equipo) o 'our workflow'.",
+        explanation:
+          "Using 'thing' in a professional interview sounds informal and imprecise. Did you mean 'my team' or 'our workflow'?",
+        translationSpanish:
+          "Usar 'thing' (cosa) en una entrevista resta formalidad; lo adecuado es 'my team' (mi equipo) o 'our workflow'.",
         cefrLevel: "B1",
         savedToMemory: false,
       });
@@ -123,8 +138,10 @@ export class AiLinguisticEvaluator {
         correctWord: "stay organized / maintain this structure",
         userSaidContext: "can have this organization",
         betterWay: "can maintain a clear and organized roadmap",
-        explanation: "Instead of 'have this organization', use natural active phrasing like 'stay well-organized', 'maintain a clear structure', or 'streamline our roadmap'.",
-        translationSpanish: "En vez de 'have this organization', usa 'stay well-organized' o 'maintain a clear structure'.",
+        explanation:
+          "Instead of 'have this organization', use natural active phrasing like 'stay well-organized', 'maintain a clear structure', or 'streamline our roadmap'.",
+        translationSpanish:
+          "En vez de 'have this organization', usa 'stay well-organized' o 'maintain a clear structure'.",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -157,7 +174,8 @@ export class AiLinguisticEvaluator {
         correctWord: `a lot of ${noun} / extensive ${noun}`,
         userSaidContext: `very ${noun}`,
         betterWay: `a lot of ${noun}`,
-        explanation: "'Very' cannot be used directly before uncountable nouns. Use 'a lot of' or 'extensive'.",
+        explanation:
+          "'Very' cannot be used directly before uncountable nouns. Use 'a lot of' or 'extensive'.",
         translationSpanish: `No se dice 'very ${noun}'. Se dice 'a lot of ${noun}' o 'extensive ${noun}'.`,
         cefrLevel: "A2",
         savedToMemory: false,
@@ -166,11 +184,18 @@ export class AiLinguisticEvaluator {
 
     // H. "I interested" / "I sure" (Missing to be)
     if (/\b(i|you|we|they|he|she)\s+(interested|sure|ready|happy|capable|aligned)\b/i.test(text)) {
-      const match = text.match(/\b(i|you|we|they|he|she)\s+(interested|sure|ready|happy|capable|aligned)\b/i);
+      const match = text.match(
+        /\b(i|you|we|they|he|she)\s+(interested|sure|ready|happy|capable|aligned)\b/i,
+      );
       if (match) {
         const subj = match[1];
         const adj = match[2];
-        const verb = subj.toLowerCase() === "i" ? "am" : (subj.toLowerCase() === "he" || subj.toLowerCase() === "she") ? "is" : "are";
+        const verb =
+          subj.toLowerCase() === "i"
+            ? "am"
+            : subj.toLowerCase() === "he" || subj.toLowerCase() === "she"
+              ? "is"
+              : "are";
         detectedErrors.push({
           id: `err-tobe-${Date.now()}`,
           errorType: "GRAMMAR",
@@ -187,8 +212,14 @@ export class AiLinguisticEvaluator {
     }
 
     // I. "so is" / "because is" (Missing dummy subject "it")
-    if (/\b(so|because|and)\s+is\s+(necessary|indispensable|important|essential|possible)\b/i.test(text)) {
-      const match = text.match(/\b(so|because|and)\s+is\s+(necessary|indispensable|important|essential|possible)\b/i);
+    if (
+      /\b(so|because|and)\s+is\s+(necessary|indispensable|important|essential|possible)\b/i.test(
+        text,
+      )
+    ) {
+      const match = text.match(
+        /\b(so|because|and)\s+is\s+(necessary|indispensable|important|essential|possible)\b/i,
+      );
       if (match) {
         detectedErrors.push({
           id: `err-so-is-${Date.now()}`,
@@ -197,7 +228,8 @@ export class AiLinguisticEvaluator {
           correctWord: `${match[1]} it is ${match[2]}`,
           userSaidContext: match[0],
           betterWay: `${match[1]} it is ${match[2]}`,
-          explanation: "English sentences require an explicit grammatical subject 'it' ('so it is ${match[2]}').",
+          explanation:
+            "English sentences require an explicit grammatical subject 'it' ('so it is ${match[2]}').",
           translationSpanish: `En inglés las oraciones necesitan sujeto: '${match[1]} it is ${match[2]}'.`,
           cefrLevel: "B1",
           savedToMemory: false,
@@ -229,7 +261,8 @@ export class AiLinguisticEvaluator {
         correctWord: "perform / develop / work effectively",
         userSaidContext: "disembaldwin",
         betterWay: "perform effectively",
-        explanation: "'disembaldwin' is an unrecognized word. Make sure to articulate clearly into the microphone.",
+        explanation:
+          "'disembaldwin' is an unrecognized word. Make sure to articulate clearly into the microphone.",
         translationSpanish: "Palabra ininteligible o captada con error: 'perform effectively'.",
         cefrLevel: "B2",
         savedToMemory: false,
@@ -260,8 +293,10 @@ export class AiLinguisticEvaluator {
         correctWord: "someone like me / people like me",
         userSaidContext: "persons as me",
         betterWay: "someone with my experience",
-        explanation: "'Persons as me' is awkward and unnatural in modern English. Say 'someone like me' or 'someone with my background'.",
-        translationSpanish: "Suena poco natural; usa 'someone like me' o 'someone with my background'.",
+        explanation:
+          "'Persons as me' is awkward and unnatural in modern English. Say 'someone like me' or 'someone with my background'.",
+        translationSpanish:
+          "Suena poco natural; usa 'someone like me' o 'someone with my background'.",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -276,8 +311,10 @@ export class AiLinguisticEvaluator {
         correctWord: "you need someone / it is essential to have someone",
         userSaidContext: "it's necessary a person",
         betterWay: "it is essential to have someone with my experience",
-        explanation: "Avoid literal Spanish interference ('es necesaria una persona'). Say 'you need someone' or 'it is necessary to have someone'.",
-        translationSpanish: "Traducción literal del español. Usa 'it is essential to have someone' o 'you need someone'.",
+        explanation:
+          "Avoid literal Spanish interference ('es necesaria una persona'). Say 'you need someone' or 'it is necessary to have someone'.",
+        translationSpanish:
+          "Traducción literal del español. Usa 'it is essential to have someone' o 'you need someone'.",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -286,12 +323,16 @@ export class AiLinguisticEvaluator {
     // =========================================================================
     // 2. QUESTION RELEVANCE & CONTENT ANALYSIS
     // =========================================================================
-    const matchedKeywords = currentQuestion.expectedKeywords.filter(kw =>
-      lower.includes(kw.toLowerCase())
+    const matchedKeywords = currentQuestion.expectedKeywords.filter((kw) =>
+      lower.includes(kw.toLowerCase()),
     );
 
-    const isPrioritizationQuestion = currentQuestion.id === 2 || /prioritize/i.test(currentQuestion.question);
-    const mentionsFrameworkOrCriteria = /(rice|moscow|matrix|criteria|impact|effort|value|data|urgency|roi|customer|business)/i.test(text);
+    const isPrioritizationQuestion =
+      currentQuestion.id === 2 || /prioritize/i.test(currentQuestion.question);
+    const mentionsFrameworkOrCriteria =
+      /(rice|moscow|matrix|criteria|impact|effort|value|data|urgency|roi|customer|business)/i.test(
+        text,
+      );
 
     if (isPrioritizationQuestion && !mentionsFrameworkOrCriteria) {
       detectedErrors.push({
@@ -300,9 +341,12 @@ export class AiLinguisticEvaluator {
         errorWord: "Vague answer (Missing prioritization framework)",
         correctWord: "Mention frameworks like RICE, MoSCoW, or Value vs. Effort matrix",
         userSaidContext: text,
-        betterWay: "I prioritize competing feature requests by evaluating customer value versus engineering effort using the RICE scoring model.",
-        explanation: "The question asked HOW you prioritize competing requests between engineering, sales, and executives. Stating only that you want 'organization' is too vague. In a Product Manager interview, explicitly mention prioritization criteria or frameworks (RICE, customer impact, engineering effort).",
-        translationSpanish: "Respuesta demasiado vaga. En entrevistas de PM debes mencionar marcos concretos como RICE (Reach, Impact, Confidence, Effort) o matriz de valor vs. esfuerzo.",
+        betterWay:
+          "I prioritize competing feature requests by evaluating customer value versus engineering effort using the RICE scoring model.",
+        explanation:
+          "The question asked HOW you prioritize competing requests between engineering, sales, and executives. Stating only that you want 'organization' is too vague. In a Product Manager interview, explicitly mention prioritization criteria or frameworks (RICE, customer impact, engineering effort).",
+        translationSpanish:
+          "Respuesta demasiado vaga. En entrevistas de PM debes mencionar marcos concretos como RICE (Reach, Impact, Confidence, Effort) o matriz de valor vs. esfuerzo.",
         cefrLevel: "B2",
         savedToMemory: false,
       });
@@ -327,25 +371,33 @@ export class AiLinguisticEvaluator {
     // =========================================================================
     // 4. TAILORED NATIVE MODEL ANSWER
     // =========================================================================
-    let modelAnswer = "My priority is to apply good product practices when handling requests. For me, it is a core principle that my team stays highly organized to balance the needs of engineering, sales, and stakeholders.";
+    let modelAnswer =
+      "My priority is to apply good product practices when handling requests. For me, it is a core principle that my team stays highly organized to balance the needs of engineering, sales, and stakeholders.";
 
     if (isPrioritizationQuestion) {
-      modelAnswer = "My priority is to apply structured product practices when handling requests. For me, it is a core principle that my team uses a transparent framework like RICE (Reach, Impact, Confidence, Effort) to balance urgent sales demands with long-term engineering scalability and executive goals.";
+      modelAnswer =
+        "My priority is to apply structured product practices when handling requests. For me, it is a core principle that my team uses a transparent framework like RICE (Reach, Impact, Confidence, Effort) to balance urgent sales demands with long-term engineering scalability and executive goals.";
     } else if (currentQuestion.id === 1) {
-      modelAnswer = "I am deeply interested in this position because I bring extensive product experience. I specialize in aligning cross-functional teams and building user-centric roadmaps that drive measurable business outcomes.";
+      modelAnswer =
+        "I am deeply interested in this position because I bring extensive product experience. I specialize in aligning cross-functional teams and building user-centric roadmaps that drive measurable business outcomes.";
     }
 
     // Strengths and tips
     const keyStrengths: string[] = [];
     if (errorCount === 0) {
-      keyStrengths.push("Excellent grammatical precision", "Clear executive delivery", "Addressed the prompt directly");
+      keyStrengths.push(
+        "Excellent grammatical precision",
+        "Clear executive delivery",
+        "Addressed the prompt directly",
+      );
     } else {
       keyStrengths.push("Communicative intent was understood", "Addressed the question theme");
     }
 
-    const tipsForNextTurn = errorCount > 0
-      ? `You have ${errorCount} linguistic and clarity point${errorCount > 1 ? "s" : ""} to polish. Review each card and save it to your Memory Bank!`
-      : "Outstanding answer! Keep reinforcing structured STAR examples.";
+    const tipsForNextTurn =
+      errorCount > 0
+        ? `You have ${errorCount} linguistic and clarity point${errorCount > 1 ? "s" : ""} to polish. Review each card and save it to your Memory Bank!`
+        : "Outstanding answer! Keep reinforcing structured STAR examples.";
 
     return {
       overallScore,
@@ -355,7 +407,10 @@ export class AiLinguisticEvaluator {
       userSpokenText: text,
       improvedFullAnswer: modelAnswer,
       unclearOrErrorWords: detectedErrors,
-      keyStrengths: matchedKeywords.length > 0 ? [`Used relevant keywords: ${matchedKeywords.join(", ")}`, ...keyStrengths] : keyStrengths,
+      keyStrengths:
+        matchedKeywords.length > 0
+          ? [`Used relevant keywords: ${matchedKeywords.join(", ")}`, ...keyStrengths]
+          : keyStrengths,
       tipsForNextTurn,
     };
   }

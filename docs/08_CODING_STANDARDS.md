@@ -1,6 +1,6 @@
 # 08. CODING STANDARDS: SOLID, DRY, Security & Clean Code Governance
 
-> **Enforcement Level**: Absolute & Permanent  
+> **Enforcement Level**: Absolute & Permanent
 
 ---
 

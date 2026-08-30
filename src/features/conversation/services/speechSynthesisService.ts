@@ -1,3 +1,4 @@
+﻿import { logger } from "../../../shared/utils/logger";
 /**
  * Speech Synthesis & Recognition Service
  * High-fidelity natural voice selection and speech recognition for Lingua AI Interviewer
@@ -44,13 +45,22 @@ export class SpeechSynthesisService {
 
     // Filter for English voices
     const englishVoices = voices.filter(
-      (v) => v.lang.startsWith("en-US") || v.lang.startsWith("en_US") || v.lang.startsWith("en")
+      (v) => v.lang.startsWith("en-US") || v.lang.startsWith("en_US") || v.lang.startsWith("en"),
     );
 
     if (englishVoices.length === 0) return voices[0] || null;
 
     // Prioritize natural neural voices: Microsoft Edge Online Natural, Google Natural, Apple Enhanced
-    const priorityKeywords = ["natural", "neural", "online", "google", "samantha", "daniel", "enhanced", "premium"];
+    const priorityKeywords = [
+      "natural",
+      "neural",
+      "online",
+      "google",
+      "samantha",
+      "daniel",
+      "enhanced",
+      "premium",
+    ];
 
     for (const keyword of priorityKeywords) {
       const match = englishVoices.find((v) => v.name.toLowerCase().includes(keyword));
@@ -95,7 +105,7 @@ export class SpeechSynthesisService {
     };
 
     utterance.onerror = (e) => {
-      console.warn("Speech synthesis notice:", e);
+      logger.warn("Speech synthesis notice:", e);
       if (options.onEnd) options.onEnd();
       if (options.onError) options.onError(e);
     };
@@ -119,7 +129,7 @@ export class SpeechSynthesisService {
     if (typeof window === "undefined") return false;
     return Boolean(
       (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ||
-        (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
+      (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
     );
   }
 }

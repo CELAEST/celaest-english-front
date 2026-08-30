@@ -1,13 +1,14 @@
-import React from 'react';
+import React from "react";
 
 export interface OnboardingWelcomeStepProps {
   onBegin: () => void;
+  onOpenLogin?: () => void;
 }
 
-export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ onBegin }) => {
+export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ onBegin, onOpenLogin }) => {
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto">
-      {/* High-Definition Hero Background Graphic Asset (Restored original initial portada image) */}
+      {/* High-Definition Hero Background Graphic Asset */}
       <div
         className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat pointer-events-none z-0 opacity-95 blend-graphic-edges"
         style={{ backgroundImage: "url('/assets/pure_hero_orb_bg.png')" }}
@@ -36,14 +37,14 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
           </h1>
 
           <div className="space-y-1.5 text-xs sm:text-sm text-[#999a9b] font-light max-w-md mx-auto leading-relaxed pt-5 sm:pt-6 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both]">
-            <p>I don't teach everyone the same way.</p>
-            <p>I'll first learn how you learn.</p>
-            <p>Then I'll build a language journey that is unique to you.</p>
+            <p>I don&apos;t teach everyone the same way.</p>
+            <p>I&apos;ll first learn how you learn.</p>
+            <p>Then I&apos;ll build a language journey that is unique to you.</p>
           </div>
         </div>
 
         {/* Glowing CTA Button */}
-        <div className="pt-5 sm:pt-6 animate-[fadeSlideUp_0.45s_ease-out_0.24s_both]">
+        <div className="pt-5 sm:pt-6 flex flex-col items-center space-y-3 animate-[fadeSlideUp_0.45s_ease-out_0.24s_both]">
           <button
             onClick={onBegin}
             className="group relative inline-flex items-center justify-center px-14 sm:px-20 md:px-22 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium text-white transition-all duration-300 rounded-full bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(124,58,237,0.8)] hover:scale-[1.04] active:scale-[0.97] cursor-pointer pointer-events-auto"
@@ -55,14 +56,34 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
+
+          {onOpenLogin && (
+            <button
+              type="button"
+              onClick={onOpenLogin}
+              className="text-[11px] sm:text-xs text-[#71719A] hover:text-[#C4B5FD] transition-colors cursor-pointer"
+            >
+              Already have an account? <span className="text-[#A27FF3] font-medium underline underline-offset-2">Sign In</span>
+            </button>
+          )}
         </div>
 
         {/* Security Sub-badge */}
         <div className="flex items-center justify-center space-x-1.5 text-[10px] sm:text-[11px] text-[#71719A] font-light pt-4 sm:pt-5 animate-[fadeSlideUp_0.45s_ease-out_0.32s_both]">
-          <svg className="w-3.5 h-3.5 text-[#71719A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-3.5 h-3.5 text-[#71719A]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

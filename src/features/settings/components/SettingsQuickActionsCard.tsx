@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Check } from "lucide-react";
 import { vaultMaintenance } from "../services/vaultMaintenance";
 import { ExportVaultIcon, PurgeVaultIcon } from "./SettingsBespokeIcons";
+import { logger } from "../../../shared/utils/logger";
 
 type QuickActionState = "idle" | "working" | "done";
 
@@ -47,16 +48,10 @@ const QuickActionBtn: React.FC<QuickActionBtnProps> = ({
     </span>
     <span
       className={`text-[10.5px] font-light leading-relaxed transition-colors duration-300 ${
-        state === "done"
-          ? "text-[#4ade80]/70"
-          : "text-[#66667c] group-hover:text-[#8a8a9e]"
+        state === "done" ? "text-[#4ade80]/70" : "text-[#66667c] group-hover:text-[#8a8a9e]"
       }`}
     >
-      {state === "done"
-        ? "Completed successfully"
-        : state === "working"
-          ? "Working…"
-          : hint}
+      {state === "done" ? "Completed successfully" : state === "working" ? "Working…" : hint}
     </span>
   </button>
 );
@@ -72,7 +67,7 @@ export const SettingsQuickActionsCard: React.FC = () => {
       vaultMaintenance.downloadExport(data);
       setExportState("done");
     } catch (err) {
-      console.warn("Vault export failed", err);
+      logger.warn("Vault export failed", err);
     } finally {
       setTimeout(() => setExportState("idle"), 2500);
     }
@@ -80,7 +75,7 @@ export const SettingsQuickActionsCard: React.FC = () => {
 
   const handlePurge = () => {
     const confirmed = window.confirm(
-      "Purge the local encrypted vault? Your AI provider keys and stored learning data will be removed from this device. This cannot be undone."
+      "Purge the local encrypted vault? Your AI provider keys and stored learning data will be removed from this device. This cannot be undone.",
     );
     if (!confirmed) return;
     setPurgeState("working");

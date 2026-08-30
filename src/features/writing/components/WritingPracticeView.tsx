@@ -1,35 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { WritingHeader } from './WritingHeader';
-import { WritingTaskHeader } from './WritingTaskHeader';
-import { WritingEditor } from './WritingEditor';
-import { WritingSubmitBar } from './WritingSubmitBar';
-import { WritingAIMentorCard } from './WritingAIMentorCard';
-import { WritingProgressCard } from './WritingProgressCard';
-import { WritingFocusCard } from './WritingFocusCard';
-import { WritingToolsCard } from './WritingToolsCard';
-import { WritingAnalysisModal, WritingErrorItem, getWritingErrorId } from './WritingAnalysisModal';
-import { useWritingEvaluation } from '../hooks/useWritingEvaluation';
-import { DynamicWritingTaskService, WritingTaskItem } from '../services/dynamicWritingTaskService';
-import { apiMemoryRepository } from '../../../infrastructure/repositories/ApiMemoryRepository';
+import React, { useEffect, useState } from "react";
+import { WritingHeader } from "./WritingHeader";
+import { WritingTaskHeader } from "./WritingTaskHeader";
+import { WritingEditor } from "./WritingEditor";
+import { WritingSubmitBar } from "./WritingSubmitBar";
+import { WritingAIMentorCard } from "./WritingAIMentorCard";
+import { WritingProgressCard } from "./WritingProgressCard";
+import { WritingFocusCard } from "./WritingFocusCard";
+import { WritingToolsCard } from "./WritingToolsCard";
+import { WritingAnalysisModal, WritingErrorItem, getWritingErrorId } from "./WritingAnalysisModal";
+import { useWritingEvaluation } from "../hooks/useWritingEvaluation";
+import { DynamicWritingTaskService, WritingTaskItem } from "../services/dynamicWritingTaskService";
+import { WritingSubmission } from "../../../domain/entities/WritingSubmission";
+import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { logger } from "../../../shared/utils/logger";
 
 export interface WritingPracticeViewProps {
   onBackToWorkspace?: () => void;
   onNavigateToMemory?: () => void;
 }
 
-export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
-  onNavigateToMemory,
-}) => {
-  const { evaluateText, isEvaluating, submission } = useWritingEvaluation();
+export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({ onNavigateToMemory }) => {
+  const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
+  const initialStored = DynamicWritingTaskService.loadActiveSubmission();
+
   const [currentTask, setCurrentTask] = useState<WritingTaskItem>(() =>
-    DynamicWritingTaskService.getActiveTask()
+    DynamicWritingTaskService.getActiveTask(),
   );
-  // Restore the draft saved for the active task (survives page reloads)
-  const [editorText, setEditorText] = useState<string>(() =>
-    DynamicWritingTaskService.loadDraft(currentTask.id)
+  // Restore the draft saved for the active task or submission content (survives page reloads)
+  const [editorText, setEditorText] = useState<string>(() => {
+    if (initialStored?.submission?.content) {
+      return initialStored.submission.content;
+    }
+    return DynamicWritingTaskService.loadDraft(currentTask.id);
+  });
+  const [persistedSubmission, setPersistedSubmission] = useState<WritingSubmission | null>(
+    () => initialStored?.submission ?? null,
   );
-  const [showResultModal, setShowResultModal] = useState<boolean>(false);
-  const [savedErrorIds, setSavedErrorIds] = useState<Set<string>>(new Set());
+  const [showResultModal, setShowResultModal] = useState<boolean>(
+    () => initialStored?.modalOpen ?? false,
+  );
+  const [savedErrorIds, setSavedErrorIds] = useState<Set<string>>(
+    () => new Set(initialStored?.savedErrorIds ?? []),
+  );
+
+  const activeSubmission = liveSubmission || persistedSubmission;
 
   // Debounced draft persistence: never writes on every keystroke
   useEffect(() => {
@@ -45,28 +59,64 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
     if (isEvaluating) return;
     if (editorText.trim().length === 0) return;
     try {
-      await evaluateText({
+      const result = await evaluateText({
         taskCategory: currentTask.category,
         title: currentTask.title,
         content: editorText,
         taskDescription: currentTask.description,
       });
+      setPersistedSubmission(result);
       setShowResultModal(true);
-      // Task answered: persist and serve a brand-new one for the next round
-      DynamicWritingTaskService.clearDraft();
-      setCurrentTask(DynamicWritingTaskService.completeTaskAndNext(currentTask.id));
-      setEditorText('');
       setSavedErrorIds(new Set());
+      DynamicWritingTaskService.saveActiveSubmission(result, true, []);
     } catch (err) {
-      console.warn("Writing evaluation failed", err);
+      logger.warn("Writing evaluation failed", err);
     }
+  };
+
+  // When clicking the X button in the modal: Keep the text, keep the task, just hide modal and allow reopening
+  const handleCloseModal = () => {
+    setShowResultModal(false);
+    if (activeSubmission) {
+      DynamicWritingTaskService.saveActiveSubmission(
+        activeSubmission,
+        false,
+        Array.from(savedErrorIds),
+      );
+    }
+  };
+
+  // When clicking "Continue Practicing": Advance to the next task and clear the editor
+  const handleContinuePracticing = () => {
+    setShowResultModal(false);
+    setPersistedSubmission(null);
+    DynamicWritingTaskService.clearActiveSubmission();
+    DynamicWritingTaskService.clearDraft();
+    setCurrentTask(DynamicWritingTaskService.completeTaskAndNext(currentTask.id));
+    setEditorText("");
+    setSavedErrorIds(new Set());
   };
 
   const handleNewTask = () => {
     if (isEvaluating) return;
+    setShowResultModal(false);
+    setPersistedSubmission(null);
+    DynamicWritingTaskService.clearActiveSubmission();
     DynamicWritingTaskService.clearDraft();
     setCurrentTask(DynamicWritingTaskService.completeTaskAndNext(currentTask.id));
-    setEditorText('');
+    setEditorText("");
+    setSavedErrorIds(new Set());
+  };
+
+  const handleOpenModal = () => {
+    if (activeSubmission) {
+      setShowResultModal(true);
+      DynamicWritingTaskService.saveActiveSubmission(
+        activeSubmission,
+        true,
+        Array.from(savedErrorIds),
+      );
+    }
   };
 
   const saveSpecificErrorToMemory = async (errorItem: WritingErrorItem): Promise<boolean> => {
@@ -82,22 +132,28 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
         cefrLevel: errorItem.cefrLevel || "B2",
       });
 
-      setSavedErrorIds((prev) => new Set([...prev, errorItem.id]));
+      setSavedErrorIds((prev) => {
+        const next = new Set([...prev, errorItem.id]);
+        if (activeSubmission) {
+          DynamicWritingTaskService.saveActiveSubmission(activeSubmission, showResultModal, Array.from(next));
+        }
+        return next;
+      });
       return true;
     } catch (err) {
-      console.warn("Failed to add writing correction to Memory Bank", err);
+      logger.warn("Failed to add writing correction to Memory Bank", err);
       return false;
     }
   };
 
   const saveAllErrorsToMemory = async (): Promise<number> => {
-    if (!submission) return 0;
-    const errors = submission.feedback?.extractedErrors || [];
+    if (!activeSubmission) return 0;
+    const errors = activeSubmission.feedback?.extractedErrors || [];
     if (errors.length === 0) return 0;
 
     let savedCount = 0;
     for (let i = 0; i < errors.length; i++) {
-      const id = getWritingErrorId(submission.id, i);
+      const id = getWritingErrorId(activeSubmission.id, i);
       if (!savedErrorIds.has(id)) {
         const success = await saveSpecificErrorToMemory({ ...errors[i], id });
         if (success) savedCount++;
@@ -137,7 +193,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
           <WritingSubmitBar
             hasContent={editorText.trim().length > 0}
             isEvaluating={isEvaluating}
+            hasAnalysis={Boolean(activeSubmission)}
             onSubmit={handleSubmit}
+            onViewAnalysis={handleOpenModal}
           />
         </div>
 
@@ -147,9 +205,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
             statusText={
               isEvaluating
                 ? "Analyzing your grammar, vocabulary, and register with AI..."
-                : submission
-                ? `Evaluation complete! Analyzed ${submission.wordCount} words and saved ${submission.extractedCardsCount || 0} cards to Memory Bank. New task: ${currentTask.title.toLowerCase()}.`
-                : `Current task: ${currentTask.title.toLowerCase()}. ${currentTask.toneHint} tone. I'll review your writing when you submit.`
+                : activeSubmission
+                  ? `Evaluation complete! Analyzed ${activeSubmission.wordCount} words and saved ${activeSubmission.extractedCardsCount || 0} cards to Memory Bank.`
+                  : `Current task: ${currentTask.title.toLowerCase()}. ${currentTask.toneHint} tone. I'll review your writing when you submit.`
             }
             animated={isEvaluating}
           />
@@ -164,15 +222,16 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
       </div>
 
       {/* AI Writing Analysis Modal (Interview design language) */}
-      {showResultModal && submission && (
+      {showResultModal && activeSubmission && (
         <WritingAnalysisModal
-          submission={submission}
+          submission={activeSubmission}
           savedErrorIds={savedErrorIds}
-          onClose={() => setShowResultModal(false)}
+          onClose={handleCloseModal}
+          onContinuePracticing={handleContinuePracticing}
           onSaveSpecificError={saveSpecificErrorToMemory}
           onSaveAllErrors={saveAllErrorsToMemory}
           onNavigateToMemory={() => {
-            setShowResultModal(false);
+            handleCloseModal();
             if (onNavigateToMemory) onNavigateToMemory();
           }}
         />

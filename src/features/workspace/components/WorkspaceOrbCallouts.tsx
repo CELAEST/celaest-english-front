@@ -1,9 +1,9 @@
-import React from 'react';
+import React from "react";
 import {
   CognitiveMemoryBrainIcon,
   PrecisionOpenBookIcon,
   StudioVoiceMicIcon,
-} from './WorkspaceBespokeIcons';
+} from "./WorkspaceBespokeIcons";
 
 export interface WorkspaceOrbCalloutsProps {
   onSelectNode?: ((nodeId: string) => void) | undefined;
@@ -12,28 +12,28 @@ export interface WorkspaceOrbCalloutsProps {
 export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({ onSelectNode }) => {
   const callouts = [
     {
-      id: 'memory',
-      tag: 'LAST MEMORY',
-      title: '“I struggle with meetings.”',
-      meta: 'Yesterday',
+      id: "memory",
+      tag: "LAST MEMORY",
+      title: "“I struggle with meetings.”",
+      meta: "Yesterday",
       Icon: CognitiveMemoryBrainIcon,
-      delay: '150ms',
+      delay: "150ms",
     },
     {
-      id: 'reading',
-      tag: 'NEXT READING',
-      title: 'How to communicate with confidence',
-      meta: 'Today',
+      id: "reading",
+      tag: "NEXT READING",
+      title: "How to communicate with confidence",
+      meta: "Today",
       Icon: PrecisionOpenBookIcon,
-      delay: '280ms',
+      delay: "280ms",
     },
     {
-      id: 'interview',
-      tag: 'UPCOMING INTERVIEW',
-      title: 'Mock interview practice',
-      meta: 'Tomorrow · 11:00 AM',
+      id: "interview",
+      tag: "UPCOMING INTERVIEW",
+      title: "Mock interview practice",
+      meta: "Tomorrow · 11:00 AM",
       Icon: StudioVoiceMicIcon,
-      delay: '400ms',
+      delay: "400ms",
     },
   ];
 
@@ -59,9 +59,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({ onSe
             <span className="text-[14px] sm:text-[14.5px] text-white font-medium mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors line-clamp-1">
               {item.title}
             </span>
-            <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5">
-              {item.meta}
-            </span>
+            <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5">{item.meta}</span>
           </div>
         </div>
       ))}

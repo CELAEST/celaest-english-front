@@ -5,6 +5,8 @@
  * the conversation feature (DynamicQuestionService).
  */
 
+import { WritingSubmission } from "../../../domain/entities/WritingSubmission";
+
 export interface WritingTaskItem {
   id: string;
   category: "EMAIL" | "LETTER" | "REPORT" | "PROPOSAL" | "REVIEW" | "MESSAGE";
@@ -31,7 +33,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "complaint-refund",
     category: "EMAIL",
     title: "Write a complaint email",
-    description: "Report a defective product you bought online and request a refund or replacement.",
+    description:
+      "Report a defective product you bought online and request a refund or replacement.",
     toneHint: "Firm but polite, fact-based",
     timeLimit: "15 min",
     minWords: 70,
@@ -51,7 +54,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "cover-letter",
     category: "LETTER",
     title: "Write a cover letter",
-    description: "Apply for your dream job and highlight your strongest qualifications and motivation.",
+    description:
+      "Apply for your dream job and highlight your strongest qualifications and motivation.",
     toneHint: "Confident, persuasive, tailored",
     timeLimit: "20 min",
     minWords: 120,
@@ -61,7 +65,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "post-interview-followup",
     category: "EMAIL",
     title: "Write a follow-up email",
-    description: "Follow up after a job interview: thank the interviewer and reinforce your interest.",
+    description:
+      "Follow up after a job interview: thank the interviewer and reinforce your interest.",
     toneHint: "Warm, grateful, concise",
     timeLimit: "12 min",
     minWords: 60,
@@ -71,7 +76,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "raise-meeting-request",
     category: "EMAIL",
     title: "Request a meeting with your manager",
-    description: "Ask your manager for a meeting to discuss a salary raise, justifying your request.",
+    description:
+      "Ask your manager for a meeting to discuss a salary raise, justifying your request.",
     toneHint: "Respectful, well-reasoned",
     timeLimit: "15 min",
     minWords: 70,
@@ -81,7 +87,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "project-delay-notice",
     category: "EMAIL",
     title: "Announce a project delay",
-    description: "Inform a client the project will be delayed one week and propose a recovery plan.",
+    description:
+      "Inform a client the project will be delayed one week and propose a recovery plan.",
     toneHint: "Transparent, responsible, solution-focused",
     timeLimit: "15 min",
     minWords: 80,
@@ -101,7 +108,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "internal-tool-proposal",
     category: "PROPOSAL",
     title: "Write a project proposal",
-    description: "Convince your leadership team to invest in a new internal tool. Include benefits and costs.",
+    description:
+      "Convince your leadership team to invest in a new internal tool. Include benefits and costs.",
     toneHint: "Executive, data-driven, compelling",
     timeLimit: "22 min",
     minWords: 120,
@@ -121,7 +129,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "recruiter-linkedin",
     category: "MESSAGE",
     title: "Write a LinkedIn message",
-    description: "Reach out to a recruiter about a position you are interested in and sell your profile.",
+    description:
+      "Reach out to a recruiter about a position you are interested in and sell your profile.",
     toneHint: "Short, engaging, professional",
     timeLimit: "10 min",
     minWords: 50,
@@ -131,7 +140,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "decline-invitation",
     category: "EMAIL",
     title: "Decline a business invitation",
-    description: "Politely decline a business event invitation while keeping the relationship warm.",
+    description:
+      "Politely decline a business event invitation while keeping the relationship warm.",
     toneHint: "Diplomatic, appreciative, brief",
     timeLimit: "12 min",
     minWords: 50,
@@ -141,7 +151,8 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     id: "resignation-letter",
     category: "LETTER",
     title: "Write a resignation letter",
-    description: "Announce your resignation professionally, express gratitude and offer a transition plan.",
+    description:
+      "Announce your resignation professionally, express gratitude and offer a transition plan.",
     toneHint: "Gracious, professional, forward-looking",
     timeLimit: "15 min",
     minWords: 80,
@@ -157,9 +168,59 @@ const WRITING_TASKS_POOL: WritingTaskItem[] = [
     minWords: 80,
     maxWords: 180,
   },
+  {
+    id: "tech-incident-postmortem",
+    category: "REPORT",
+    title: "Write an Incident Post-Mortem",
+    description: "Explain the root cause of a production outage, the immediate mitigation steps, and preventative measures.",
+    toneHint: "Blameless, precise, analytical",
+    timeLimit: "20 min",
+    minWords: 100,
+    maxWords: 240,
+  },
+  {
+    id: "rfc-architectural-proposal",
+    category: "PROPOSAL",
+    title: "Draft an Architectural RFC",
+    description: "Propose migrating from a monolithic architecture to asynchronous event-driven services with clear trade-offs.",
+    toneHint: "Structured, technical, persuasive",
+    timeLimit: "25 min",
+    minWords: 120,
+    maxWords: 280,
+  },
+  {
+    id: "sprint-retrospective-action",
+    category: "EMAIL",
+    title: "Summarize Sprint Retrospective Actions",
+    description: "Send an email to engineering and product outlining key takeaways and agreed action items from the sprint review.",
+    toneHint: "Collaborative, action-oriented, clear",
+    timeLimit: "15 min",
+    minWords: 75,
+    maxWords: 170,
+  },
+  {
+    id: "cross-functional-alignment-brief",
+    category: "MESSAGE",
+    title: "Send a Stakeholder Alignment Brief",
+    description: "Update senior management on the launch timeline for a new enterprise feature, addressing dependencies and risks.",
+    toneHint: "Executive-ready, concise, proactive",
+    timeLimit: "12 min",
+    minWords: 60,
+    maxWords: 150,
+  },
+  {
+    id: "product-launch-announcement",
+    category: "REPORT",
+    title: "Announce a New Product Release",
+    description: "Draft an internal release announcement detailing new capabilities, customer impact, and support documentation links.",
+    toneHint: "Celebratory, informative, professional",
+    timeLimit: "18 min",
+    minWords: 90,
+    maxWords: 200,
+  },
 ];
 
-const MAX_RECENT_TASKS = 6;
+const COMPLETED_TASKS_KEY = "lingua:writing_completed_tasks";
 const ACTIVE_TASK_STORAGE_KEY = "celaest:writing:activeTask";
 const DRAFT_STORAGE_KEY = "celaest:writing:draft";
 
@@ -169,8 +230,33 @@ interface StoredDraft {
 }
 
 export class DynamicWritingTaskService {
-  /** Recently served task ids (most recent last) to avoid immediate repetition */
+  /** Recently served task ids to avoid immediate repetition */
   private static recentTaskIds: string[] = [];
+
+  private static getCompletedTaskIds(): string[] {
+    try {
+      if (typeof window === "undefined") return [];
+      const raw = window.localStorage.getItem(COMPLETED_TASKS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private static markTaskCompleted(taskId: string): void {
+    try {
+      if (typeof window === "undefined" || !taskId) return;
+      const current = this.getCompletedTaskIds();
+      if (!current.includes(taskId)) {
+        const updated = [...current, taskId];
+        window.localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify(updated));
+      }
+    } catch {
+      // Storage unavailable
+    }
+  }
 
   private static persistActiveTask(task: WritingTaskItem): void {
     try {
@@ -192,7 +278,6 @@ export class DynamicWritingTaskService {
         if (raw) {
           const parsed = JSON.parse(raw) as WritingTaskItem;
           if (parsed?.id && WRITING_TASKS_POOL.some((t) => t.id === parsed.id)) {
-            this.recentTaskIds = [...this.recentTaskIds, parsed.id].slice(-MAX_RECENT_TASKS);
             return parsed;
           }
         }
@@ -206,15 +291,7 @@ export class DynamicWritingTaskService {
     return task;
   }
 
-  /**
-   * Call after the user answers: serves AND persists a brand-new task
-   * guaranteed to be different from the answered one
-   */
-  public static completeTaskAndNext(answeredTaskId: string): WritingTaskItem {
-    const next = this.getNextTask(answeredTaskId);
-    this.persistActiveTask(next);
-    return next;
-  }
+
 
   /**
    * Persists the draft for the given task so a page reload never loses progress.
@@ -259,17 +336,79 @@ export class DynamicWritingTaskService {
     }
   }
 
+  public static saveActiveSubmission(
+    submission: unknown,
+    modalOpen: boolean = true,
+    savedErrorIds: string[] = [],
+  ): void {
+    try {
+      if (typeof window === "undefined") return;
+      window.localStorage.setItem(
+        "lingua:writing_active_submission",
+        JSON.stringify({ submission, modalOpen, savedErrorIds }),
+      );
+    } catch {
+      // Storage unavailable
+    }
+  }
+
+  public static loadActiveSubmission(): {
+    submission: WritingSubmission;
+    modalOpen: boolean;
+    savedErrorIds: string[];
+  } | null {
+    try {
+      if (typeof window === "undefined") return null;
+      const raw = window.localStorage.getItem("lingua:writing_active_submission");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed?.submission?.id) {
+        return {
+          submission: parsed.submission,
+          modalOpen: parsed.modalOpen ?? true,
+          savedErrorIds: Array.isArray(parsed.savedErrorIds) ? parsed.savedErrorIds : [],
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  public static clearActiveSubmission(): void {
+    try {
+      if (typeof window === "undefined") return;
+      window.localStorage.removeItem("lingua:writing_active_submission");
+    } catch {
+      // noop
+    }
+  }
+
   /**
-   * Returns a random task, preferring tasks not served recently
+   * Call after the user answers: marks the task completed, and serves AND persists
+   * a brand-new uncompleted task.
+   */
+  public static completeTaskAndNext(answeredTaskId: string): WritingTaskItem {
+    if (answeredTaskId) {
+      this.markTaskCompleted(answeredTaskId);
+    }
+    const next = this.getNextTask(answeredTaskId);
+    this.persistActiveTask(next);
+    return next;
+  }
+
+  /**
+   * Returns a random task, prioritizing tasks the user has NOT completed yet
    */
   public static getRandomTask(): WritingTaskItem {
-    const candidates = WRITING_TASKS_POOL.filter(
-      (task) => !this.recentTaskIds.includes(task.id)
-    );
-    const pool = candidates.length > 0 ? candidates : WRITING_TASKS_POOL;
-    const task = pool[Math.floor(Math.random() * pool.length)];
+    const completed = this.getCompletedTaskIds();
+    const uncompleted = WRITING_TASKS_POOL.filter((t) => !completed.includes(t.id));
+    const pool = uncompleted.length > 0 ? uncompleted : WRITING_TASKS_POOL;
+    const candidates = pool.filter((task) => !this.recentTaskIds.includes(task.id));
+    const finalPool = candidates.length > 0 ? candidates : pool;
+    const task = finalPool[Math.floor(Math.random() * finalPool.length)];
 
-    this.recentTaskIds = [...this.recentTaskIds, task.id].slice(-MAX_RECENT_TASKS);
+    this.recentTaskIds = [...this.recentTaskIds, task.id].slice(-6);
     return task;
   }
 
@@ -279,9 +418,11 @@ export class DynamicWritingTaskService {
   public static getNextTask(currentTaskId?: string): WritingTaskItem {
     let task = this.getRandomTask();
     if (currentTaskId && task.id === currentTaskId) {
-      const alternatives = WRITING_TASKS_POOL.filter((t) => t.id !== currentTaskId);
-      task = alternatives[Math.floor(Math.random() * alternatives.length)];
-      this.recentTaskIds = [...this.recentTaskIds, task.id].slice(-MAX_RECENT_TASKS);
+      const completed = this.getCompletedTaskIds();
+      const uncompleted = WRITING_TASKS_POOL.filter((t) => !completed.includes(t.id) && t.id !== currentTaskId);
+      const pool = uncompleted.length > 0 ? uncompleted : WRITING_TASKS_POOL.filter((t) => t.id !== currentTaskId);
+      task = pool[Math.floor(Math.random() * pool.length)];
+      this.recentTaskIds = [...this.recentTaskIds, task.id].slice(-6);
     }
     return task;
   }

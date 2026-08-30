@@ -1,5 +1,9 @@
 import { IInterviewRepository } from "../../domain/repositories/IInterviewRepository";
 import { InterviewSession } from "../../domain/entities/InterviewSession";
+import {
+  InterviewProgressDTO,
+  SaveProgressPayload,
+} from "../../domain/repositories/IInterviewRepository";
 import { HttpClient } from "../http/HttpClient";
 
 export class ApiInterviewRepository implements IInterviewRepository {
@@ -15,11 +19,24 @@ export class ApiInterviewRepository implements IInterviewRepository {
   }
 
   connectAudioStream(sessionId: string, onSpectrumFrame: (bars: number[]) => void): WebSocket {
-    return HttpClient.connectWebSocket(`/ws/interview/${sessionId}/audio`, (data) => {
-      if (data.type === "spectrum_data" && data.bars) {
-        onSpectrumFrame(data.bars);
+    return HttpClient.connectWebSocket(`/ws/interview/${sessionId}/audio`, (data: unknown) => {
+      const payload = data as { type?: string; bars?: number[] };
+      if (payload?.type === "spectrum_data" && Array.isArray(payload.bars)) {
+        onSpectrumFrame(payload.bars);
       }
     });
+  }
+
+  async getProgress(): Promise<InterviewProgressDTO | null> {
+    try {
+      return await HttpClient.get<InterviewProgressDTO | null>("/interview/progress");
+    } catch {
+      return null;
+    }
+  }
+
+  async saveProgress(payload: SaveProgressPayload): Promise<void> {
+    await HttpClient.post<void>("/interview/progress", payload);
   }
 }
 

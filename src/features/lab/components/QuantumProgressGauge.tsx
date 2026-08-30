@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export interface QuantumProgressGaugeProps {
   value?: number; // 0 to 100
@@ -13,7 +13,7 @@ export const QuantumProgressGauge: React.FC<QuantumProgressGaugeProps> = ({
   size = 240,
   interactive = true,
   label = "Neural Proficiency",
-  sublabel = "Adaptive AI Linguistic Alignment"
+  sublabel = "Adaptive AI Linguistic Alignment",
 }) => {
   const [val, setVal] = useState<number>(initialValue);
 
@@ -52,7 +52,13 @@ export const QuantumProgressGauge: React.FC<QuantumProgressGaugeProps> = ({
 
             {/* Glowing Drop Filter for Neon Arc */}
             <filter id="gaugeGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#A27FF3" floodOpacity="0.6" />
+              <feDropShadow
+                dx="0"
+                dy="0"
+                stdDeviation="4"
+                floodColor="#A27FF3"
+                floodOpacity="0.6"
+              />
             </filter>
           </defs>
 
@@ -117,18 +123,74 @@ export const QuantumProgressGauge: React.FC<QuantumProgressGaugeProps> = ({
               strokeLinejoin="round"
             >
               {/* Vertical Connection Stems */}
-              <line x1="26" y1="14" x2="26" y2="50" strokeWidth="1.5" stroke="#7048E8" strokeOpacity="0.8" />
+              <line
+                x1="26"
+                y1="14"
+                x2="26"
+                y2="50"
+                strokeWidth="1.5"
+                stroke="#7048E8"
+                strokeOpacity="0.8"
+              />
               <line x1="32" y1="10" x2="32" y2="54" strokeWidth="1.75" stroke="#A27FF3" />
-              <line x1="38" y1="14" x2="38" y2="50" strokeWidth="1.5" stroke="#7048E8" strokeOpacity="0.8" />
+              <line
+                x1="38"
+                y1="14"
+                x2="38"
+                y2="50"
+                strokeWidth="1.5"
+                stroke="#7048E8"
+                strokeOpacity="0.8"
+              />
 
               {/* Diagonal Cross Matrix Bonds */}
-              <line x1="20" y1="20" x2="44" y2="44" strokeWidth="1.5" stroke="#8b5cf6" strokeOpacity="0.6" />
-              <line x1="20" y1="44" x2="44" y2="20" strokeWidth="1.5" stroke="#8b5cf6" strokeOpacity="0.6" />
-              <line x1="26" y1="14" x2="38" y2="50" strokeWidth="1.2" stroke="#A27FF3" strokeOpacity="0.4" />
-              <line x1="26" y1="50" x2="38" y2="14" strokeWidth="1.2" stroke="#A27FF3" strokeOpacity="0.4" />
+              <line
+                x1="20"
+                y1="20"
+                x2="44"
+                y2="44"
+                strokeWidth="1.5"
+                stroke="#8b5cf6"
+                strokeOpacity="0.6"
+              />
+              <line
+                x1="20"
+                y1="44"
+                x2="44"
+                y2="20"
+                strokeWidth="1.5"
+                stroke="#8b5cf6"
+                strokeOpacity="0.6"
+              />
+              <line
+                x1="26"
+                y1="14"
+                x2="38"
+                y2="50"
+                strokeWidth="1.2"
+                stroke="#A27FF3"
+                strokeOpacity="0.4"
+              />
+              <line
+                x1="26"
+                y1="50"
+                x2="38"
+                y2="14"
+                strokeWidth="1.2"
+                stroke="#A27FF3"
+                strokeOpacity="0.4"
+              />
 
               {/* Horizontal Center Axis */}
-              <line x1="16" y1="32" x2="48" y2="32" strokeWidth="1.5" stroke="#A27FF3" strokeOpacity="0.7" />
+              <line
+                x1="16"
+                y1="32"
+                x2="48"
+                y2="32"
+                strokeWidth="1.5"
+                stroke="#A27FF3"
+                strokeOpacity="0.7"
+              />
 
               {/* Top Satellite Nodes */}
               <circle cx="20" cy="20" r="3.5" fill="#181336" stroke="#C4B5FD" strokeWidth="1.75" />

@@ -53,10 +53,10 @@ export const ConversationMicControl: React.FC<ConversationMicControlProps> = ({
             hasText
               ? "bg-[#A27FF3] hover:bg-[#8f66ea] border-2 border-[#A27FF3] shadow-[0_0_32px_rgba(162,127,243,0.7)] scale-105"
               : isAiSpeaking
-              ? "bg-[#090A14] border-2 border-[#7750a7]/50 opacity-70 cursor-not-allowed shadow-[0_0_20px_rgba(162,127,243,0.2)]"
-              : isListening
-              ? "bg-[#090A14] border-2 border-[#A27FF3] animate-[softPulse_3s_ease-in-out_infinite] shadow-[0_0_28px_rgba(162,127,243,0.45)]"
-              : "bg-[#090A14] border-2 border-white/[0.12] hover:border-white/[0.25] opacity-95 shadow-[0_0_20px_rgba(0,0,0,0.6)]"
+                ? "bg-[#090A14] border-2 border-[#7750a7]/50 opacity-70 cursor-not-allowed shadow-[0_0_20px_rgba(162,127,243,0.2)]"
+                : isListening
+                  ? "bg-[#090A14] border-2 border-[#A27FF3] animate-[softPulse_3s_ease-in-out_infinite] shadow-[0_0_28px_rgba(162,127,243,0.45)]"
+                  : "bg-[#090A14] border-2 border-white/[0.12] hover:border-white/[0.25] opacity-95 shadow-[0_0_20px_rgba(0,0,0,0.6)]"
           }`}
         >
           {isThinking ? (
@@ -113,11 +113,7 @@ export const ConversationMicControl: React.FC<ConversationMicControlProps> = ({
               stroke="currentColor"
               strokeWidth={2.2}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </button>
         )}

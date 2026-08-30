@@ -47,22 +47,31 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
             />
             <div className="absolute left-0 bottom-10 w-72 sm:w-80 bg-[#060713] border border-[#14152b] rounded-2xl p-4 shadow-2xl z-50 animate-[fadeSlideUp_0.25s_ease-out_both]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-[#A27FF3]">STAR Interview Strategy</span>
+                <span className="text-xs font-semibold text-[#A27FF3]">
+                  STAR Interview Strategy
+                </span>
                 <button
                   onClick={() => setShowTipsModal(false)}
                   className="text-neutral-400 hover:text-white text-xs p-1 cursor-pointer"
-                >
-                  ✕
-                </button>
+                ></button>
               </div>
-              <p className="text-xs text-white/90 font-light leading-relaxed mb-3">
-                {starHint}
-              </p>
+              <p className="text-xs text-white/90 font-light leading-relaxed mb-3">{starHint}</p>
               <div className="space-y-1.5 text-[11px] text-neutral-400">
-                <p><strong className="text-[#A27FF3]">S</strong>ituation: Set the scene in 1 sentence.</p>
-                <p><strong className="text-[#A27FF3]">T</strong>ask: What was the goal or obstacle?</p>
-                <p><strong className="text-[#A27FF3]">A</strong>ction: What specific action did YOU take?</p>
-                <p><strong className="text-[#A27FF3]">R</strong>esult: What was the measurable positive outcome?</p>
+                <p>
+                  <strong className="text-[#A27FF3]">S</strong>ituation: Set the scene in 1
+                  sentence.
+                </p>
+                <p>
+                  <strong className="text-[#A27FF3]">T</strong>ask: What was the goal or obstacle?
+                </p>
+                <p>
+                  <strong className="text-[#A27FF3]">A</strong>ction: What specific action did YOU
+                  take?
+                </p>
+                <p>
+                  <strong className="text-[#A27FF3]">R</strong>esult: What was the measurable
+                  positive outcome?
+                </p>
               </div>
             </div>
           </>
@@ -88,7 +97,9 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
               d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
             />
           </svg>
-          <span className="text-xs font-normal text-white/90 group-hover:text-white">Change question</span>
+          <span className="text-xs font-normal text-white/90 group-hover:text-white">
+            Change question
+          </span>
         </button>
       )}
     </div>

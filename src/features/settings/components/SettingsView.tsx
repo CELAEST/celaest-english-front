@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { SettingsLearningSection } from "./SettingsLearningSection";
 import { SettingsPersonalSection } from "./SettingsPersonalSection";
 import { SettingsAiProvidersSection } from "./SettingsAiProvidersSection";
 import { SettingsAIMentorCard } from "./SettingsAIMentorCard";
 import { SettingsQuickActionsCard } from "./SettingsQuickActionsCard";
 import { SettingsFooterMessage } from "./SettingsFooterMessage";
+import { SettingsLevelModal } from "./SettingsLevelModal";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
 export interface SettingsViewProps {
@@ -12,13 +13,14 @@ export interface SettingsViewProps {
   onBackToWorkspace?: (() => void) | undefined;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({
-  userName = "Esteban",
-}) => {
-  const { displayName } = useSettingsProfile(userName);
+export const SettingsView: React.FC<SettingsViewProps> = ({ userName = "Esteban" }) => {
+  const { displayName, currentLevel, currentFocus, profile, updateSettings } =
+    useSettingsProfile(userName);
+  const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
+
   return (
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-4">
-      {/* ─── Header: Title + Orb + Back Button (Fixed Top Section) ─── */}
+      {/*  Header: Title + Orb + Back Button (Fixed Top Section)  */}
       <div className="relative flex items-center justify-between mb-4 sm:mb-6 pt-2 sm:pt-4 shrink-0 z-20">
         <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">
           {/* Category Tag */}
@@ -28,8 +30,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Title */}
           <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-[34px] font-sans text-[#f8f8f8] font-light tracking-wide leading-tight animate-[fadeSlideUp_0.5s_ease-out_0.08s_both]">
-            Make Lingua{" "}
-            <span className="text-[#A27FF3] font-light">yours.</span>
+            Make Lingua <span className="text-[#A27FF3] font-light">yours.</span>
           </h1>
 
           {/* Subtitle */}
@@ -48,13 +49,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* ─── Two-Column Content Canvas: Page NEVER scrolls, columns scroll independently ─── */}
+      {/*  Two-Column Content Canvas: Page NEVER scrolls, columns scroll independently  */}
       <div className="flex-1 min-h-0 w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8 xl:gap-10 overflow-hidden">
-
         {/* LEFT COLUMN: Settings Lists (Scrolls internally if height constrained, no scrollbar) */}
         <div className="flex-1 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-6 sm:gap-8 pr-1 py-1">
           <SettingsAiProvidersSection />
-          <SettingsLearningSection />
+          <SettingsLearningSection
+            currentLevel={currentLevel}
+            learningGoals={profile?.learningGoal || "Business Communication"}
+            dailyFocus={currentFocus}
+            onOpenLevelModal={() => setIsLevelModalOpen(true)}
+          />
           <SettingsPersonalSection userName={displayName} />
         </div>
 
@@ -64,8 +69,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <SettingsQuickActionsCard />
           <SettingsFooterMessage />
         </div>
-
       </div>
+
+      {/* Interactive CEFR Level Selection Modal */}
+      <SettingsLevelModal
+        isOpen={isLevelModalOpen}
+        currentLevel={currentLevel}
+        onSelectLevel={async (newLevel) => {
+          await updateSettings({ cefrLevel: newLevel });
+        }}
+        onClose={() => setIsLevelModalOpen(false)}
+      />
     </div>
   );
 };

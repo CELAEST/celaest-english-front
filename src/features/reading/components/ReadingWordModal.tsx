@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
-import {
-  VocabloTranslateIcon,
-  MemoryBankSaveIcon,
-} from "./ReadingBespokeIcons";
+import { logger } from "../../../shared/utils/logger";
+import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
 
 export interface ReadingWordModalProps {
   wordData: WordLookup | null;
@@ -113,7 +111,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         }
         setAddedSuccess(true);
       } catch (err) {
-        console.warn("Failed to save word to Memory Bank", err);
+        logger.warn("Failed to save word to Memory Bank", err);
       } finally {
         setIsAdding(false);
       }
@@ -204,23 +202,31 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               <div className="flex flex-col pl-2">
                 <h3
                   id="word-modal-title"
-                  className="text-[22px] font-bold text-white tracking-tight leading-none mt-0.5"
+                  className="text-[20px] sm:text-[22px] font-bold text-white tracking-tight leading-none mt-0.5"
                 >
                   {wordData.word}
                 </h3>
 
                 <span className="text-[11.5px] text-[#8a8b9e] font-mono italic mt-1">
-                  {wordData.phonetic || `/'${wordData.word}'/`}
+                  {wordData.phonetic?.replace(/^\/'/, "/").split(",")[0] || `/${wordData.word}/`}
                 </span>
               </div>
 
               {/* Part of Speech */}
-              <span className="text-[10.5px] text-[#6b6c82] uppercase tracking-wider font-semibold mt-2.5 pl-2">
-                {wordData.partOfSpeech || "vocabulary"}
+              <span
+                className={`text-[10.5px] uppercase tracking-wider font-semibold mt-2 pl-2 ${
+                  wordData.partOfSpeech?.toLowerCase().includes("phrasal") || wordData.word.includes(" ")
+                    ? "text-[#A27FF3]"
+                    : "text-[#6b6c82]"
+                }`}
+              >
+                {wordData.partOfSpeech?.toLowerCase().includes("phrasal") || wordData.word.includes(" ")
+                  ? "phrasal verb"
+                  : wordData.partOfSpeech || "vocabulary"}
               </span>
 
               {/* Vocablo Translation */}
-              <div className="flex items-center space-x-1.5 mt-1 pl-2">
+              <div className="flex items-center space-x-1.5 mt-2 pl-2">
                 <VocabloTranslateIcon />
                 <span className="text-[12px] font-medium text-[#c4b5fd]">
                   {wordData.spanishTranslation || wordData.word}
@@ -238,12 +244,11 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               <div className="w-full h-px bg-white/[0.05] my-3" />
 
               {/* Example Sentence */}
-              <p className="text-[11.5px] italic text-[#8e90a5] font-light leading-[1.5] mb-3 pl-2">
-                "
-                {wordData.exampleSentence ||
-                  `Using '${wordData.word}' in context enhances clarity and professional expression.`}
-                "
-              </p>
+              {wordData.exampleSentence && (
+                <p className="text-[11.5px] italic text-[#8e90a5] font-light leading-[1.5] mb-3 pl-2">
+                  "{wordData.exampleSentence.replace(/^["']+|["']+$/g, "").trim()}"
+                </p>
+              )}
 
               {/* Bottom Action: + Add to Memory */}
               <div className="flex items-center justify-start pt-0.5 pl-2">
@@ -251,24 +256,18 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                   type="button"
                   onClick={handleSaveToMemory}
                   disabled={isAdding || addedSuccess}
-                  aria-label={
-                    addedSuccess ? "Word saved to Memory" : "Add word to Memory"
-                  }
+                  aria-label={addedSuccess ? "Word saved to Memory" : "Add word to Memory"}
                   className={`text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group ${
                     addedSuccess
                       ? "text-[#4ade80]"
-                      : "text-[#b096dd] hover:text-white cursor-pointer"
+                      : "text-[#A27FF3] hover:text-white cursor-pointer"
                   }`}
                 >
                   {!addedSuccess && (
                     <MemoryBankSaveIcon className="w-3.5 h-3.5 text-[#A27FF3] group-hover:scale-110 transition-transform" />
                   )}
                   <span>
-                    {addedSuccess
-                      ? "✓ Saved to Memory"
-                      : isAdding
-                        ? "Saving..."
-                        : "Add to Memory"}
+                    {addedSuccess ? "✓ Saved to Memory" : isAdding ? "Saving..." : "Add to Memory"}
                   </span>
                 </button>
               </div>

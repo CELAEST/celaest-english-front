@@ -35,9 +35,7 @@ export const vaultMaintenance = {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `celaest-vault-export-${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`;
+    anchor.download = `celaest-vault-export-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   },

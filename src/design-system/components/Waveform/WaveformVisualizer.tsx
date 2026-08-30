@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 export interface WaveformVisualizerProps {
   isActive?: boolean;
@@ -13,14 +13,14 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
   barCount = 32,
   height = 48,
   width = 320,
-  className = '',
+  className = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationId: number;
@@ -46,8 +46,8 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
         const y = (height - barHeight) / 2;
 
         const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
-        gradient.addColorStop(0, '#b89cff');
-        gradient.addColorStop(1, '#7048e8');
+        gradient.addColorStop(0, "#b89cff");
+        gradient.addColorStop(1, "#7048e8");
 
         ctx.fillStyle = gradient;
         ctx.beginPath();

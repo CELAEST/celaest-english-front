@@ -1,8 +1,11 @@
-/**
+﻿/**
  * Audio Capture & Real-Time Speech Recognition Service
  * Handles microphone hardware access, live frequency analysis,
  * and robust SpeechRecognition for English & Spanish with continuous streaming.
  */
+
+import { ENV } from "../../../shared/constants/env";
+import { logger } from "../../../shared/utils/logger";
 
 export interface SpeechRecognitionResultItem {
   transcript: string;
@@ -85,7 +88,9 @@ export class AudioCaptureService {
       });
       this.micStream = stream;
 
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.audioContext = new AudioCtx();
         const source = this.audioContext.createMediaStreamSource(stream);
@@ -96,7 +101,7 @@ export class AudioCaptureService {
 
       return true;
     } catch (err) {
-      console.warn("Microphone access permission notice:", err);
+      logger.warn("Microphone access permission notice:", err);
       return false;
     }
   }
@@ -143,7 +148,9 @@ export class AudioCaptureService {
     if (this.micStream) {
       try {
         const mimeType = getBestAudioMimeType();
-        const recorder = mimeType ? new MediaRecorder(this.micStream, { mimeType }) : new MediaRecorder(this.micStream);
+        const recorder = mimeType
+          ? new MediaRecorder(this.micStream, { mimeType })
+          : new MediaRecorder(this.micStream);
         this.mediaRecorder = recorder;
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
@@ -152,20 +159,22 @@ export class AudioCaptureService {
         };
         recorder.start(100);
       } catch (recErr) {
-        console.warn("MediaRecorder start notice:", recErr);
+        logger.warn("MediaRecorder start notice:", recErr);
       }
     }
 
     // 2. Prepare Web Speech Recognition (for instant streaming preview)
     const SpeechRecognitionAPI =
-      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance }).webkitSpeechRecognition;
+      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance })
+        .webkitSpeechRecognition;
 
     this.isListening = true;
     this.accumulatedTranscript = "";
 
     if (!SpeechRecognitionAPI) {
-      console.warn("Speech Recognition API not supported on this browser.");
+      logger.warn("Speech Recognition API not supported on this browser.");
       return null;
     }
 
@@ -201,7 +210,13 @@ export class AudioCaptureService {
             }
           }
 
-          const combined = (this.accumulatedTranscript + " " + sessionFinalTranscript + " " + currentInterim)
+          const combined = (
+            this.accumulatedTranscript +
+            " " +
+            sessionFinalTranscript +
+            " " +
+            currentInterim
+          )
             .replace(/\s+/g, " ")
             .trim();
 
@@ -213,7 +228,7 @@ export class AudioCaptureService {
           if (errCode === "no-speech") {
             return;
           }
-          console.warn("Speech recognition notice:", errCode || e);
+          logger.warn("Speech recognition notice:", errCode || e);
           if (options.onError) options.onError(e);
         };
 
@@ -244,7 +259,7 @@ export class AudioCaptureService {
         this.recognizer = recognizer;
         return recognizer;
       } catch (err) {
-        console.warn("Failed to start SpeechRecognition:", err);
+        logger.warn("Failed to start SpeechRecognition:", err);
         if (options.onError) options.onError(err);
         return null;
       }
@@ -269,7 +284,9 @@ export class AudioCaptureService {
     }
 
     const durationSeconds =
-      this.recordingStartTime > 0 ? Math.max(1, Math.round((Date.now() - this.recordingStartTime) / 1000)) : 0;
+      this.recordingStartTime > 0
+        ? Math.max(1, Math.round((Date.now() - this.recordingStartTime) / 1000))
+        : 0;
     this.recordingStartTime = 0;
 
     if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") {
@@ -298,7 +315,7 @@ export class AudioCaptureService {
           this.mediaRecorder = null;
           resolve({ audioBlob: blob, audioUrl: url, durationSeconds });
         } catch (err) {
-          console.warn("Error creating audio blob:", err);
+          logger.warn("Error creating audio blob:", err);
           resolve({ audioBlob: null, audioUrl: null, durationSeconds });
         }
       };
@@ -322,14 +339,14 @@ export class AudioCaptureService {
       const extension = audioBlob.type.includes("mp4")
         ? "mp4"
         : audioBlob.type.includes("ogg")
-        ? "ogg"
-        : audioBlob.type.includes("wav")
-        ? "wav"
-        : "webm";
+          ? "ogg"
+          : audioBlob.type.includes("wav")
+            ? "wav"
+            : "webm";
 
       formData.append("file", audioBlob, `recording.${extension}`);
 
-      const response = await fetch("http://127.0.0.1:8085/api/v1/ai/audio/transcribe", {
+      const response = await fetch(`${ENV.coreAiUrl}/ai/audio/transcribe`, {
         method: "POST",
         body: formData,
       });
@@ -342,7 +359,7 @@ export class AudioCaptureService {
         }
       }
     } catch (err) {
-      console.warn("Whisper transcription via core error:", err);
+      logger.warn("Whisper transcription via core error:", err);
     }
 
     return null;
@@ -400,4 +417,3 @@ export class AudioCaptureService {
     }
   }
 }
-

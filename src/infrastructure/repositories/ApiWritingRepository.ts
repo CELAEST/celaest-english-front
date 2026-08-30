@@ -7,14 +7,18 @@ export class ApiWritingRepository implements IWritingRepository {
     taskCategory: string,
     title: string,
     content: string,
-    taskDescription?: string
+    taskDescription?: string,
   ): Promise<WritingSubmission> {
-    return HttpClient.post<WritingSubmission>("/writing/evaluate", {
-      taskCategory,
-      title,
-      taskDescription,
-      content,
-    });
+    return HttpClient.post<WritingSubmission>(
+      "/writing/evaluate",
+      {
+        taskCategory,
+        title,
+        taskDescription,
+        content,
+      },
+      { timeoutMs: 60_000 },
+    );
   }
 }
 

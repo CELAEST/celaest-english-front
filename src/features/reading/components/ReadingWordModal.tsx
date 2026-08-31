@@ -150,7 +150,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           aria-hidden="true"
         />
 
-        {/* Spatial 3D Flashcard Container Style */}
+        {/* Spatial 3D Flashcard Container Style with Ambient Backlight Glow */}
         <div
           ref={cardRef}
           role="dialog"
@@ -163,9 +163,21 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
             left: `${coords.left}px`,
             transform: `perspective(1200px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
           }}
-          className="fixed z-[9999] w-[275px] sm:w-[295px] pl-6 pr-5 pt-5 pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out"
+          className="fixed z-[9999] w-[275px] sm:w-[295px] pl-6 pr-5 pt-5 pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_35px_rgba(112,72,232,0.15)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Ambient Backlight Glow for High Contrast & Depth */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-3 sm:-inset-4 rounded-[36px] transition-opacity duration-300 opacity-65 group-hover:opacity-90 z-[-1]"
+            style={{
+              background:
+                "radial-gradient(75% 65% at 50% 50%, rgba(112, 72, 232, 0.28), rgba(162, 127, 243, 0.12) 50%, transparent 80%)",
+              filter: "blur(26px)",
+              transform: "translate3d(0, 0, -10px)",
+            }}
+          />
+
           {/* Dynamic Specular Sheen */}
           <div
             aria-hidden="true"

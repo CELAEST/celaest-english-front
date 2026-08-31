@@ -124,19 +124,22 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           {/* Separator Line */}
           <div className="w-8 h-[1px] bg-[#111220] my-0.5" />
 
-          {/* User Profile Capsule Item */}
+          {/* User Profile Capsule Item — Navigates to Settings */}
           <button
-            onClick={() => onSelectNav && onSelectNav("onboarding")}
+            onClick={() => onSelectNav && onSelectNav("settings")}
             className={`flex items-center w-full py-2 rounded-2xl hover:bg-[#111220] transition-all cursor-pointer group/user ${
+              activeItem === "settings" ? "bg-[#111220] border border-[#7048E8]/30 shadow-[0_0_12px_rgba(112,72,232,0.15)]" : ""
+            } ${
               isHovered ? "px-2 justify-start" : "justify-center"
             }`}
+            aria-label="User profile and settings"
           >
-            <div className="w-9 h-9 rounded-full bg-[#111220] border border-[#231956] flex items-center justify-center text-[#f8f8f8] font-medium text-sm shadow-[0_2px_10px_rgba(0,0,0,0.4)] shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[#111220] border border-[#231956] group-hover/user:border-[#7048E8] flex items-center justify-center text-[#f8f8f8] font-medium text-sm shadow-[0_2px_10px_rgba(0,0,0,0.4)] shrink-0 transition-colors">
               {userName.charAt(0)}
             </div>
             {isHovered && (
               <div className="flex flex-col items-start ml-3 overflow-hidden text-left">
-                <span className="text-sm font-medium text-[#f8f8f8] truncate">{userName}</span>
+                <span className="text-sm font-medium text-[#f8f8f8] truncate group-hover/user:text-[#DDD6FE] transition-colors">{userName}</span>
                 <span className="text-[10px] text-[#f8f8f8]/60 font-light tracking-wider uppercase truncate">
                   {userLevel}
                 </span>
@@ -150,6 +153,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               try {
                 const { SupabaseAuthAdapter } = await import("../../../infrastructure/adapters/auth/SupabaseAuthAdapter");
                 await SupabaseAuthAdapter.getInstance().logout();
+                localStorage.removeItem("lingua_onboarding_completed");
+                localStorage.removeItem("lingua_user_settings");
               } catch (e) {
                 console.error("Logout error", e);
               }
@@ -158,12 +163,13 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             className={`flex items-center w-full py-2.5 rounded-2xl text-[#f8f8f8] hover:bg-[#111220] transition-all cursor-pointer group/logout ${
               isHovered ? "px-3.5 justify-start" : "justify-center"
             }`}
+            aria-label="Log out"
           >
             <div className="flex items-center justify-center w-6 h-6 shrink-0 text-[#f8f8f8]">
-              <LogoutIcon className="w-5 h-5 text-[#f8f8f8] group-hover/logout:scale-110 transition-transform" />
+              <LogoutIcon className="w-5 h-5 text-[#f8f8f8] group-hover/logout:scale-110 group-hover/logout:text-rose-400 transition-all" />
             </div>
             {isHovered && (
-              <span className="ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap text-[#f8f8f8]">
+              <span className="ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap text-[#f8f8f8] group-hover/logout:text-rose-400 transition-colors">
                 Logout
               </span>
             )}

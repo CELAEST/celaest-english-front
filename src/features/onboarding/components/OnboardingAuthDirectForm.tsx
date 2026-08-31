@@ -5,7 +5,7 @@ import { AuthUser } from "../../../application/ports/IAuthService";
 
 export interface OnboardingAuthDirectFormProps {
   mode: "login" | "register";
-  onSuccess: (user: AuthUser) => void;
+  onSuccess: (user: AuthUser, mode: "login" | "register") => void;
   loading?: boolean;
 }
 
@@ -36,7 +36,7 @@ export const OnboardingAuthDirectForm: React.FC<OnboardingAuthDirectFormProps> =
     setIsLoading(false);
 
     if (result.success && result.user) {
-      onSuccess(result.user);
+      onSuccess(result.user, mode);
     } else {
       setErrorMessage(result.error || "Authentication failed. Please check your credentials.");
     }

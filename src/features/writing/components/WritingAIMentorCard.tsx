@@ -14,25 +14,28 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.mem
     animated = true,
   }) => {
     return (
-      <div className="bg-[#05060c] border border-[#111220] hover:border-[#1a1a35] transition-colors duration-300 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col space-y-3 shrink-0 animate-[slideInRight_0.45s_ease-out_both]">
+      <div className="relative bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 rounded-3xl p-5 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col space-y-3 shrink-0 overflow-hidden animate-[slideInRight_0.45s_ease-out_both]">
+        {/* Top Specular Hairline */}
+        <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+
         {/* Header with Title and Clean Active Status */}
-        <div className="flex items-center justify-between">
-          <span className="text-[#f8f8f8] font-medium text-sm sm:text-base tracking-wide">
+        <div className="flex items-center justify-between z-10">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
             AI Mentor
           </span>
           {isActive && (
-            <span className="text-[11px] tracking-wider uppercase font-semibold text-[#4ade80] filter drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-emerald-400">
               Active
             </span>
           )}
         </div>
 
         {/* Subtitle / Feedback Text */}
-        <p className="text-xs sm:text-sm text-[#8a8a9e] font-light leading-relaxed">{statusText}</p>
+        <p className="text-[11px] font-mono text-white/30 leading-relaxed z-10">{statusText}</p>
 
-        {/* Compact Purple Equalizer Waveform Animation */}
+        {/* Compact Waveform */}
         <div
-          className="w-full h-8 flex items-center justify-center gap-[3px] pt-1"
+          className="w-full h-8 flex items-center justify-center gap-[3px] pt-1 z-10"
           aria-hidden="true"
         >
           {Array.from({ length: 45 }).map((_, i) => {
@@ -47,9 +50,8 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.mem
                   width: "1.5px",
                   height: px,
                   borderRadius: "1px",
-                  backgroundColor: animated ? "rgba(162,127,243,0.7)" : "rgba(162,127,243,0.28)",
-                  boxShadow: animated ? "0 0 6px rgba(162,127,243,0.5)" : "none",
-                  animationDuration: `${1.2 + (i % 5) * 0.2}s`,
+                  backgroundColor: animated ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)",
+                  animationDuration: `${1.4 + (i % 5) * 0.2}s`,
                 }}
               />
             );
@@ -59,3 +61,5 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.mem
     );
   },
 );
+
+WritingAIMentorCard.displayName = "WritingAIMentorCard";

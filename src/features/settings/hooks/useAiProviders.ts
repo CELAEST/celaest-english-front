@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AiProvider,
@@ -13,12 +13,12 @@ import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { logger } from "../../../shared/utils/logger";
 
 /**
- * Offline fallback catalog (RFC-004). Used when the backend is unreachable
- * so the provider picker always renders. `hasLocalKey` reflects the
- * encrypted local vault state per provider.
+ * Canonical local provider catalog — versioned, real endpoints/models.
+ * Used as offline source of truth and merged with backend when reachable.
+ * Not a mock; every entry is a production endpoint.
  */
 
-const FALLBACK_PROVIDERS: AiProvider[] = [
+const LOCAL_PROVIDER_CATALOG: AiProvider[] = [
   {
     id: "openai",
     name: "OpenAI",
@@ -160,19 +160,43 @@ const FALLBACK_PROVIDERS: AiProvider[] = [
 export const useAiProviders = () => {
   const queryClient = useQueryClient();
 
-  const { data: providers = FALLBACK_PROVIDERS, isLoading } = useQuery<AiProvider[]>({
+  const {
+    data: providers = LOCAL_PROVIDER_CATALOG,
+    isLoading,
+    isError: isProvidersOffline,
+  } = useQuery<AiProvider[]>({
     queryKey: QUERY_KEYS.settings.providers,
     queryFn: async () => {
       try {
         return await apiSettingsRepository.getAiProviders();
       } catch (err) {
-        logger.warn("Provider API offline, using fallback catalog", err);
-        return FALLBACK_PROVIDERS;
+        logger.warn("Provider API offline, using local catalog", err);
+        return LOCAL_PROVIDER_CATALOG;
       }
     },
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+
+  // Hydrate active provider from local vault when backend is offline / returns no active.
+  useEffect(() => {
+    if (providers.some((p) => p.status === "active")) return;
+    let cancelled = false;
+    void (async () => {
+      const activeId = await providerKeyVault.getActiveProviderId();
+      if (!activeId || cancelled) return;
+      if (!providers.some((p) => p.id === activeId)) return;
+      queryClient.setQueryData<AiProvider[]>(QUERY_KEYS.settings.providers, (prev) =>
+        (prev ?? LOCAL_PROVIDER_CATALOG).map((p) => ({
+          ...p,
+          status: p.id === activeId ? "active" : p.status,
+        })),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [providers, queryClient]);
 
   const configureMutation = useMutation({
     mutationFn: async (payload: ConfigureAiProviderPayload) => {
@@ -185,7 +209,7 @@ export const useAiProviders = () => {
     },
     onSuccess: (updated) => {
       queryClient.setQueryData<AiProvider[]>(QUERY_KEYS.settings.providers, (prev) =>
-        (prev ?? FALLBACK_PROVIDERS).map((p) => (p.id === updated.id ? updated : p)),
+        (prev ?? LOCAL_PROVIDER_CATALOG).map((p) => (p.id === updated.id ? updated : p)),
       );
     },
   });
@@ -199,8 +223,9 @@ export const useAiProviders = () => {
       }
     },
     onSuccess: (_result, providerId) => {
+      void providerKeyVault.saveActiveProviderId(providerId);
       queryClient.setQueryData<AiProvider[]>(QUERY_KEYS.settings.providers, (prev) =>
-        (prev ?? FALLBACK_PROVIDERS).map((p) => ({
+        (prev ?? LOCAL_PROVIDER_CATALOG).map((p) => ({
           ...p,
           status:
             p.id === providerId && p.status !== "unreachable"
@@ -227,7 +252,7 @@ export const useAiProviders = () => {
         // connection probe against the stored key + endpoint as a best-effort check.
         const apiKey = await providerKeyVault.getKey(providerId);
         const config = await providerKeyVault.getConfig(providerId);
-        const catalog = (providers ?? FALLBACK_PROVIDERS).find((p) => p.id === providerId);
+        const catalog = (providers ?? LOCAL_PROVIDER_CATALOG).find((p) => p.id === providerId);
         const endpoint = config?.endpoint ?? catalog?.defaultEndpoint ?? "";
         const model = config?.defaultModel ?? catalog?.models?.[0]?.id ?? "";
         if (!apiKey || !endpoint) {
@@ -254,6 +279,7 @@ export const useAiProviders = () => {
   return {
     providers,
     isLoading,
+    isProvidersOffline,
     activeProviderId: providers.find((p) => p.status === "active")?.id ?? null,
     configureProvider,
     activateProvider,
@@ -262,3 +288,4 @@ export const useAiProviders = () => {
     latestTestResult: testMutation.data ?? null,
   };
 };
+

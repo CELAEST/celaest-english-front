@@ -6,6 +6,13 @@ import { SettingsAIMentorCard } from "./SettingsAIMentorCard";
 import { SettingsQuickActionsCard } from "./SettingsQuickActionsCard";
 import { SettingsFooterMessage } from "./SettingsFooterMessage";
 import { SettingsLevelModal } from "./SettingsLevelModal";
+import { SettingsGoalsModal } from "./SettingsGoalsModal";
+import { SettingsPreferencesModal } from "./SettingsPreferencesModal";
+import { SettingsFocusModal } from "./SettingsFocusModal";
+import { SettingsProfileModal } from "./SettingsProfileModal";
+import { SettingsNotificationsModal } from "./SettingsNotificationsModal";
+import { SettingsPrivacyModal } from "./SettingsPrivacyModal";
+import { SettingsAboutModal } from "./SettingsAboutModal";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
 export interface SettingsViewProps {
@@ -13,10 +20,21 @@ export interface SettingsViewProps {
   onBackToWorkspace?: (() => void) | undefined;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ userName = "Esteban" }) => {
-  const { displayName, currentLevel, currentFocus, profile, updateSettings } =
+export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: SettingsViewProps) => {
+  const { displayName, currentLevel, currentFocus, profile, isLoading, updateSettings } =
     useSettingsProfile(userName);
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
+  const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [notificationPref, setNotificationPref] = useState<string>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("celaest:notification-pref") ?? "Smart" : "Smart",
+  );
+  const isOffline = !isLoading && profile === null;
 
   return (
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-4">
@@ -53,14 +71,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName = "Esteban"
       <div className="flex-1 min-h-0 w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8 xl:gap-10 overflow-hidden">
         {/* LEFT COLUMN: Settings Lists (Scrolls internally if height constrained, no scrollbar) */}
         <div className="flex-1 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-6 sm:gap-8 pr-1 py-1">
+          {isOffline ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-xs leading-relaxed text-amber-200/90">
+              Offline — showing local settings. Your changes will be saved on this device and synced when the service is back.
+            </div>
+          ) : null}
           <SettingsAiProvidersSection />
           <SettingsLearningSection
             currentLevel={currentLevel}
-            learningGoals={profile?.learningGoal || "Business Communication"}
+            learningGoals={profile?.learningGoal}
             dailyFocus={currentFocus}
+            preferenceStyle={profile?.preferenceStyle}
             onOpenLevelModal={() => setIsLevelModalOpen(true)}
+            onOpenGoalsModal={() => setIsGoalsModalOpen(true)}
+            onOpenPreferencesModal={() => setIsPreferencesModalOpen(true)}
+            onOpenFocusModal={() => setIsFocusModalOpen(true)}
           />
-          <SettingsPersonalSection userName={displayName} />
+          <SettingsPersonalSection
+            userName={displayName}
+            notificationPref={notificationPref}
+            onItemClick={(item) => {
+              if (item === "profile") setIsProfileModalOpen(true);
+              else if (item === "notifications") setIsNotificationsModalOpen(true);
+              else if (item === "privacy") setIsPrivacyModalOpen(true);
+              else if (item === "about") setIsAboutModalOpen(true);
+            }}
+          />
         </div>
 
         {/* RIGHT COLUMN: Sidebar Cards Stack (Scrolls internally if height constrained, no scrollbar) */}
@@ -80,6 +116,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName = "Esteban"
         }}
         onClose={() => setIsLevelModalOpen(false)}
       />
+      <SettingsGoalsModal
+        isOpen={isGoalsModalOpen}
+        currentGoal={profile?.learningGoal}
+        onSelectGoal={async (newGoal) => {
+          await updateSettings({ learningGoal: newGoal });
+        }}
+        onClose={() => setIsGoalsModalOpen(false)}
+      />
+      <SettingsPreferencesModal
+        isOpen={isPreferencesModalOpen}
+        currentPreference={profile?.preferenceStyle}
+        onSelectPreference={async (newPref) => {
+          await updateSettings({ preferenceStyle: newPref });
+        }}
+        onClose={() => setIsPreferencesModalOpen(false)}
+      />
+      <SettingsFocusModal
+        isOpen={isFocusModalOpen}
+        currentFocus={currentFocus}
+        onSelectFocus={async (newFocus) => {
+          await updateSettings({ dailyFocus: newFocus });
+        }}
+        onClose={() => setIsFocusModalOpen(false)}
+      />
+      <SettingsProfileModal
+        isOpen={isProfileModalOpen}
+        currentName={displayName}
+        currentEmail={profile?.email}
+        onSave={async ({ name, email }) => {
+          await updateSettings({ name, ...(email ? { email } : {}) });
+        }}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
+      <SettingsNotificationsModal
+        isOpen={isNotificationsModalOpen}
+        currentPref={notificationPref}
+        onSave={async (pref) => {
+          localStorage.setItem("celaest:notification-pref", pref);
+          setNotificationPref(pref);
+        }}
+        onClose={() => setIsNotificationsModalOpen(false)}
+      />
+      <SettingsPrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
+      <SettingsAboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
     </div>
   );
 };

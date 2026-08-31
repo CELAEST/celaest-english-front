@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { OnboardingStepProgress } from "./OnboardingStepProgress";
 import { LearnerProfileData } from "../types";
+import { ProfessionNormalizerService } from "../services/professionNormalizerService";
 
 export interface OnboardingQuestionsStepProps {
   profile: LearnerProfileData;
@@ -42,9 +43,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
     if (subStep < 3) {
       setSubStep((prev) => (prev + 1) as 0 | 1 | 2 | 3);
     } else {
-      if (professionInput.trim()) {
-        onUpdateProfile({ profession: professionInput.trim() });
-      }
+      const cleanProfession = ProfessionNormalizerService.normalize(professionInput);
+      onUpdateProfile({ profession: cleanProfession });
       onNext();
     }
   };

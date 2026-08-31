@@ -1,19 +1,24 @@
 import { useState } from "react";
 import { OnboardingStep, UserAnswer, LearnerProfileData } from "../types";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export const useOnboardingFlow = () => {
-  // Initial entry point is Auth (Sign In / Register)
-  const [step, setStep] = useState<OnboardingStep>("auth");
+  const authAdapter = SupabaseAuthAdapter.getInstance();
+  const storedUser = authAdapter.getStoredUser();
+  const isAuth = authAdapter.isAuthenticated();
+
+  // If already authenticated (e.g. Google OAuth or session), land directly on Welcome / Begin
+  const [step, setStep] = useState<OnboardingStep>(() => (isAuth ? "welcome" : "auth"));
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfileData>({
-    name: "Learner",
-    email: "",
+    name: storedUser?.name || "Learner",
+    email: storedUser?.email || "",
     learningGoal: "Tech Career & AI",
     preferenceStyle: "Conversation First",
     dailyFocus: "20 min",
-    profession: "Software Engineer",
+    profession: "Software & Technology",
     speakingConfidence: "Medium",
     cefrLevel: "B1 — Intermediate",
     conversationStyle: "Direct & Structured",
@@ -30,8 +35,9 @@ export const useOnboardingFlow = () => {
   };
 
   const prevStep = () => {
-    if (step === "welcome") setStep("auth");
-    else if (step === "questions") setStep("welcome");
+    if (step === "welcome") {
+      if (!isAuth) setStep("auth");
+    } else if (step === "questions") setStep("welcome");
     else if (step === "dna-analysis") setStep("questions");
     else if (step === "first-conversation") setStep("dna-analysis");
     else if (step === "ready") setStep("first-conversation");

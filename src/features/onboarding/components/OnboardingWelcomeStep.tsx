@@ -1,4 +1,5 @@
 import React from "react";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export interface OnboardingWelcomeStepProps {
   onBegin: () => void;
@@ -6,6 +7,8 @@ export interface OnboardingWelcomeStepProps {
 }
 
 export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ onBegin, onOpenLogin }) => {
+  const isAuth = SupabaseAuthAdapter.getInstance().isAuthenticated();
+
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto">
       {/* High-Definition Hero Background Graphic Asset */}
@@ -65,7 +68,7 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
             </svg>
           </button>
 
-          {onOpenLogin && (
+          {!isAuth && onOpenLogin && (
             <button
               type="button"
               onClick={onOpenLogin}

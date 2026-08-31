@@ -6,32 +6,54 @@ import {
 } from "./WorkspaceBespokeIcons";
 
 export interface WorkspaceOrbCalloutsProps {
+  learningGoal?: string | undefined;
+  profession?: string | undefined;
   onSelectNode?: ((nodeId: string) => void) | undefined;
 }
 
-export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({ onSelectNode }) => {
+export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
+  learningGoal,
+  profession,
+  onSelectNode,
+}) => {
+  // No eager fetch — memory/reading load only when entering their feature.
+  // Workspace shows honest placeholders; dynamic counts appear after first visit (warm cache).
+  const activeMemoryTitle = "“Daily conversation review”";
+
+  const activeMemoryMeta = "Ready for practice";
+
+  const activeReadingTitle = "Mastering Modern Leadership and Team Alignment";
+  const activeReadingMeta = "3 min read · Today";
+
+  // Dynamic interview track from user profile
+  const activeInterviewTitle = learningGoal
+    ? `${learningGoal} Simulation`
+    : profession
+      ? `${profession} Interview`
+      : "Mock interview practice";
+
   const callouts = [
     {
       id: "memory",
       tag: "LAST MEMORY",
-      title: "“I struggle with meetings.”",
-      meta: "Yesterday",
+      title: activeMemoryTitle,
+      meta: activeMemoryMeta,
       Icon: CognitiveMemoryBrainIcon,
       delay: "150ms",
     },
     {
       id: "reading",
       tag: "NEXT READING",
-      title: "How to communicate with confidence",
-      meta: "Today",
+      title: activeReadingTitle,
+      meta: activeReadingMeta,
       Icon: PrecisionOpenBookIcon,
       delay: "280ms",
     },
     {
       id: "interview",
       tag: "UPCOMING INTERVIEW",
-      title: "Mock interview practice",
-      meta: "Tomorrow · 11:00 AM",
+      title: activeInterviewTitle,
+      meta: "Live AI Simulation",
       Icon: StudioVoiceMicIcon,
       delay: "400ms",
     },
@@ -52,14 +74,14 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({ onSe
           </div>
 
           {/* Clean High-Contrast Typography */}
-          <div className="flex flex-col">
+          <div className="flex flex-col max-w-[220px] sm:max-w-[260px]">
             <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.2em] text-[#B197FF] uppercase">
               {item.tag}
             </span>
-            <span className="text-[14px] sm:text-[14.5px] text-white font-medium mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors line-clamp-1">
+            <span className="text-[14px] sm:text-[14.5px] text-white font-medium mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors truncate">
               {item.title}
             </span>
-            <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5">{item.meta}</span>
+            <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5 truncate">{item.meta}</span>
           </div>
         </div>
       ))}

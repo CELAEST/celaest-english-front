@@ -40,9 +40,9 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
     );
 
     // Front Face assertions
-    expect(screen.getByText("SPEAKING")).toBeDefined();
-    expect(screen.getByText("YOU SAID")).toBeDefined();
-    expect(screen.getByText("BETTER WAY")).toBeDefined();
+    expect(screen.getAllByText(/SPEAKING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/YOU SAID/i)).toBeDefined();
+    expect(screen.getByText(/BETTER WAY/i)).toBeDefined();
 
     // Flip to Back Face
     rerender(
@@ -57,11 +57,11 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
       />,
     );
 
-    expect(screen.getByText("DETAILS · SPEAKING")).toBeDefined();
-    expect(screen.getByText("CORRECCIÓN ESPECÍFICA")).toBeDefined();
-    expect(screen.getByText("TRADUCCIÓN")).toBeDefined();
-    expect(screen.getByText("Estoy de acuerdo contigo")).toBeDefined();
-    expect(screen.getByText("POR QUÉ / EXPLICACIÓN")).toBeDefined();
+    expect(screen.getAllByText(/SPEAKING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Correction Syntax Diff/i)).toBeDefined();
+    expect(screen.getByText(/Traducción al Español/i)).toBeDefined();
+    expect(screen.getByText(/Estoy de acuerdo contigo/i)).toBeDefined();
+    expect(screen.getAllByText(/Grammar Rule & Context/i).length).toBeGreaterThan(0);
   });
 
   it("renders Writing card with editorial register and style rules", () => {
@@ -88,9 +88,9 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
     );
 
     // Front Face for Writing
-    expect(screen.getByText("WRITING")).toBeDefined();
-    expect(screen.getByText("YOU WROTE")).toBeDefined();
-    expect(screen.getByText("REFINED VERSION")).toBeDefined();
+    expect(screen.getAllByText(/WRITING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/ORIGINAL DRAFT/i)).toBeDefined();
+    expect(screen.getByText(/EXECUTIVE POLISH/i)).toBeDefined();
 
     // Back Face for Writing
     rerender(
@@ -103,10 +103,10 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
       />,
     );
 
-    expect(screen.getByText("DETAILS · WRITING")).toBeDefined();
-    expect(screen.getByText("AJUSTE EDITORIAL Y REGISTRO")).toBeDefined();
-    expect(screen.getByText("TRADUCCIÓN Y SENTIDO")).toBeDefined();
-    expect(screen.getByText("REGLA DE ESTILO Y REDACCIÓN")).toBeDefined();
+    expect(screen.getAllByText(/WRITING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Ajuste Editorial & Registro/i)).toBeDefined();
+    expect(screen.getByText(/Traducción & Sentido Conceptual/i)).toBeDefined();
+    expect(screen.getByText(/Regla de Concisión/i)).toBeDefined();
   });
 
   it("renders Reading card with vocabulary term, context, and definition", () => {
@@ -132,10 +132,10 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
     );
 
     // Front Face for Reading
-    expect(screen.getByText("READING")).toBeDefined();
-    expect(screen.getByText("VOCABULARY TERM")).toBeDefined();
+    expect(screen.getAllByText(/READING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/TECHNICAL TERM|VOCABULARY TERM/i)).toBeDefined();
     expect(screen.getAllByText("relentless").length).toBeGreaterThan(0);
-    expect(screen.getByText("CONTEXT IN READING")).toBeDefined();
+    expect(screen.getByText(/CONTEXT IN READING/i)).toBeDefined();
 
     // Back Face for Reading
     rerender(
@@ -148,10 +148,10 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
       />,
     );
 
-    expect(screen.getByText("DETAILS · READING")).toBeDefined();
-    expect(screen.getByText("DEFINICIÓN Y SIGNIFICADO")).toBeDefined();
-    expect(screen.getByText("Implacable, incesante, constante.")).toBeDefined();
-    expect(screen.getByText("USO Y CATEGORÍA GRAMATICAL")).toBeDefined();
+    expect(screen.getAllByText(/READING/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Definición & Significado/i)).toBeDefined();
+    expect(screen.getByText(/Implacable, incesante, constante./i)).toBeDefined();
+    expect(screen.getByText(/Categoría & Contexto de Uso/i)).toBeDefined();
   });
 
   it("handles delete action trigger", () => {

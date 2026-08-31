@@ -1,5 +1,6 @@
 import React from "react";
 import { logger } from "../utils/logger";
+import { captureAppException } from "../../infrastructure/monitoring/sentry";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     logger.error("Unhandled UI error:", error, info.componentStack);
+    captureAppException(error, { componentStack: info.componentStack });
   }
 
   private handleReload = (): void => {

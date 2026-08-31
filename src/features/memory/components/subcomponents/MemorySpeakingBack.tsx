@@ -10,16 +10,16 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
   const grammarExplanation = card.grammarExplanation;
 
   return (
-    <div className="flex flex-col justify-center gap-3.5 sm:gap-4 lg:gap-5 my-auto py-1 z-10 overflow-hidden">
-      {/* Optional Specific Error Word vs Correct Word Diff */}
+    <div className="flex flex-col justify-center space-y-5 my-auto py-2 z-10 select-none">
+      {/* 1. Specific Error Diff */}
       {(card.errorWord || card.correctWord) && (
-        <div className="space-y-1">
-          <span className="block text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8E90A6]">
-            CORRECCIÓN ESPECÍFICA
+        <div className="space-y-1.5 pl-3 border-l border-white/20">
+          <span className="block text-[10px] font-mono uppercase tracking-widest text-white/40">
+            Correction Syntax Diff
           </span>
-          <div className="flex items-center gap-2 text-sm sm:text-base font-mono pl-3 border-l-2 border-white/[0.15]">
+          <div className="flex items-center gap-2 text-sm sm:text-base font-mono">
             {card.errorWord && (
-              <span className="line-through text-[#F87171] opacity-90">
+              <span className="line-through text-[#F87171] opacity-80">
                 {card.errorWord}
               </span>
             )}
@@ -27,7 +27,7 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
               <span className="text-white/30">→</span>
             )}
             {card.correctWord && (
-              <span className="font-semibold text-[#4ADE80]">
+              <span className="font-semibold text-[#34D399]">
                 {card.correctWord}
               </span>
             )}
@@ -35,28 +35,32 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
         </div>
       )}
 
-      {/* 1. Spanish Translation */}
-      <div className="space-y-1">
-        <span className="block text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A27FF3]">
-          TRADUCCIÓN
-        </span>
-        <p className="text-base sm:text-lg font-medium text-white/95 leading-snug sm:leading-relaxed pl-3 border-l-2 border-[#A27FF3]/40 line-clamp-3">
-          {translationSpanish}
-        </p>
-      </div>
+      {/* 2. Spanish Translation */}
+      {translationSpanish && (
+        <div className="space-y-1.5 pl-3 border-l border-white/20">
+          <span className="block text-[10px] font-mono uppercase tracking-widest text-[#A27FF3]">
+            Traducción al Español
+          </span>
+          <p className="text-sm sm:text-base font-normal text-white/90 leading-relaxed">
+            "{translationSpanish}"
+          </p>
+        </div>
+      )}
 
       {/* Subtle Divider Line */}
-      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
-      {/* 2. Grammar Explanation */}
-      <div className="space-y-1">
-        <span className="block text-[9.5px] sm:text-[10px] font-semibold uppercase tracking-[0.14em] text-[#55c9a4]">
-          POR QUÉ / EXPLICACIÓN
-        </span>
-        <p className="text-xs sm:text-[13.5px] font-normal text-[#CBD5E1] leading-relaxed pl-3 border-l-2 border-[#55c9a4]/40 line-clamp-4">
-          {grammarExplanation}
-        </p>
-      </div>
+      {/* 3. Grammar Rule / Explanation */}
+      {grammarExplanation && (
+        <div className="space-y-1.5 pl-3 border-l border-white/20">
+          <span className="block text-[10px] font-mono uppercase tracking-widest text-white/40">
+            Grammar Rule & Context
+          </span>
+          <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
+            {grammarExplanation}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

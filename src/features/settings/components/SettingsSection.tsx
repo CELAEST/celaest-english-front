@@ -42,9 +42,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
         </svg>
       </button>
 
-      {open && (
-        <div className="mt-1 animate-[fadeSlideUp_0.3s_ease-out_both]">{children}</div>
-      )}
+      {open && <div className="mt-1 animate-[fadeSlideUp_0.3s_ease-out_both]">{children}</div>}
     </div>
   );
 };

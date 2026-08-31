@@ -184,6 +184,44 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-3 sm:p-5 lg:px-8 pt-3 sm:pt-4 pb-3 sm:pb-5">
+      {/* ── Subtle Permanent Ambient Background Illuminations ── */}
+      {/* Violet core glow — center-left, anchors the card area */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[35%] left-[30%] w-[500px] h-[400px] z-0"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(112, 72, 232, 0.12), transparent 70%)",
+          filter: "blur(80px)",
+        }}
+      />
+      {/* Emerald accent — bottom-right, subtle warmth */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[10%] right-[15%] w-[420px] h-[350px] z-0"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(52, 211, 153, 0.07), transparent 70%)",
+          filter: "blur(90px)",
+        }}
+      />
+      {/* Indigo whisper — top-right, secondary depth layer */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-[5%] right-[25%] w-[380px] h-[300px] z-0"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(162, 127, 243, 0.09), transparent 70%)",
+          filter: "blur(70px)",
+        }}
+      />
+      {/* Warm crimson hint — bottom-left, very faint for tonal richness */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[20%] left-[10%] w-[300px] h-[250px] z-0"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(248, 113, 113, 0.05), transparent 70%)",
+          filter: "blur(80px)",
+        }}
+      />
+
       {/* Root Background Glowing Memory Sphere */}
       <div className="pointer-events-none absolute right-8 sm:right-28 lg:right-[260px] -top-1 sm:top-1 w-[155px] sm:w-[190px] lg:w-[230px] h-[155px] sm:h-[190px] lg:h-[230px] z-0 opacity-90">
         <img
@@ -261,6 +299,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
                 onNext={handleNextCard}
                 onBookmark={onBookmark}
                 onDelete={handleDeleteCard}
+                onReviewScore={handleReviewScore}
               />
             </div>
           </div>

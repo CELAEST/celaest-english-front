@@ -1,6 +1,7 @@
 import React from "react";
 import { MemoryCard } from "../../../../domain/entities/MemoryCard";
 import { HighlightWord } from "./HighlightWord";
+import { Volume2 } from "lucide-react";
 
 interface MemoryReadingFrontProps {
   card: MemoryCard;
@@ -26,52 +27,51 @@ export const MemoryReadingFront: React.FC<MemoryReadingFrontProps> = ({
         : "";
 
   return (
-    <div className="flex flex-col justify-center gap-4 sm:gap-5 lg:gap-6 my-auto py-1 z-10 overflow-hidden">
-      {/* 1. VOCABULARY TERM Section */}
-      <div className="space-y-1 sm:space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="block text-[10px] sm:text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#A27FF3]">
-            VOCABULARY TERM
+    <div className="flex flex-col justify-center space-y-6 my-auto py-2 z-10 select-none">
+      {/* 1. TECHNICAL TERM Section */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="block text-[10px] font-mono uppercase tracking-widest text-[#A27FF3]">
+            TECHNICAL TERM
           </span>
 
-          {/* Pronunciation Audio Button */}
+          {/* Clean Audio Speaker */}
           <button
             type="button"
             onClick={onPlayVoice}
             aria-label="Listen to pronunciation"
-            className={`p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[#C4B5FD] hover:text-white hover:bg-[#7048E8]/40 hover:border-[#A27FF3] active:scale-95 transition-all cursor-pointer ${
+            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
               isPlayingAudio
-                ? "bg-[#7048E8] text-white border-[#A27FF3] shadow-[0_0_12px_rgba(162,127,243,0.6)]"
-                : ""
+                ? "text-[#A27FF3] bg-[#A27FF3]/15 shadow-[0_0_12px_rgba(162,127,243,0.4)]"
+                : "text-white/40 hover:text-white hover:bg-white/[0.05]"
             }`}
           >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            </svg>
+            <Volume2 className={`w-4 h-4 ${isPlayingAudio ? "animate-pulse" : ""}`} />
           </button>
         </div>
 
-        <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight pl-3 border-l-2 border-[#A27FF3]/60">
+        <h3 className="text-2xl sm:text-3xl font-light text-white tracking-wide pl-3 border-l border-[#A27FF3]/60">
           {term}
         </h3>
       </div>
 
       {/* Subtle Divider Line */}
-      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
-      {/* 2. CONTEXT SENTENCE Section */}
+      {/* 2. CONTEXT IN READING Section */}
       {contextSentence && (
-        <div className="space-y-1 sm:space-y-1.5">
-          <span className="block text-[10px] sm:text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#55c9a4]">
+        <div className="space-y-2">
+          <span className="block text-[10px] font-mono uppercase tracking-widest text-[#34D399]/80">
             CONTEXT IN READING
           </span>
-          <p className="text-base sm:text-lg font-normal text-white/85 leading-snug sm:leading-relaxed pl-3 border-l-2 border-[#55c9a4]/40 line-clamp-3">
+          <p className="text-lg sm:text-xl lg:text-2xl font-normal text-white/90 leading-relaxed pl-3 border-l border-[#34D399]/60">
+            "
             <HighlightWord
               sentence={contextSentence}
               word={term}
-              color="#A27FF3"
+              color="#34D399"
             />
+            "
           </p>
         </div>
       )}

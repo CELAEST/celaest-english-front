@@ -9,6 +9,7 @@ import { EncryptedLocalStorageVault } from "../../../infrastructure/adapters/sto
 
 const KEY_PREFIX = "celaest:provider-key:";
 const CONFIG_PREFIX = "celaest:provider-config:";
+const ACTIVE_PROVIDER_KEY = "celaest:active-provider";
 
 export interface StoredProviderConfig {
   endpoint?: string;
@@ -49,5 +50,20 @@ export const providerKeyVault = {
     return EncryptedLocalStorageVault.getItem<StoredProviderConfig>(
       `${CONFIG_PREFIX}${providerId}`,
     );
+  },
+
+  async saveActiveProviderId(providerId: AiProviderId): Promise<void> {
+    await EncryptedLocalStorageVault.setItem(ACTIVE_PROVIDER_KEY, { providerId });
+  },
+
+  async getActiveProviderId(): Promise<AiProviderId | null> {
+    const entry = await EncryptedLocalStorageVault.getItem<{ providerId: AiProviderId }>(
+      ACTIVE_PROVIDER_KEY,
+    );
+    return entry?.providerId ?? null;
+  },
+
+  async clearActiveProviderId(): Promise<void> {
+    EncryptedLocalStorageVault.removeItem(ACTIVE_PROVIDER_KEY);
   },
 };

@@ -48,7 +48,7 @@ export const OnboardingFirstConversationStep: React.FC<OnboardingFirstConversati
     }
   }, [messages, isAiTyping]);
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = async (text: string) => {
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: "user",
@@ -72,52 +72,161 @@ export const OnboardingFirstConversationStep: React.FC<OnboardingFirstConversati
             timestamp: "Just now",
           },
         ]);
-      }, 1200);
+      }, 1100);
     } else if (turn === 2) {
       setTurn(3);
-      // Run CEFR lexical & grammatical heuristic diagnostic
-      const fullText = `${messages.map((m) => m.text).join(" ")} ${text}`;
-      const words = fullText.split(/\s+/).filter(Boolean);
-      const uniqueWords = new Set(words.map((w) => w.toLowerCase()));
-      const wordCount = words.length;
 
-      let calculatedLevel = "B1 — Intermediate";
-      let style = "Analytical & Direct";
-      let confidence: "Low" | "Medium" | "High" = "Medium";
+      const allUserTexts = [
+        ...messages.filter((m) => m.sender === "user").map((m) => m.text),
+        text,
+      ].join(". ");
 
-      if (wordCount >= 40 || uniqueWords.size >= 30) {
-        calculatedLevel = "B2 — Upper Intermediate";
-        style = "Fluent & Expressive";
-        confidence = "High";
-      } else if (wordCount >= 20) {
-        calculatedLevel = "B1 — Intermediate";
-        style = "Structured & Clear";
-        confidence = "Medium";
-      } else {
-        calculatedLevel = "A2 — Elementary";
-        style = "Foundational & Concise";
-        confidence = "Low";
-      }
+      try {
+        const { CoreAiEvaluatorService } = await import(
+          "../../conversation/services/coreAiEvaluatorService"
+        );
 
-      onUpdateProfile({
-        cefrLevel: calculatedLevel,
-        conversationStyle: style,
-        speakingConfidence: confidence,
-        pronunciationScore: confidence === "High" ? "Strong" : "Good",
-      });
+        const evaluation = await CoreAiEvaluatorService.evaluate(
+          allUserTexts,
+          {
+            id: 1,
+            question:
+              "Tell me about your background, projects, and key communication challenges.",
+            category: "BEHAVIORAL",
+            starHint: "Describe your professional background, active projects, and daily communication challenges.",
+            expectedKeywords: [
+              "project",
+              "team",
+              "communication",
+              "challenge",
+              "experience",
+            ],
+          },
+          profile.profession || profile.learningGoal || "Professional",
+        );
 
-      setTimeout(() => {
+        // --- CEFR Calibration: Composite Scoring + LLM Estimation ---
+        const grammar = evaluation.grammarScore ?? 50;
+        const vocab = evaluation.vocabularyScore ?? 50;
+        const clarity = evaluation.clarityScore ?? 50;
+        const compositeScore = Math.round(
+          grammar * 0.35 + vocab * 0.35 + clarity * 0.30,
+        );
+
+        // LLM's own CEFR judgment (if available) takes priority
+        const llmCefr = evaluation.estimatedCefrLevel;
+
+        const cefrFromScore = (score: number): string => {
+          if (score >= 93) return "C2";
+          if (score >= 85) return "C1";
+          if (score >= 72) return "B2";
+          if (score >= 58) return "B1";
+          if (score >= 40) return "A2";
+          return "A1";
+        };
+
+        const cefrLabels: Record<string, string> = {
+          C2: "C2 — Mastery",
+          C1: "C1 — Advanced",
+          B2: "B2 — Upper Intermediate",
+          B1: "B1 — Intermediate",
+          A2: "A2 — Elementary",
+          A1: "A1 — Beginner",
+        };
+
+        const cefrStyles: Record<string, string> = {
+          C2: "Native-Like & Nuanced",
+          C1: "Fluent & Expressive",
+          B2: "Confident & Articulate",
+          B1: "Structured & Clear",
+          A2: "Foundational & Concise",
+          A1: "Emerging & Building",
+        };
+
+        const cefrConfidence: Record<string, "Low" | "Medium" | "High"> = {
+          C2: "High",
+          C1: "High",
+          B2: "High",
+          B1: "Medium",
+          A2: "Low",
+          A1: "Low",
+        };
+
+        // Use LLM estimation if valid, otherwise fall back to composite score
+        const validCefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+        const normalizedLlmCefr = llmCefr?.toUpperCase().trim();
+        const cefrCode = validCefrLevels.includes(normalizedLlmCefr || "")
+          ? normalizedLlmCefr!
+          : cefrFromScore(compositeScore);
+
+        const calculatedLevel = cefrLabels[cefrCode] || "B1 — Intermediate";
+        const style = cefrStyles[cefrCode] || "Structured & Clear";
+        const confidence = cefrConfidence[cefrCode] || "Medium";
+
+        const strengthsNote =
+          evaluation.keyStrengths && evaluation.keyStrengths.length > 0
+            ? evaluation.keyStrengths.slice(0, 2).join(", ")
+            : "";
+
+        const feedbackMsg = evaluation.strategicFeedback?.explanation
+          ? `${evaluation.strategicFeedback.explanation} I have calibrated your baseline at ${calculatedLevel}.`
+          : strengthsNote
+            ? `Diagnostic complete. I've detected ${strengthsNote} and calibrated your CEFR baseline at ${calculatedLevel}.`
+            : `Diagnostic complete. I've calibrated your CEFR baseline at ${calculatedLevel}. Your personalized learning plan is ready.`;
+
+        onUpdateProfile({
+          cefrLevel: calculatedLevel,
+          conversationStyle: style,
+          speakingConfidence: confidence,
+          pronunciationScore: "Pending Audio Assessment",
+        });
+
         setIsAiTyping(false);
         setMessages((prev) => [
           ...prev,
           {
             id: `ai-${Date.now()}`,
             sender: "ai",
-            text: `Excellent! Diagnostic complete. I've calibrated your CEFR benchmark at ${calculatedLevel}. Your personalized learning plan is ready.`,
+            text: feedbackMsg,
             timestamp: "Just now",
           },
         ]);
-      }, 1400);
+      } catch (evalErr) {
+        // Safe fallback if network/mesh is interrupted
+        const words = allUserTexts.split(/\s+/).filter(Boolean);
+        const uniqueWords = new Set(words.map((w) => w.toLowerCase()));
+        const wordCount = words.length;
+
+        let calculatedLevel = "B1 — Intermediate";
+        if (wordCount >= 60 && uniqueWords.size >= 40) {
+          calculatedLevel = "C1 — Advanced";
+        } else if (wordCount >= 40 && uniqueWords.size >= 28) {
+          calculatedLevel = "B2 — Upper Intermediate";
+        } else if (wordCount >= 20) {
+          calculatedLevel = "B1 — Intermediate";
+        } else if (wordCount >= 8) {
+          calculatedLevel = "A2 — Elementary";
+        } else {
+          calculatedLevel = "A1 — Beginner";
+        }
+
+        onUpdateProfile({
+          cefrLevel: calculatedLevel,
+          conversationStyle: "Structured & Clear",
+          speakingConfidence: "Medium",
+          pronunciationScore: "Pending Audio Assessment",
+        });
+        setIsAiTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: "ai",
+            text: `Diagnostic complete. I've calibrated your CEFR benchmark at ${calculatedLevel}. Your personalized learning plan is ready.`,
+            timestamp: "Just now",
+          },
+        ]);
+      }
     }
   };
 

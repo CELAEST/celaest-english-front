@@ -7,6 +7,7 @@ import { OnboardingDnaAnalysisStep } from "./OnboardingDnaAnalysisStep";
 import { OnboardingFirstConversationStep } from "./OnboardingFirstConversationStep";
 import { OnboardingReadyStep } from "./OnboardingReadyStep";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
+import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
 import { logger } from "../../../shared/utils/logger";
 
 export interface OnboardingViewProps {
@@ -34,6 +35,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
         learningGoal: learnerProfile.learningGoal,
         preferenceStyle: learnerProfile.preferenceStyle,
         profession: learnerProfile.profession,
+        onboardingCompleted: true,
       });
     } catch (e) {
       logger.warn("[OnboardingView] Error saving profile settings on finish", e);
@@ -75,19 +77,37 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
         >
           {step === "auth" && (
             <OnboardingAuthStep
-              onSuccess={(authUser) => {
+              onSuccess={async (authUser) => {
                 if (authUser?.name) {
-                  updateLearnerProfile({ name: authUser.name, email: authUser.email });
+                  updateLearnerProfile({ name: authUser.name, email: authUser.email || "" });
                 }
-                // If user is already completed, route immediately to dashboard
-                const isAlreadyCompleted = localStorage.getItem("lingua_onboarding_completed") === "true";
-                if (isAlreadyCompleted && authUser?.onboardingCompleted !== false) {
-                  if (onFinish) {
-                    onFinish();
-                    return;
+
+                // Check if user has genuinely completed the onboarding placement diagnostic:
+                try {
+                  const profile = await apiSettingsRepository.getProfile();
+                  if (profile && profile.onboardingCompleted) {
+                    updateLearnerProfile({
+                      name: (profile.name || authUser?.name || "Learner") as string,
+                      email: (profile.email || authUser?.email || "") as string,
+                      cefrLevel: profile.cefrLevel,
+                      dailyFocus: profile.dailyFocus,
+                      learningGoal: profile.learningGoal || "Tech Career",
+                      preferenceStyle: profile.preferenceStyle || "Conversation First",
+                      profession: profile.profession || "Software & Technology",
+                    });
+                    localStorage.setItem("lingua_onboarding_completed", "true");
+                    if (onFinish) {
+                      onFinish();
+                      return;
+                    }
                   }
+                } catch (err) {
+                  logger.warn("[OnboardingView] Could not fetch remote profile on login", err);
                 }
-                nextStep(); // moves to 'welcome' (Your AI Language Mentor -> Begin)
+
+                // If user has not completed the placement diagnostic interview, proceed through calibration
+                localStorage.removeItem("lingua_onboarding_completed");
+                nextStep();
               }}
               onBackToWelcome={openAuth}
             />

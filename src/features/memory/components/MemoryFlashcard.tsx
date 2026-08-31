@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import {
   MemorySpeakingFront,
@@ -8,6 +8,7 @@ import {
   MemoryReadingFront,
   MemoryReadingBack,
 } from "./subcomponents";
+import { Bookmark, Trash2, RotateCw, Volume2 } from "lucide-react";
 
 export interface MemoryFlashcardProps {
   card: MemoryCard;
@@ -17,245 +18,291 @@ export interface MemoryFlashcardProps {
   onFlip: () => void;
   onBookmark?: ((cardId: string) => void) | undefined;
   onDelete?: ((cardId: string) => void) | undefined;
+  onReviewScore?: ((score: number) => void) | undefined;
 }
 
 export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
-  ({ card, cardIndex, totalCards, isFlipped, onFlip, onBookmark, onDelete }) => {
-  const [isBookmarked, setIsBookmarked] = useState<boolean>(card.bookmarked ?? false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  ({
+    card,
+    cardIndex,
+    totalCards,
+    isFlipped,
+    onFlip,
+    onBookmark,
+    onDelete,
+    onReviewScore,
+  }) => {
+    const [isBookmarked, setIsBookmarked] = useState<boolean>(card.bookmarked ?? false);
+    const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+    const [selectedScore, setSelectedScore] = useState<number | null>(null);
 
-  const handleBookmarkToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsBookmarked((prev: boolean) => !prev);
-    if (onBookmark) onBookmark(card.id);
-  };
+    // 3D Mathematical Tilt & Specular Glare Physics
+    const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) {
-      onDelete(card.id);
-    }
-  };
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+      if (!cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      setTilt({
+        x: ((x - centerX) / centerX) * 5,
+        y: ((y - centerY) / centerY) * -5,
+        glareX: (x / rect.width) * 100,
+        glareY: (y / rect.height) * 100,
+        glareOpacity: 0.14,
+      });
+    }, []);
 
-  const handlePlayVoice = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const textToSpeak = card.betterWay || card.correctWord || card.userSaid;
-    if (!textToSpeak) return;
+    const handleMouseLeave = useCallback(() => {
+      setTilt({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    }, []);
 
-    setIsPlayingAudio(true);
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = "en-US";
-      utterance.rate = 0.9;
-      utterance.onend = () => setIsPlayingAudio(false);
-      utterance.onerror = () => setIsPlayingAudio(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(() => setIsPlayingAudio(false), 1000);
-    }
-  };
+    const handleBookmarkToggle = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsBookmarked((prev: boolean) => !prev);
+      if (onBookmark) onBookmark(card.id);
+    };
 
-  const rawCategory = (card.category || "").toUpperCase().trim();
-  const normalizedCategory: "SPEAKING" | "WRITING" | "READING" =
-    rawCategory === "WRITING"
-      ? "WRITING"
-      : rawCategory === "READING"
+    const handleDeleteClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onDelete) {
+        onDelete(card.id);
+      }
+    };
+
+    const handlePlayVoice = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const textToSpeak = card.betterWay || card.correctWord || card.userSaid;
+      if (!textToSpeak) return;
+
+      setIsPlayingAudio(true);
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = "en-US";
+        utterance.rate = 0.9;
+        utterance.onend = () => setIsPlayingAudio(false);
+        utterance.onerror = () => setIsPlayingAudio(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(() => setIsPlayingAudio(false), 1000);
+      }
+    };
+
+    const handleScoreClick = (e: React.MouseEvent, score: number) => {
+      e.stopPropagation();
+      setSelectedScore(score);
+      if (onReviewScore) {
+        onReviewScore(score);
+      }
+    };
+
+    const rawCategory = (card.category || "").toUpperCase().trim();
+    const normalizedCategory: "SPEAKING" | "WRITING" | "READING" =
+      rawCategory === "WRITING"
+        ? "WRITING"
+        : rawCategory === "READING"
         ? "READING"
         : "SPEAKING";
 
-  return (
-    <div
-      onClick={onFlip}
-      className="relative w-full max-w-[640px] lg:max-w-[690px] h-[370px] sm:h-[410px] lg:h-[440px] max-h-[calc(100dvh-230px)] cursor-pointer select-none [perspective:1400px] group mx-auto"
-    >
+    const formattedIndex = cardIndex < 10 ? `0${cardIndex}` : `${cardIndex}`;
+    const formattedTotal = totalCards < 10 ? `0${totalCards}` : `${totalCards}`;
+
+    const ratingChips = [
+      { label: "Again", interval: "<1m", score: 1 },
+      { label: "Hard", interval: "12h", score: 2 },
+      { label: "Good", interval: "1d", score: 3 },
+      { label: "Easy", interval: "4d", score: 5 },
+    ];
+
+    return (
       <div
-        className={`relative w-full h-full duration-600 [transform-style:preserve-3d] transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isFlipped ? "[transform:rotateY(180deg)]" : ""
-        }`}
+        ref={cardRef}
+        onClick={onFlip}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[390px] sm:h-[430px] lg:h-[460px] max-h-[calc(100dvh-220px)] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
-        {/* ═══════════════════════════════════════════════════════════════════
-            FRONT FACE: Polymorphic category face
-           ═══════════════════════════════════════════════════════════════════ */}
-        <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-[28px] sm:rounded-[32px] bg-[#070714]/90 border border-white/[0.08] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_40px_rgba(112,72,232,0.1)] p-5 sm:p-7 lg:p-8 flex flex-col justify-between overflow-hidden group-hover:border-[#A27FF3]/40 transition-colors">
-          <div className="pointer-events-none absolute -top-24 -left-24 w-56 h-56 bg-[#7048E8] opacity-15 blur-[60px]" />
-          <div className="pointer-events-none absolute -bottom-24 -right-24 w-56 h-56 bg-[#55c9a4] opacity-10 blur-[60px]" />
+        {/* ── Subtle Atmospheric Backlight Aura (Layer 1 - Background Contrast) ── */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-6 sm:-inset-8 rounded-[40px] transition-all duration-500 opacity-60 group-hover:opacity-90 z-0"
+          style={{
+            background: isFlipped
+              ? "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(162, 127, 243, 0.22), rgba(52, 211, 153, 0.08) 45%, transparent 75%)"
+              : "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(112, 72, 232, 0.22), rgba(162, 127, 243, 0.12) 45%, transparent 75%)",
+            filter: "blur(40px)",
+            transform: `translate3d(${tilt.x * 2.5}px, ${tilt.y * -2.5}px, -10px)`,
+          }}
+        />
 
-          {/* Top Bar: Pure Clean Text + Counter + Actions */}
-          <div className="flex items-center justify-between z-10 shrink-0">
-            <span className="text-[11px] font-mono font-semibold tracking-wider text-[#C4B5FD] uppercase">
-              {normalizedCategory}
-            </span>
+        {/* ── 3D Card Shell ── */}
+        <div
+          className="relative w-full h-full [transform-style:preserve-3d] transition-transform duration-500 ease-out z-10"
+          style={{
+            transform: `rotateY(${tilt.x + (isFlipped ? 180 : 0)}deg) rotateX(${tilt.y}deg)`,
+          }}
+        >
+          {/* Dynamic Specular Sheen (Shared Overlays) */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 rounded-3xl pointer-events-none z-30 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(450px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,${tilt.glareOpacity}), transparent 70%)`,
+            }}
+          />
 
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-mono font-medium text-[#8E90A6]">
-                {cardIndex} <span className="text-white/20">/</span> {totalCards}
+          {/* ═══════════════════════════════════════════════════════════════════
+              FRONT FACE: Minimalist Luxury Glass
+             ═══════════════════════════════════════════════════════════════════ */}
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-6 sm:p-8 bg-[#04040A] border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_40px_rgba(112,72,232,0.12),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+            {/* Top 1px Specular Hairline */}
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+            {/* Top Bar: Category + Syntax Tag + Counter + Bookmark */}
+            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
+              <span className="tracking-widest uppercase">
+                {normalizedCategory} • {card.errorWord ? "SYNTAX & RETENTION" : "CORE LEXICON"}
               </span>
 
-              <button
-                type="button"
-                onClick={handleBookmarkToggle}
-                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                  isBookmarked
-                    ? "text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/30"
-                    : "text-[#8E90A6] hover:text-white hover:bg-white/[0.05]"
-                }`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill={isBookmarked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="tracking-widest">
+                  Card {formattedIndex}/{formattedTotal}
+                </span>
 
-              {onDelete && (
                 <button
                   type="button"
-                  onClick={handleDeleteClick}
-                  aria-label="Delete card"
-                  title="Eliminar tarjeta"
-                  className="p-1.5 rounded-xl text-[#8E90A6] hover:text-[#F87171] hover:bg-[#F87171]/10 transition-all cursor-pointer"
+                  onClick={handleBookmarkToggle}
+                  aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
+                  className={`p-1 rounded transition-colors cursor-pointer ${
+                    isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
+                  }`}
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
+                  <Bookmark className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} />
                 </button>
-              )}
+
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    aria-label="Delete card"
+                    title="Eliminar tarjeta"
+                    className="p-1 rounded text-white/40 hover:text-[#F87171] transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Dynamic Front Face per Category */}
-          {normalizedCategory === "SPEAKING" && (
-            <MemorySpeakingFront
-              card={card}
-              isPlayingAudio={isPlayingAudio}
-              onPlayVoice={handlePlayVoice}
-            />
-          )}
-          {normalizedCategory === "WRITING" && (
-            <MemoryWritingFront
-              card={card}
-              isPlayingAudio={isPlayingAudio}
-              onPlayVoice={handlePlayVoice}
-            />
-          )}
-          {normalizedCategory === "READING" && (
-            <MemoryReadingFront
-              card={card}
-              isPlayingAudio={isPlayingAudio}
-              onPlayVoice={handlePlayVoice}
-            />
-          )}
-
-          {/* Bottom Flip Action Prompt */}
-          <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs text-[#8E90A6] group-hover:text-[#C4B5FD] transition-colors z-10 shrink-0 pt-2 border-t border-white/[0.04]">
-            <svg
-              className="w-3.5 h-3.5 text-[#A27FF3] animate-spin [animation-duration:8s]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+            {/* Dynamic Polymorphic Front Face Content */}
+            {normalizedCategory === "SPEAKING" && (
+              <MemorySpeakingFront
+                card={card}
+                isPlayingAudio={isPlayingAudio}
+                onPlayVoice={handlePlayVoice}
               />
-            </svg>
-            <span>Tap card or press <kbd className="px-1.5 py-0.5 text-[9.5px] bg-white/[0.08] rounded font-mono text-white">Space</kbd> for translation & explanation</span>
-          </div>
-        </article>
+            )}
+            {normalizedCategory === "WRITING" && (
+              <MemoryWritingFront
+                card={card}
+                isPlayingAudio={isPlayingAudio}
+                onPlayVoice={handlePlayVoice}
+              />
+            )}
+            {normalizedCategory === "READING" && (
+              <MemoryReadingFront
+                card={card}
+                isPlayingAudio={isPlayingAudio}
+                onPlayVoice={handlePlayVoice}
+              />
+            )}
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            BACK FACE: Polymorphic category details
-           ═══════════════════════════════════════════════════════════════════ */}
-        <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[28px] sm:rounded-[32px] bg-[#070818]/95 border border-[#7048E8]/40 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_40px_rgba(112,72,232,0.15)] p-5 sm:p-7 lg:p-8 flex flex-col justify-between overflow-hidden">
-          <div className="pointer-events-none absolute -top-24 -right-24 w-56 h-56 bg-[#7048E8] opacity-20 blur-[60px]" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 w-56 h-56 bg-[#55c9a4] opacity-10 blur-[60px]" />
+            {/* Bottom Footer: Click to inspect + SM-2 Interval */}
+            <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
+              <span className="flex items-center gap-1.5 hover:text-white transition-colors">
+                <RotateCw className="w-3 h-3 text-[#A27FF3]" />
+                Click to inspect grammar rule
+              </span>
+              <span>SM-2 Interval</span>
+            </div>
+          </article>
 
-          {/* Top Bar: Pure Clean Text + Audio Speaker + Actions */}
-          <div className="flex items-center justify-between z-10 shrink-0">
-            <span className="text-[11px] font-mono font-semibold tracking-wider text-[#C4B5FD] uppercase">
-              DETAILS · {normalizedCategory}
-            </span>
+          {/* ═══════════════════════════════════════════════════════════════════
+              BACK FACE: Minimalist Luxury Glass ($180^\circ$ Flip)
+             ═══════════════════════════════════════════════════════════════════ */}
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-6 sm:p-8 bg-[#04040A] border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_40px_rgba(112,72,232,0.15),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+            {/* Top 1px Specular Hairline */}
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handlePlayVoice}
-                aria-label="Listen to pronunciation"
-                className={`p-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[#C4B5FD] hover:text-white hover:bg-[#7048E8]/40 hover:border-[#A27FF3] active:scale-95 transition-all cursor-pointer ${
-                  isPlayingAudio
-                    ? "bg-[#7048E8] text-white border-[#A27FF3] shadow-[0_0_16px_rgba(162,127,243,0.6)]"
-                    : ""
-                }`}
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                </svg>
-              </button>
+            {/* Top Bar: Details + Audio + Actions */}
+            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
+              <span className="tracking-widest uppercase">
+                Grammar Rule & Context • {normalizedCategory}
+              </span>
 
-              <button
-                type="button"
-                onClick={handleBookmarkToggle}
-                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                  isBookmarked
-                    ? "text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/30"
-                    : "text-[#8E90A6] hover:text-white hover:bg-white/[0.05]"
-                }`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill={isBookmarked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </button>
-
-              {onDelete && (
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={handleDeleteClick}
-                  aria-label="Delete card"
-                  title="Eliminar tarjeta"
-                  className="p-1.5 rounded-xl text-[#8E90A6] hover:text-[#F87171] hover:bg-[#F87171]/10 transition-all cursor-pointer"
+                  onClick={handlePlayVoice}
+                  aria-label="Listen to pronunciation"
+                  className="p-1 rounded text-white/40 hover:text-white transition-colors cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
+                  <Volume2 className={`w-3.5 h-3.5 ${isPlayingAudio ? "animate-pulse text-[#34D399]" : ""}`} />
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={handleBookmarkToggle}
+                  aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
+                  className={`p-1 rounded transition-colors cursor-pointer ${
+                    isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
+                  }`}
+                >
+                  <Bookmark className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Dynamic Back Face per Category */}
-          {normalizedCategory === "SPEAKING" && (
-            <MemorySpeakingBack card={card} />
-          )}
-          {normalizedCategory === "WRITING" && (
-            <MemoryWritingBack card={card} />
-          )}
-          {normalizedCategory === "READING" && (
-            <MemoryReadingBack card={card} />
-          )}
+            {/* Dynamic Polymorphic Back Face Content */}
+            {normalizedCategory === "SPEAKING" && <MemorySpeakingBack card={card} />}
+            {normalizedCategory === "WRITING" && <MemoryWritingBack card={card} />}
+            {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}
 
-          {/* Bottom Flip Back Action Prompt */}
-          <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs text-[#8E90A6] z-10 shrink-0 pt-2 border-t border-white/[0.04]">
-            <span>Tap card or press <kbd className="px-1.5 py-0.5 text-[9.5px] bg-white/[0.08] rounded font-mono text-white">Space</kbd> to return to comparison</span>
-          </div>
-        </article>
+            {/* 4 Integrated SM-2 Rating Chips */}
+            <div className="pt-3 border-t border-white/[0.04] flex flex-col space-y-2 z-10 shrink-0">
+              <div className="grid grid-cols-4 gap-1.5">
+                {ratingChips.map((chip) => {
+                  const isSelected = selectedScore === chip.score;
+                  return (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={(e) => handleScoreClick(e, chip.score)}
+                      className={`py-1.5 px-2 rounded-xl text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-white text-black font-semibold shadow-[0_0_12px_rgba(255,255,255,0.3)]"
+                          : "bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:text-white"
+                      }`}
+                    >
+                      <span className="block text-[10px] font-mono uppercase">{chip.label}</span>
+                      <span className="block text-[9px] opacity-50">{chip.interval}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] font-mono text-white/30 pt-1">
+                <span>Click rating chip or press 1, 2, 3</span>
+                <span>Space to return</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);

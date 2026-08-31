@@ -20,38 +20,39 @@ export const ConversationProgressWidget: React.FC<ConversationProgressWidgetProp
     <div className="absolute top-20 sm:top-24 right-8 sm:right-12 z-20 flex flex-col items-end space-y-4 select-none animate-[slideInRight_0.4s_cubic-bezier(0.16,1,0.3,1)_both]">
       {/* Question Progress */}
       <div className="flex flex-col items-end space-y-2">
-        <span className="text-xs font-normal text-[#9579cc]">
-          Question <span className="text-[#f8f8f8] font-semibold">{currentQuestion}</span> of{" "}
+        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+          Question <span className="text-white font-light">{currentQuestion}</span> of{" "}
           {totalQuestions}
         </span>
         <div className="flex space-x-1.5">
           {dashArray.map((_, i) => (
             <div
               key={i}
-              className={`h-1.5 w-5 sm:w-6 rounded-full transition-all duration-300 ${
+              className={`h-1 w-5 sm:w-6 rounded-full transition-all duration-300 ${
                 i < currentQuestion
-                  ? "bg-[#A27FF3] shadow-[0_0_8px_rgba(162,127,243,0.6)]"
-                  : "bg-[#111220]"
+                  ? "bg-white/60"
+                  : "bg-white/[0.04]"
               }`}
             />
           ))}
         </div>
       </div>
 
-      {/* Larger Circular Timer Widget Card */}
-      <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-3xl bg-[#05060c] border border-[#111220] shadow-2xl backdrop-blur-xl flex items-center justify-center relative">
+      {/* Circular Timer Widget Card */}
+      <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-3xl bg-[#04040A] border border-white/[0.07] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex items-center justify-center overflow-hidden">
+        {/* Top Specular Hairline */}
+        <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
         {/* SVG Circular Progress Ring */}
         <svg className="absolute inset-0 w-full h-full -rotate-90 p-2.5" viewBox="0 0 100 100">
-          {/* Background Ring */}
-          <circle cx="50" cy="50" r="42" fill="none" stroke="#111220" strokeWidth="3.5" />
-          {/* Active Progress Ring in #A27FF3 */}
+          <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3" />
           <circle
             cx="50"
             cy="50"
             r="42"
             fill="none"
-            stroke="#A27FF3"
-            strokeWidth="4"
+            stroke="rgba(255,255,255,0.7)"
+            strokeWidth="3.5"
             strokeDasharray="263.8"
             strokeDashoffset={263.8 - (263.8 * progressPercentage) / 100}
             strokeLinecap="round"
@@ -61,10 +62,10 @@ export const ConversationProgressWidget: React.FC<ConversationProgressWidgetProp
 
         {/* Timer Text */}
         <div className="relative flex flex-col items-center justify-center">
-          <span className="text-2xl sm:text-3xl font-light text-[#f8f8f8] tracking-wide">
+          <span className="text-2xl sm:text-3xl font-light text-white tracking-wide tabular-nums">
             0:{remainingSeconds.toString().padStart(2, "0")}
           </span>
-          <span className="text-xs text-[#9579cc] font-light mt-1">{totalSeconds} sec</span>
+          <span className="text-[10px] font-mono text-white/30 mt-1">{totalSeconds} sec</span>
         </div>
       </div>
     </div>

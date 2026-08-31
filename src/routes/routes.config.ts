@@ -12,6 +12,7 @@ export const ROUTES = {
   MEMORY: "/memory",
   SETTINGS: "/settings",
   ONBOARDING: "/onboarding",
+  AUTH_CALLBACK: "/auth/callback",
   LAB: "/lab",
 } as const;
 

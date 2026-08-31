@@ -9,7 +9,7 @@ import { ReadingPracticeView } from "../../reading";
 import { MemoryView } from "../../memory";
 import { SettingsView } from "../../settings";
 import { LabView } from "../../lab";
-import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
+import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 
 export interface WorkspaceDashboardViewProps {
   userName?: string | undefined;
@@ -19,16 +19,21 @@ export interface WorkspaceDashboardViewProps {
 }
 
 export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
-  userName = "Esteban",
-  userLevel = "B1 Level",
+  userName = "",
+  userLevel = "",
   defaultTab = "workspace",
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const { displayName, currentLevel, profile } = useSettingsProfile(userName);
-
-  const activeUserName = displayName || userName;
-  const activeUserLevel = currentLevel || userLevel;
+  const { settings } = useCurrentUser();
+  // Single source of truth — no duplicate GET /user/profile
+  const activeUserName = settings.name || userName || "";
+  const activeUserLevel = settings.cefrLevel || userLevel || "";
+  const profile = {
+    learningGoal: settings.learningGoal,
+    preferenceStyle: settings.preferenceStyle,
+    dailyFocus: settings.dailyFocus,
+  } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string };
 
   const handleSelectNav = (route: string) => {
     setActiveTab(route);
@@ -76,9 +81,8 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
         onSelectNav={handleSelectNav}
       />
 
-      {/* 3. Main Dynamic Content Canvas */}
+      {/* 3. Main Dynamic Content Canvas — on-demand: solo el tab activo se monta (code-split + queries lazy) */}
       <main className="flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden bg-transparent">
-        {/* Route Canvas 1: INTERVIEW PRACTICE */}
         {activeTab === "interview" && (
           <div key="interview" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <InterviewPracticeView
@@ -88,35 +92,30 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
           </div>
         )}
 
-        {/* Route Canvas 2: WRITING PRACTICE */}
         {activeTab === "writing" && (
           <div key="writing" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <WritingPracticeView onBackToWorkspace={() => handleSelectNav("workspace")} />
           </div>
         )}
 
-        {/* Route Canvas 3: READING PRACTICE */}
         {activeTab === "reading" && (
           <div key="reading" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <ReadingPracticeView onBackToWorkspace={() => handleSelectNav("workspace")} />
           </div>
         )}
 
-        {/* Route Canvas 4: MEMORY */}
         {activeTab === "memory" && (
           <div key="memory" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <MemoryView onBackToWorkspace={() => handleSelectNav("workspace")} />
           </div>
         )}
 
-        {/* Route Canvas: LAB (Interactive UI & Icon Sandbox) */}
         {activeTab === "lab" && (
           <div key="lab" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <LabView onBackToWorkspace={() => handleSelectNav("workspace")} />
           </div>
         )}
 
-        {/* Route Canvas 5: WORKSPACE DASHBOARD */}
         {activeTab === "workspace" && (
           <div
             key="workspace"
@@ -130,7 +129,11 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
                 dailyFocus={profile?.dailyFocus}
                 onContinueTopic={() => handleSelectNav("interview")}
               />
-              <WorkspaceOrbCallouts onSelectNode={handleSelectNav} />
+              <WorkspaceOrbCallouts
+                learningGoal={profile?.learningGoal}
+                profession={profile?.preferenceStyle}
+                onSelectNode={handleSelectNav}
+              />
             </div>
 
             <div className="w-full pb-1 sm:pb-2 relative z-10">
@@ -139,7 +142,6 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
           </div>
         )}
 
-        {/* Route Canvas 6: SETTINGS */}
         {activeTab === "settings" && (
           <div key="settings" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <SettingsView

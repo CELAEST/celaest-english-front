@@ -2,17 +2,34 @@ import React, { useState } from "react";
 import { OnboardingAuthDirectForm } from "./OnboardingAuthDirectForm";
 import { GoogleAuthGlyph } from "./OnboardingAuthIcons";
 import { AuthUser } from "../../../application/ports/IAuthService";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export interface OnboardingAuthStepProps {
-  onSuccess: (user?: AuthUser) => void;
-  onBackToWelcome: () => void;
+  onSuccess: (user?: AuthUser, mode?: "login" | "register") => void;
+  onBackToWelcome?: () => void;
 }
 
 export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
   onSuccess,
-  onBackToWelcome,
 }) => {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setGoogleError(null);
+    try {
+      const { error } = await SupabaseAuthAdapter.getInstance().loginWithGoogle();
+      if (error) {
+        setGoogleError(error);
+        setIsGoogleLoading(false);
+      }
+    } catch {
+      setGoogleError("Unable to initialize Google Sign In. Please check your connection.");
+      setIsGoogleLoading(false);
+    }
+  };
 
   const topOffset =
     mode === "register"
@@ -58,15 +75,21 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
           {/* Google SSO Pill */}
           <button
             type="button"
-            onClick={() => {
-              // Standard OAuth entry point
-              onSuccess({ id: `google-${Date.now()}`, email: "google.user@celaest.com", name: "Google User" });
-            }}
-            className="inline-flex items-center justify-center space-x-2 px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-[11px] sm:text-xs text-white transition-all duration-200 cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.3)] hover:scale-[1.02] active:scale-[0.98]"
+            disabled={isGoogleLoading}
+            onClick={handleGoogleSignIn}
+            className="inline-flex items-center justify-center space-x-2 px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-[11px] sm:text-xs text-white transition-all duration-200 cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <GoogleAuthGlyph className="w-3.5 h-3.5" />
-            <span>Continue with Google</span>
+            {isGoogleLoading ? (
+              <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <GoogleAuthGlyph className="w-3.5 h-3.5" />
+            )}
+            <span>{isGoogleLoading ? "Connecting..." : "Continue with Google"}</span>
           </button>
+
+          {googleError && (
+            <p className="text-[10px] text-red-400 font-light max-w-xs">{googleError}</p>
+          )}
 
           {/* Divider */}
           <div className="w-full max-w-[220px] flex items-center justify-center space-x-2 py-0.5">
@@ -76,7 +99,7 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
           </div>
 
           {/* Direct Form */}
-          <OnboardingAuthDirectForm mode={mode} onSuccess={onSuccess} />
+          <OnboardingAuthDirectForm mode={mode} onSuccess={(user, authMode) => onSuccess(user, authMode)} />
 
           {/* Bottom Switch Links */}
           <div className="flex flex-col items-center space-y-1 pt-0.5">
@@ -90,14 +113,6 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
               ) : (
                 <>Already have an account? <span className="text-[#A27FF3] underline underline-offset-2">Sign In</span></>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={onBackToWelcome}
-              className="text-[10px] text-[#71719A] hover:text-[#C4B5FD] transition-colors cursor-pointer pt-0.5"
-            >
-              ← Back to Overview
             </button>
           </div>
         </div>

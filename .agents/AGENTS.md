@@ -50,3 +50,44 @@ Before declaring any task or file modification complete:
 - [ ] Does the new/modified file sit in its exact location per `docs/07_FOLDER_STRUCTURE.md`?
 - [ ] Are all exports cleanly exposed via feature barrel `index.ts` files?
 - [ ] Are all abstract interfaces decoupled from low-level implementations?
+
+---
+
+## 3. Intelligent MCP Dynamic Workflow & Token Conservation Protocol
+
+### 1. Dynamic On-Demand MCP Orchestration
+AI agents must activate specialized MCP tools exclusively when the task demands it, preventing context clutter and saving tokens:
+
+| Scenario / Intent | Primary Tool / MCP | Objective |
+|---|---|---|
+| **Semantic AST & Symbol Refactoring** | `Serena MCP` / `gopls` | Query symbols, references, and definitions without bulk file dumping. |
+| **System & Architecture Design** | `MCP Architect` | Decompose multi-step architectural features into hierarchical sub-specs. |
+| **Live API & Contract Regression** | `Postman MCP` | Validate live endpoints (`celaest-back`, `celaest-english-back`). |
+| **End-to-End UI & Authentication** | `Playwright MCP` / `browser_subagent` | Test live OAuth flows, screen transitions, and DOM rendering. |
+| **Telemetry & Live Error Triage** | `Sentry MCP` | Capture and diagnose unhandled exceptions and performance traces. |
+| **Remote Database & State** | `Supabase MCP` / `Context7 (Upstash)` | Check schema migrations, auth configs, and Redis cache keys. |
+| **Security & Vulnerability Audit** | `Semgrep MCP` | Run static analysis (XSS, SQLi, token leaks) inside the Quality Gate. |
+
+### 2. Refined 5-Stage Engineering Pipeline & Self-Healing Loop
+
+```mermaid
+graph TD
+    A[Requerimiento / Tarea] --> B[Análisis Inicial & AST]
+    B -->|Serena / gopls| C[Lectura Quirúrgica por Rangos (StartLine/EndLine)]
+    C --> D[Memoria de Contexto & Arquitectura]
+    D --> E[Implementación Modular & Desacoplada]
+    E --> F[Quality Gate Automatizado]
+    F -->|tsc / vitest / go test / Semgrep| G{¿Pasa 100%?}
+    G -->|Fallo Detectado (Loop Auto-Reparación)| E
+    G -->|100% Aprobado| H[Registro en Memoria Serena & Entrega]
+```
+
+### 3. Execution & Token Efficiency Directives
+1. **Targeted Reading (Token Saving)**: Always use `StartLine` and `EndLine` slices when reading code files; never read entire 500+ line files when inspecting single functions.
+2. **Surgical Diffs**: Make focused contiguous replacements with `replace_file_content` instead of rewriting entire files.
+3. **Decoupled Architecture (SRP & DIP)**: Depend on abstract interfaces, never create monolithic components.
+4. **Semgrep in Quality Gate**: Run Semgrep security scans during the post-implementation Quality Gate stage ($F$), avoiding latency in the initial analysis phase ($B$).
+5. **Self-Healing Quality Gate ($F \xrightarrow{\text{Fallo}} E$)**:
+   - Run `npx tsc --noEmit` + `vitest` + `go test`.
+   - If any compiler/linter error occurs, analyze the error output and apply targeted auto-repair diffs before concluding the turn.
+6. **Persistent Memory Gate**: Update Serena project memories and knowledge items upon completing major architectural changes so all future sessions retain context.

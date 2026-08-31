@@ -9,6 +9,7 @@ import { IAuthService, AuthResult, AuthUser } from "../../../application/ports/I
 import { HttpClient } from "../../http/HttpClient";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
+import { supabase } from "./supabaseClient";
 
 const ACCESS_TOKEN_KEY = "lingua_access_token";
 const REFRESH_TOKEN_KEY = "lingua_refresh_token";
@@ -80,17 +81,11 @@ export class SupabaseAuthAdapter implements IAuthService {
       this.persistSession(accessToken, refreshToken, user);
       return { success: true, accessToken, refreshToken, user };
     } catch (err) {
-      logger.warn("[AuthAdapter] Backend unavailable, entering offline mode", err);
-      // Seamless offline / local fallback
-      const fallbackUser: AuthUser = {
-        id: `user-${Date.now()}`,
-        email,
-        name: email.split("@")[0] || "Learner",
-        role: "member",
+      logger.warn("[AuthAdapter] Backend unavailable during login", err);
+      return {
+        success: false,
+        error: "Unable to connect to authentication server. Please check your network and try again.",
       };
-      const dummyToken = `demo-token-${Date.now()}`;
-      this.persistSession(dummyToken, `demo-refresh-${Date.now()}`, fallbackUser);
-      return { success: true, accessToken: dummyToken, user: fallbackUser };
     }
   }
 
@@ -123,17 +118,37 @@ export class SupabaseAuthAdapter implements IAuthService {
       this.persistSession(accessToken, refreshToken, user);
       return { success: true, accessToken, refreshToken, user };
     } catch (err) {
-      logger.warn("[AuthAdapter] Backend unavailable, entering offline registration fallback", err);
-      const fallbackUser: AuthUser = {
-        id: `user-${Date.now()}`,
-        email,
-        name: name || email.split("@")[0] || "Learner",
-        role: "member",
-        onboardingCompleted: false,
+      logger.warn("[AuthAdapter] Backend unavailable during registration", err);
+      return {
+        success: false,
+        error: "Unable to connect to authentication server. Please check your network and try again.",
       };
-      const dummyToken = `demo-token-${Date.now()}`;
-      this.persistSession(dummyToken, `demo-refresh-${Date.now()}`, fallbackUser);
-      return { success: true, accessToken: dummyToken, user: fallbackUser };
+    }
+  }
+
+  public async loginWithGoogle(): Promise<{ error?: string }> {
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+
+      if (error) {
+        logger.error("[AuthAdapter] Google OAuth error", error);
+        return { error: error.message };
+      }
+
+      return {};
+    } catch (err) {
+      logger.error("[AuthAdapter] Unexpected Google OAuth exception", err);
+      return { error: "Failed to initiate Google authentication." };
     }
   }
 
@@ -171,6 +186,7 @@ export class SupabaseAuthAdapter implements IAuthService {
           },
         });
       }
+      await supabase.auth.signOut().catch(() => {});
     } catch (e) {
       logger.warn("[AuthAdapter] Logout request error", e);
     } finally {
@@ -178,10 +194,13 @@ export class SupabaseAuthAdapter implements IAuthService {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       HttpClient.setAuthToken("");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
+      }
     }
   }
 
-  private persistSession(accessToken?: string, refreshToken?: string, user?: AuthUser): void {
+  public persistSession(accessToken?: string, refreshToken?: string, user?: AuthUser): void {
     if (accessToken) {
       localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       HttpClient.setAuthToken(accessToken);
@@ -191,6 +210,9 @@ export class SupabaseAuthAdapter implements IAuthService {
     }
     if (user) {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
     }
   }
 }

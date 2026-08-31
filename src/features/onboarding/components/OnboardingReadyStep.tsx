@@ -28,14 +28,10 @@ const ConfidenceIcon = () => (
   </svg>
 );
 
-const PronunciationIcon = () => (
+const ProfessionIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 10v3" />
-    <path d="M6 6v11" />
-    <path d="M10 3v18" />
-    <path d="M14 8v7" />
-    <path d="M18 5v13" />
-    <path d="M22 10v3" />
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+    <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
   </svg>
 );
 
@@ -59,10 +55,10 @@ export const OnboardingReadyStep: React.FC<OnboardingReadyStepProps> = ({
 }) => {
   const dynamicMetrics: ProfileMetric[] = [
     { icon: <LevelIcon />, label: "Calibrated CEFR", value: profile.cefrLevel || "B1 — Intermediate" },
+    { icon: <ProfessionIcon />, label: "Profession / Specialty", value: profile.profession || "Software & Technology" },
     { icon: <ConversationIcon />, label: "Conversation Style", value: profile.conversationStyle || "Analytical & Direct" },
     { icon: <ConfidenceIcon />, label: "Speaking Confidence", value: profile.speakingConfidence || "Medium" },
-    { icon: <PronunciationIcon />, label: "Pronunciation Benchmark", value: profile.pronunciationScore || "Good" },
-    { icon: <TopicsIcon />, label: "Tailored Focus", value: `${profile.profession || "Tech"} • ${profile.learningGoal || "AI Career"}` },
+    { icon: <TopicsIcon />, label: "Tailored Focus", value: profile.learningGoal || "Tech Career & AI" },
     { icon: <LearningStyleIcon />, label: "Pedagogical Mode", value: profile.preferenceStyle || "Conversation First" },
   ];
 

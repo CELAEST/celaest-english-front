@@ -24,6 +24,7 @@ export interface AuthResult {
 export interface IAuthService {
   login(email: string, password: string): Promise<AuthResult>;
   register(email: string, password: string, name: string): Promise<AuthResult>;
+  loginWithGoogle(): Promise<{ error?: string }>;
   refresh(): Promise<AuthResult>;
   logout(): Promise<void>;
   getStoredToken(): string | null;

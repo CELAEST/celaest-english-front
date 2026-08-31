@@ -22,12 +22,15 @@ export const JourneyTimelineCard: React.FC<JourneyTimelineCardProps> = ({
   nodes = DEFAULT_TIMELINE_NODES,
 }) => {
   return (
-    <div className="w-full p-6 rounded-2xl bg-[#090717]/90 border border-[#1C1738] hover:border-[#2D2455] backdrop-blur-md transition-all shadow-[0_4px_25px_rgba(0,0,0,0.4)] select-none">
+    <div className="relative w-full p-6 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] select-none overflow-hidden">
+      {/* Top Specular Hairline */}
+      <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
       {/* Title */}
-      <h3 className="text-xs font-light text-[#9E9EB6] mb-6">Your Journey</h3>
+      <h3 className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-6 z-10 relative">Your Journey</h3>
 
       {/* Timeline Steps Container */}
-      <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex items-center justify-between px-4 py-2 z-10 relative">
         {nodes.map((node, index) => {
           const isLast = index === nodes.length - 1;
 
@@ -37,40 +40,28 @@ export const JourneyTimelineCard: React.FC<JourneyTimelineCardProps> = ({
               <div className="flex items-center gap-4">
                 {/* Node Icon */}
                 {node.status === "completed" && (
-                  <div className="w-9 h-9 rounded-full bg-[#181236] border border-[#3B2C78] flex items-center justify-center text-[#A78BFA] shadow-[0_0_12px_rgba(112,72,232,0.4)] shrink-0">
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
+                  <div className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.12] flex items-center justify-center shrink-0">
+                    <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 )}
 
                 {node.status === "active" && (
-                  <div className="w-10 h-10 rounded-full bg-[#1A1242] border-2 border-[#7C3AED] flex items-center justify-center text-white shadow-[0_0_20px_rgba(124,58,237,0.7)] animate-pulse shrink-0">
-                    <div className="w-3 h-3 rounded-full bg-white shadow-[0_0_8px_#fff]" />
+                  <div className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/30 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.15)] shrink-0">
+                    <div className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_#fff]" />
                   </div>
                 )}
 
                 {node.status === "future" && (
-                  <div className="w-8 h-8 rounded-full bg-[#100D24] border border-[#231B45] flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-[#4A4A6D]" />
+                  <div className="w-7 h-7 rounded-full bg-white/[0.02] border border-white/[0.06] flex items-center justify-center shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
                   </div>
                 )}
 
                 {node.status === "goal" && (
-                  <div className="w-9 h-9 rounded-full bg-[#161036] border border-[#342766] flex items-center justify-center text-[#A78BFA] shadow-[0_0_12px_rgba(112,72,232,0.3)] shrink-0">
-                    <svg
-                      className="w-4.5 h-4.5 text-[#A78BFA]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                    >
+                  <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.10] flex items-center justify-center shrink-0">
+                    <svg className="w-3.5 h-3.5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                     </svg>
                   </div>
@@ -78,27 +69,23 @@ export const JourneyTimelineCard: React.FC<JourneyTimelineCardProps> = ({
 
                 {/* Node Details */}
                 <div className="flex flex-col text-left">
-                  <span
-                    className={`text-xs ${node.status === "active" ? "font-medium text-white" : "font-light text-[#8E8EB3]"}`}
-                  >
+                  <span className={`text-[11px] font-mono ${node.status === "active" ? "text-white" : "text-white/30"}`}>
                     {node.label}
                   </span>
-                  <span
-                    className={`text-xs ${node.status === "active" ? "font-light text-[#C8C8E8]" : "font-light text-[#5D5D82]"}`}
-                  >
+                  <span className={`text-[10px] font-mono ${node.status === "active" ? "text-white/50" : "text-white/20"}`}>
                     {node.topic}
                   </span>
                 </div>
               </div>
 
-              {/* Dotted Connecting Line (except after last item) */}
+              {/* Dotted Connecting Line */}
               {!isLast && (
                 <div className="flex-1 px-4 flex items-center justify-center">
                   <div
                     className={`w-full border-t border-dashed ${
                       index === 0
-                        ? "border-[#7C3AED]/60 shadow-[0_0_8px_rgba(124,58,237,0.4)]"
-                        : "border-[#262046]"
+                        ? "border-white/20"
+                        : "border-white/[0.06]"
                     }`}
                   />
                 </div>

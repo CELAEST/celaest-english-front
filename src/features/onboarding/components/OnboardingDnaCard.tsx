@@ -13,28 +13,26 @@ export const OnboardingDnaCard: React.FC<OnboardingDnaCardProps> = ({
 }) => {
   return (
     <div
-      className={`relative flex items-center pl-4 sm:pl-5 pr-3.5 sm:pr-4 py-2 sm:py-2.5 rounded-xl border transition-all duration-300 overflow-hidden ${
+      className={`relative flex items-center pl-4 sm:pl-5 pr-3.5 sm:pr-4 py-2.5 sm:py-3 rounded-2xl border transition-all duration-300 overflow-hidden ${
         isChecked
-          ? "bg-[#0B0A1A] border-[#1C1A36] text-white"
-          : "bg-[#080816]/40 border-[#18172E]/50 text-slate-500 opacity-40"
+          ? "bg-[#04040A] border-white/20 text-white shadow-[0_12px_30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "bg-[#04040A]/40 border-white/[0.04] text-white/40 opacity-50"
       }`}
     >
-      {/* Left Vertical Accent Line (Pill-shaped, inset slightly from top and bottom) */}
-      <div
-        className={`absolute left-0.5 top-1.5 bottom-1.5 w-[2.5px] rounded-full transition-all duration-300 ${
-          isChecked ? "bg-[#9353D3]" : "bg-transparent"
-        }`}
-      />
+      {/* Top Specular Hairline when checked */}
+      {isChecked && (
+        <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+      )}
 
-      {/* Circle Indicator (Flat solid circle, zero box shadow) */}
+      {/* Circle Indicator */}
       <div className="mr-3 flex items-center justify-center shrink-0">
         <div
           className={`w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors duration-300 ${
-            isChecked ? "bg-[#241747] text-[#D4B2FF]" : "bg-[#151528] text-transparent"
+            isChecked ? "bg-white/10 text-white" : "bg-white/[0.03] text-transparent"
           }`}
         >
           <svg
-            className={`w-4 h-4 transition-transform duration-300 ${
+            className={`w-3.5 h-3.5 transition-transform duration-300 ${
               isChecked ? "scale-100 opacity-100" : "scale-50 opacity-0"
             }`}
             fill="none"
@@ -44,7 +42,7 @@ export const OnboardingDnaCard: React.FC<OnboardingDnaCardProps> = ({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2.5}
+              strokeWidth={2}
               d="M5 13l4 4L19 7"
             />
           </svg>
@@ -54,15 +52,15 @@ export const OnboardingDnaCard: React.FC<OnboardingDnaCardProps> = ({
       {/* Text Details */}
       <div className="flex flex-col min-w-0">
         <span
-          className={`text-xs sm:text-[13px] font-medium leading-tight tracking-wide ${
-            isChecked ? "text-[#F1F1F8]" : "text-slate-500"
+          className={`text-xs sm:text-[13px] font-light leading-tight tracking-wide ${
+            isChecked ? "text-white" : "text-white/40"
           }`}
         >
           {title}
         </span>
         <span
-          className={`text-[11px] sm:text-xs font-light truncate pt-0.5 ${
-            isChecked ? "text-[#8E8EA8]" : "text-slate-600"
+          className={`text-[11px] font-mono truncate pt-0.5 ${
+            isChecked ? "text-white/40" : "text-white/20"
           }`}
         >
           {subtitle}

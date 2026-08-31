@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Check } from "lucide-react";
 import { vaultMaintenance } from "../services/vaultMaintenance";
 import { ExportVaultIcon, PurgeVaultIcon } from "./SettingsBespokeIcons";
@@ -29,17 +29,17 @@ const QuickActionBtn: React.FC<QuickActionBtnProps> = ({
     aria-busy={state === "working"}
     className={`group relative flex flex-col items-start gap-1.5 px-4 py-3.5 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 ${
       danger
-        ? "border-[#2a1215] bg-gradient-to-b from-[#170a0d]/80 to-[#100609]/50 hover:border-[#ef4444]/45 hover:shadow-[0_10px_28px_rgba(239,68,68,0.13)]"
-        : "border-white/[0.06] bg-white/[0.03] hover:border-[#A27FF3]/40 hover:bg-white/[0.05] hover:shadow-[0_10px_28px_rgba(112,72,232,0.14)]"
+        ? "border-rose-900/30 bg-rose-950/20 hover:border-rose-500/40 hover:bg-rose-950/30"
+        : "border-white/[0.06] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]"
     }`}
   >
     <span
       className={`flex items-center gap-2 text-xs font-medium tracking-wide transition-colors duration-300 ${
         state === "done"
-          ? "text-[#4ade80]"
+          ? "text-emerald-400"
           : danger
-            ? "text-[#f0a2a2] group-hover:text-[#fca5a5]"
-            : "text-[#b9b4cc] group-hover:text-[#f8f8f8]"
+            ? "text-rose-400/80 group-hover:text-rose-400"
+            : "text-white/70 group-hover:text-white"
       }`}
     >
       {icon}
@@ -47,8 +47,8 @@ const QuickActionBtn: React.FC<QuickActionBtnProps> = ({
       {state === "done" && <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
     </span>
     <span
-      className={`text-[10.5px] font-light leading-relaxed transition-colors duration-300 ${
-        state === "done" ? "text-[#4ade80]/70" : "text-[#66667c] group-hover:text-[#8a8a9e]"
+      className={`text-[10.5px] font-mono leading-relaxed transition-colors duration-300 ${
+        state === "done" ? "text-emerald-400/70" : "text-white/30 group-hover:text-white/50"
       }`}
     >
       {state === "done" ? "Completed successfully" : state === "working" ? "Working…" : hint}
@@ -86,22 +86,25 @@ export const SettingsQuickActionsCard: React.FC = () => {
   };
 
   return (
-    <div className="rounded-3xl border border-[#111220] bg-[#05060c] p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
+    <div className="relative rounded-3xl border border-white/[0.07] hover:border-white/[0.12] bg-[#04040A] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden transition-all duration-300">
+      {/* Top Specular Hairline */}
+      <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm sm:text-base font-medium text-[#f8f8f8] tracking-wide">
+      <div className="flex items-center justify-between z-10 relative">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
           Privacy &amp; Data
         </span>
-        <span className="text-[10px] tracking-wider uppercase font-semibold text-[#A27FF3] drop-shadow-[0_0_8px_rgba(162,127,243,0.45)]">
+        <span className="text-[10px] font-mono tracking-wider uppercase text-white/40">
           AES-GCM Vault
         </span>
       </div>
 
       {/* Actions Grid */}
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 z-10 relative">
         <QuickActionBtn
           icon={
-            <ExportVaultIcon className="w-5 h-5 text-[#A27FF3] drop-shadow-[0_0_6px_rgba(162,127,243,0.45)]" />
+            <ExportVaultIcon className="w-4 h-4 text-white/50 group-hover:text-white" />
           }
           label="Export my data"
           hint="Download an encrypted copy of your vault."
@@ -110,7 +113,7 @@ export const SettingsQuickActionsCard: React.FC = () => {
         />
         <QuickActionBtn
           icon={
-            <PurgeVaultIcon className="w-5 h-5 text-[#f0a2a2] drop-shadow-[0_0_6px_rgba(239,68,68,0.35)]" />
+            <PurgeVaultIcon className="w-4 h-4 text-rose-400/70" />
           }
           label="Purge vault"
           hint="Erase all local data from this device."

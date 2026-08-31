@@ -14,7 +14,7 @@ const BASE_URL = ENV.apiUrl;
 
 /** Hard cap for every request; prevents hung connections holding UI state. Set to 60s for heavy AI inference workloads. */
 const DEFAULT_TIMEOUT_MS = 60_000;
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 0; // React Query owns retry with dedupe/backoff — HttpClient does not double-retry
 const BASE_RETRY_DELAY_MS = 500;
 /** Only automatically retry methods that are safe to repeat. */
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -68,11 +68,14 @@ export class HttpClient {
   }
 
   private static getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
+    const activeToken =
+      this.token ||
+      (typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null);
+    if (activeToken) {
+      headers["Authorization"] = `Bearer ${activeToken}`;
     }
     return headers;
   }

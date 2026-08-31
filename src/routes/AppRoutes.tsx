@@ -1,7 +1,8 @@
-import React, { lazy, Suspense } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import React, { lazy, Suspense, useEffect } from "react";
+import { Routes, Route, useNavigate, useLocation, Navigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "./routes.config";
 import { useCurrentUser } from "../shared/hooks/useCurrentUser";
+import { SupabaseAuthAdapter } from "../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 /**
  * Feature views are code-split so each route only ships the JS it needs.
@@ -11,6 +12,9 @@ const OnboardingView = lazy(() =>
 );
 const WorkspaceDashboardView = lazy(() =>
   import("../features/workspace").then((m) => ({ default: m.WorkspaceDashboardView })),
+);
+const AuthCallbackView = lazy(() =>
+  import("../features/auth/components/AuthCallbackView").then((m) => ({ default: m.AuthCallbackView })),
 );
 
 function RouteFallback() {
@@ -29,15 +33,100 @@ function RouteFallback() {
   );
 }
 
+/**
+ * OnboardingGuard (PublicOnly / Fresh User Guard):
+ * If the user has already finished onboarding and holds a session,
+ * block access to /onboarding and immediately redirect to Workspace.
+ */
 function OnboardingRoute() {
   const navigate = useNavigate();
-  return <OnboardingView onFinish={() => navigate(ROUTES.HOME, { replace: true })} />;
+  const [searchParams] = useSearchParams();
+  const authAdapter = SupabaseAuthAdapter.getInstance();
+  const { settings } = useCurrentUser();
+  const isReset = searchParams.get("reset") === "true";
+
+  useEffect(() => {
+    if (isReset) {
+      localStorage.removeItem("lingua_onboarding_completed");
+    }
+  }, [isReset]);
+
+  const isCompletedLocal =
+    !isReset &&
+    typeof window !== "undefined" &&
+    localStorage.getItem("lingua_onboarding_completed") === "true";
+  const hasToken = authAdapter.isAuthenticated();
+
+  // If user is authenticated and backend confirms onboarding completion, navigate to Workspace
+  useEffect(() => {
+    if (!isReset && hasToken && settings?.onboardingCompleted) {
+      localStorage.setItem("lingua_onboarding_completed", "true");
+      navigate(ROUTES.HOME, { replace: true });
+    }
+  }, [isReset, hasToken, settings?.onboardingCompleted, navigate]);
+
+  if (!isReset && hasToken && (isCompletedLocal || settings?.onboardingCompleted)) {
+    return <Navigate to={ROUTES.HOME} replace />;
+  }
+
+  return (
+    <OnboardingView
+      onFinish={() => {
+        localStorage.setItem("lingua_onboarding_completed", "true");
+        navigate(ROUTES.HOME, { replace: true });
+      }}
+    />
+  );
 }
 
+/**
+ * WorkspaceWrapper (Protected Application Shell):
+ * Demarcates private routes with Default Deny. If unauthenticated,
+ * redirects cleanly to onboarding.
+ */
 function WorkspaceWrapper() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, settings } = useCurrentUser();
+  const { user, settings, loading } = useCurrentUser();
+  const authAdapter = SupabaseAuthAdapter.getInstance();
+  const hasToken = authAdapter.isAuthenticated();
+
+  // Global Unauthorized Event Listener (from HttpClient 401s)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      authAdapter.logout();
+      localStorage.removeItem("lingua_onboarding_completed");
+      navigate(ROUTES.ONBOARDING, { replace: true });
+    };
+
+    window.addEventListener("celaest:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("celaest:unauthorized", handleUnauthorized);
+    };
+  }, [authAdapter, navigate]);
+
+  // Auth & Onboarding Guard
+  useEffect(() => {
+    if (!hasToken) {
+      navigate(ROUTES.ONBOARDING, { replace: true });
+      return;
+    }
+    // If backend reports onboarding is genuinely not completed, redirect to diagnostic flow
+    if (!loading && settings && settings.onboardingCompleted === false) {
+      const isCompletedLocal = typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
+      if (!isCompletedLocal) {
+        navigate(ROUTES.ONBOARDING, { replace: true });
+      }
+    }
+  }, [hasToken, loading, settings, navigate]);
+
+  const isCompletedLocal = typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
+  const isCompleted = isCompletedLocal || settings?.onboardingCompleted === true;
+
+  // If unauthenticated or never completed onboarding placement diagnostic, protect workspace
+  if (!hasToken || (!loading && !isCompleted && settings?.onboardingCompleted === false)) {
+    return <Navigate to={ROUTES.ONBOARDING} replace />;
+  }
 
   const getTabFromPath = (pathname: string) => {
     const clean = pathname.replace(/^\//, "");
@@ -49,6 +138,7 @@ function WorkspaceWrapper() {
 
   const handleNavigate = (route: string) => {
     if (route === "onboarding") {
+      // Intentional navigation to onboarding only permitted if logging out
       navigate(ROUTES.ONBOARDING);
     } else if (route === "workspace") {
       navigate(ROUTES.HOME);
@@ -74,6 +164,7 @@ export const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        <Route path={ROUTES.AUTH_CALLBACK} element={<AuthCallbackView />} />
         <Route path={ROUTES.ONBOARDING} element={<OnboardingRoute />} />
         <Route path="/*" element={<WorkspaceWrapper />} />
       </Routes>

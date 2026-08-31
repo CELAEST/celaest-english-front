@@ -1,5 +1,10 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { __resetInterviewHydrationForTest } from "./useInterviewSession";
+
+beforeEach(() => {
+  __resetInterviewHydrationForTest();
+});
 
 // Isolate the hook from browser-only media/audio APIs so we can assert on the
 // pure memoization guarantee without jsdom limitations.
@@ -131,6 +136,7 @@ describe("useInterviewSession persistence", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    __resetInterviewHydrationForTest();
     vi.mocked(apiInterviewRepository.getProgress).mockReturnValue(
       Promise.resolve(null),
     );

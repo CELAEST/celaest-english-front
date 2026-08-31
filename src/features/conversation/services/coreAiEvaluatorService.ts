@@ -16,6 +16,7 @@ import { normalizeTranslationAndExplanation } from "./linguisticTranslationNorma
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 
 const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
 
@@ -98,6 +99,8 @@ interface LlmEvaluationPayload {
   grammarScore?: number;
   clarityScore?: number;
   vocabularyScore?: number;
+  /** LLM's own CEFR estimation based on linguistic analysis. */
+  estimatedCefrLevel?: string;
   /** Alternative score key names some provider models emit. */
   overall?: number;
   grammar?: number;
@@ -220,6 +223,7 @@ export class CoreAiEvaluatorService {
   public static async evaluate(
     spokenText: string,
     currentQuestion: InterviewQuestionItem,
+    roleName: string = "Professional",
   ): Promise<TurnEvaluationFeedback & { strategicFeedback?: StrategicFeedbackItem | null }> {
     const cleanText = spokenText.trim();
 
@@ -235,6 +239,7 @@ RULES:
 3. STRATEGIC FEEDBACK in Spanish: "title" (motivating), "explanation" (appreciation + constructive diagnosis using "tú"), "recommendation" (actionable step-by-step with example).
 4. MAX 5 errors. "explanation" = grammar rule in Spanish. "translationSpanish" = direct Spanish translation of corrected phrase ONLY (no tips).
 5. No emojis. No markdown. Return ONLY raw JSON.
+6. CEFR ESTIMATION: Based on the grammar complexity, vocabulary range, coherence, and error density of the candidate's answer, estimate their CEFR level (A1, A2, B1, B2, C1, or C2) and return it in the "estimatedCefrLevel" field.
 
 JSON schema:
 {
@@ -242,6 +247,7 @@ JSON schema:
   "grammarScore": number (0-100),
   "clarityScore": number (0-100),
   "vocabularyScore": number (0-100),
+  "estimatedCefrLevel": "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
   "improvedFullAnswer": string (C2 model answer for this question),
   "strategicFeedback": {
     "title": string (ES),
@@ -266,22 +272,46 @@ JSON schema:
 }`;
 
     const userMessage = `Interview Question: "${currentQuestion.question}"
-Candidate Role: Product Manager
+Candidate Role: ${roleName}
 Candidate Spoken Answer: "${cleanText}"`;
 
     try {
       // 1. Tier 1: Evaluate via CELAEST-English Backend (Auth, Caching, Rate Limiting, Telemetry)
+      // Inject active BYOK provider so the backend can route to the user's chosen LLM
+      // (headers are safe to send even when offline — backend will ignore if unknown).
       let parsed: LlmEvaluationPayload | null = null;
       try {
+        let byokHeaders: Record<string, string> = {};
+        let byokBody: Record<string, string> = {};
+        try {
+          const activeId = await providerKeyVault.getActiveProviderId();
+          if (activeId) {
+            const cfg = await providerKeyVault.getConfig(activeId);
+            const hasKey = await providerKeyVault.hasKey(activeId);
+            byokHeaders["X-Active-Provider"] = activeId;
+            if (cfg?.defaultModel) byokHeaders["X-Provider-Model"] = cfg.defaultModel;
+            if (cfg?.endpoint) byokHeaders["X-Provider-Endpoint"] = cfg.endpoint;
+            byokHeaders["X-Provider-Has-Key"] = hasKey ? "1" : "0";
+            byokBody = {
+              providerId: activeId,
+              ...(cfg?.defaultModel ? { providerModel: cfg.defaultModel } : {}),
+              ...(cfg?.endpoint ? { providerEndpoint: cfg.endpoint } : {}),
+            };
+          }
+        } catch {
+          // Vault read failure must never block evaluation
+        }
+
         parsed = await HttpClient.post<LlmEvaluationPayload>(
           "/interview/evaluate",
           {
             spokenText: cleanText,
             question: currentQuestion.question,
             questionId: String(currentQuestion.id),
-            roleName: "Product Manager",
+            roleName: roleName,
+            ...byokBody,
           },
-          { timeoutMs: 25_000 },
+          { timeoutMs: 25_000, headers: byokHeaders },
         );
       } catch (backendErr) {
         logger.warn(
@@ -289,14 +319,22 @@ Candidate Spoken Answer: "${cleanText}"`;
           backendErr,
         );
 
-        // 2. Tier 2: Direct Core AI fallback
+        // 2. Tier 2: Direct Core AI fallback — respect BYOK provider if set
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        let fallbackProvider = "groq";
+        try {
+          const a = await providerKeyVault.getActiveProviderId();
+          if (a) fallbackProvider = a;
+        } catch {
+          // ignore
+        }
 
         const bodyPayload = {
           system: systemPrompt,
           message: userMessage,
-          provider: "groq",
+          provider: fallbackProvider,
           max_tokens: 4096,
         };
 
@@ -510,6 +548,7 @@ Candidate Spoken Answer: "${cleanText}"`;
             grammarScore: grammar,
             clarityScore: clarity,
             vocabularyScore: vocab,
+            estimatedCefrLevel: parsed.estimatedCefrLevel,
             userSpokenText: cleanText,
             improvedFullAnswer:
               parsed.improvedFullAnswer ||

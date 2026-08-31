@@ -31,13 +31,14 @@ export interface TurnEvaluationFeedback {
   clarityScore: number; // 0 - 100
   grammarScore: number; // 0 - 100
   vocabularyScore: number; // 0 - 100
+  estimatedCefrLevel?: string | undefined;
   userSpokenText: string;
   improvedFullAnswer: string;
   unclearOrErrorWords: SpecificErrorItem[];
   keyStrengths: string[];
   tipsForNextTurn: string;
-  userAudioUrl?: string;
-  recordingDurationSeconds?: number;
+  userAudioUrl?: string | undefined;
+  recordingDurationSeconds?: number | undefined;
 }
 
 export interface InterviewRoleData {

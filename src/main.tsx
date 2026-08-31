@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { QueryProvider } from "./shared/providers/QueryProvider";
+import { initSentry } from "./infrastructure/monitoring/sentry";
+
+initSentry();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

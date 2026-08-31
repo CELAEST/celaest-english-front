@@ -15,6 +15,14 @@ import {
 } from "../services/interviewPersistence";
 import { setMicVolume } from "./micVolumeStore";
 
+let interviewHydratedOnce = false;
+let interviewLastHydratedAt = 0;
+
+export function __resetInterviewHydrationForTest(): void {
+  interviewHydratedOnce = false;
+  interviewLastHydratedAt = 0;
+}
+
 export type InterviewStatus = "IDLE" | "AI_SPEAKING" | "RECORDING" | "THINKING" | "PAUSED";
 
 export type ProcessingStage = "IDLE" | "TRANSCRIBING" | "ANALYZING" | "PREPARING";
@@ -53,6 +61,7 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
   // re-render the entire conversation tree on every frame.
   const lastVolUpdateRef = useRef<number>(0);
   const lastVolRef = useRef<number>(0);
+  const lastTranscriptUpdateRef = useRef<number>(0);
 
   // Dynamically generate question for the current question index (Continuous infinite rounds).
   // Memoized so the returned object reference is stable across renders that don't change the
@@ -190,8 +199,12 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       lang: "en-US",
       onTranscript: (liveTranscript: string) => {
         if (!isMountedRef.current || isAiSpeakingRef.current) return;
-        setUserTranscript(liveTranscript);
         userTranscriptRef.current = liveTranscript;
+        const now = Date.now();
+        if (now - lastTranscriptUpdateRef.current > 180) {
+          lastTranscriptUpdateRef.current = now;
+          setUserTranscript(liveTranscript);
+        }
       },
       onError: () => {
         // Soft error recovery
@@ -476,7 +489,13 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     }
     lastSavedSnapshotRef.current = comparable;
 
-    savePersistedInterview(snapshot);
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
+        () => savePersistedInterview(snapshot),
+      );
+    } else {
+      savePersistedInterview(snapshot);
+    }
 
     const handle = setTimeout(() => {
       apiInterviewRepository
@@ -512,11 +531,15 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
 
   // Hydrate from the backend on mount: if the cloud copy is newer than the
   // locally restored snapshot (e.g. progress made on another device), adopt it.
-  // didHydrateRef guarantees a single GET even under StrictMode double-invoke.
+  // Module-level singleton guarantees a single GET per app lifetime (covers
+  // StrictMode double-invoke *and* tab re-mount within stale window).
   const didHydrateRef = useRef(false);
   useEffect(() => {
     if (didHydrateRef.current) return;
     didHydrateRef.current = true;
+    if (interviewHydratedOnce && Date.now() - interviewLastHydratedAt < 5 * 60 * 1000) return;
+    interviewHydratedOnce = true;
+    interviewLastHydratedAt = Date.now();
     let cancelled = false;
     apiInterviewRepository
       .getProgress()

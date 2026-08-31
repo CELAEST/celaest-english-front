@@ -115,7 +115,9 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               <circle cx="12" cy="12" r="1.4" fill="#FFFFFF" />
             </svg>
 
-            <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">AI Interviewer</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+              AI Interviewer
+            </span>
           </div>
 
           <div className="flex items-center space-x-2 select-none">
@@ -173,9 +175,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                i < currentQuestion
-                  ? "bg-white/60"
-                  : "bg-white/[0.04]"
+                i < currentQuestion ? "bg-white/60" : "bg-white/[0.04]"
               }`}
             />
           ))}
@@ -483,8 +483,24 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               viewBox="0 0 24 24"
               fill="none"
             >
-              <rect x="3" y="14" width="3.2" height="7" rx="1.5" fill="currentColor" fillOpacity="0.45" />
-              <rect x="8.5" y="9" width="3.2" height="12" rx="1.5" fill="currentColor" fillOpacity="0.7" />
+              <rect
+                x="3"
+                y="14"
+                width="3.2"
+                height="7"
+                rx="1.5"
+                fill="currentColor"
+                fillOpacity="0.45"
+              />
+              <rect
+                x="8.5"
+                y="9"
+                width="3.2"
+                height="12"
+                rx="1.5"
+                fill="currentColor"
+                fillOpacity="0.7"
+              />
               <rect x="14" y="4" width="3.2" height="17" rx="1.5" fill="currentColor" />
             </svg>
 
@@ -566,7 +582,9 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
             }`}
           >
             <div className="flex flex-col space-y-0.5">
-              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">Grammar</span>
+              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">
+                Grammar
+              </span>
               <span
                 className={`text-xs font-mono font-light ${getScoreColor(
                   turnFeedback.grammarScore,
@@ -576,7 +594,9 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               </span>
             </div>
             <div className="flex flex-col space-y-0.5 border-l border-white/[0.04]">
-              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">Vocabulary</span>
+              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">
+                Vocabulary
+              </span>
               <span
                 className={`text-xs font-mono font-light ${getScoreColor(
                   turnFeedback.vocabularyScore,
@@ -586,7 +606,9 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               </span>
             </div>
             <div className="flex flex-col space-y-0.5 border-l border-white/[0.04]">
-              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">Clarity</span>
+              <span className="text-white/30 text-[9px] font-mono uppercase tracking-wider">
+                Clarity
+              </span>
               <span
                 className={`text-xs font-mono font-light ${getScoreColor(
                   turnFeedback.clarityScore,

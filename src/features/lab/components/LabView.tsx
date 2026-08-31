@@ -1,5 +1,6 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { WorkspaceHeroEvolutionShowcase } from "./WorkspaceHeroEvolutionShowcase";
 import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
 import { QuantumProgressGauge } from "./QuantumProgressGauge";
 import { BespokeIconsShowcase } from "./BespokeIconsShowcase";
@@ -22,18 +23,32 @@ export interface LabViewProps {
 export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
   return (
     <div className="w-full h-full flex flex-col justify-start items-center p-4 sm:p-8 lg:p-12 overflow-y-auto no-scrollbar bg-[#030208] text-white">
-      <div className="w-full max-w-6xl flex flex-col space-y-8 pb-16">
+      <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
 
-        {/* Section 1: Reading Generation Loading States (Top Priority) */}
+        {/* Section 1: Workspace Hero Banner Evolution (Top Priority) */}
         <div className="flex flex-col space-y-4">
           <div>
             <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
-              <span>1. Reading Generation Loading States</span>
-              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#34D399]/20 border border-[#34D399]/30 text-[#34D399]">
-                Priority
+              <span>1. Workspace Hero Banner Evolution & Spatial Lighting</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#A27FF3]/20 border border-[#A27FF3]/40 text-[#C4B5FD]">
+                New · Top Priority
               </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Calibrate and compare ultra-luxury, borderless obsidian glass variants with atmospheric
+              backlights behind the cosmic orb, pure editorial typography, and high-contrast callout nodes.
+            </p>
+          </div>
+          <WorkspaceHeroEvolutionShowcase />
+        </div>
+
+        {/* Section 2: Reading Generation Loading States */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>2. Reading Generation Loading States</span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
               Inspect and calibrate the 3 AI preparation states with orbital ring, nexus centerpiece

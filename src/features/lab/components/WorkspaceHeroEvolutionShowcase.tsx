@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 
 // ==========================================
 // BESPOKE ULTRA-CLEAN SVG ICON MASTERPIECES
-// (Strict adherence to bespoke-icon-crafting standard)
+// (Strict adherence to bespoke-icon-crafting & ultra-luxury standard)
 // ==========================================
 
 export const MemorySynapticHelixIcon: React.FC<{ className?: string }> = ({
@@ -17,14 +17,14 @@ export const MemorySynapticHelixIcon: React.FC<{ className?: string }> = ({
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    {/* Elegant double-helix synapse waves */}
+    {/* Continuous synaptic waves */}
     <path d="M4 6C8 6 10 18 14 18C18 18 20 6 20 6" opacity={0.9} />
     <path d="M4 18C8 18 10 6 14 6C18 6 20 18 20 18" opacity={0.5} />
-    {/* Luminous Synaptic Connectors */}
+    {/* Synaptic Connectors */}
     <line x1="7" y1="9.5" x2="7" y2="14.5" strokeDasharray="1 2" opacity={0.6} />
     <line x1="12" y1="6" x2="12" y2="18" strokeDasharray="1 2" opacity={0.7} />
     <line x1="17" y1="9.5" x2="17" y2="14.5" strokeDasharray="1 2" opacity={0.6} />
-    {/* Focal Synapse Nodes */}
+    {/* Clean Focal Nodes */}
     <circle cx="4" cy="6" r="1.3" fill="currentColor" />
     <circle cx="12" cy="12" r="1.5" fill="currentColor" />
     <circle cx="20" cy="18" r="1.3" fill="currentColor" />
@@ -80,13 +80,13 @@ export const StudioAcousticApertureIcon: React.FC<{ className?: string }> = ({
 );
 
 export const QuantumSparkleIcon: React.FC<{ className?: string }> = ({
-  className = "w-4 h-4",
+  className = "w-3.5 h-3.5",
 }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
     <path
       d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"
       fill="currentColor"
-      fillOpacity={0.2}
+      fillOpacity={0.25}
       strokeLinejoin="round"
     />
   </svg>
@@ -107,7 +107,7 @@ export const TargetReticleIcon: React.FC<{ className?: string }> = ({
 );
 
 export const PlayArrowIcon: React.FC<{ className?: string }> = ({
-  className = "w-3.5 h-3.5",
+  className = "w-3 h-3",
 }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M8 5V19L19 12L8 5Z" />
@@ -117,7 +117,7 @@ export const PlayArrowIcon: React.FC<{ className?: string }> = ({
 export const ArrowRightIcon: React.FC<{ className?: string }> = ({
   className = "w-3.5 h-3.5",
 }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
     <path d="M5 12H19M19 12L12 5M19 12L12 19" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
@@ -142,7 +142,6 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: "“Daily conversation review”",
         meta: "Ready for practice · 14 cards",
         Icon: MemorySynapticHelixIcon,
-        accent: "#C4B5FD",
         progress: 88,
         actionLabel: "Review Flashcards",
       },
@@ -152,7 +151,6 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: "Mastering Modern Leadership",
         meta: "3 min read · Business C1",
         Icon: ArchitecturalCodexIcon,
-        accent: "#A27FF3",
         progress: 45,
         actionLabel: "Resume Reading",
       },
@@ -162,7 +160,6 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: `${activeMode} Simulation`,
         meta: "Live AI Simulation · Round 01",
         Icon: StudioAcousticApertureIcon,
-        accent: "#7048E8",
         progress: 0,
         actionLabel: "Start Interview",
       },
@@ -172,15 +169,15 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col space-y-6 select-none">
-      {/* 1. Header Control Ribbon */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#04040A] border border-white/[0.07] shadow-2xl">
+      {/* 1. Ultra-Refined Control Ribbon */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-[#04040A] border border-white/[0.07] shadow-2xl">
         <div className="flex items-center flex-wrap gap-2">
-          <span className="text-xs font-mono uppercase tracking-widest text-white/40 mr-2">
+          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/40 mr-1">
             Design Direction:
           </span>
           {(
             [
-              { id: "linear", label: "1. Spatial Linear (Apple Standard)" },
+              { id: "linear", label: "1. Spatial Linear Glass (Apple SF Standard)" },
               { id: "minimalist", label: "2. Pure Monochromatic Rail" },
               { id: "synapse", label: "3. Neural Horizon Mode" },
               { id: "capsule", label: "4. Tactile Glass Capsules" },
@@ -192,7 +189,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               onClick={() => setActiveDirection(d.id)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                 activeDirection === d.id
-                  ? "bg-white/[0.12] text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.12)] scale-[1.02]"
+                  ? "bg-white/[0.1] text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.08)] scale-[1.01]"
                   : "bg-white/[0.02] text-white/50 border border-white/[0.05] hover:text-white hover:bg-white/[0.06]"
               }`}
             >
@@ -201,32 +198,32 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
           ))}
         </div>
 
-        {/* Quick Features Toggle */}
+        {/* Quick Action Toggle */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setShowQuickAction((prev) => !prev)}
-            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
               showQuickAction
-                ? "bg-[#7048E8]/20 border border-[#A27FF3]/40 text-[#C4B5FD]"
-                : "bg-white/[0.03] border border-white/[0.06] text-white/40"
+                ? "bg-white/[0.08] border border-white/20 text-white/90"
+                : "bg-white/[0.02] border border-white/[0.05] text-white/30"
             }`}
           >
-            CTA Actions: {showQuickAction ? "ON" : "OFF"}
+            Trigger CTAs: {showQuickAction ? "Visible" : "Hidden"}
           </button>
         </div>
       </div>
 
       {/* 2. Hero Interactive Canvas Arena */}
       <div className="relative w-full rounded-3xl overflow-hidden bg-[#030208] border border-white/[0.08] shadow-[0_24px_80px_rgba(0,0,0,0.95)] min-h-[500px] p-6 sm:p-10 lg:p-12 flex flex-col justify-between transition-all duration-500">
-        {/* Full Bleed Room Wallpaper Background (Contains the realistic room + 3D Orb in video) */}
+        {/* Full Bleed Room Wallpaper Background (Realistic room with 3D Orb seamlessly in video) */}
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
           <img
             src="/assets/workspace_room_bg.png"
             alt="Room Background with integrated 3D Orb"
             className="w-full h-full object-cover object-[58%_97%] opacity-95 transition-all duration-300"
           />
-          {/* Subtle Vignette Gradients for Crisp 100% Typography Contrast */}
+          {/* Subtle Vignette Gradients for 100% Typography Contrast */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#030208]/95 via-[#030208]/40 to-[#030208]/20 pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-b from-[#030208]/30 via-transparent to-[#030208]/90 pointer-events-none" />
         </div>
@@ -234,18 +231,14 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         {/* Main Content Grid: Left Editorial Header + Right Bespoke Callouts */}
         <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
           {/* ========================================================================= */}
-          {/* LEFT COLUMN: Editorial Typography & Persona Statement                   */}
+          {/* LEFT COLUMN: Pure Editorial Typography & Personalized Context            */}
           {/* ========================================================================= */}
           <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start">
-            {/* Top Persona Greeting & Status Pill */}
+            {/* Top Persona Greeting (Delicate hairline & pure typography) */}
             <div className="flex items-center gap-3">
               <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
               <span className="text-[10.5px] font-sans font-medium tracking-[0.22em] text-[#A99BC9] uppercase">
                 GOOD AFTERNOON, ESTEBAN PEREZ
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9.5px] font-mono text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                NEURAL SYNAPSE ACTIVE
               </span>
             </div>
 
@@ -264,7 +257,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               Shall we continue from where we left off?
             </p>
 
-            {/* Dynamic Horizon Topic Switcher (Direction 3 & interactive test) */}
+            {/* Dynamic Horizon Topic Switcher (Direction 3 interactive test) */}
             {activeDirection === "synapse" && (
               <div className="flex items-center gap-2 pt-2 flex-wrap">
                 {["Tech Career & AI", "Executive Leadership", "Cross-Functional Pitch"].map(
@@ -275,8 +268,8 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                       onClick={() => setActiveMode(mode)}
                       className={`px-3 py-1 rounded-full text-[11px] font-mono transition-all cursor-pointer ${
                         activeMode === mode
-                          ? "bg-[#7048E8]/30 border border-[#A27FF3] text-white shadow-[0_0_12px_rgba(162,127,243,0.35)]"
-                          : "bg-white/[0.03] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06]"
+                          ? "bg-white/[0.1] border border-white/25 text-white shadow-[0_0_12px_rgba(255,255,255,0.1)]"
+                          : "bg-white/[0.02] border border-white/[0.06] text-white/50 hover:text-white hover:bg-white/[0.05]"
                       }`}
                     >
                       {mode}
@@ -286,7 +279,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               </div>
             )}
 
-            {/* Signature Pill with Ambient Sparkle */}
+            {/* Signature Pill with Subtle Ambient Sparkle (No heavy borders) */}
             <div className="pt-2">
               <button
                 type="button"
@@ -318,7 +311,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                       onClick={() => setSelectedCallout(item.id)}
                       className={`group flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 cursor-pointer ${
                         isSelected
-                          ? "bg-white/[0.07] border border-white/[0.18] shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] translate-x-[-4px]"
+                          ? "bg-white/[0.06] border border-white/[0.18] shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] translate-x-[-4px]"
                           : "bg-[#04040A]/40 border border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.04]"
                       }`}
                     >
@@ -327,7 +320,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                         <div
                           className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0 ${
                             isSelected
-                              ? "bg-gradient-to-b from-white/[0.15] to-white/[0.05] border border-white/30 text-white shadow-[0_0_20px_rgba(162,127,243,0.4)]"
+                              ? "bg-gradient-to-b from-white/[0.15] to-white/[0.05] border border-white/30 text-white shadow-[0_0_20px_rgba(162,127,243,0.3)]"
                               : "bg-white/[0.03] border border-white/[0.07] text-[#C4B5FD] group-hover:text-white group-hover:bg-white/[0.08] group-hover:border-white/[0.16]"
                           }`}
                         >
@@ -353,10 +346,10 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                         <div className="pl-2 shrink-0 animate-[fadeIn_0.3s_ease-out]">
                           <button
                             type="button"
-                            className="w-8 h-8 rounded-full bg-[#7048E8]/40 border border-[#A27FF3]/60 flex items-center justify-center text-white hover:bg-[#7048E8] transition-all shadow-[0_0_12px_rgba(112,72,232,0.5)] cursor-pointer"
+                            className="w-7 h-7 rounded-full bg-white/[0.08] border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer"
                             title={item.actionLabel}
                           >
-                            <PlayArrowIcon className="w-3.5 h-3.5 translate-x-0.5" />
+                            <PlayArrowIcon className="w-2.5 h-2.5 translate-x-0.5" />
                           </button>
                         </div>
                       )}
@@ -399,7 +392,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                               {item.tag}
                             </span>
                             {item.progress > 0 && (
-                              <span className="text-[9.5px] font-mono text-emerald-400 tabular-nums">
+                              <span className="text-[9.5px] font-mono text-white/70 tabular-nums">
                                 {item.progress}%
                               </span>
                             )}
@@ -431,7 +424,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
             )}
 
             {/* --------------------------------------------------------------------- */}
-            {/* DIRECTION 3: Neural Synapse Horizon                                   */}
+            {/* DIRECTION 3: Neural Horizon                                           */}
             {/* --------------------------------------------------------------------- */}
             {activeDirection === "synapse" && (
               <div className="flex flex-col space-y-3.5">
@@ -443,7 +436,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                       onClick={() => setSelectedCallout(item.id)}
                       className={`relative p-4 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden ${
                         isSelected
-                          ? "bg-[#0A0818]/80 border border-[#A27FF3]/50 shadow-[0_8px_30px_rgba(112,72,232,0.25)]"
+                          ? "bg-[#04040A]/90 border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.7)]"
                           : "bg-[#04040A]/40 border border-white/[0.06] hover:border-white/[0.14]"
                       }`}
                     >
@@ -467,10 +460,10 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Synapse Micro Progress Track */}
+                      {/* Micro Progress Track */}
                       <div className="w-full h-1 bg-white/[0.04] rounded-full mt-3 overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-[#7048E8] to-[#C4B5FD] rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-white/40 to-white/80 rounded-full transition-all duration-500"
                           style={{ width: `${Math.max(15, item.progress)}%` }}
                         />
                       </div>
@@ -493,12 +486,12 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                       onClick={() => setSelectedCallout(item.id)}
                       className={`group p-3.5 rounded-3xl transition-all duration-300 cursor-pointer flex items-center justify-between gap-3 ${
                         isSelected
-                          ? "bg-[#090814]/90 border border-white/[0.2] shadow-[0_16px_50px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.15)] translate-y-[-2px]"
+                          ? "bg-[#04040A]/90 border border-white/[0.2] shadow-[0_16px_50px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.15)] translate-y-[-2px]"
                           : "bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.12]"
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Circular Action Node with Micro Progress Arc */}
+                        {/* Circular Action Node */}
                         <div className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-white/[0.03] border border-white/[0.08] text-[#DDD6FE] group-hover:scale-105 transition-transform">
                           <item.Icon className="w-5 h-5" />
                         </div>
@@ -516,11 +509,11 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Pill Action Button */}
+                      {/* Clean Trigger Button */}
                       <div className="shrink-0">
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-full text-[11px] font-mono font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.1] text-white/80 hover:text-white hover:bg-[#7048E8]/40 hover:border-[#A27FF3]/60"
+                          className="px-3 py-1.5 rounded-full text-[11px] font-mono font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.1] text-white/80 hover:text-white hover:bg-white/[0.12]"
                         >
                           <span>{item.actionLabel.split(" ")[0]}</span>
                           <ArrowRightIcon className="w-3 h-3" />
@@ -535,7 +528,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Engineering Comparison Card / Architectural Insights */}
+      {/* 3. Luxury Engineering Standard Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
         <div className="p-4 rounded-2xl bg-[#04040A] border border-white/[0.06] flex flex-col space-y-2">
           <div className="flex items-center space-x-2 text-[#C4B5FD]">
@@ -545,8 +538,8 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
             </span>
           </div>
           <p className="text-[11.5px] text-[#8a8a9e] leading-relaxed">
-            Eliminated duplicate standalone sphere image overlay. The 3D orb now breathes seamlessly
-            within the natural ambient room lighting of the video background.
+            Eliminated duplicate sphere image and neon status pills. Clean room architecture with
+            integrated 3D orb atmosphere.
           </p>
         </div>
 
@@ -558,21 +551,21 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
             </span>
           </div>
           <p className="text-[11.5px] text-[#8a8a9e] leading-relaxed">
-            Custom engineered vector paths: Synaptic DNA Helix for Memory, Architectural Open Codex
-            for Reading, and Acoustic Studio Aperture for Interview.
+            Vector icons engineered from scratch: Synaptic DNA Helix for Memory, Architectural Open
+            Codex for Reading, and Acoustic Aperture for Interview.
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-[#04040A] border border-white/[0.06] flex flex-col space-y-2">
-          <div className="flex items-center space-x-2 text-[#7048E8]">
+          <div className="flex items-center space-x-2 text-white/70">
             <QuantumSparkleIcon className="w-4 h-4" />
             <span className="text-xs font-mono font-semibold uppercase tracking-wider">
-              Tactile Micro-Interactions
+              Obsidian Glass Refinement
             </span>
           </div>
           <p className="text-[11.5px] text-[#8a8a9e] leading-relaxed">
-            Quick-action action triggers, real-time topic horizon toggles, and high-contrast specular
-            glass highlights without heavy opaque container boxes.
+            Specular hairlines, pure high-contrast typography, and tactile micro-interactions
+            without heavy opaque boxes.
           </p>
         </div>
       </div>

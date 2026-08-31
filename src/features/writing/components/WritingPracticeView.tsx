@@ -165,14 +165,12 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({ onNavi
 
   return (
     <div className="relative w-full h-full min-h-screen bg-[#000001] text-white flex flex-col justify-between select-none z-10 overflow-hidden animate-[fadeIn_0.5s_ease-out_both]">
-      {/* Top Header Navigation */}
-      <WritingHeader />
-
       {/* Main Workspace Content Canvas */}
       <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-6 sm:px-10 lg:px-14 py-3 sm:py-5 pt-3 sm:pt-4 gap-6 sm:gap-8 z-10 overflow-hidden">
         {/* Left Column: Task Header, Editor & Submit Bar */}
         <div className="flex-1 w-full flex flex-col justify-between h-full min-h-0 overflow-hidden">
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <WritingHeader />
             <React.Fragment key={currentTask.id}>
               <WritingTaskHeader
                 category={`WRITING TASK · ${currentTask.category}`}

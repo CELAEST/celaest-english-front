@@ -21,7 +21,7 @@ export const ReadingBottomBar: React.FC<ReadingBottomBarProps> = React.memo(
     return (
       <nav
         aria-label="Reading navigation"
-        className="w-full max-w-[620px] flex flex-col space-y-2 select-none shrink-0 mt-auto mb-3 sm:mb-4.5 pb-1 mx-auto relative bg-transparent z-20 animate-[slideUp_0.45s_ease-out_0.2s_both]"
+        className="w-full flex flex-col space-y-2 select-none shrink-0 mt-auto mb-3 sm:mb-4.5 pb-1 relative bg-transparent z-20 animate-[slideUp_0.45s_ease-out_0.2s_both]"
       >
         {/* Main Progress Section (Labels + Progress Line) */}
         <div className="w-full flex flex-col space-y-1.5 px-0">
@@ -99,13 +99,13 @@ export const ReadingBottomBar: React.FC<ReadingBottomBarProps> = React.memo(
             disabled={!onNextPage}
             className={`group flex items-center space-x-1.5 text-xs transition-all duration-200 py-1 px-2.5 rounded-lg ${
               onNextPage
-                ? "text-[#A27FF3] hover:text-[#C4B5FD] cursor-pointer hover:bg-[#7048E8]/15 font-medium active:scale-95 shadow-[0_0_12px_rgba(162,127,243,0.2)]"
+                ? "text-white/70 hover:text-white cursor-pointer hover:bg-white/[0.06] active:scale-95"
                 : "text-white/20 cursor-not-allowed"
             }`}
             title="Next page"
             aria-label="Next page"
           >
-            <span className="font-medium">Next</span>
+            <span className="font-normal">Next</span>
             <svg
               className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
               viewBox="0 0 24 24"

@@ -70,7 +70,6 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
   // Keyboard navigation: ArrowLeft / ArrowRight for reading pages
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input or textarea
       if (
         document.activeElement?.tagName === "INPUT" ||
         document.activeElement?.tagName === "TEXTAREA"
@@ -131,20 +130,20 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
         </button>
       )}
 
-      {/* Main Workspace Layout Canvas */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch px-4 sm:px-6 lg:px-10 xl:px-12 py-2 sm:py-3 gap-6 xl:gap-8 2xl:gap-12 z-10 overflow-hidden min-h-0">
-        {/* Left / Central Column: Main Landmark */}
+      {/* Main Workspace Layout Canvas (Aligned with Writing standard 1:1) */}
+      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-6 sm:px-10 lg:px-14 py-3 sm:py-5 pt-3 sm:pt-4 gap-6 sm:gap-8 z-10 overflow-hidden">
+        {/* Left / Central Column: Strictly aligned to the left */}
         <main
           role="main"
           aria-label="Reading Arena"
-          className="flex-1 w-full flex flex-col h-full min-h-0 overflow-hidden xl:pl-4 2xl:pl-8"
+          className="flex-1 w-full flex flex-col h-full min-h-0 overflow-hidden"
         >
           {/* Top Centered Cosmic Orb Hero */}
           {!isSpecialView && <ReadingHeader hideCenterOrb={isSpecialView} />}
 
-          {/* Content wrapper: fills vertical space */}
+          {/* Content wrapper: centered in the viewport under the Orb, with internal text flush left */}
           <div
-            className={`flex flex-col w-full max-w-[620px] mx-auto flex-1 min-h-0 ${
+            className={`flex flex-col w-full max-w-[680px] mx-auto flex-1 min-h-0 ${
               isSpecialView ? "items-center justify-center" : "items-start justify-between"
             }`}
           >
@@ -167,20 +166,17 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
             {/* Central Reader / Completion / Loading Switcher */}
             <div
               className={`w-full flex-1 min-h-0 flex flex-col overflow-visible ${
-                isSpecialView ? "items-center justify-center" : "items-start justify-start"
+                isSpecialView ? "items-center justify-center" : "items-start justify-start text-left"
               }`}
             >
               {isLoading ? (
                 /* Initial cold-load article skeleton */
-                <div className="w-full max-w-[620px] flex flex-col space-y-5 animate-pulse select-none py-4">
-                  {/* Article Header Skeleton */}
-                  <div className="flex flex-col space-y-2">
+                <div className="w-full flex flex-col space-y-5 animate-pulse select-none py-4 text-left">
+                  <div className="flex flex-col space-y-2 text-left">
                     <div className="h-3 w-28 rounded bg-white/[0.07]" />
                     <div className="h-7 w-80 rounded-lg bg-white/[0.08]" />
                     <div className="h-4 w-64 rounded bg-white/[0.04]" />
                   </div>
-
-                  {/* Text Body Skeleton Lines */}
                   <div className="flex flex-col space-y-2.5 pt-3">
                     {[1, 0.85, 0.95, 0.7, 0.9, 0.6, 0.8, 0.75].map((w, i) => (
                       <div
@@ -236,11 +232,11 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
           </div>
         </main>
 
-        {/* Right Sidebar Stack: Semantic Aside with Real Telemetry */}
+        {/* Right Sidebar Stack: 4 Cards (Matches Writing: w-80 xl:w-96 space-y-4 py-1) */}
         <aside
           role="complementary"
           aria-label="Reading telemetry and AI mentor"
-          className="hidden xl:flex w-[270px] 2xl:w-[310px] flex-col space-y-3.5 2xl:space-y-4 shrink-0 overflow-y-auto no-scrollbar pt-1 pb-4 min-h-0 justify-start"
+          className="hidden xl:flex w-80 xl:w-96 flex-col space-y-4 shrink-0 h-full max-h-full overflow-y-auto no-scrollbar py-1"
         >
           <ReadingAIMentorCard />
           <ReadingProgressCard

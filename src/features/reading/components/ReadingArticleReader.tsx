@@ -2,6 +2,10 @@ import React, { useState, useCallback, useMemo, useRef } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { ReadingWordModal } from "./ReadingWordModal";
 import { logger } from "../../../shared/utils/logger";
+import {
+  VERIFIED_PHRASAL_VERBS_SET,
+  OBJECT_PRONOUNS_SET,
+} from "../utils/phrasalVerbsCatalog";
 
 export interface ReadingArticleReaderProps {
   content: string;
@@ -10,11 +14,6 @@ export interface ReadingArticleReaderProps {
   onAddToMemory?: (wordData: WordLookup) => Promise<void>;
   activeKaraokeWordIndex?: number | null | undefined;
 }
-
-import {
-  VERIFIED_PHRASAL_VERBS_SET,
-  OBJECT_PRONOUNS_SET,
-} from "../utils/phrasalVerbsCatalog";
 
 interface WordRange {
   start: number;
@@ -65,7 +64,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
       const n = cleanTokens.length;
 
       for (let i = 0; i < n; i++) {
-        // 1. 4-word Idioms (e.g. "at the end of", "in the long run", "on the same page", "think outside the box")
+        // 1. 4-word Idioms
         if (i + 3 < n) {
           const phrase4 = `${cleanTokens[i]} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]} ${cleanTokens[i + 3]}`;
           if (activePhrasalSet.has(phrase4)) {
@@ -76,7 +75,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           }
         }
 
-        // 2. 3-word Continuous Phrasal Verbs & Idioms (e.g. "look forward to", "come up with", "pressing down on", "state of the art")
+        // 2. 3-word Continuous Phrasal Verbs & Idioms
         if (i + 2 < n) {
           const phrase3 = `${cleanTokens[i]} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]}`;
           if (activePhrasalSet.has(phrase3)) {
@@ -86,7 +85,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             continue;
           }
 
-          // 3. Separable Phrasal Verbs with Object Pronoun (e.g. "figure it out" -> lookup "figure out", "turn it off")
+          // 3. Separable Phrasal Verbs with Object Pronoun
           if (OBJECT_PRONOUNS_SET.has(cleanTokens[i + 1])) {
             const splitVerb = `${cleanTokens[i]} ${cleanTokens[i + 2]}`;
             if (activePhrasalSet.has(splitVerb)) {
@@ -98,7 +97,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           }
         }
 
-        // 4. 2-word Phrasal Verbs & Collocations (e.g. "broke out", "carry out", "ramp up", "trade off")
+        // 4. 2-word Phrasal Verbs & Collocations
         if (i + 1 < n) {
           const phrase2 = `${cleanTokens[i]} ${cleanTokens[i + 1]}`;
           if (activePhrasalSet.has(phrase2)) {
@@ -244,7 +243,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         aria-label="Reading content"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
-        className="w-full max-w-[620px] flex-1 min-h-0 flex flex-col justify-start items-start text-left text-[#c5c6d0] font-sans text-[15px] sm:text-[16px] lg:text-[17px] font-light leading-[1.65] sm:leading-[1.7] select-text overflow-visible relative transition-all pt-0.5 pb-1 sm:pb-2 px-1 sm:px-1.5"
+        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-left text-[#c5c6d0] font-sans text-[15px] sm:text-[16px] lg:text-[17px] font-light leading-[1.65] sm:leading-[1.7] select-text overflow-visible relative transition-all pt-0.5 pb-1 sm:pb-2"
       >
         <div className="tracking-wide text-[#c5c6d0] leading-[1.65] sm:leading-[1.7] animate-[fadeSlideUp_0.4s_ease-out_both] relative z-10 text-left w-full overflow-visible">
           {rawWords.map((rawWord, idx) => {
@@ -260,9 +259,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
               activeKaraokeWordIndex !== undefined &&
               idx === activeKaraokeWordIndex;
             const isHovered =
-              hoveredRange !== null &&
-              idx >= hoveredRange.start &&
-              idx <= hoveredRange.end;
+              hoveredRange !== null && idx >= hoveredRange.start && idx <= hoveredRange.end;
             const isSelected =
               activeRange !== null &&
               showTooltip &&
@@ -270,17 +267,16 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
               idx <= activeRange.end;
 
             // Fluid continuous rounded borders for multi-word phrasal groups
-            const roundingClass = isPhrasalPart && !isSingle
-              ? isStart
-                ? "rounded-l-md rounded-r-none"
-                : isEnd
-                  ? "rounded-r-md rounded-l-none"
-                  : "rounded-none"
-              : "rounded-md";
+            const roundingClass =
+              isPhrasalPart && !isSingle
+                ? isStart
+                  ? "rounded-l-md rounded-r-none"
+                  : isEnd
+                    ? "rounded-r-md rounded-l-none"
+                    : "rounded-none"
+                : "rounded-md";
 
-            const spacingClass = isPhrasalPart && !isSingle && !isEnd
-              ? "mr-[2px]"
-              : "mr-1.5";
+            const spacingClass = isPhrasalPart && !isSingle && !isEnd ? "mr-[2px]" : "mr-1.5";
 
             return (
               <span

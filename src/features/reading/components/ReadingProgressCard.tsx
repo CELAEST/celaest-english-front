@@ -35,7 +35,14 @@ export const ReadingProgressCard: React.FC<ReadingProgressCardProps> = React.mem
             {/* Circular Progress Ring */}
             <div className="w-18 h-18 sm:w-20 sm:h-20 relative flex items-center justify-center shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3.5" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.04)"
+                  strokeWidth="3.5"
+                />
                 <circle
                   cx="50"
                   cy="50"

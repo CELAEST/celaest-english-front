@@ -28,8 +28,8 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     onCycleAudioRate,
   }) => {
     return (
-      <div className="w-full max-w-[620px] flex flex-col items-start text-left space-y-1.5 select-none pt-1 sm:pt-2 mb-1.5 sm:mb-2 shrink-0 transition-all">
-        {/* Category, Level & Read Time + Audio Streaming Action (Centerline Aligned) */}
+      <div className="w-full flex flex-col items-start text-left space-y-1.5 select-none pt-1 sm:pt-2 mb-1.5 sm:mb-2 shrink-0 transition-all">
+        {/* Category, Level & Read Time + Audio Streaming Action */}
         <div className="w-full flex items-center justify-between min-h-[20px]">
           <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-[0.2em] text-[#A27FF3]/90 uppercase animate-[fadeSlideUp_0.45s_ease-out_both] block text-left leading-none">
             {category} {cefrLevel ? `· ${cefrLevel}` : ""} · {readTime}

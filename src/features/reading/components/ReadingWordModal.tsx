@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { logger } from "../../../shared/utils/logger";
 import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
@@ -18,6 +18,30 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     const [addedSuccess, setAddedSuccess] = useState(false);
     const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // 3D Spatial Tilt Physics & Dynamic Specular Sheen (Memory card physics)
+    const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+      if (!cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      setTilt({
+        x: ((x - centerX) / centerX) * 5,
+        y: ((y - centerY) / centerY) * -5,
+        glareX: (x / rect.width) * 100,
+        glareY: (y / rect.height) * 100,
+        glareOpacity: 0.14,
+      });
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+      setTilt({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    }, []);
 
     // Keyboard accessibility: Dismiss on Escape
     useEffect(() => {
@@ -126,30 +150,55 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           aria-hidden="true"
         />
 
-        {/* Luxury Obsidian Glass Popover Card */}
+        {/* 3D Spatial Interactive Popover Card (Clean, Zero Nested Box Containers) */}
         <div
+          ref={cardRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="word-modal-title"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
           style={{
             top: `${coords.top}px`,
             left: `${coords.left}px`,
+            transform: `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
           }}
-          className="fixed z-[9999] w-[265px] sm:w-[285px] pl-6 pr-5 pt-4 pb-4 rounded-3xl bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] shadow-[0_24px_60px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.08)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-all duration-300"
+          className="fixed z-[9999] w-[275px] sm:w-[295px] pl-6 pr-5 pt-4 pb-4 rounded-3xl bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_40px_rgba(112,72,232,0.12),inset_0_1px_0_rgba(255,255,255,0.08)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Specular Hairline */}
-          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+          {/* Ambient Glowing Aura Backdrop */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-4 rounded-[36px] transition-all duration-500 opacity-50 group-hover:opacity-80 z-0"
+            style={{
+              background:
+                "radial-gradient(70% 60% at 50% 50%, rgba(112, 72, 232, 0.25), rgba(162, 127, 243, 0.1) 45%, transparent 75%)",
+              filter: "blur(24px)",
+              transform: "translate3d(0, 0, -10px)",
+            }}
+          />
 
-          {/* Left Speaker Badge */}
+          {/* Dynamic Specular Sheen Overlay */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 rounded-3xl pointer-events-none z-30 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(280px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255, 255, 255, ${tilt.glareOpacity}), transparent 70%)`,
+            }}
+          />
+
+          {/* Top Specular Hairline */}
+          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none z-20" />
+
+          {/* Left Speaker Badge — clean, borderless button */}
           {!isLoading && wordData && (
             <button
               type="button"
               onClick={handlePlayAudio}
               aria-label={`Listen to pronunciation of ${wordData.word}`}
-              className={`absolute top-[18px] -left-[16px] w-10 h-10 rounded-2xl bg-[#04040A] border border-white/[0.08] flex items-center justify-center text-white/60 hover:text-white hover:border-white/20 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] z-20 animate-[scaleIn_0.2s_ease-out_both] ${
+              className={`absolute top-[18px] -left-[16px] w-10 h-10 rounded-2xl bg-[#04040A] border border-white/[0.08] hover:border-white/20 flex items-center justify-center text-[#C4B5FD] hover:text-white hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] z-40 animate-[scaleIn_0.2s_ease-out_both] ${
                 isPlayingAudio
-                  ? "scale-105 text-white border-white/30 shadow-[0_0_16px_rgba(255,255,255,0.3)]"
+                  ? "scale-105 text-white border-white/30 shadow-[0_0_16px_rgba(162,127,243,0.5)]"
                   : ""
               }`}
             >
@@ -190,63 +239,63 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               <div className="flex flex-col pl-2">
                 <h3
                   id="word-modal-title"
-                  className="text-[20px] sm:text-[22px] font-medium text-white tracking-tight leading-none mt-0.5"
+                  className="text-[21px] sm:text-[23px] font-medium text-white tracking-tight leading-none mt-0.5"
                 >
                   {wordData.word}
                 </h3>
 
-                <span className="text-[11px] text-white/40 font-mono italic mt-1">
+                <span className="text-[11.5px] text-[#A27FF3] font-mono italic mt-1">
                   {wordData.phonetic?.replace(/^\/'/, "/").split(",")[0] || `/${wordData.word}/`}
                 </span>
               </div>
 
-              {/* Part of Speech */}
+              {/* Part of Speech — Clean typography, zero container box */}
               <span className="text-[9.5px] uppercase tracking-widest font-mono text-white/40 mt-2 pl-2">
                 {wordData.partOfSpeech?.toLowerCase().includes("phrasal") || wordData.word.includes(" ")
                   ? "phrasal verb"
                   : wordData.partOfSpeech || "vocabulary"}
               </span>
 
-              {/* Vocablo Translation */}
-              <div className="flex items-center space-x-1.5 mt-2 pl-2">
-                <VocabloTranslateIcon className="w-3.5 h-3.5 text-white/50" />
-                <span className="text-[12px] font-mono text-white/90">
+              {/* Translation — Clean row with bilingual icon, zero box container */}
+              <div className="flex items-center space-x-2 mt-2 pl-2">
+                <VocabloTranslateIcon className="w-3.5 h-3.5 text-[#A27FF3] shrink-0" />
+                <span className="text-[13px] font-medium text-[#C4B5FD] leading-snug">
                   {wordData.spanishTranslation || wordData.word}
                 </span>
               </div>
 
               {/* Definition / Explanation Note */}
               {wordData.definition && (
-                <p className="text-[11.5px] text-white/50 font-light leading-relaxed mt-2 pl-2">
+                <p className="text-[11.5px] text-white/60 font-light leading-relaxed mt-2 pl-2">
                   {wordData.definition}
                 </p>
               )}
 
               {/* Divider Line */}
-              <div className="w-full h-px bg-white/[0.06] my-3" />
+              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-2.5" />
 
-              {/* Example Sentence */}
+              {/* Example Sentence — Clean italics in quotes */}
               {wordData.exampleSentence && (
-                <p className="text-[11.5px] italic text-white/70 font-light leading-relaxed mb-3 pl-2">
+                <p className="text-[11.5px] italic text-white/80 font-light leading-relaxed mb-3 pl-2">
                   "{wordData.exampleSentence.replace(/^["']+|["']+$/g, "").trim()}"
                 </p>
               )}
 
-              {/* Bottom Action: + Add to Memory */}
+              {/* Bottom Action: + Add to Memory (Clean, naked action text with icon) */}
               <div className="flex items-center justify-start pt-0.5 pl-2">
                 <button
                   type="button"
                   onClick={handleSaveToMemory}
                   disabled={isAdding || addedSuccess}
                   aria-label={addedSuccess ? "Word saved to Memory" : "Add word to Memory"}
-                  className={`text-xs font-mono tracking-wide transition-all flex items-center space-x-1.5 group ${
+                  className={`text-xs font-mono tracking-wide transition-all flex items-center space-x-2 cursor-pointer group ${
                     addedSuccess
                       ? "text-emerald-400"
-                      : "text-white/60 hover:text-white cursor-pointer"
+                      : "text-[#A27FF3] hover:text-white drop-shadow-[0_0_8px_rgba(162,127,243,0.5)]"
                   }`}
                 >
                   {!addedSuccess && (
-                    <MemoryBankSaveIcon className="w-3.5 h-3.5 text-white/50 group-hover:text-white group-hover:scale-110 transition-all" />
+                    <MemoryBankSaveIcon className="w-3.5 h-3.5 text-[#A27FF3] group-hover:text-white group-hover:scale-110 transition-all" />
                   )}
                   <span>
                     {addedSuccess ? "✓ Saved to Memory" : isAdding ? "Saving..." : "+ Add to Memory"}

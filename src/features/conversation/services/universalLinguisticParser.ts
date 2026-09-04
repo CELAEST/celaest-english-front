@@ -43,7 +43,7 @@ export const ROLE_MODEL_ANSWERS: Record<number, string> = {
 
   12: "I foster psychological safety by establishing blameless retrospectives, encouraging team members to surface failure early as a learning opportunity, and delegating clear ownership of problem domains rather than micromanaging feature specifications.",
 
-  13: "When a major competitor launches our most requested feature, I avoid reactive copycat decisions. I analyze user sentiment, assess whether this shifts our core market differentiation, and double down on our unique product moat while gathering feedback from our power users.",
+  13: "When balancing legacy code refactoring against aggressive deadlines, I negotiate with product stakeholders by quantifying technical risk and developer velocity. Rather than proposing a risky full rewrite, I implement an incremental refactoring strategy: dedicating 15-20% of each sprint to modularize critical bottlenecks while maintaining our delivery cadence for customer-facing features.",
 
   14: "I execute A/B experiments by formulating crisp hypotheses, calculating required sample sizes for 95% statistical power, establishing primary conversion metrics alongside guardrail latency metrics, and running tests for at least two business cycles to avoid novelty bias.",
 

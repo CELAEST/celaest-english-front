@@ -1,5 +1,12 @@
 import React, { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation, Navigate, useSearchParams } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ROUTES } from "./routes.config";
 import { useCurrentUser } from "../shared/hooks/useCurrentUser";
 import { SupabaseAuthAdapter } from "../infrastructure/adapters/auth/SupabaseAuthAdapter";
@@ -14,7 +21,9 @@ const WorkspaceDashboardView = lazy(() =>
   import("../features/workspace").then((m) => ({ default: m.WorkspaceDashboardView })),
 );
 const AuthCallbackView = lazy(() =>
-  import("../features/auth/components/AuthCallbackView").then((m) => ({ default: m.AuthCallbackView })),
+  import("../features/auth/components/AuthCallbackView").then((m) => ({
+    default: m.AuthCallbackView,
+  })),
 );
 
 function RouteFallback() {
@@ -113,14 +122,17 @@ function WorkspaceWrapper() {
     }
     // If backend reports onboarding is genuinely not completed, redirect to diagnostic flow
     if (!loading && settings && settings.onboardingCompleted === false) {
-      const isCompletedLocal = typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
+      const isCompletedLocal =
+        typeof window !== "undefined" &&
+        localStorage.getItem("lingua_onboarding_completed") === "true";
       if (!isCompletedLocal) {
         navigate(ROUTES.ONBOARDING, { replace: true });
       }
     }
   }, [hasToken, loading, settings, navigate]);
 
-  const isCompletedLocal = typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
+  const isCompletedLocal =
+    typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
   const isCompleted = isCompletedLocal || settings?.onboardingCompleted === true;
 
   // If unauthenticated or never completed onboarding placement diagnostic, protect workspace

@@ -51,10 +51,11 @@ function TopHighlight() {
   );
 }
 
-function cleanRuleNote(translationSpanish?: string, explanation?: string): string {
-  if (!translationSpanish) return sanitizeFeedbackTone(explanation || "");
+function cleanRuleNote(explanation?: string, fallback?: string): string {
+  const target = explanation?.trim() || fallback?.trim() || "";
+  if (!target) return "";
 
-  let text = translationSpanish.trim();
+  let text = target;
 
   // If text contains the bombillito emoji (U+1F4A1), extract only the focused rule/reminder after it
   if (/[\u{1F4A1}]/u.test(text)) {
@@ -73,7 +74,7 @@ function cleanRuleNote(translationSpanish?: string, explanation?: string): strin
   text = text.replace(/^(Regla|Nota|Tip|Consejo)\s*:\s*/i, "").trim();
 
   // Capitalize first letter
-  const cleaned = text ? text.charAt(0).toUpperCase() + text.slice(1) : explanation || "";
+  const cleaned = text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
   return sanitizeFeedbackTone(cleaned);
 }
 
@@ -608,82 +609,92 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={handleToggleUserAudio}
-                className="flex items-center gap-1.5 text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
-              >
-                <Volume2
-                  className={`h-4 w-4 ${isPlayingUserAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`}
-                />
-                <span>{isPlayingUserAudio ? "Pausar audio" : "Escuchar audio"}</span>
-              </button>
+              {feedback.userAudioUrl && (
+                <button
+                  onClick={handleToggleUserAudio}
+                  className="flex items-center gap-1.5 text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
+                >
+                  <Volume2
+                    className={`h-4 w-4 ${isPlayingUserAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`}
+                  />
+                  <span>{isPlayingUserAudio ? "Pausar audio" : "Escuchar audio"}</span>
+                </button>
+              )}
             </div>
 
             {/* Body: Bespoke Purple SVG Quote Icon + Quoted Text */}
-            <div className="flex items-start gap-4 pl-2 sm:pl-5 pr-6 sm:pr-28 mb-7">
+            <div className="flex items-start gap-4 pl-2 sm:pl-5 pr-6 sm:pr-28 mb-6">
               <svg
                 className="w-[25px] h-[20px] shrink-0 mt-0.5 text-[#674ee6]"
-                viewBox="0 0 28 22"
+                viewBox="0 0 25 20"
                 fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
+                <path d="M7.5 0C3.36 0 0 3.36 0 7.5C0 11.64 3.36 15 7.5 15C8.16 15 8.8 14.91 9.4 14.75C8.44 17.72 5.56 19.86 2.14 20H4.29C8.95 20 12.86 16.09 12.86 11.43V7.5C12.86 3.36 9.5 0 7.5 0ZM19.64 0C15.5 0 12.14 3.36 12.14 7.5C12.14 11.64 15.5 15 19.64 15C20.3 15 20.94 14.91 21.54 14.75C20.58 17.72 17.7 19.86 14.28 20H16.43C21.09 20 25 16.09 25 11.43V7.5C25 3.36 21.64 0 19.64 0Z" />
               </svg>
               <p className="text-[14.5px] leading-[1.75] text-[#d4d4e0] font-normal">
-                "{feedback.userSpokenText}"
+                "{feedback.reconciledTranscript || feedback.userSpokenText}"
               </p>
             </div>
 
-            {/* Audio Player Bar */}
-            <div className="flex items-center gap-4 pl-2 sm:pl-5 pr-4 sm:pr-14 max-w-[740px] pt-1">
-              <button
-                onClick={handleToggleUserAudio}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#171233] border border-[#2a2057] text-white hover:scale-105 hover:bg-[#221a47] transition-all cursor-pointer shadow-md"
-                aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
-              >
-                {isPlayingUserAudio ? (
-                  <Pause className="h-4 w-4 fill-white text-white" />
-                ) : (
-                  <Play className="h-4 w-4 ml-0.5 fill-white text-white" />
-                )}
-              </button>
+            {/* Audio Player Bar (Only if user recorded with mic) */}
+            {feedback.userAudioUrl ? (
+              <div className="flex items-center gap-4 pl-2 sm:pl-5 pr-4 sm:pr-14 max-w-[740px] pt-1">
+                <button
+                  onClick={handleToggleUserAudio}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#171233] border border-[#2a2057] text-white hover:scale-105 hover:bg-[#221a47] transition-all cursor-pointer shadow-md"
+                  aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
+                >
+                  {isPlayingUserAudio ? (
+                    <Pause className="h-4 w-4 fill-white text-white" />
+                  ) : (
+                    <Play className="h-4 w-4 ml-0.5 fill-white text-white" />
+                  )}
+                </button>
 
-              {/* Dynamic interactive waveform */}
-              <div
-                className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-6 overflow-hidden cursor-pointer group"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const fraction = Math.max(0, Math.min(1, clickX / rect.width));
-                  handleSeekUserAudio(fraction);
-                }}
-                title="Haz clic en cualquier punto para reproducir"
-              >
-                {WAVEFORM_BARS.map((h, i) => {
-                  const effectiveDuration = userAudioDuration || 1;
-                  const progress = userAudioCurrentTime / effectiveDuration;
-                  const barProgress = i / WAVEFORM_BARS.length;
-                  const isPassed = barProgress <= progress;
+                {/* Dynamic interactive waveform */}
+                <div
+                  className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-6 overflow-hidden cursor-pointer group"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const fraction = Math.max(0, Math.min(1, clickX / rect.width));
+                    handleSeekUserAudio(fraction);
+                  }}
+                  title="Haz clic en cualquier punto para reproducir"
+                >
+                  {WAVEFORM_BARS.map((h, i) => {
+                    const effectiveDuration = userAudioDuration || 1;
+                    const progress = userAudioCurrentTime / effectiveDuration;
+                    const barProgress = i / WAVEFORM_BARS.length;
+                    const isPassed = barProgress <= progress;
 
-                  return (
-                    <div
-                      key={i}
-                      className={`w-[1.5px] rounded-full shrink-0 transition-colors ${
-                        isPassed
-                          ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.8)]"
-                          : "bg-[#674ee6]/35 group-hover:bg-[#674ee6]/60"
-                      }`}
-                      style={{ height: `${h}px` }}
-                    />
-                  );
-                })}
+                    return (
+                      <div
+                        key={i}
+                        className={`w-[1.5px] rounded-full shrink-0 transition-colors ${
+                          isPassed
+                            ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.8)]"
+                            : "bg-[#674ee6]/35 group-hover:bg-[#674ee6]/60"
+                        }`}
+                        style={{ height: `${h}px` }}
+                      />
+                    );
+                  })}
+                </div>
+
+                <span className="text-[13px] font-medium text-[#7c7b94] ml-2 shrink-0 font-mono">
+                  {formatPlaybackTime(
+                    userAudioCurrentTime > 0 ? userAudioCurrentTime : userAudioDuration || 0,
+                  )}
+                </span>
               </div>
-
-              <span className="text-[13px] font-medium text-[#7c7b94] ml-2 shrink-0 font-mono">
-                {formatPlaybackTime(
-                  userAudioCurrentTime > 0 ? userAudioCurrentTime : userAudioDuration || 0,
-                )}
-              </span>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 pl-2 sm:pl-5 pt-1 text-xs text-white/40 font-mono">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A27FF3]/60" />
+                <span>Respuesta ingresada por texto</span>
+              </div>
+            )}
           </article>
 
           {/* 2. Respuesta mejorada (Native Model Answer) */}
@@ -886,14 +897,16 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                 <p className="relative mt-4 text-xl font-medium text-[#55c9a4] sm:text-[1.4rem] sm:leading-snug">
                   {currentError.correctWord}
                 </p>
-                <div className="relative mt-4">
-                  <p className="text-xs font-semibold text-[#d4d4e0] uppercase tracking-wider">
-                    Explicación:
-                  </p>
-                  <p className="mt-1.5 text-xs sm:text-[13px] leading-relaxed text-[#a7a8b5]">
-                    {currentError.explanation}
-                  </p>
-                </div>
+                {currentError.translationSpanish && (
+                  <div className="relative mt-3.5">
+                    <p className="text-[11px] font-semibold text-[#8a8a9e] uppercase tracking-wider">
+                      Traducción al español:
+                    </p>
+                    <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-[#d4d4e0]">
+                      {cleanRuleNote(currentError.translationSpanish)}
+                    </p>
+                  </div>
+                )}
               </article>
 
               {/* Grammar rule / Note — occupies the lower area, layered above the red card's
@@ -911,8 +924,8 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                   <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#a27ff3]" aria-hidden="true" />
                   <span className="text-xs font-semibold text-[#f4f4f7]">Regla gramatical:</span>
                 </div>
-                <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#a7a8b5]">
-                  {cleanRuleNote(currentError.translationSpanish, currentError.explanation)}
+                <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#d4d4e0]">
+                  {cleanRuleNote(currentError.explanation, currentError.translationSpanish)}
                 </p>
               </div>
             </div>
@@ -967,8 +980,10 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
               <CircleCheck className="h-6 w-6 text-[#6ce2a3]" strokeWidth={2.5} />
             </span>
-            <p className="text-[15.5px] font-normal text-white tracking-wide">
-              ¡Excelente entrega nativa! No se detectaron errores.
+            <p className="text-[15px] font-normal text-white/90 tracking-wide text-center leading-relaxed">
+              {(feedback.userSpokenText || "").split(/\s+/).filter(Boolean).length < 20
+                ? "Respuesta breve sin errores gramaticales directos. Te sugerimos ampliar tu argumento con ejemplos de tu experiencia técnica."
+                : "Excelente precisión gramatical en tu respuesta. No se detectaron errores sintácticos."}
             </p>
           </div>
         )}

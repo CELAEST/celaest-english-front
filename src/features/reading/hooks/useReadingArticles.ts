@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { WordLookup, GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
+import { readingAudioPrefetcher } from "../services/readingAudioPrefetcher";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { logger } from "../../../shared/utils/logger";
 
@@ -83,7 +84,7 @@ function readInitialState(): InitialReadingState {
   return { cachedArticles, activeArticleId };
 }
 
-export const useReadingArticles = (level?: string) => {
+export const useReadingArticles = (level?: string, profession?: string) => {
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
 
@@ -258,6 +259,13 @@ export const useReadingArticles = (level?: string) => {
   const progressPercentage = Math.min(100, Math.round(((currentPageIndex + 1) / totalPages) * 100));
   const currentPageContent = dynamicPages[currentPageIndex] || dynamicPages[0] || fullContent;
 
+  // Proactive Background Audio Prefetching for 0ms Instant Playback (Page-by-Page & Mentor-by-Mentor)
+  useEffect(() => {
+    if (dynamicPages.length > 0) {
+      readingAudioPrefetcher.prefetchArticlePages(dynamicPages, currentPageIndex);
+    }
+  }, [dynamicPages, currentPageIndex]);
+
   // Real Exact Word Counts & Session Telemetry
   const totalWords = useMemo(() => countWords(fullContent), [fullContent]);
 
@@ -309,7 +317,7 @@ export const useReadingArticles = (level?: string) => {
     async (category: string = "BUSINESS") => {
       setIsGenerating(true);
       try {
-        const newArticle = await apiReadingRepository.generateArticle(category, level);
+        const newArticle = await apiReadingRepository.generateArticle(category, level, undefined, profession);
 
         setLocalArticles((prev) => [newArticle, ...prev.filter((a) => a.id !== newArticle.id)]);
         setActiveArticleId(newArticle.id);
@@ -322,8 +330,28 @@ export const useReadingArticles = (level?: string) => {
         setIsGenerating(false);
       }
     },
-    [level],
+    [level, profession],
   );
+
+  const lastProfessionRef = useRef<string | undefined>(profession);
+  useEffect(() => {
+    if (profession && lastProfessionRef.current && profession !== lastProfessionRef.current) {
+      // Profession changed: invalidate reading cache and generate tailored article
+      try {
+        localStorage.removeItem(READING_CACHE_KEY);
+        localStorage.removeItem(ACTIVE_ARTICLE_ID_KEY);
+      } catch {
+        // ignore
+      }
+      setLocalArticles([]);
+      setActiveArticleId(null);
+      setCurrentPageIndex(0);
+      generateNextArticle("BUSINESS").catch((e) =>
+        logger.warn("[useReadingArticles] auto-generate on profession change error", e),
+      );
+    }
+    lastProfessionRef.current = profession;
+  }, [profession, generateNextArticle]);
 
   const instantWordLookup = useCallback(
     async (word: string, context?: string): Promise<WordLookup> => {
@@ -496,6 +524,7 @@ export const useReadingArticles = (level?: string) => {
     totalPages,
     progressPercentage,
     currentPageContent,
+    allPages: dynamicPages,
     fullContent,
     totalWords,
     readWords,

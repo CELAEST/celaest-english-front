@@ -20,6 +20,11 @@ import {
   CognitiveMemoryBrainIcon,
   PrecisionOpenBookIcon,
   StudioVoiceMicIcon,
+  TechnicalWritingQuillIcon,
+  QuantumNeuralGaugeIcon,
+  MasteryCefrPrismIcon,
+  CryptographicVaultShieldIcon,
+  SonicAcousticSpectrumIcon,
 } from "../../workspace/components/WorkspaceBespokeIcons";
 
 /* 
@@ -38,13 +43,13 @@ interface IconEntry {
 }
 
 const ICON_CATALOGUE: IconEntry[] = [
-  //  Workspace Dashboard Callouts (24px viewBox)
+  //  Workspace Dashboard Callouts (28px viewBox)
   {
     id: "workspace-memory-brain",
     name: "Cognitive Memory Brain",
     category: "workspace",
     description:
-      "Clean, iconic brain glyph with cerebral hemispheres and anatomical gyri folds. Apple SF Symbols standard.",
+      "Anatomical dual-hemisphere cerebral cortex with synaptic gyri folds, central fissure, and radiant lavender pearl nucleus.",
     Icon: CognitiveMemoryBrainIcon,
     defaultClass: "w-6 h-6 text-[#C4B5FD]",
   },
@@ -53,7 +58,7 @@ const ICON_CATALOGUE: IconEntry[] = [
     name: "Precision Open Book",
     category: "workspace",
     description:
-      'Architectural open volume with clean spine and editorial text markings for "Next Reading".',
+      "Architectural open folio codex with 3D perspective curvature, clean spine, editorial typography etchings, and radiant diamond pearl.",
     Icon: PrecisionOpenBookIcon,
     defaultClass: "w-6 h-6 text-[#C4B5FD]",
   },
@@ -62,8 +67,53 @@ const ICON_CATALOGUE: IconEntry[] = [
     name: "Studio Vocal Mic",
     category: "workspace",
     description:
-      'Studio condenser capsule with acoustic suspension cradle for "Upcoming Interview".',
+      "Broadcast condenser microphone capsule with acoustic mesh grid, U-suspension gimbal cradle, and live signal beacon pearl.",
     Icon: StudioVoiceMicIcon,
+    defaultClass: "w-6 h-6 text-[#C4B5FD]",
+  },
+  {
+    id: "workspace-writing-quill",
+    name: "Technical Writing Quill",
+    category: "workspace",
+    description:
+      "Drafting fountain pen with precision isometric nib, ink channel slit, breather orifice node, and dynamic elevation angle.",
+    Icon: TechnicalWritingQuillIcon,
+    defaultClass: "w-6 h-6 text-[#C4B5FD]",
+  },
+  {
+    id: "workspace-quantum-gauge",
+    name: "Quantum Neural Gauge",
+    category: "workspace",
+    description:
+      "Polar coordinate convergence radar with 4 cardinal optical ticks, segmented outer ring, and central focal nucleus.",
+    Icon: QuantumNeuralGaugeIcon,
+    defaultClass: "w-6 h-6 text-[#C4B5FD]",
+  },
+  {
+    id: "workspace-cefr-prism",
+    name: "Mastery CEFR Prism",
+    category: "workspace",
+    description:
+      "Multi-faceted isometric diamond prism representing European CEFR language tiers with internal apex pearl.",
+    Icon: MasteryCefrPrismIcon,
+    defaultClass: "w-6 h-6 text-[#C4B5FD]",
+  },
+  {
+    id: "workspace-vault-shield",
+    name: "Cryptographic Vault Shield",
+    category: "workspace",
+    description:
+      "Hexagonal security vault shield with keyhole lattice protecting personal linguistic memory.",
+    Icon: CryptographicVaultShieldIcon,
+    defaultClass: "w-6 h-6 text-[#C4B5FD]",
+  },
+  {
+    id: "workspace-acoustic-spectrum",
+    name: "Sonic Acoustic Spectrum",
+    category: "workspace",
+    description:
+      "Logarithmic multi-harmonic audio frequency bars with rounded terminals and dynamic center pearl.",
+    Icon: SonicAcousticSpectrumIcon,
     defaultClass: "w-6 h-6 text-[#C4B5FD]",
   },
   //  Nexus Centerpiece Icons (Large, 48px viewBox, holographic)

@@ -8,6 +8,8 @@ export class ApiWritingRepository implements IWritingRepository {
     title: string,
     content: string,
     taskDescription?: string,
+    roleName?: string,
+    targetLevel?: string,
   ): Promise<WritingSubmission> {
     return HttpClient.post<WritingSubmission>(
       "/writing/evaluate",
@@ -16,6 +18,8 @@ export class ApiWritingRepository implements IWritingRepository {
         title,
         taskDescription,
         content,
+        roleName,
+        targetLevel,
       },
       { timeoutMs: 60_000 },
     );

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { LevelSelectorPill } from "./LevelSelectorPill";
+import { CefrLevelCode } from "../services/dynamicQuestionService";
 
 const SPEED_OPTIONS = [
   { label: "0.75x", value: 0.75 },
@@ -13,8 +15,10 @@ export interface ResponsiveInterviewHUDProps {
   currentQuestion?: number;
   totalQuestions?: number;
   roleName?: string;
+  userLevel?: string;
   speechRate?: number;
   onSetSpeechRate?: (rate: number) => void;
+  onSetLevel?: (level: CefrLevelCode) => void;
   onRepeatQuestion?: () => void;
   onNextQuestion?: () => void;
   onOpenDrawer: () => void;
@@ -27,8 +31,10 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
   currentQuestion = 1,
   totalQuestions = 5,
   roleName = "Product Manager",
+  userLevel,
   speechRate = 0.95,
   onSetSpeechRate,
+  onSetLevel,
   onRepeatQuestion,
   onNextQuestion,
   onOpenDrawer,
@@ -55,6 +61,19 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
         <span className="font-sans text-xs font-medium text-white/80 tracking-normal truncate max-w-[140px] sm:max-w-[240px] hidden sm:inline">
           {roleName}
         </span>
+        {onSetLevel ? (
+          <LevelSelectorPill
+            currentLevel={userLevel || "B1"}
+            onSelectLevel={onSetLevel}
+          />
+        ) : userLevel ? (
+          <>
+            <span className="text-white/20 font-sans hidden sm:inline">·</span>
+            <span className="font-sans text-xs font-medium text-white/60 tracking-normal truncate hidden sm:inline">
+              {userLevel}
+            </span>
+          </>
+        ) : null}
       </div>
 
       {/* 2. TOP-RIGHT: Semantic Action Controls (Bespoke Handcrafted SVGs, Zero AI Look, Perfect Baseline) */}

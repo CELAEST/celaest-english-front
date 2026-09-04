@@ -5,6 +5,7 @@ export interface WritingAIMentorCardProps {
   isActive?: boolean;
   /** When false the waveform stays static (saves constant repaints) */
   animated?: boolean;
+  userLevel?: string;
 }
 
 export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.memo(
@@ -12,6 +13,7 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.mem
     statusText = "You're communicating clearly. I'll review your writing and help you make it even stronger.",
     isActive = true,
     animated = true,
+    userLevel,
   }) => {
     return (
       <div className="relative bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 rounded-3xl p-5 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col space-y-3 shrink-0 overflow-hidden animate-[slideInRight_0.45s_ease-out_both]">
@@ -20,9 +22,19 @@ export const WritingAIMentorCard: React.FC<WritingAIMentorCardProps> = React.mem
 
         {/* Header with Title and Clean Active Status */}
         <div className="flex items-center justify-between z-10">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-            AI Mentor
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+              AI Mentor
+            </span>
+            {userLevel && (
+              <>
+                <span className="text-white/20 text-xs font-sans">·</span>
+                <span className="text-[10px] font-sans font-normal text-white/50 tracking-wide">
+                  {userLevel}
+                </span>
+              </>
+            )}
+          </div>
           {isActive && (
             <span className="text-[10px] font-mono tracking-wider uppercase text-emerald-400">
               Active

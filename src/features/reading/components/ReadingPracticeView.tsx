@@ -19,10 +19,15 @@ import { logger } from "../../../shared/utils/logger";
 
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
+  roleName?: string | undefined;
 }
 
-export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBackToWorkspace }) => {
+export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
+  onBackToWorkspace,
+  roleName,
+}) => {
   const { profile, isLoading: isProfileLoading } = useSettingsProfile();
+  const effectiveProfession = roleName || profile?.profession;
   const userLevel = React.useMemo(() => {
     if (!profile?.cefrLevel) return isProfileLoading ? undefined : "B1";
     return profile.cefrLevel.split(" ")[0].trim().toUpperCase();
@@ -33,6 +38,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
     currentPageIndex,
     totalPages,
     currentPageContent,
+    allPages,
     fullContent,
     totalWords,
     readWords,
@@ -47,16 +53,25 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
     generateNextArticle,
     getOrFetchQuiz,
     instantWordLookup,
-  } = useReadingArticles(userLevel);
+  } = useReadingArticles(userLevel, effectiveProfession);
 
   const {
     isPlaying: isPlayingAudio,
     isPaused: isPausedAudio,
     currentWordIndex: activeKaraokeWordIndex,
     playbackRate: audioPlaybackRate,
+    selectedVoice,
+    setSelectedVoice,
     togglePlay: toggleAudioPlay,
+    restart: restartAudioPlay,
     cyclePlaybackRate: cycleAudioRate,
-  } = useReadingAudioNarrator(currentPageContent);
+  } = useReadingAudioNarrator(currentPageContent, allPages, currentPageIndex);
+
+  const handleToggleVoice = useCallback(() => {
+    setSelectedVoice(
+      selectedVoice === "en-US-AriaNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural",
+    );
+  }, [selectedVoice, setSelectedVoice]);
 
   const articleCategory = currentArticle?.category || "BUSINESS";
   const articleReadTime = `${currentArticle?.readTimeMin || Math.max(1, Math.ceil(totalWords / 160))} MIN READ`;
@@ -158,7 +173,11 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({ onBack
                 isPlayingAudio={isPlayingAudio}
                 isPausedAudio={isPausedAudio}
                 playbackRate={audioPlaybackRate}
+                selectedVoice={selectedVoice}
+                onSelectVoice={setSelectedVoice}
+                onToggleVoice={handleToggleVoice}
                 onToggleAudio={toggleAudioPlay}
+                onRestartAudio={restartAudioPlay}
                 onCycleAudioRate={cycleAudioRate}
               />
             )}

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Audio Capture & Real-Time Speech Recognition Service
  * Handles microphone hardware access, live frequency analysis,
  * and robust SpeechRecognition for English & Spanish with continuous streaming.
@@ -6,6 +6,7 @@
 
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
+import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
 
 export interface SpeechRecognitionResultItem {
   transcript: string;
@@ -55,6 +56,12 @@ export interface AudioCaptureResult {
   durationSeconds: number;
 }
 
+export interface AudioTranscriptionResult {
+  text: string;
+  language?: string | undefined;
+  duration?: number | undefined;
+}
+
 export class AudioCaptureService {
   private static audioContext: AudioContext | null = null;
   private static analyser: AnalyserNode | null = null;
@@ -82,7 +89,7 @@ export class AudioCaptureService {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
+          autoGainControl: false,
           channelCount: 1,
         },
       });
@@ -107,6 +114,49 @@ export class AudioCaptureService {
   }
 
   /**
+   * Returns whether a live, active microphone stream track is available
+   */
+  public static hasActiveMic(): boolean {
+    if (!this.micStream || !this.micStream.active) return false;
+    const tracks = this.micStream.getAudioTracks();
+    return tracks.length > 0 && tracks.some((t) => t.readyState === "live");
+  }
+
+  /**
+   * Directly sets the active microphone MediaStream and hooks up the AnalyserNode
+   */
+  public static setMicStream(stream: MediaStream): void {
+    if (this.micStream && this.micStream !== stream) {
+      try {
+        this.micStream.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore
+      }
+    }
+    this.micStream = stream;
+
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (AudioCtx) {
+      try {
+        if (!this.audioContext || this.audioContext.state === "closed") {
+          this.audioContext = new AudioCtx();
+        }
+        if (this.audioContext.state === "suspended") {
+          void this.audioContext.resume();
+        }
+        const source = this.audioContext.createMediaStreamSource(stream);
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 64;
+        source.connect(this.analyser);
+      } catch (err) {
+        logger.warn("Error connecting external microphone stream to AudioContext:", err);
+      }
+    }
+  }
+
+  /**
    * Returns current live microphone amplitude (0 to 1)
    */
   public static getMicVolume(): number {
@@ -127,7 +177,9 @@ export class AudioCaptureService {
    */
   public static startRecognition(options: {
     lang?: string;
+    initialTranscript?: string;
     onTranscript: (transcript: string, isFinal: boolean) => void;
+    onSpanishDetected?: (message: string) => void;
     onError?: (err: unknown) => void;
     onEnd?: () => void;
   }): SpeechRecognitionInstance | null {
@@ -171,7 +223,7 @@ export class AudioCaptureService {
         .webkitSpeechRecognition;
 
     this.isListening = true;
-    this.accumulatedTranscript = "";
+    this.accumulatedTranscript = (options.initialTranscript || "").trim();
 
     if (!SpeechRecognitionAPI) {
       logger.warn("Speech Recognition API not supported on this browser.");
@@ -210,15 +262,33 @@ export class AudioCaptureService {
             }
           }
 
+          const prefix = this.accumulatedTranscript ? this.accumulatedTranscript + " " : "";
           const combined = (
-            this.accumulatedTranscript +
-            " " +
+            prefix +
             sessionFinalTranscript +
             " " +
             currentInterim
           )
             .replace(/\s+/g, " ")
             .trim();
+
+          const liveCheck = detectLiveSpanishOrFiller(combined);
+          if (liveCheck.isSpanishOrFiller) {
+            logger.info("[AudioCaptureService] Live Spanish or non-interview filler detected:", combined);
+            this.isListening = false;
+            try {
+              recognizer.abort();
+            } catch {
+              // ignore
+            }
+            if (options.onSpanishDetected) {
+              options.onSpanishDetected(
+                liveCheck.message ||
+                  "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista."
+              );
+            }
+            return;
+          }
 
           options.onTranscript(combined, false);
         };
@@ -233,7 +303,10 @@ export class AudioCaptureService {
         };
 
         recognizer.onend = () => {
-          this.accumulatedTranscript = (this.accumulatedTranscript + " " + sessionFinalTranscript)
+          this.accumulatedTranscript = (
+            (this.accumulatedTranscript ? this.accumulatedTranscript + " " : "") +
+            sessionFinalTranscript
+          )
             .replace(/\s+/g, " ")
             .trim();
           sessionFinalTranscript = "";
@@ -330,8 +403,12 @@ export class AudioCaptureService {
 
   /**
    * Transcribes recorded audio via Groq Whisper large-v3-turbo (running on CELAEST-CORE IA-Mesh)
+   * Returns transcription text along with acoustic language detection and audio duration.
    */
-  public static async transcribeAudio(audioBlob: Blob): Promise<string | null> {
+  public static async transcribeAudio(
+    audioBlob: Blob,
+    context?: { roleName?: string; question?: string },
+  ): Promise<AudioTranscriptionResult | null> {
     if (!audioBlob || audioBlob.size < 200) return null;
 
     try {
@@ -345,6 +422,12 @@ export class AudioCaptureService {
             : "webm";
 
       formData.append("file", audioBlob, `recording.${extension}`);
+      if (context?.roleName) {
+        formData.append("role", context.roleName);
+      }
+      if (context?.question) {
+        formData.append("question", context.question);
+      }
 
       const response = await fetch(`${ENV.coreAiUrl}/ai/audio/transcribe`, {
         method: "POST",
@@ -352,10 +435,19 @@ export class AudioCaptureService {
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { text?: string; transcript?: string };
+        const data = (await response.json()) as {
+          text?: string;
+          transcript?: string;
+          language?: string;
+          duration?: number;
+        };
         const text = (data.transcript || data.text || "").trim();
         if (text) {
-          return text;
+          return {
+            text,
+            language: (data.language || "").toLowerCase().trim(),
+            duration: data.duration,
+          };
         }
       }
     } catch (err) {

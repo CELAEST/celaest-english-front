@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
+import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
 
@@ -101,24 +102,24 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
       setIsPlayingAudio(true);
       try {
-        if (wordData.audioUrl) {
-          if (audioRef.current) {
-            audioRef.current.pause();
-          }
-          const audio = new Audio(wordData.audioUrl);
-          audioRef.current = audio;
-          audio.onended = () => setIsPlayingAudio(false);
-          audio.onerror = () => {
-            speakFallback(wordData.word);
-          };
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(() => {
-              speakFallback(wordData.word);
-            });
-          }
-        } else {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+
+        const audioUrl = wordData.audioUrl || `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(wordData.word)}&voice=en-US-AriaNeural`;
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => setIsPlayingAudio(false);
+        audio.onerror = () => {
           speakFallback(wordData.word);
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            speakFallback(wordData.word);
+          });
         }
       } catch {
         speakFallback(wordData.word);

@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from "react";
 
 // =========================================================================
-// BESPOKE STANDALONE SVG VECTOR MASTERPIECES (Zero Container, Pure Artwork)
+// BESPOKE STANDALONE SVG VECTOR MASTERPIECES (LOCKED REFERENCE STANDARD)
 // =========================================================================
 
-export const StandaloneMemoryGlyph: React.FC<{ className?: string }> = ({
+/**
+ * 1. SolarNeuralSynapseIcon (Top Icon in Reference):
+ * Central circle with 8 optical radial rays and glowing lavender pearl nucleus.
+ */
+export const SolarNeuralSynapseIcon: React.FC<{ className?: string }> = ({
   className = "w-7 h-7",
 }) => (
   <svg
@@ -17,29 +21,24 @@ export const StandaloneMemoryGlyph: React.FC<{ className?: string }> = ({
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    {/* Continuous multi-harmonic synaptic DNA waves */}
-    <path
-      className="icon-draw"
-      pathLength={1}
-      d="M4 8C9 8 11 20 16 20C21 20 23 8 23 8"
-      opacity={0.9}
-    />
-    <path
-      className="icon-draw"
-      pathLength={1}
-      d="M4 20C9 20 11 8 16 8C21 8 23 20 23 20"
-      opacity={0.5}
-    />
-    {/* Synaptic Molecular Bridge Rungs */}
-    <line x1="7.5" y1="11.5" x2="7.5" y2="16.5" strokeDasharray="1.5 2" opacity={0.6} />
-    <line x1="13.5" y1="8" x2="13.5" y2="20" strokeDasharray="1.5 2" opacity={0.8} />
-    <line x1="19.5" y1="11.5" x2="19.5" y2="16.5" strokeDasharray="1.5 2" opacity={0.6} />
-    {/* Brand Center Pulsating Pearl */}
-    <circle className="icon-pearl" cx="13.5" cy="14" r="2.2" fill="currentColor" stroke="none" />
+    <circle cx="14" cy="14" r="4.2" className="icon-draw" pathLength={1} />
+    <line x1="14" y1="2.5" x2="14" y2="7" className="icon-draw" pathLength={1} />
+    <line x1="14" y1="21" x2="14" y2="25.5" className="icon-draw" pathLength={1} />
+    <line x1="2.5" y1="14" x2="7" y2="14" className="icon-draw" pathLength={1} />
+    <line x1="21" y1="14" x2="25.5" y2="14" className="icon-draw" pathLength={1} />
+    <line x1="5.8" y1="5.8" x2="9" y2="9" className="icon-draw" pathLength={1} />
+    <line x1="22.2" y1="5.8" x2="19" y2="9" className="icon-draw" pathLength={1} />
+    <line x1="5.8" y1="22.2" x2="9" y2="19" className="icon-draw" pathLength={1} />
+    <line x1="22.2" y1="22.2" x2="19" y2="19" className="icon-draw" pathLength={1} />
+    <circle className="icon-pearl" cx="14" cy="14" r="1.8" fill="#C4B5FD" stroke="none" />
   </svg>
 );
 
-export const StandaloneReadingCodex: React.FC<{ className?: string }> = ({
+/**
+ * 2. ArchitecturalCodexSpineIcon (Middle Icon in Reference):
+ * Open geometric book wings with clean vertical spine and radiant lavender diamond pearl on center axis.
+ */
+export const ArchitecturalCodexSpineIcon: React.FC<{ className?: string }> = ({
   className = "w-7 h-7",
 }) => (
   <svg
@@ -52,26 +51,26 @@ export const StandaloneReadingCodex: React.FC<{ className?: string }> = ({
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    {/* Isometric architectural codex spine and pages */}
     <path
       className="icon-draw"
       pathLength={1}
-      d="M3.5 7C7 5.2 10.5 5.2 14 7C17.5 5.2 21 5.2 24.5 7V21C21 19.2 17.5 19.2 14 21C10.5 19.2 7 19.2 3.5 21Z"
+      d="M4.5 7.5 C8 5.8 11.5 5.8 14 7.5 C16.5 5.8 20 5.8 23.5 7.5 V20.5 C20 18.8 16.5 18.8 14 20.5 C11.5 18.8 8 18.8 4.5 20.5 Z"
     />
-    <path className="icon-draw" pathLength={1} d="M14 7V21" opacity={0.7} />
-    {/* Clean horizontal paragraph engravings */}
-    <line x1="6.5" y1="11" x2="10.5" y2="11" opacity={0.5} />
-    <line x1="6.5" y1="14" x2="10.5" y2="14" opacity={0.5} />
-    <line x1="6.5" y1="17" x2="9.5" y2="17" opacity={0.4} />
-    <line x1="17.5" y1="11" x2="21.5" y2="11" opacity={0.5} />
-    <line x1="17.5" y1="14" x2="21.5" y2="14" opacity={0.5} />
-    <line x1="17.5" y1="17" x2="20.5" y2="17" opacity={0.4} />
-    {/* Brand Radiant Bookmark Pearl */}
-    <circle className="icon-pearl" cx="19" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
+    <line x1="14" y1="7.5" x2="14" y2="20.5" className="icon-draw" pathLength={1} opacity={0.8} />
+    <path
+      d="M14 11.5 L15.6 14 L14 16.5 L12.4 14 Z"
+      fill="#C4B5FD"
+      stroke="none"
+      className="icon-pearl"
+    />
   </svg>
 );
 
-export const StandaloneInterviewAperture: React.FC<{ className?: string }> = ({
+/**
+ * 3. AcousticOrbitalApertureIcon (Bottom Icon in Reference):
+ * Concentric orbit rings with top vertical antenna/pin and glowing lavender pearl tip.
+ */
+export const AcousticOrbitalApertureIcon: React.FC<{ className?: string }> = ({
   className = "w-7 h-7",
 }) => (
   <svg
@@ -84,37 +83,26 @@ export const StandaloneInterviewAperture: React.FC<{ className?: string }> = ({
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    {/* Studio Condenser Diaphragm Capsule */}
-    <rect className="icon-draw" pathLength={1} x="10.5" y="3.5" width="7" height="12.5" rx="3.5" />
-    <line x1="14" y1="7" x2="14" y2="10.5" opacity={0.5} />
-    {/* Acoustic Suspension Cradle */}
-    <path
-      className="icon-draw"
-      pathLength={1}
-      d="M6.5 12C6.5 16.1421 9.85786 19.5 14 19.5C18.1421 19.5 21.5 16.1421 21.5 12"
-      opacity={0.8}
-    />
-    <line x1="14" y1="19.5" x2="14" y2="24.5" />
-    <line x1="9.5" y1="24.5" x2="18.5" y2="24.5" />
-    {/* Dual Harmonic Pulsing Pearls */}
-    <circle className="icon-pearl" cx="6.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
-    <circle className="icon-pearl" cx="21.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="14" cy="16" r="7.5" className="icon-draw" pathLength={1} />
+    <circle cx="14" cy="16" r="3.2" className="icon-draw" pathLength={1} opacity={0.9} />
+    <line x1="14" y1="8.5" x2="14" y2="3.5" className="icon-draw" pathLength={1} strokeWidth="1.4" />
+    <circle className="icon-pearl" cx="14" cy="3.5" r="1.5" fill="#C4B5FD" stroke="none" />
   </svg>
 );
 
-type MasterParadigm = "unboxed-kinetic" | "horizon-timeline" | "acoustic-studio" | "swiss-hud";
+type LeftFontFamily = "jakarta" | "sora" | "instrument" | "cormorant";
 
 export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
-  const [activeParadigm, setActiveParadigm] = useState<MasterParadigm>("unboxed-kinetic");
+  const [activeFont, setActiveFont] = useState<LeftFontFamily>("jakarta");
   const [activeTrack, setActiveTrack] = useState<"tech" | "executive" | "pitch">("tech");
-  const [isPlayingBriefing, setIsPlayingBriefing] = useState<boolean>(false);
 
   // Dynamic Career Track Profiles
   const tracks = {
     tech: {
       headline: "Tech Career & AI",
       focus: "Conversation First",
-      subline: "Centered on distributed systems, AI-native leadership, and low-latency architectural consensus.",
+      subline: "Focused on distributed systems, AI-native leadership, and low-latency architectural consensus.",
+      actionPrompt: "Continue Session",
       memoryTitle: "“Distributed systems & latency review”",
       memoryMeta: "Ready for practice · 14 cards",
       memoryStat: "88% Stability",
@@ -128,7 +116,8 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
     executive: {
       headline: "Executive Leadership",
       focus: "Boardroom Authority",
-      subline: "Centered on high-stakes alignment, decisive RFC vocabulary, and diplomatic risk framing.",
+      subline: "Focused on high-stakes alignment, decisive RFC vocabulary, and diplomatic risk framing.",
+      actionPrompt: "Continue Session",
       memoryTitle: "“Diplomatic risk framing & concision”",
       memoryMeta: "Ready for practice · 22 cards",
       memoryStat: "94% Retention",
@@ -142,7 +131,8 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
     pitch: {
       headline: "Cross-Functional Pitch",
       focus: "Persuasive Negotiation",
-      subline: "Centered on ROI framing before engineering velocity, objection handling, and stakeholder buy-in.",
+      subline: "Focused on ROI framing before engineering velocity, objection handling, and stakeholder buy-in.",
+      actionPrompt: "Continue Session",
       memoryTitle: "“Persuasive ROI metrics lexicon”",
       memoryMeta: "Ready for practice · 18 cards",
       memoryStat: "91% Recall",
@@ -157,6 +147,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
 
   const currentTrack = tracks[activeTrack];
 
+  // Right-hand callouts (LOCKED & PRISTINE)
   const callouts = useMemo(
     () => [
       {
@@ -165,8 +156,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: currentTrack.memoryTitle,
         meta: currentTrack.memoryMeta,
         stat: currentTrack.memoryStat,
-        Icon: StandaloneMemoryGlyph,
-        accentColor: "#C4B5FD",
+        Icon: SolarNeuralSynapseIcon,
       },
       {
         id: "reading",
@@ -174,8 +164,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: currentTrack.readingTitle,
         meta: currentTrack.readingMeta,
         stat: currentTrack.readingStat,
-        Icon: StandaloneReadingCodex,
-        accentColor: "#A27FF3",
+        Icon: ArchitecturalCodexSpineIcon,
       },
       {
         id: "interview",
@@ -183,8 +172,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
         title: currentTrack.interviewTitle,
         meta: currentTrack.interviewMeta,
         stat: currentTrack.interviewStat,
-        Icon: StandaloneInterviewAperture,
-        accentColor: "#7048E8",
+        Icon: AcousticOrbitalApertureIcon,
       },
     ],
     [currentTrack],
@@ -192,56 +180,63 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col space-y-6 select-none">
-      {/* 1. Header Filter Ribbon: 4 Radical Design Paradigms */}
+      {/* 1. Header Filter Ribbon */}
       <div className="w-full flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#04040A] border border-white/[0.06] shadow-2xl">
         <div className="flex items-center flex-wrap gap-2">
           <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/40 mr-1">
-            Design Paradigm:
+            Left Font:
           </span>
           {[
-            { id: "unboxed-kinetic", label: "1. Naked Kinetic Luxury" },
-            { id: "horizon-timeline", label: "2. Spatial Horizon Timeline" },
-            { id: "acoustic-studio", label: "3. Acoustic Synaptic Studio" },
-            { id: "swiss-hud", label: "4. Swiss Precision HUD" },
-          ].map((p) => (
+            { id: "jakarta", label: "1. Plus Jakarta Sans (Selected · Modern Tech Luxury)" },
+            { id: "sora", label: "2. Sora (Neo-Geometric)" },
+            { id: "instrument", label: "3. Instrument Serif" },
+            { id: "cormorant", label: "4. Cormorant Garamond" },
+          ].map((f) => (
             <button
-              key={p.id}
+              key={f.id}
               type="button"
-              onClick={() => setActiveParadigm(p.id as MasterParadigm)}
+              onClick={() => setActiveFont(f.id as LeftFontFamily)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
-                activeParadigm === p.id
+                activeFont === f.id
                   ? "bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-[1.01]"
                   : "bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
-              {p.label}
+              {f.label}
             </button>
           ))}
         </div>
 
-        {/* Career Track Quick Selector */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono uppercase text-white/30 mr-1">Track:</span>
-          {(
-            [
-              { id: "tech", label: "Tech & AI" },
-              { id: "executive", label: "Executive" },
-              { id: "pitch", label: "Pitch" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTrack(t.id)}
-              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono transition-all cursor-pointer ${
-                activeTrack === t.id
-                  ? "bg-white/[0.12] text-white border border-white/20"
-                  : "bg-white/[0.02] text-white/40 border border-white/[0.04] hover:text-white"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Luxury Standards Signature & Track Selector */}
+        <div className="flex items-center gap-4">
+          <span className="text-[11px] font-mono text-white/40 tracking-wider flex items-center gap-1.5 hidden md:flex">
+            <span className="text-[#A27FF3]">✦</span>
+            <span>Minimalist Luxury Standard</span>
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono uppercase text-white/30 mr-1">Track:</span>
+            {(
+              [
+                { id: "tech", label: "Tech & AI" },
+                { id: "executive", label: "Executive" },
+                { id: "pitch", label: "Pitch" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTrack(t.id)}
+                className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono transition-all cursor-pointer ${
+                  activeTrack === t.id
+                    ? "bg-white/[0.12] text-white border border-white/20"
+                    : "bg-white/[0.02] text-white/40 border border-white/[0.04] hover:text-white"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -259,68 +254,185 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-[#030208]/30 via-transparent to-[#030208]/90 pointer-events-none" />
         </div>
 
-        {/* ========================================================================= */}
-        {/* PARADIGM 1: NAKED KINETIC LUXURY (Zero Containers, Standalone Vectors)    */}
-        {/* ========================================================================= */}
-        {activeParadigm === "unboxed-kinetic" && (
-          <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
-            {/* Left Editorial Column */}
-            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1">
+        {/* Main Stage Grid: Ultra-Clean Sora Left Column + Locked Right-Side Swiss HUD */}
+        <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
+          {/* ========================================================================= */}
+          {/* LEFT COLUMN: SORA FEATURED (100% Clean, Zero Box, Pure Luxury Match)     */}
+          {/* ========================================================================= */}
+          {activeFont === "sora" && (
+            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1 font-['Sora',sans-serif]">
+              {/* Category Line with Fine Hairline Gradient */}
               <div className="flex items-center gap-3">
                 <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
-                <span className="text-[10.5px] font-sans font-medium tracking-[0.22em] text-[#A99BC9] uppercase">
+                <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
                   Good Afternoon, Esteban Perez
                 </span>
               </div>
 
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-normal text-white leading-[1.08] tracking-tight">
+              {/* Display Headline in Sora (Light & Clean Contrast) */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[48px] font-light text-white leading-[1.1] tracking-[-0.03em]">
                 I’ve been thinking <br />
                 about our last <br />
-                <span className="font-display-accent italic text-[#DDD6FE] drop-shadow-[0_0_30px_rgba(162,127,243,0.3)]">
-                  conversation.
-                </span>
+                <span className="font-normal text-[#DDD6FE]">conversation.</span>
               </h1>
 
-              <p className="text-xs sm:text-sm text-[#9E9EBD] font-light leading-[1.7] font-sans pt-1 max-w-md">
+              {/* Context Subtext (Matching the Right Column's Color & Spacing Palette) */}
+              <p className="text-xs sm:text-[13.5px] text-[#8E90A5] font-light leading-[1.7] max-w-md">
                 Your customized session for{" "}
                 <span className="text-[#C4B5FD] font-medium">{currentTrack.focus}</span> is centered on{" "}
                 <span className="text-[#C4B5FD] font-medium">{currentTrack.headline}</span>. <br />
-                {currentTrack.subline}
+                Shall we continue from where we left off?
               </p>
 
-              {/* Minimal Lingua AI Signature */}
+              {/* Naked Typographic Action (Zero Container, Pure Crisp Link) */}
               <div className="pt-2">
                 <button
                   type="button"
-                  className="group/link text-xs sm:text-sm font-medium text-[#B197FF] hover:text-white transition-colors cursor-pointer flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.2]"
+                  className="group text-[11.5px] font-mono font-medium tracking-widest text-[#B197FF] hover:text-white transition-colors cursor-pointer flex items-center gap-2.5"
                 >
-                  <span className="w-3.5 h-3.5 rounded-full bg-[radial-gradient(circle_at_38%_32%,#C4B5FD,#7048E8_65%)] shadow-[0_0_12px_rgba(136,104,248,0.8)] animate-pulse" />
-                  <span className="group-hover/link:translate-x-0.5 transition-transform duration-300">
-                    Lingua AI Engine
+                  <span>CONTINUE SESSION</span>
+                  <span className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all text-xs">
+                    →
                   </span>
-                  <span className="text-white/30 group-hover/link:text-white transition-colors text-xs">→</span>
                 </button>
               </div>
             </div>
+          )}
 
-            {/* Right Callouts: Standalone Floating Vectors (ZERO BOX) */}
-            <div className="flex flex-col select-none pt-2 sm:pt-4 gap-7 w-full sm:w-auto lg:min-w-[340px]">
-              {callouts.map((item) => (
-                <div
-                  key={item.id}
-                  className="group flex items-start gap-4 cursor-pointer transition-all duration-300 hover:-translate-x-2"
+          {/* FONT 2: PLUS JAKARTA SANS */}
+          {activeFont === "jakarta" && (
+            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1 font-['Plus_Jakarta_Sans',sans-serif]">
+              <div className="flex items-center gap-3">
+                <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
+                <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
+                  Good Afternoon, Esteban Perez
+                </span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[48px] font-light text-white leading-[1.08] tracking-[-0.035em]">
+                I’ve been thinking <br />
+                about our last <br />
+                <span className="font-normal text-[#DDD6FE]">conversation.</span>
+              </h1>
+
+              <p className="text-xs sm:text-[13.5px] text-[#8E90A5] font-light leading-[1.7] max-w-md">
+                Your customized session for{" "}
+                <span className="text-[#C4B5FD] font-medium">{currentTrack.focus}</span> is centered on{" "}
+                <span className="text-[#C4B5FD] font-medium">{currentTrack.headline}</span>. <br />
+                Shall we continue from where we left off?
+              </p>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  className="group text-[11.5px] font-mono font-medium tracking-widest text-[#B197FF] hover:text-white transition-colors cursor-pointer flex items-center gap-2.5"
                 >
-                  {/* Standalone Vector Glyph with Brand Pulse & Self-Drawing Stroke */}
-                  <div className="text-[#C4B5FD] group-hover:text-white transition-all duration-300 shrink-0 pt-0.5 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(162,127,243,0.3)]">
+                  <span>CONTINUE SESSION</span>
+                  <span className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all text-xs">
+                    →
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* FONT 3: INSTRUMENT SERIF */}
+          {activeFont === "instrument" && (
+            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1 font-['Instrument_Serif',serif]">
+              <div className="flex items-center gap-3 font-sans">
+                <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
+                <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
+                  Good Afternoon, Esteban Perez
+                </span>
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[62px] font-normal italic text-white leading-[0.98] tracking-[-0.015em]">
+                I’ve been thinking <br />
+                about our last <br />
+                <span className="not-italic font-normal text-[#DDD6FE]">conversation.</span>
+              </h1>
+
+              <p className="text-xs sm:text-[14px] text-[#8E90A5] font-sans font-light leading-[1.65] max-w-md">
+                Your customized session for{" "}
+                <span className="text-[#C4B5FD] font-medium">{currentTrack.focus}</span> is centered on{" "}
+                <span className="text-[#C4B5FD] font-medium">{currentTrack.headline}</span>. <br />
+                Shall we continue from where we left off?
+              </p>
+
+              <div className="pt-2 font-sans">
+                <button
+                  type="button"
+                  className="group text-[11.5px] font-mono font-medium tracking-widest text-[#B197FF] hover:text-white transition-colors cursor-pointer flex items-center gap-2.5"
+                >
+                  <span>CONTINUE SESSION</span>
+                  <span className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all text-xs">
+                    →
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* FONT 4: CORMORANT GARAMOND */}
+          {activeFont === "cormorant" && (
+            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1 font-['Cormorant_Garamond',serif]">
+              <div className="flex items-center gap-3 font-sans">
+                <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
+                <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
+                  Good Afternoon, Esteban Perez
+                </span>
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[58px] font-light italic text-white leading-[1.02] tracking-[-0.01em]">
+                I’ve been thinking <br />
+                about our last <br />
+                <span className="not-italic font-normal text-[#DDD6FE]">conversation.</span>
+              </h1>
+
+              <p className="text-xs sm:text-[14px] font-sans text-[#8E90A5] font-light leading-[1.7] max-w-md">
+                Your customized session for{" "}
+                <span className="text-white font-medium">{currentTrack.focus}</span> is ready on{" "}
+                <span className="text-white font-medium">{currentTrack.headline}</span>.
+              </p>
+
+              <div className="pt-2 font-sans">
+                <button
+                  type="button"
+                  className="group text-[11.5px] font-mono font-medium tracking-widest text-[#B197FF] hover:text-white transition-colors cursor-pointer flex items-center gap-2.5"
+                >
+                  <span>CONTINUE SESSION</span>
+                  <span className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all text-xs">
+                    →
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* RIGHT COLUMN: LOCKED SWISS PRECISION HUD (Exact Reference Replica)        */}
+          {/* ========================================================================= */}
+          <div className="flex flex-col select-none pt-0 divide-y divide-white/[0.08] w-full sm:w-auto lg:min-w-[320px] xl:min-w-[340px] shrink-0">
+            {callouts.map((item, index) => (
+              <div
+                key={item.id}
+                className={`group px-1 flex items-center justify-between cursor-pointer transition-all duration-300 hover:translate-x-[-4px] ${
+                  index === 0 ? "pt-0 pb-4 sm:pb-5" : "py-4 sm:py-5"
+                }`}
+              >
+                <div className="flex items-center gap-5 min-w-0">
+                  {/* Standalone Vector Artwork with Glowing Lavender Pearl Accent */}
+                  <div className="text-white group-hover:text-[#DDD6FE] transition-all duration-300 shrink-0 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(162,127,243,0.3)]">
                     <item.Icon className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
 
-                  {/* Clean Typography */}
-                  <div className="flex flex-col text-left max-w-[240px] sm:max-w-[280px]">
+                  {/* High-Contrast Typography Hierarchy */}
+                  <div className="flex flex-col text-left min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.2em] text-[#B197FF] uppercase">
                         {item.tag}
                       </span>
+                      <span className="text-[9.5px] font-mono text-white/40">{item.stat}</span>
                     </div>
                     <span className="text-[14.5px] sm:text-[15px] text-white font-medium mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors truncate">
                       {item.title}
@@ -330,196 +442,16 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* PARADIGM 2: SPATIAL HORIZON TIMELINE (Linear Flow with Direct Metrics)     */}
-        {/* ========================================================================= */}
-        {activeParadigm === "horizon-timeline" && (
-          <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
-            {/* Left Column with Time-of-Day Stamp */}
-            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1">
-              <div className="flex items-center gap-2.5 text-[11px] font-mono text-white/40">
-                <span className="text-[#34D399]">●</span>
-                <span className="tracking-widest uppercase">15:45 GMT-5 • Real-Time AI Synapse</span>
-              </div>
-
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-normal text-white leading-[1.08] tracking-tight">
-                I’ve been thinking <br />
-                about our last <br />
-                <span className="font-display-accent italic text-[#DDD6FE]">conversation.</span>
-              </h1>
-
-              <p className="text-xs sm:text-sm text-[#9E9EBD] font-light leading-[1.7] font-sans max-w-md">
-                Your focus today is on{" "}
-                <span className="text-[#C4B5FD] font-medium">{currentTrack.headline}</span>.{" "}
-                Ready to review your recent cognitive memory cards or start your live simulation?
-              </p>
-            </div>
-
-            {/* Right Column: Floating Timeline Rail with Direct Stat Meters */}
-            <div className="flex flex-col select-none pt-2 sm:pt-4 divide-y divide-white/[0.06] w-full sm:w-auto lg:min-w-[340px]">
-              {callouts.map((item) => (
-                <div
-                  key={item.id}
-                  className="group py-4 px-1 flex items-center justify-between cursor-pointer transition-all duration-300 hover:translate-x-[-3px]"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="text-[#C4B5FD] group-hover:text-white transition-colors shrink-0">
-                      <item.Icon className="w-7 h-7" />
-                    </div>
-                    <div className="flex flex-col text-left min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono tracking-widest text-[#B197FF] uppercase">
-                          {item.tag}
-                        </span>
-                        <span className="text-[9.5px] font-mono text-white/50">{item.stat}</span>
-                      </div>
-                      <span className="text-[14.5px] font-medium text-white tracking-wide truncate group-hover:text-[#DDD6FE] transition-colors">
-                        {item.title}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="text-white/20 group-hover:text-white transition-colors text-sm pl-2">
-                    →
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* PARADIGM 3: ACOUSTIC SYNAPTIC STUDIO (Voice & Spectrum Focused)            */}
-        {/* ========================================================================= */}
-        {activeParadigm === "acoustic-studio" && (
-          <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
-            {/* Left Column with Audio Briefing Trigger */}
-            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1">
-              <div className="flex items-center gap-3">
-                <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
-                <span className="text-[10.5px] font-sans font-medium tracking-[0.22em] text-[#A99BC9] uppercase">
-                  AI Vocal Briefing Ready
-                </span>
-              </div>
-
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-normal text-white leading-[1.08] tracking-tight">
-                I’ve been thinking <br />
-                about our last <br />
-                <span className="font-display-accent italic text-[#DDD6FE]">conversation.</span>
-              </h1>
-
-              {/* Interactive Audio Briefing Pill */}
-              <div className="flex items-center gap-4 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsPlayingBriefing((p) => !p)}
-                  className="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.2] text-xs font-mono text-white transition-all flex items-center gap-2.5 cursor-pointer"
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isPlayingBriefing ? "bg-[#34D399] animate-ping" : "bg-[#A27FF3]"
-                    }`}
-                  />
-                  <span>{isPlayingBriefing ? "Playing Audio Briefing..." : "Play 15s AI Briefing"}</span>
-                </button>
-
-                {/* Animated Audio Spectrum Bars */}
-                <div className="flex items-end gap-[2px] h-5">
-                  {[30, 65, 100, 45, 80, 50, 90, 40].map((h, i) => (
-                    <span
-                      key={i}
-                      className={`w-[2px] rounded-full transition-all duration-300 ${
-                        isPlayingBriefing ? "bg-[#34D399] animate-pulse" : "bg-white/30"
-                      }`}
-                      style={{ height: `${isPlayingBriefing ? h : 25}%` }}
-                    />
-                  ))}
+                <div className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 pl-3">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                    <path d="M5 12H19M19 12L12 5M19 12L12 19" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </div>
               </div>
-            </div>
-
-            {/* Right Column: Acoustic Floating Nodes */}
-            <div className="flex flex-col select-none pt-2 sm:pt-4 gap-6 w-full sm:w-auto lg:min-w-[340px]">
-              {callouts.map((item) => (
-                <div
-                  key={item.id}
-                  className="group flex items-start gap-4 cursor-pointer transition-all duration-300 hover:translate-x-[-3px]"
-                >
-                  <div className="text-[#C4B5FD] group-hover:text-white transition-colors shrink-0 pt-0.5">
-                    <item.Icon className="w-7 h-7" />
-                  </div>
-                  <div className="flex flex-col text-left max-w-[240px] sm:max-w-[280px]">
-                    <span className="text-[10px] font-mono tracking-widest text-[#B197FF] uppercase">
-                      {item.tag}
-                    </span>
-                    <span className="text-[14.5px] font-medium text-white mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors truncate">
-                      {item.title}
-                    </span>
-                    <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5 truncate">
-                      {item.stat}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* PARADIGM 4: SWISS PRECISION HUD (Ultra-Minimal Monochromatic)              */}
-        {/* ========================================================================= */}
-        {activeParadigm === "swiss-hud" && (
-          <div className="relative z-20 w-full flex flex-col lg:flex-row items-start justify-between gap-8 h-full">
-            {/* Left Column: Monochromatic High-Contrast */}
-            <div className="flex flex-col space-y-4 max-w-lg select-none text-left items-start pt-1">
-              <div className="text-[10.5px] font-mono tracking-[0.25em] text-white/50 uppercase">
-                ESTEBAN PEREZ // TRACK: {currentTrack.headline}
-              </div>
-
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-normal text-white leading-[1.08] tracking-tight">
-                I’ve been thinking <br />
-                about our last <br />
-                <span className="font-display-accent italic text-white underline decoration-white/20 underline-offset-8">
-                  conversation.
-                </span>
-              </h1>
-
-              <p className="text-xs sm:text-sm text-white/60 font-light leading-[1.7] font-sans max-w-md">
-                Session calibrated for {currentTrack.focus}. All neural metrics synced.
-              </p>
-            </div>
-
-            {/* Right Column: Monochromatic HUD Glyph Rail */}
-            <div className="flex flex-col select-none pt-2 sm:pt-4 gap-6 w-full sm:w-auto lg:min-w-[340px]">
-              {callouts.map((item) => (
-                <div
-                  key={item.id}
-                  className="group flex items-start gap-4 cursor-pointer transition-all duration-300 hover:translate-x-[-3px]"
-                >
-                  <div className="text-white/70 group-hover:text-white transition-colors shrink-0 pt-0.5">
-                    <item.Icon className="w-7 h-7" />
-                  </div>
-                  <div className="flex flex-col text-left max-w-[240px] sm:max-w-[280px]">
-                    <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase">
-                      {item.tag}
-                    </span>
-                    <span className="text-[14.5px] font-medium text-white mt-0.5 tracking-wide truncate">
-                      {item.title}
-                    </span>
-                    <span className="text-[11.5px] text-white/40 font-mono mt-0.5 truncate">
-                      {item.meta}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

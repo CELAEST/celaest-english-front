@@ -5,6 +5,8 @@ import { ConversationPromptArea } from "./ConversationPromptArea";
 import { ConversationWaveformSpectrum } from "./ConversationWaveformSpectrum";
 import { ConversationMicControl } from "./ConversationMicControl";
 import { ConversationAudioSettingsModal } from "./ConversationAudioSettingsModal";
+import { MicHardwareRecoveryModal } from "./MicHardwareRecoveryModal";
+import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
 import { InterviewAnalysisModal } from "./InterviewAnalysisModal";
 import { ResponsiveInterviewHUD } from "./ResponsiveInterviewHUD";
 import { SessionCardsSidenav } from "./SessionCardsSidenav";
@@ -14,12 +16,14 @@ export interface InterviewPracticeViewProps {
   onBackToWorkspace?: () => void;
   onNavigateToMemory?: () => void;
   roleName?: string;
+  userLevel?: string;
 }
 
 export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   onBackToWorkspace,
   onNavigateToMemory,
-  roleName = "Product Manager",
+  roleName = "Professional",
+  userLevel,
 }) => {
   const {
     isListening,
@@ -35,21 +39,34 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     speakingSeconds,
     speechRate,
     userTranscript,
+    speechNotice,
+    clearTranscript,
     turnFeedback,
     savedErrorIds,
     setSpeechRate,
     setUserTranscript,
     toggleListening,
     finishTurnManual,
-    submitCustomAnswer,
     skipQuestion,
     repeatQuestion,
     takeTime,
     saveSpecificErrorToMemory,
     saveAllErrorsToMemory,
+    selectedVoice,
+    setSelectedVoice,
     setShowAnalysisModal,
     showAnalysisModal,
-  } = useInterviewSession(roleName);
+    isMicRecoveryModalOpen,
+    setIsMicRecoveryModalOpen,
+    resumeFromMicRecovery,
+    isRecoveryModalOpen,
+    setIsRecoveryModalOpen,
+    infrastructureErrorScenario,
+    recoveryCooldown,
+    resumeFromRecoveryModal,
+    activeCefrLevel,
+    setActiveCefrLevel,
+  } = useInterviewSession(roleName, userLevel);
 
   const [showAudioSettings, setShowAudioSettings] = useState<boolean>(false);
   const [showControlsDrawer, setShowControlsDrawer] = useState<boolean>(false);
@@ -57,13 +74,21 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   // Keyboard shortcut listener (Space to pause/resume, Enter to finish speaking)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA" ||
-        showAnalysisModal ||
-        showAudioSettings ||
-        showControlsDrawer
-      ) {
+      const target = e.target as HTMLElement | null;
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isEditableOrInteractive =
+        activeEl?.tagName === "INPUT" ||
+        activeEl?.tagName === "TEXTAREA" ||
+        activeEl?.tagName === "SELECT" ||
+        activeEl?.tagName === "BUTTON" ||
+        activeEl?.isContentEditable ||
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "BUTTON" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable;
+
+      if (isEditableOrInteractive || showAnalysisModal || showAudioSettings || showControlsDrawer) {
         return;
       }
 
@@ -101,6 +126,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     if (isThinking) return "Procesando respuesta...";
     if (isPaused) return "Interview paused";
     if (isListening) return "Listening to your answer...";
+    if (speechNotice) return "Micrófono en pausa";
     return "Ready for your answer";
   };
 
@@ -112,10 +138,14 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       remainingSeconds,
       speakingSeconds,
       roleName,
+      userLevel: activeCefrLevel,
       speechRate,
+      isListening,
+      isPaused,
       turnFeedback,
       savedErrorIds,
       onSetSpeechRate: setSpeechRate,
+      onSetLevel: setActiveCefrLevel,
       onSkipQuestion: skipQuestion,
       onRepeatQuestion: repeatQuestion,
       onPauseInterview: toggleListening,
@@ -132,10 +162,14 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       remainingSeconds,
       speakingSeconds,
       roleName,
+      activeCefrLevel,
       speechRate,
+      isListening,
+      isPaused,
       turnFeedback,
       savedErrorIds,
       setSpeechRate,
+      setActiveCefrLevel,
       skipQuestion,
       repeatQuestion,
       toggleListening,
@@ -155,8 +189,10 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         currentQuestion={currentQuestionIndex + 1}
         totalQuestions={totalQuestions}
         roleName={roleName}
+        userLevel={activeCefrLevel}
         speechRate={speechRate}
         onSetSpeechRate={setSpeechRate}
+        onSetLevel={setActiveCefrLevel}
         onRepeatQuestion={repeatQuestion}
         onNextQuestion={skipQuestion}
         onOpenDrawer={() => setShowControlsDrawer(true)}
@@ -183,13 +219,13 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             <ConversationPromptArea
               currentQuestionText={currentQuestion.question}
               userTranscript={userTranscript}
+              selectedVoice={selectedVoice}
+              onSelectVoice={setSelectedVoice}
+              onRepeatQuestion={() => repeatQuestion()}
+              onClearTranscript={clearTranscript}
               onTranscriptChange={setUserTranscript}
-              onSubmitAnswer={() => {
-                if (isListening) {
-                  finishTurnManual();
-                } else {
-                  submitCustomAnswer(userTranscript);
-                }
+              onSubmitAnswer={(text) => {
+                finishTurnManual(text);
               }}
             />
           </div>
@@ -210,14 +246,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
               isThinking={isThinking}
               hasText={userTranscript.trim().length > 0}
               onToggleListening={toggleListening}
-              onFinishTurn={finishTurnManual}
-              onSubmitText={() => {
-                if (isListening) {
-                  finishTurnManual();
-                } else {
-                  submitCustomAnswer(userTranscript);
-                }
-              }}
+              onFinishTurn={() => finishTurnManual()}
+              onSubmitText={() => finishTurnManual()}
+              onClearText={clearTranscript}
             />
           </div>
         </div>
@@ -256,6 +287,24 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         onClose={() => setShowAudioSettings(false)}
         speechRate={speechRate}
         onSetSpeechRate={setSpeechRate}
+      />
+
+      {/* 6. Luxury Hardware Resilience Mic Recovery Modal */}
+      <MicHardwareRecoveryModal
+        isOpen={isMicRecoveryModalOpen}
+        onClose={() => setIsMicRecoveryModalOpen(false)}
+        onResume={resumeFromMicRecovery}
+      />
+
+      {/* 7. Luxury AI Infrastructure Recovery Modal */}
+      <AiInfrastructureRecoveryModal
+        isOpen={isRecoveryModalOpen}
+        scenario={infrastructureErrorScenario}
+        cooldown={recoveryCooldown}
+        contextType="speaking"
+        bufferDetail={{ durationSeconds: speakingSeconds }}
+        onClose={() => setIsRecoveryModalOpen(false)}
+        onImmediateResume={resumeFromRecoveryModal}
       />
     </div>
   );

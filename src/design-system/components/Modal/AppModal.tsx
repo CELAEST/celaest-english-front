@@ -142,9 +142,9 @@ export const AppModal: React.FC<AppModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.07] text-[#8a8a9e] hover:bg-[#1f1a3a] hover:border-[#A27FF3]/40 hover:text-white transition-all duration-300 cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center text-white/40 hover:text-white transition-colors duration-200 cursor-pointer"
             >
-              <X className="w-[18px] h-[18px]" />
+              <X className="w-5 h-5" strokeWidth={1.8} />
             </button>
           </div>
         )}

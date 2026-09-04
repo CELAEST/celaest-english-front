@@ -6,6 +6,7 @@ export interface WritingEditorProps {
   minWords?: number;
   maxWords?: number;
   onNewTask?: () => void;
+  isGeneratingTask?: boolean;
 }
 
 const FONT_SIZES = [
@@ -25,6 +26,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
   minWords = 80,
   maxWords = 180,
   onNewTask,
+  isGeneratingTask = false,
 }) => {
   const [content, setContent] = useState(initialContent);
   const [fontSizeIndex, setFontSizeIndex] = useState<number>(1);
@@ -45,6 +47,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
       if (clearTimerRef.current) window.clearTimeout(clearTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (initialContent !== content) {
+      setContent(initialContent);
+      historyRef.current = [initialContent];
+      historyIndexRef.current = 0;
+      setCanUndo(false);
+      setCanRedo(false);
+    }
+  }, [initialContent]);
 
   const wordCount = countWords(content);
   const inRange = wordCount >= minWords && wordCount <= maxWords;
@@ -141,11 +153,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             <button
               type="button"
               onClick={onNewTask}
+              disabled={isGeneratingTask}
               aria-label="Show a different writing task"
-              className={`flex items-center gap-2 text-xs font-mono transition-all duration-300 cursor-pointer group active:scale-95 ${FOCUS_RING}`}
+              className={`flex items-center gap-2 text-xs font-mono transition-all duration-300 cursor-pointer group active:scale-95 ${
+                isGeneratingTask ? "opacity-60 cursor-not-allowed pointer-events-none" : ""
+              } ${FOCUS_RING}`}
             >
               <svg
-                className="w-4 h-4 text-[#A27FF3] group-hover:text-[#38BDF8] group-hover:rotate-180 transition-all duration-500 shrink-0 drop-shadow-[0_0_8px_rgba(162,127,243,0.7)]"
+                className={`w-4 h-4 text-[#A27FF3] group-hover:text-[#38BDF8] transition-all duration-500 shrink-0 drop-shadow-[0_0_8px_rgba(162,127,243,0.7)] ${
+                  isGeneratingTask ? "animate-spin" : "group-hover:rotate-180"
+                }`}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -158,7 +175,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
                 <polyline points="21 3 21 9 15 9" />
               </svg>
               <span className="font-medium tracking-wider bg-gradient-to-r from-[#A27FF3] via-[#c084fc] to-[#38BDF8] bg-clip-text text-transparent group-hover:brightness-125 transition-all duration-300 drop-shadow-[0_0_12px_rgba(162,127,243,0.3)]">
-                New task
+                {isGeneratingTask ? "Generating..." : "New task"}
               </span>
             </button>
           )}

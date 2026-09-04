@@ -15,11 +15,13 @@ export class ApiReadingRepository implements IReadingRepository {
     category: string = "BUSINESS",
     level: string = "B1",
     topic?: string,
+    profession?: string,
   ): Promise<ReadingArticle> {
     return HttpClient.post<ReadingArticle>("/reading/generate", {
       category,
       cefrLevel: level,
       topic,
+      profession,
     });
   }
 

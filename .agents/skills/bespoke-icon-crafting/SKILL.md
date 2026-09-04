@@ -1,72 +1,73 @@
----
-name: bespoke-icon-crafting
-description: >-
-  Master guide for engineering bespoke, ultra-clean, high-level vector SVG icons
-  for enterprise UI systems (Apple SF Symbols & Linear standard). Use whenever creating,
-  refactoring, or auditing UI iconography, progress gauges, and glyphs.
----
+# Brand-Grade Bespoke Vector Crafting Standards (Claude, OpenAI, DeepSeek, Apple Standard)
 
-# Bespoke Icon Crafting Standards (CELAEST / Apple / Linear Standard)
-
-This skill defines the rigorous geometric, optical, and semantic standards required for crafting bespoke vector icons in modern dark-mode, high-end interfaces.
+> **Mandate**: This document defines the mathematical, optical, and geometric standards for crafting Tier-1 brand-grade SVG icons. Generic "AI Clipart" is strictly forbidden. Every icon must look like an iconic mark designed by Apple, Anthropic, OpenAI, or Teenage Engineering.
 
 ---
 
-## 1. Core Geometric Principles
+## 1. 🚫 Prohibited "AI Clipart" Tropes (What NEVER to Create)
 
-### 1.1 Fixed Coordinate Grid & ViewBox
+Generative AI models have a notorious habit of producing juvenile, 2012-era clipart SVGs. These are completely banned:
 
-- Always design on a standardized, integer-based coordinate grid:
-  - **Micro / Inline Nodes:** `viewBox="0 0 16 16"` or `viewBox="0 0 20 20"` (e.g. timeline pills, badges).
-  - **Standard UI Icons:** `viewBox="0 0 24 24"` or `viewBox="0 0 28 28"` (e.g. sidebar navigation, toolbar buttons).
-  - **Hero Nexus Centerpieces:** `viewBox="0 0 48 48"` or `viewBox="0 0 64 64"` (e.g. state loaders, modal headers, orb centers).
-- Maintain a consistent **Safe Area Padding** (1.5px – 3px) from the viewBox boundary to prevent clipping when transformed or scaled.
+### 1.1 The "Cartoon Microphone" Trope
+- **FORBIDDEN:** Drawing a pill rectangle with two horizontal lines, sitting in a U-shaped arc on a stick with a flat line base (`M14 22C14... M24 32V38 M20 38H28`).
+- **FORBIDDEN:** Surrounding icons with generic dashed circles (`strokeDasharray="3 3"`).
+- **WHY:** It looks like a cheap free clipart icon from 2010. Real luxury audio software (Logic Pro, Ableton, Teenage Engineering, Universal Audio) uses precision industrial broadcast silhouettes (Shure SM7B, Neumann U87) or architectural acoustic diaphragms.
 
-### 1.2 Unified Stroke Weight & Consistency
+### 1.2 The "Dumb Object on a Stick" Trope
+- **FORBIDDEN:** Generic lightbulbs, generic padlocks with rounded wire shackles, generic shields with crosses, or gear wheels with 6 blocky teeth.
+- **WHY:** They instantly scream "AI-generated placeholder".
 
-- **Rule of Single Weight:** All strokes within an icon suite must share a uniform primary thickness:
-  - `48x48` Hero: `1.5px` to `1.8px` primary stroke, `1.2px` secondary.
-  - `24x24` Standard: `1.75px` stroke.
-  - `16x16` Micro: `1.3px` to `1.5px` stroke.
-- **Terminals & Joins:** Strictly enforce `strokeLinecap="round"` and `strokeLinejoin="round"` to guarantee smooth, continuous contour geometry.
-
-### 1.3 Keyline Proportions & Visual Volume
-
-- Different geometric shapes require optical sizing compensation:
-  - **Circles:** Sized slightly larger than squares (e.g., 20px circle vs 18px square) to match visual weight.
-  - **Triangles / Asymmetric Glyphs:** Center of gravity must be optically shifted, not just mathematically centered in the viewBox.
+### 1.3 Disconnected Line Segments & Broken Topology
+- **FORBIDDEN:** Scattering floating unconnected strokes around a shape to fake detail. Every line must represent an intentional mechanical or architectural feature.
 
 ---
 
-## 2. Eliminating Visual Noise & Clutter ("The Cleanliness Rule")
+## 2. 🏛️ The Tier-1 Brand-Grade Vector Hall of Fame
 
-- **Zero Arbitrary Ray/Sunburst Flares:** Never add disconnected ray dashes (`M24 4V10`) above books or objects unless explicitly part of an active laser reticle.
-- **Zero Heavy Box Fills or Drop Shadows on Vectors:** Avoid blurry CSS filter shadows directly on SVG elements. Let vector paths stay razor-sharp and use high-contrast color tokens.
-- **Simplified Skeletons:** A symbol must be instantly recognizable at 16px when blurred. If an icon has more than 5 distinct micro-elements, simplify it.
+Study what makes the world's best brandmarks and system glyphs iconic:
 
----
-
-## 3. Dark Theme & Violet Cosmic Color Palette
-
-- **Primary Stroke (High Luminance):** `#FFFFFF` (100% white for focal points) and `#DDD6FE` / `#C4B5FD` (soft lavender violet).
-- **Secondary Accent:** `#A27FF3` (medium energy violet).
-- **Tertiary / Base Structure:** `#7048E8` / `#38267D` (deep luminous violet) with subtle opacities (`0.4`–`0.7`).
-- **Core Fills:** Deep cosmic container fills (`#0c0a24` or `#080816`) with high-contrast borders.
+| Brand / Glyph | Geometric Principle | Optical Technique |
+|---|---|---|
+| **Claude (Anthropic)** | Radiant 16-point organic solar asterisk | Curved tapered terminals, central circular negative aperture, uniform radial flow. |
+| **OpenAI** | Continuous recursive cycloid knot | Single continuous ribbon with isometric bevel depth, zero breaks, mathematical symmetry. |
+| **DeepSeek** | Fluid dual-fin aerodynamic manta ray | Golden-ratio Bezier curves, organic negative space notch, zero internal clutter. |
+| **Groq** | Bold geometric monospace forward-chevron | Monolithic typographic stroke weight with integrated dynamic directional cut. |
+| **Apple Studio Audio** | Precision Neumann / Shure broadcast silhouette | Chamfered capsule body, industrial suspension yoke, precision cardioid polar grid lines. |
 
 ---
 
-## 4. Crafting Specific Semantic Metaphors
+## 3. 📐 Mathematical Rules for Engineering Brand-Grade SVGs
 
-### 🧬 Linguistic DNA / Synaptic Personalization
+### 3.1 ViewBox & Integer Coordinate Snapping
+- **ViewBox Standard:** Always design inside an integer coordinate space: `viewBox="0 0 24 24"`, `viewBox="0 0 32 32"`, or `viewBox="0 0 48 48"`.
+- **Zero Subpixel Blur:** Stroke centers must snap to integer or `.5` coordinates (`cx="12" cy="12"`) to guarantee razor-sharp rendering on Retina/HiDPI displays.
 
-- **Avoid:** Clunky hourglasses with heavy corner rings and boxy crosses.
-- **Use:** Continuous, organic double-helix sine waves with evenly distributed horizontal hydrogen bond lines and luminous terminal nodes.
+### 3.2 Continuous Path Geometry & Fill-Rule
+- Prefer unified, continuous closed paths (`<path d="..." />`) over stacking 5 primitive shapes (`<circle/><rect/><line/><line/>`).
+- Use `fillRule="evenodd"` when creating intricate cutouts or negative space windows.
 
-### 📖 Reading Codex / Lexicon Knowledge
+### 3.3 Stroke Weights & Terminal Precision
+- **Primary Hero Stroke:** `1.5px` to `1.75px` in a `24x24` or `32x32` canvas.
+- **Micro Detail Lines:** `1.0px` to `1.2px` with `strokeOpacity="0.4"` to `0.6` for secondary mechanical etchings.
+- **Terminals & Joins:** Always declare `strokeLinecap="round"` and `strokeLinejoin="round"` to prevent jarring spiky miter corners.
 
-- **Avoid:** Thick cartoon books with wavy lines and exclamation rays.
-- **Use:** Precision open architectural codex with clean 3D perspective spine, crisp horizontal paragraph etchings, and subtle page bevel curves.
+---
 
-### 🎯 Topic Radar / Calibration Target
+## 4. 🎙️ Specific Blueprint: The Broadcast Studio Audio Capsule (Anti-Clipart Standard)
 
-- **Use:** Concentric circular rings with precision 4-point crosshair ticks and a solid focal nucleus.
+When rendering studio microphones, speech sensors, or acoustic hardware, follow this industrial design blueprint:
+
+```
+          ╭─────────╮   <-- Precision Chamfered Windscreen / Capsule Dome
+          │ ░░░░░░░ │   <-- Micro-Etched Cardioid Polar Mesh
+          ├─────────┤   <-- Titanium Center Band Ring (0.8px hairline)
+          │         │   <-- Machined Solid Metal Body
+          ╰────┬────╯   <-- Tapered Acoustic Porting Base
+           ╭───┴───╮
+          ╭╯       ╰╮   <-- Industrial Cantilever / Swivel Yoke Mount
+          │    ●    │   <-- Precision Swivel Pivot Dial
+```
+
+- **Avoid:** The generic U-pipe cradle with a stick.
+- **Use:** A modern, cantilevered broadcast capsule silhouette (inspired by the legendary Shure SM7B and Neumann TLM 103), rendered with clean, continuous vector paths and subtle titanium hairlines.
+- **Acoustic Wave:** Pair with smooth, continuous Gaussian or harmonic frequency bars with dynamic CSS scale transforms, never rigid blocky meters.

@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
+import {
+  FlagshipVoiceId,
+} from "../../reading/services/readingAudioPrefetcher";
+import { MENTOR_VOICE_STORAGE_KEY } from "../../reading/hooks/useReadingAudioNarrator";
 import { InterviewQuestionItem, SpecificErrorItem } from "../services/interviewEngineService";
-import { DynamicQuestionService } from "../services/dynamicQuestionService";
+import { DynamicQuestionService, classifyProfession, normalizeCefr } from "../services/dynamicQuestionService";
+import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { AudioCaptureService } from "../services/audioCaptureService";
+import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
 import { logger } from "../../../shared/utils/logger";
@@ -14,6 +20,13 @@ import {
   PersistedInterviewState,
 } from "../services/interviewPersistence";
 import { setMicVolume } from "./micVolumeStore";
+import { appToast } from "../../../design-system/components/Toast";
+import {
+  AiApiErrorType,
+  ErrorScenarioData,
+  ERROR_DATA,
+} from "../../lab/components/AiEngineErrorsLuxuryStudio";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 
 let interviewHydratedOnce = false;
 let interviewLastHydratedAt = 0;
@@ -27,21 +40,55 @@ export type InterviewStatus = "IDLE" | "AI_SPEAKING" | "RECORDING" | "THINKING" 
 
 export type ProcessingStage = "IDLE" | "TRANSCRIBING" | "ANALYZING" | "PREPARING";
 
-export const useInterviewSession = (roleName: string = "Product Manager") => {
+export const useInterviewSession = (
+  roleName: string = "Professional",
+  initialLevel?: string,
+) => {
   // Restore the last interview turn from localStorage so a reload or an SPA
   // route change never loses the user's answer or the AI feedback.
   const restoredRef = useRef<PersistedInterviewState | null>(loadPersistedInterview());
 
+  const [activeCefrLevel, setActiveCefrLevelState] = useState<string>(() => {
+    if (initialLevel) return normalizeCefr(initialLevel);
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("celaest:interview:cefrLevel");
+        if (saved) return normalizeCefr(saved);
+      } catch {
+        // ignore
+      }
+    }
+    return "B1";
+  });
+
   const [status, setStatus] = useState<InterviewStatus>("IDLE");
   const [processingStage, setProcessingStage] = useState<ProcessingStage>("IDLE");
+  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(
     restoredRef.current?.currentQuestionIndex ?? 0,
   );
   const [speechRate, setSpeechRate] = useState<number>(restoredRef.current?.speechRate ?? 0.95);
   const [speakingSeconds, setSpeakingSeconds] = useState<number>(0);
-  const [userTranscript, setUserTranscript] = useState<string>(
+  const [userTranscript, setUserTranscriptRaw] = useState<string>(
     restoredRef.current?.userTranscript ?? "",
   );
+
+  const setUserTranscript = useCallback((value: string | ((prev: string) => string)) => {
+    // When the user edits or pastes text directly into the transcript area,
+    // detach old acoustic metadata so prior mic detection doesn't misclassify typed text!
+    lastCapturedAudioRef.current = {
+      audioBlob: null,
+      audioUrl: null,
+      durationSeconds: 0,
+      detectedLanguage: undefined,
+    };
+    setSpeechNotice(null);
+    setUserTranscriptRaw((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      userTranscriptRef.current = next;
+      return next;
+    });
+  }, []);
   const [turnFeedback, setTurnFeedback] = useState<ComprehensiveTurnFeedback | null>(
     restoredRef.current?.turnFeedback ?? null,
   );
@@ -51,27 +98,231 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
   const [showAnalysisModal, setShowAnalysisModal] = useState<boolean>(
     restoredRef.current?.showAnalysisModal ?? false,
   );
+  const [selectedVoice, setSelectedVoiceState] = useState<FlagshipVoiceId>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(MENTOR_VOICE_STORAGE_KEY) as FlagshipVoiceId;
+        if (stored === "en-US-AriaNeural" || stored === "en-US-ChristopherNeural") {
+          return stored;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    return "en-US-AriaNeural";
+  });
+  const [isMicRecoveryModalOpen, setIsMicRecoveryModalOpen] = useState<boolean>(false);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
+  const [infrastructureErrorScenario, setInfrastructureErrorScenario] = useState<ErrorScenarioData>(
+    ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
+  );
+  const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
+
+  const selectedVoiceRef = useRef<FlagshipVoiceId>(selectedVoice);
+  selectedVoiceRef.current = selectedVoice;
 
   const animFrameRef = useRef<number | null>(null);
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const isAiSpeakingRef = useRef<boolean>(false);
   const userTranscriptRef = useRef<string>("");
+  const textBeforeSegmentRef = useRef<string>("");
   // Throttle mic-volume state updates so the ~60fps rAF poll does not
   // re-render the entire conversation tree on every frame.
   const lastVolUpdateRef = useRef<number>(0);
   const lastVolRef = useRef<number>(0);
   const lastTranscriptUpdateRef = useRef<number>(0);
+  const lastCapturedAudioRef = useRef<{
+    audioBlob: Blob | null;
+    audioUrl: string | null;
+    durationSeconds: number;
+    detectedLanguage?: string | undefined;
+  }>({ audioBlob: null, audioUrl: null, durationSeconds: 0 });
+
+  // The prop `roleName` from WorkspaceDashboardView is the single source of truth.
+  // Only fall back to persisted state if the prop genuinely hasn't loaded yet.
+  const effectiveRoleName = (roleName && roleName !== "Professional")
+    ? roleName
+    : "Professional";
+
+  // Detect profession mismatch between persisted state and current prop.
+  // If there's a mismatch, the persisted session questions are stale and must be discarded.
+  const professionMatchesPersisted =
+    !!restoredRef.current?.roleName &&
+    restoredRef.current.roleName.toLowerCase() === effectiveRoleName.toLowerCase();
+
+  // Auto-invalidate stale AI question caches from localStorage when profession changes
+  const cacheInvalidatedRef = useRef(false);
+  if (!cacheInvalidatedRef.current && effectiveRoleName !== "Professional" && !professionMatchesPersisted) {
+    cacheInvalidatedRef.current = true;
+    if (typeof window !== "undefined") {
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("celaest:interview:ai_questions:v2:") &&
+              !key.includes(effectiveRoleName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_"))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+        if (keysToRemove.length > 0) {
+          logger.info(`[useInterviewSession] Invalidated ${keysToRemove.length} stale AI question cache(s) for profession change → ${effectiveRoleName}`);
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }
+
+  // Session-level pre-generated questions tailored to exact (effectiveRoleName, activeCefrLevel)
+  const [sessionQuestions, setSessionQuestions] = useState<InterviewQuestionItem[]>(() => {
+    const expectedCat = classifyProfession(effectiveRoleName);
+    const hasCategoryMismatch = (questions: InterviewQuestionItem[]) => {
+      if (expectedCat === "HEALTHCARE") {
+        return questions.some((q) => {
+          const lower = (q.question || "").toLowerCase();
+          return (
+            lower.includes("client meeting") ||
+            lower.includes("presentation for a client") ||
+            lower.includes("pull request") ||
+            lower.includes("standup") ||
+            lower.includes("sprint")
+          );
+        });
+      }
+      return false;
+    };
+
+    const normActiveLevel = normalizeCefr(activeCefrLevel);
+    const hasLevelMismatch = (questions: InterviewQuestionItem[]) => {
+      return questions.some((q) => q.targetLevel && normalizeCefr(q.targetLevel) !== normActiveLevel);
+    };
+
+    // Only restore persisted session questions if they EXACTLY match current profession, domain, and level
+    if (
+      professionMatchesPersisted &&
+      restoredRef.current?.sessionQuestions &&
+      restoredRef.current.sessionQuestions.length > 0 &&
+      !hasCategoryMismatch(restoredRef.current.sessionQuestions) &&
+      !hasLevelMismatch(restoredRef.current.sessionQuestions)
+    ) {
+      return restoredRef.current.sessionQuestions;
+    }
+    // Instant procedural seed from the correct profession pool and level
+    return AiInterviewQuestionGenerator.getCachedOrSeedQuestions(effectiveRoleName, activeCefrLevel, 12);
+  });
+
+  const setActiveCefrLevel = useCallback(
+    (level: string) => {
+      const norm = normalizeCefr(level);
+      setActiveCefrLevelState(norm);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("celaest:interview:cefrLevel", norm);
+        } catch {
+          // ignore
+        }
+      }
+      // Instant switch: load seed/cached questions matching this role and the new CEFR level
+      const newQuestions = AiInterviewQuestionGenerator.getCachedOrSeedQuestions(
+        effectiveRoleName,
+        norm,
+        12,
+      );
+      setSessionQuestions(newQuestions);
+      setCurrentQuestionIndex(0);
+      setUserTranscriptRaw("");
+      setTurnFeedback(null);
+    },
+    [effectiveRoleName],
+  );
+
+  // Synchronize when initialLevel changes from props (e.g. updated in Settings)
+  useEffect(() => {
+    if (initialLevel) {
+      const norm = normalizeCefr(initialLevel);
+      if (norm !== normalizeCefr(activeCefrLevel)) {
+        setActiveCefrLevel(norm);
+      }
+    }
+  }, [initialLevel, activeCefrLevel, setActiveCefrLevel]);
+
+  const lastGeneratedKeyRef = useRef<string>("");
+
+  // Background AI pre-generation of full 12-question tailored session block
+  useEffect(() => {
+    let isCancelled = false;
+
+    const normLevel = normalizeCefr(activeCefrLevel);
+    const expectedCat = classifyProfession(effectiveRoleName);
+    const hasCategoryMismatch = sessionQuestions.some((q) => {
+      if (expectedCat === "HEALTHCARE") {
+        const lower = (q.question || "").toLowerCase();
+        return (
+          lower.includes("client meeting") ||
+          lower.includes("presentation for a client") ||
+          lower.includes("pull request") ||
+          lower.includes("standup") ||
+          lower.includes("sprint")
+        );
+      }
+      return false;
+    });
+
+    const hasLevelMismatch = sessionQuestions.some((q) => {
+      if (!q.targetLevel) return false;
+      return normalizeCefr(q.targetLevel) !== normLevel;
+    });
+
+    const generationKey = `${effectiveRoleName}::${normLevel}`;
+    if (
+      !hasCategoryMismatch &&
+      !hasLevelMismatch &&
+      lastGeneratedKeyRef.current === generationKey
+    ) {
+      return;
+    }
+
+    lastGeneratedKeyRef.current = generationKey;
+
+    AiInterviewQuestionGenerator.generateSessionQuestions({
+      profession: effectiveRoleName,
+      cefrLevel: normLevel,
+      count: 12,
+    })
+      .then((aiQuestions) => {
+        if (!isCancelled && aiQuestions && aiQuestions.length >= 5) {
+          setSessionQuestions(aiQuestions);
+        }
+      })
+      .catch((err) => {
+        logger.warn("[useInterviewSession] Background AI questions error:", err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [effectiveRoleName, activeCefrLevel, sessionQuestions]);
 
   // Dynamically generate question for the current question index (Continuous infinite rounds).
   // Memoized so the returned object reference is stable across renders that don't change the
-  // question — this keeps every callback depending on it (processTurn, speakQuestion,
-  // repeatQuestion, stopRecordingAndAnalyze, toggleListening) referentially stable, which in
-  // turn makes the memoized ConversationRightPanel / SessionCardsSidenav actually effective.
-  const currentQuestion = useMemo<InterviewQuestionItem>(
-    () => DynamicQuestionService.getQuestionForIndex(currentQuestionIndex, roleName),
-    [currentQuestionIndex, roleName],
-  );
+  // question — this keeps every callback depending on it referentially stable.
+  const currentQuestion = useMemo<InterviewQuestionItem>(() => {
+    if (sessionQuestions.length > 0) {
+      const q = sessionQuestions[currentQuestionIndex % sessionQuestions.length];
+      return {
+        ...q,
+        id: currentQuestionIndex + 1,
+        round: Math.floor(currentQuestionIndex / 5) + 1,
+      };
+    }
+    return DynamicQuestionService.getQuestionForIndex(
+      currentQuestionIndex,
+      effectiveRoleName,
+      activeCefrLevel,
+    );
+  }, [sessionQuestions, currentQuestionIndex, effectiveRoleName, activeCefrLevel]);
 
   // Ref to always have the latest question in async callbacks and avoid stale closures
   const currentQuestionRef = useRef<InterviewQuestionItem>(currentQuestion);
@@ -156,11 +407,60 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       AudioCaptureService.stop();
 
       try {
+        const isCore = await providerKeyVault.isCentralCoreEnabled();
+        const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+        const hasKey = await providerKeyVault.hasKey(activeProvider);
+
+        if (!isCore && !hasKey) {
+          setInfrastructureErrorScenario(ERROR_DATA["keys-exhausted-pool"]);
+          setRecoveryCooldown(0);
+          setIsRecoveryModalOpen(true);
+          return;
+        }
+
         // Real AI Feedback via CELAEST-CORE IA-Mesh with UniversalLinguisticParser fallback
-        const feedback = await CoreAiEvaluatorService.evaluate(spokenText, activeQuestion);
+        const feedback = await CoreAiEvaluatorService.evaluate(
+          spokenText,
+          activeQuestion,
+          effectiveRoleName,
+          activeCefrLevel,
+        );
 
         if (!isMountedRef.current) return;
         if (feedback) {
+          // If the AI evaluated it as 0 or flagged Spanish/invalid input, suppress modal and show alert
+          const isSpanishOrZero =
+            feedback.overallScore === 0 ||
+            feedback.strategicFeedback?.title?.toLowerCase().includes("español") ||
+            feedback.strategicFeedback?.title?.toLowerCase().includes("spanish") ||
+            feedback.strategicFeedback?.title?.toLowerCase().includes("sin contenido") ||
+            feedback.strategicFeedback?.title?.toLowerCase().includes("muy breve");
+
+          if (isSpanishOrZero) {
+            const isSpanish =
+              feedback.overallScore === 0 ||
+              feedback.strategicFeedback?.title?.toLowerCase().includes("español") ||
+              feedback.strategicFeedback?.title?.toLowerCase().includes("spanish");
+
+            if (isSpanish) {
+              setUserTranscript("");
+              userTranscriptRef.current = "";
+              textBeforeSegmentRef.current = "";
+              setSpeakingSeconds(0);
+              appToast.spanishDetected(
+                feedback.strategicFeedback?.explanation ||
+                  "Detectamos que tu respuesta está formulada en español. Por favor responde en inglés para evaluar tu práctica.",
+              );
+            } else {
+              appToast.warning(
+                feedback.strategicFeedback?.title || "Atención",
+                feedback.strategicFeedback?.explanation ||
+                  "Por favor formula una respuesta estructurada en inglés.",
+              );
+            }
+            return;
+          }
+
           setProcessingStage("PREPARING");
           if (audioUrl) {
             feedback.userAudioUrl = audioUrl;
@@ -171,8 +471,24 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
           setTurnFeedback(feedback);
           setShowAnalysisModal(true);
         }
-      } catch (err) {
+      } catch (err: any) {
         logger.warn("Interview turn evaluation failed:", err);
+        const errMsg = err?.message || String(err);
+        let errorType: AiApiErrorType = "rate-limit-429";
+        if (errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
+          errorType = "invalid-key-401";
+        } else if (errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
+          errorType = "rate-limit-429";
+        } else if (errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
+          errorType = "keys-exhausted-pool";
+        } else if (errMsg.includes("504") || errMsg.includes("timeout")) {
+          errorType = "gateway-timeout-504";
+        } else {
+          errorType = "server-outage-503";
+        }
+        setInfrastructureErrorScenario(ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"]);
+        setRecoveryCooldown(ERROR_DATA[errorType]?.cooldownDefault || 14);
+        setIsRecoveryModalOpen(true);
       } finally {
         if (isMountedRef.current) {
           setProcessingStage("IDLE");
@@ -180,23 +496,37 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
         }
       }
     },
-    [currentQuestion],
+    [currentQuestion, setUserTranscript],
   );
 
   /**
-   * Starts Speech Recognition without automatic cutoff (User controls start and stop)
+   * Starts Speech Recognition (Microphone capture only).
+   * Resumes and appends to any existing transcript without wiping it out.
    */
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
     if (isAiSpeakingRef.current) return;
 
-    setUserTranscript("");
-    userTranscriptRef.current = "";
-    setSpeakingSeconds(0);
+    // Check if mic permission is granted, otherwise open luxury recovery modal
+    if (!AudioCaptureService.hasActiveMic()) {
+      const granted = await AudioCaptureService.initMicrophone();
+      if (!granted) {
+        if (isMountedRef.current) {
+          setStatus("IDLE");
+          setIsMicRecoveryModalOpen(true);
+        }
+        return;
+      }
+    }
+
+    const existingText = (userTranscriptRef.current || userTranscript).trim();
+    textBeforeSegmentRef.current = existingText;
+    setSpeechNotice(null);
     setStatus("RECORDING");
 
     AudioCaptureService.startRecognition({
       lang: "en-US",
+      initialTranscript: existingText,
       onTranscript: (liveTranscript: string) => {
         if (!isMountedRef.current || isAiSpeakingRef.current) return;
         userTranscriptRef.current = liveTranscript;
@@ -206,62 +536,214 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
           setUserTranscript(liveTranscript);
         }
       },
-      onError: () => {
-        // Soft error recovery
+      onSpanishDetected: (noticeMessage: string) => {
+        if (!isMountedRef.current) return;
+        void AudioCaptureService.stopAndGetAudio().then(() => {
+          if (!isMountedRef.current) return;
+          setStatus("IDLE");
+          setProcessingStage("IDLE");
+          setUserTranscript("");
+          userTranscriptRef.current = "";
+          textBeforeSegmentRef.current = "";
+          setSpeakingSeconds(0);
+          setSpeechNotice(noticeMessage);
+          appToast.spanishDetected(noticeMessage);
+        });
+      },
+      onError: (err: unknown) => {
+        const errObj = err as { error?: string } | undefined;
+        const errCode = errObj?.error || String(err);
+        if (
+          errCode === "not-allowed" ||
+          errCode.includes("not-allowed") ||
+          errCode.includes("NotAllowedError") ||
+          errCode.includes("audio-capture")
+        ) {
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setIsMicRecoveryModalOpen(true);
+          }
+        }
       },
     });
-  }, []);
+  }, [userTranscript, setUserTranscript]);
+
+  const resumeFromMicRecovery = useCallback(() => {
+    setIsMicRecoveryModalOpen(false);
+    void startRecording();
+  }, [startRecording]);
 
   /**
-   * Stops Recording and submits the turn immediately for deep analysis with Whisper STT & audio capture.
-   * Always resets the session state even if audio capture or transcription fails.
+   * Stops Recording without submitting to the AI (Pauses mic).
+   * Transcribes captured audio into the textarea for user review and leaves state in IDLE.
    */
-  const stopRecordingAndAnalyze = useCallback(async () => {
-    setStatus("THINKING");
+  const stopRecording = useCallback(async () => {
+    if (status !== "RECORDING") return;
+    setStatus("IDLE");
     setProcessingStage("TRANSCRIBING");
 
     try {
-      // 1. Capture audio recording blob & playback URL
-      const { audioBlob, audioUrl, durationSeconds } = await AudioCaptureService.stopAndGetAudio();
+      const audioResult = await AudioCaptureService.stopAndGetAudio();
+      lastCapturedAudioRef.current = audioResult;
 
-      // 2. Transcribe via Whisper AI for maximum ESL acoustic accuracy.
-      // NOTE: read the latest transcript from the ref, not from state, so this
-      // callback stays referentially stable (userTranscript updates continuously
-      // during recording and would otherwise invalidate it on every frame).
-      let finalTranscript = userTranscriptRef.current;
-      if (audioBlob) {
+      if (audioResult.audioBlob) {
         try {
-          const whisperTranscript = await AudioCaptureService.transcribeAudio(audioBlob);
-          if (whisperTranscript && whisperTranscript.trim().length > 3) {
-            finalTranscript = whisperTranscript.trim();
-            setUserTranscript(finalTranscript);
-            userTranscriptRef.current = finalTranscript;
+          const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
+            roleName: effectiveRoleName,
+            question: currentQuestion.question,
+          });
+          if (whisperResult && whisperResult.text.trim().length > 0) {
+            const trimmed = whisperResult.text.trim();
+            lastCapturedAudioRef.current.detectedLanguage = whisperResult.language;
+            const validation = validateSpeechIntelligibility(
+              trimmed,
+              audioResult.durationSeconds,
+              whisperResult.language,
+            );
+            // If Whisper hallucinated silence noise (e.g. "okay, thank you"), do not pollute input
+            if (validation.reason === "WHISPER_HALLUCINATION" || validation.reason === "SILENCE_OR_EMPTY") {
+              setSpeechNotice(validation.message || null);
+              appToast.ambientNoise(validation.message);
+              return;
+            }
+            if (validation.reason === "SPANISH_DETECTED") {
+              setUserTranscript("");
+              userTranscriptRef.current = "";
+              textBeforeSegmentRef.current = "";
+              setSpeakingSeconds(0);
+              setSpeechNotice(validation.message || null);
+              appToast.spanishDetected(validation.message);
+              return;
+            }
+
+            // Seamless merge: if user had prior text, append new segment
+            const prefix = textBeforeSegmentRef.current.trim();
+            const segmentText = trimmed;
+            const merged = prefix ? `${prefix} ${segmentText}` : segmentText;
+
+            // WHISPER SOVEREIGNTY: Whisper output is the authoritative canonical transcript
+            setUserTranscript(merged);
+            userTranscriptRef.current = merged;
+
+            if (!validation.isValid && validation.message) {
+              setSpeechNotice(validation.message);
+            } else {
+              setSpeechNotice(null);
+            }
           }
         } catch (err) {
           logger.warn("Whisper transcription fallback to web speech:", err);
         }
       }
-
-      await processTurn(finalTranscript, audioUrl, durationSeconds);
     } catch (err) {
-      logger.warn("Failed to finish interview turn:", err);
+      logger.warn("Failed to stop recording cleanly:", err);
+    } finally {
       if (isMountedRef.current) {
         setProcessingStage("IDLE");
         setStatus("IDLE");
       }
     }
-  }, [processTurn]);
+  }, [status, setUserTranscript]);
 
   /**
-   * Toggle recording (Tap to talk, tap again to finish)
+   * Toggles Recording state (Microphone switch only)
    */
   const toggleRecording = useCallback(() => {
     if (status === "RECORDING") {
-      stopRecordingAndAnalyze();
+      void stopRecording();
     } else if (status === "IDLE" || status === "PAUSED") {
       startRecording();
     }
-  }, [status, startRecording, stopRecordingAndAnalyze]);
+  }, [status, startRecording, stopRecording]);
+
+  /**
+   * Explicitly Submits the Turn for Deep AI Evaluation.
+   * Triggered ONLY when the user clicks the Green Checkmark / OK Button, purple send arrow, or presses Enter.
+   * Guards against Spanish leaks, silence hallucinations, and gibberish with 0 token waste.
+   */
+  const submitCurrentTurn = useCallback(
+    async (customText?: string) => {
+      let textToSubmit = (
+        typeof customText === "string" ? customText : userTranscriptRef.current || userTranscript
+      ).trim();
+      let audioUrl = lastCapturedAudioRef.current.audioUrl;
+      let durationSeconds = lastCapturedAudioRef.current.durationSeconds;
+      let detectedLang: string | undefined = lastCapturedAudioRef.current.detectedLanguage;
+
+      // If user clicks submit while microphone is still actively recording, stop and capture first
+      if (status === "RECORDING") {
+        setStatus("THINKING");
+        setProcessingStage("TRANSCRIBING");
+        const audioResult = await AudioCaptureService.stopAndGetAudio();
+        lastCapturedAudioRef.current = audioResult;
+        audioUrl = audioResult.audioUrl;
+        durationSeconds = audioResult.durationSeconds;
+
+        if (audioResult.audioBlob) {
+          try {
+            const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
+              roleName: effectiveRoleName,
+              question: currentQuestion.question,
+            });
+            if (whisperResult && whisperResult.text.trim().length > 0) {
+              textToSubmit = whisperResult.text.trim();
+              detectedLang = whisperResult.language;
+              lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+              setUserTranscript(textToSubmit);
+              userTranscriptRef.current = textToSubmit;
+            }
+          } catch (err) {
+            logger.warn("Whisper transcription fallback to web speech on submit:", err);
+          }
+        }
+      }
+
+      // Pre-Flight Intelligibility & Token Shield Guard (0 Token Protection)
+      const validation = validateSpeechIntelligibility(textToSubmit, durationSeconds, detectedLang);
+      if (!validation.isValid) {
+        logger.info("[useInterviewSession] Suppressed turn submission:", validation.reason);
+        if (isMountedRef.current) {
+          setSpeechNotice(validation.message || "Por favor responde en inglés para evaluar tu práctica.");
+          setProcessingStage("IDLE");
+          setStatus("IDLE");
+
+          if (validation.reason === "SPANISH_DETECTED") {
+            setUserTranscript("");
+            userTranscriptRef.current = "";
+            textBeforeSegmentRef.current = "";
+            setSpeakingSeconds(0);
+            appToast.spanishDetected(validation.message);
+          } else if (validation.reason === "NONSENSE_OR_GIBBERISH") {
+            appToast.gibberishDetected(validation.message);
+          } else if (
+            validation.reason === "WHISPER_HALLUCINATION" ||
+            validation.reason === "SILENCE_OR_EMPTY"
+          ) {
+            appToast.ambientNoise(validation.message);
+          } else {
+            appToast.warning("Atención", validation.message);
+          }
+        }
+        return;
+      }
+
+      setSpeechNotice(null);
+      await processTurn(validation.cleanTranscript, audioUrl, durationSeconds);
+    },
+    [status, userTranscript, setUserTranscript, processTurn],
+  );
+
+  /**
+   * Action: Clears the current transcript and resets speech notices
+   */
+  const clearTranscript = useCallback(() => {
+    setUserTranscript("");
+    userTranscriptRef.current = "";
+    textBeforeSegmentRef.current = "";
+    setSpeakingSeconds(0);
+    setSpeechNotice(null);
+    lastCapturedAudioRef.current = { audioBlob: null, audioUrl: null, durationSeconds: 0 };
+  }, [setUserTranscript]);
 
   /**
    * Ask the current question using TTS with anti-audio-leak protection
@@ -276,17 +758,19 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       isAiSpeakingRef.current = true;
       setStatus("AI_SPEAKING");
 
-      // Fallback safety timer (reads the live ref, never a stale closure)
+      // Adaptive safety timeout based on text length (prevents cutting off longer questions)
       if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      const estimatedSec = Math.max(10, Math.ceil(activeQuestion.question.split(/\s+/).length / 1.8));
       safetyTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current && isAiSpeakingRef.current) {
           isAiSpeakingRef.current = false;
           setStatus("IDLE");
           setSpeakingSeconds(0);
         }
-      }, 5000);
+      }, (estimatedSec + 4) * 1000);
 
       await SpeechSynthesisService.speak(activeQuestion.question, {
+        voice: selectedVoiceRef.current,
         rate: rate ?? speechRate,
         onEnd: () => {
           if (safetyTimeoutRef.current) {
@@ -303,6 +787,39 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     },
     [currentQuestion, speechRate],
   );
+
+  const setSelectedVoice = useCallback(
+    (voice: FlagshipVoiceId) => {
+      setSelectedVoiceState(voice);
+      selectedVoiceRef.current = voice;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(MENTOR_VOICE_STORAGE_KEY, voice);
+        } catch {
+          // Safe storage write
+        }
+      }
+      if (currentQuestionRef.current) {
+        SpeechSynthesisService.prefetch(currentQuestionRef.current.question, voice);
+      }
+      // If AI is currently speaking, live-replay question with the new mentor voice!
+      if (isAiSpeakingRef.current) {
+        void speakQuestion();
+      }
+    },
+    [speakQuestion],
+  );
+
+  // Proactively prefetch the current and upcoming questions in background
+  useEffect(() => {
+    if (currentQuestion?.question) {
+      SpeechSynthesisService.prefetch(currentQuestion.question, selectedVoice);
+      const nextQ = DynamicQuestionService.getQuestionForIndex(currentQuestionIndex + 1, effectiveRoleName, activeCefrLevel);
+      if (nextQ?.question) {
+        SpeechSynthesisService.prefetch(nextQ.question, selectedVoice);
+      }
+    }
+  }, [currentQuestion, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
   // Trigger initial question on question change.
   // Deferred via rAF so the status transition never happens synchronously
@@ -335,6 +852,8 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     isAiSpeakingRef.current = false;
     setUserTranscript("");
     userTranscriptRef.current = "";
+    textBeforeSegmentRef.current = "";
+    setSpeakingSeconds(0);
     setTurnFeedback(null); // Clear previous feedback
     setCurrentQuestionIndex((prev) => prev + 1); // Seamless continuous generation
   }, [setUserTranscript, setTurnFeedback, setCurrentQuestionIndex]);
@@ -356,18 +875,6 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     isAiSpeakingRef.current = false;
     setStatus("IDLE");
   }, []);
-
-  /**
-   * Action: Test / Submit custom text directly
-   */
-  const submitCustomAnswer = useCallback(
-    async (text: string) => {
-      setUserTranscript(text);
-      userTranscriptRef.current = text;
-      await processTurn(text);
-    },
-    [processTurn, setUserTranscript],
-  );
 
   /**
    * Action: Save an individual specific error to Memory Bank
@@ -448,25 +955,33 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
   // backend write is debounced so rapid transcript updates don't spam requests.
   const lastSavedSnapshotRef = useRef<string | null>(null);
   const isFirstPersistRef = useRef(true);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const snapshot: PersistedInterviewState = {
-      version: 1,
-      roleName,
+      version: 2,
+      roleName: effectiveRoleName,
       speechRate,
       currentQuestionIndex,
       userTranscript,
       turnFeedback,
       showAnalysisModal,
       savedErrorIds: Array.from(savedErrorIds),
+      sessionQuestions: sessionQuestions.length > 0 ? sessionQuestions : undefined,
       updatedAt: Date.now(),
     };
 
     // Compare without updatedAt (which always changes) so we only persist when
     // something the user actually sees has changed.
     const comparable = JSON.stringify({
-      version: 1,
-      roleName,
+      version: 2,
+      roleName: effectiveRoleName,
       speechRate,
       currentQuestionIndex,
       userTranscript,
@@ -475,8 +990,6 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       savedErrorIds: Array.from(savedErrorIds),
     });
 
-    // On first mount the state is just the restored snapshot already stored in
-    // localStorage, so re-saving it is a wasted network round-trip. Skip it.
     if (isFirstPersistRef.current) {
       isFirstPersistRef.current = false;
       lastSavedSnapshotRef.current = comparable;
@@ -487,6 +1000,7 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     if (lastSavedSnapshotRef.current === comparable) {
       return;
     }
+
     lastSavedSnapshotRef.current = comparable;
 
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
@@ -497,10 +1011,18 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       savePersistedInterview(snapshot);
     }
 
-    const handle = setTimeout(() => {
+    const debounceMs = 500;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveTimeoutRef.current = null;
       apiInterviewRepository
         .saveProgress({
-          roleName,
+          roleName: effectiveRoleName,
           speechRate,
           currentQuestionIndex,
           userTranscript,
@@ -515,11 +1037,9 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
         .catch(() => {
           // Backend sync is best-effort; localStorage already holds the data.
         });
-    }, 600);
-
-    return () => clearTimeout(handle);
+    }, debounceMs);
   }, [
-    roleName,
+    effectiveRoleName,
     speechRate,
     currentQuestionIndex,
     userTranscript,
@@ -548,26 +1068,40 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
         const backendTime = new Date(dto.updatedAt).getTime();
         const localTime = restoredRef.current?.updatedAt ?? 0;
         if (!Number.isFinite(backendTime) || backendTime <= localTime) return;
+
+        // Domain sanity check: If cloud data has mismatched corporate questions for healthcare, sanitize it
+        const expectedCat = classifyProfession(effectiveRoleName);
+        const cloudQuestion = String((dto.latestTurn as any)?.question || "").toLowerCase();
+        const hasDomainConflict =
+          expectedCat === "HEALTHCARE" &&
+          (cloudQuestion.includes("client meeting") ||
+            cloudQuestion.includes("presentation for a client") ||
+            cloudQuestion.includes("standup") ||
+            cloudQuestion.includes("pull request"));
+
+        const sanitizedIndex = hasDomainConflict ? 0 : dto.currentQuestionIndex;
+        const sanitizedTurn = hasDomainConflict ? null : dto.latestTurn;
+
         // Adopt the cloud copy, but flag this exact snapshot as already-saved so
         // the persist effect does NOT fire a redundant POST just for the restore.
         lastSavedSnapshotRef.current = JSON.stringify({
-          version: 1,
-          roleName: dto.roleName,
+          version: 2,
+          roleName: dto.roleName || effectiveRoleName,
           speechRate: dto.speechRate,
-          currentQuestionIndex: dto.currentQuestionIndex,
+          currentQuestionIndex: sanitizedIndex,
           userTranscript: dto.userTranscript,
-          turnFeedback: dto.latestTurn?.feedback ?? null,
+          turnFeedback: sanitizedTurn?.feedback ?? null,
           showAnalysisModal: dto.showAnalysisModal,
           savedErrorIds: dto.savedErrorIds,
         });
         applyProgress({
-          roleName: dto.roleName,
+          roleName: dto.roleName || effectiveRoleName,
           speechRate: dto.speechRate,
-          currentQuestionIndex: dto.currentQuestionIndex,
+          currentQuestionIndex: sanitizedIndex,
           userTranscript: dto.userTranscript,
           savedErrorIds: dto.savedErrorIds,
           showAnalysisModal: dto.showAnalysisModal,
-          latestTurn: dto.latestTurn,
+          latestTurn: sanitizedTurn,
         });
       })
       .catch(() => {
@@ -577,7 +1111,7 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
-  }, []);
+  }, [effectiveRoleName]);
 
   return {
     status,
@@ -600,21 +1134,46 @@ export const useInterviewSession = (roleName: string = "Product Manager") => {
     speakingSeconds,
     speechRate,
     setSpeechRate,
+    selectedVoice,
+    setSelectedVoice,
     userTranscript,
     setUserTranscript,
     turnFeedback,
     savedErrorIds,
     showAnalysisModal,
     setShowAnalysisModal,
+    isMicRecoveryModalOpen,
+    setIsMicRecoveryModalOpen,
+    resumeFromMicRecovery,
+    isRecoveryModalOpen,
+    setIsRecoveryModalOpen,
+    infrastructureErrorScenario,
+    recoveryCooldown,
+    resumeFromRecoveryModal: useCallback(() => {
+      setIsRecoveryModalOpen(false);
+      setTimeout(() => {
+        const textToSubmit = userTranscriptRef.current || userTranscript;
+        if (textToSubmit && textToSubmit.trim()) {
+          void submitCurrentTurn(textToSubmit);
+        }
+      }, 350);
+    }, [submitCurrentTurn, userTranscript]),
+    speechNotice,
+    clearSpeechNotice: useCallback(() => setSpeechNotice(null), []),
     repeatQuestion,
     skipQuestion,
     pauseInterview,
     resumeInterview,
     takeTime: useCallback(() => {}, []),
     toggleListening: toggleRecording,
-    finishTurnManual: stopRecordingAndAnalyze,
-    submitCustomAnswer,
+    stopRecording,
+    finishTurnManual: submitCurrentTurn,
+    submitCurrentTurn,
+    submitCustomAnswer: submitCurrentTurn,
+    clearTranscript,
     saveSpecificErrorToMemory,
     saveAllErrorsToMemory,
+    activeCefrLevel,
+    setActiveCefrLevel,
   };
 };

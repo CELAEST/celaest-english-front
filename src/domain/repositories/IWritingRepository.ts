@@ -6,5 +6,7 @@ export interface IWritingRepository {
     title: string,
     content: string,
     taskDescription?: string,
+    roleName?: string,
+    targetLevel?: string,
   ): Promise<WritingSubmission>;
 }

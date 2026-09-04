@@ -17,6 +17,7 @@ import { HttpClient } from "../../../infrastructure/http/HttpClient";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
 
 const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
 
@@ -112,6 +113,7 @@ interface LlmEvaluationPayload {
   clarity_score?: number;
   overall_score?: number;
   improvedFullAnswer?: string;
+  reconciledTranscript?: string;
   strategicFeedback?: {
     title?: string;
     explanation?: string;
@@ -216,6 +218,16 @@ function repairAndParseJson(raw: string): LlmEvaluationPayload | null {
   }
 }
 
+const EVALUATION_CACHE = new Map<
+  string,
+  TurnEvaluationFeedback & { strategicFeedback?: StrategicFeedbackItem | null }
+>();
+const MAX_CACHE_SIZE = 100;
+
+function getEvaluationCacheKey(questionId: string | number, roleName: string, text: string, targetLevel: string = "B1"): string {
+  return `${questionId}::${roleName}::${targetLevel}::${text.toLowerCase().trim().replace(/\s+/g, " ")}`;
+}
+
 export class CoreAiEvaluatorService {
   /**
    * Evaluates user answer using CELAEST-CORE real LLM with graceful local fallback
@@ -224,11 +236,23 @@ export class CoreAiEvaluatorService {
     spokenText: string,
     currentQuestion: InterviewQuestionItem,
     roleName: string = "Professional",
+    targetLevel?: string,
   ): Promise<TurnEvaluationFeedback & { strategicFeedback?: StrategicFeedbackItem | null }> {
     const cleanText = spokenText.trim();
 
     if (!cleanText || cleanText.length < 3) {
       return UniversalLinguisticParser.parse(spokenText, currentQuestion);
+    }
+
+    const effectiveLevel = targetLevel || currentQuestion.targetLevel || "B1";
+    const cacheKey = getEvaluationCacheKey(currentQuestion.id, roleName, cleanText, effectiveLevel);
+    const cachedResult = EVALUATION_CACHE.get(cacheKey);
+    if (cachedResult) {
+      logger.info("[CoreAiEvaluator] Serving evaluation from idempotency cache (0 tokens):", cacheKey);
+      return {
+        ...cachedResult,
+        userSpokenText: cachedResult.reconciledTranscript || cachedResult.userSpokenText || cleanText,
+      };
     }
 
     const systemPrompt = `You are an empathetic AI English Mentor for Spanish-speaking professionals preparing for job interviews. Address user as "tú" in all Spanish text. Use growth-oriented language; never punitive.
@@ -237,9 +261,14 @@ RULES:
 1. CHILL PILL: If the answer is grammatically correct and natural, return EMPTY [] for "unclearOrErrorWords". Do NOT penalize synonyms or nitpick valid phrasing. Reward C1/C2 excellence with 95-100%.
 2. FALSE COGNATES: Flag Spanish false friends (assist≠attend, resume≠summarize, realize≠implement, pretend≠intend, compromise≠commitment, actual≠current, fastly→quickly, win money→earn/generate revenue, make the work→do the work). Explain in Spanish.
 3. STRATEGIC FEEDBACK in Spanish: "title" (motivating), "explanation" (appreciation + constructive diagnosis using "tú"), "recommendation" (actionable step-by-step with example).
-4. MAX 5 errors. "explanation" = grammar rule in Spanish. "translationSpanish" = direct Spanish translation of corrected phrase ONLY (no tips).
+4. RIGOROUS GRAMMAR RULE CARDS (STRICTLY PROHIBIT LAZY TRANSLATIONS):
+   - "explanation": DEBES explicar la regla lingüística o gramatical formal en español con claridad pedagógica y rigor técnico. PROHIBIDO poner simples palabras sueltas o traducciones como "utiliza" o "usa". DEBES detallar el porqué del error. Ejemplo: "En el Presente Simple, los verbos que acompañan a la tercera persona del singular (he, she, it) deben terminar en '-s' o '-es' (use -> uses)."
+   - "translationSpanish": Traducción natural y completa al español de la frase u oración corregida (e.g. "Utiliza Python y N8N para orquestar APIs de IA").
 5. No emojis. No markdown. Return ONLY raw JSON.
 6. CEFR ESTIMATION: Based on the grammar complexity, vocabulary range, coherence, and error density of the candidate's answer, estimate their CEFR level (A1, A2, B1, B2, C1, or C2) and return it in the "estimatedCefrLevel" field.
+7. NON-ENGLISH GUARD: If the candidate's answer is in Spanish, not in English, or unintelligible noise, do NOT invent fake corrections. Set overallScore: 0, grammarScore: 0, clarityScore: 0, vocabularyScore: 0, estimatedCefrLevel: "A1", unclearOrErrorWords: [], and in strategicFeedback explain in Spanish: title: "Respuesta en español", explanation: "Detectamos que respondiste en español.", recommendation: "Para evaluar tu pronunciación y gramática, por favor responde en inglés a esta pregunta."
+8. MODEL ANSWER IN ENGLISH: The "improvedFullAnswer" field MUST ALWAYS BE WRITTEN IN NATIVE EXECUTIVE ENGLISH (C2 level) demonstrating STAR methodology. NEVER write "improvedFullAnswer" in Spanish.
+9. NO FABRICATED METRICS (HONEST PLACEHOLDERS): In "improvedFullAnswer" and "strategicFeedback", NEVER invent arbitrary numerical metrics, percentages, or performance benchmarks that the candidate did not explicitly state (e.g. do NOT invent "2 GB of RAM", "99.9% uptime", "cut downtime by 100%", "40% latency drop"). When framing STAR quantifiable results, you MUST use clear bracketed placeholders that prompt the candidate to supply their own real numbers, e.g.: "...reducing database latency by [X]%...", "...preventing approximately [X] hours of downtime...", "...freeing up [insert amount] of memory...". This ensures the candidate practices with authentic data in real technical interviews.
 
 JSON schema:
 {
@@ -248,7 +277,7 @@ JSON schema:
   "clarityScore": number (0-100),
   "vocabularyScore": number (0-100),
   "estimatedCefrLevel": "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
-  "improvedFullAnswer": string (C2 model answer for this question),
+  "improvedFullAnswer": string (C2 executive model answer IN ENGLISH ONLY),
   "strategicFeedback": {
     "title": string (ES),
     "explanation": string (ES, 2nd person tú),
@@ -276,82 +305,102 @@ Candidate Role: ${roleName}
 Candidate Spoken Answer: "${cleanText}"`;
 
     try {
-      // 1. Tier 1: Evaluate via CELAEST-English Backend (Auth, Caching, Rate Limiting, Telemetry)
-      // Inject active BYOK provider so the backend can route to the user's chosen LLM
-      // (headers are safe to send even when offline — backend will ignore if unknown).
       let parsed: LlmEvaluationPayload | null = null;
-      try {
-        let byokHeaders: Record<string, string> = {};
-        let byokBody: Record<string, string> = {};
-        try {
-          const activeId = await providerKeyVault.getActiveProviderId();
-          if (activeId) {
-            const cfg = await providerKeyVault.getConfig(activeId);
-            const hasKey = await providerKeyVault.hasKey(activeId);
-            byokHeaders["X-Active-Provider"] = activeId;
-            if (cfg?.defaultModel) byokHeaders["X-Provider-Model"] = cfg.defaultModel;
-            if (cfg?.endpoint) byokHeaders["X-Provider-Endpoint"] = cfg.endpoint;
-            byokHeaders["X-Provider-Has-Key"] = hasKey ? "1" : "0";
-            byokBody = {
-              providerId: activeId,
-              ...(cfg?.defaultModel ? { providerModel: cfg.defaultModel } : {}),
-              ...(cfg?.endpoint ? { providerEndpoint: cfg.endpoint } : {}),
-            };
-          }
-        } catch {
-          // Vault read failure must never block evaluation
+      const isCoreEnabled = await providerKeyVault.isCentralCoreEnabled();
+
+      if (!isCoreEnabled) {
+        // Direct BYOK evaluation with active provider key
+        const activeId = (await providerKeyVault.getActiveProviderId()) || "groq";
+        const hasKey = await providerKeyVault.hasKey(activeId);
+        if (!hasKey) {
+          throw new AiInfrastructureError(
+            "AI_KEYS_EXHAUSTED",
+            `No se encontró una clave privada para ${activeId.toUpperCase()} y el Clúster Central está desactivado.`,
+            401,
+          );
         }
-
-        parsed = await HttpClient.post<LlmEvaluationPayload>(
-          "/interview/evaluate",
-          {
-            spokenText: cleanText,
-            question: currentQuestion.question,
-            questionId: String(currentQuestion.id),
-            roleName: roleName,
-            ...byokBody,
-          },
-          { timeoutMs: 25_000, headers: byokHeaders },
-        );
-      } catch (backendErr) {
-        logger.warn(
-          "[CoreAiEvaluator] Go Backend failed, trying direct Core AI Mesh fallback:",
-          backendErr,
-        );
-
-        // 2. Tier 2: Direct Core AI fallback — respect BYOK provider if set
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        let fallbackProvider = "groq";
-        try {
-          const a = await providerKeyVault.getActiveProviderId();
-          if (a) fallbackProvider = a;
-        } catch {
-          // ignore
-        }
-
-        const bodyPayload = {
-          system: systemPrompt,
-          message: userMessage,
-          provider: fallbackProvider,
-          max_tokens: 4096,
-        };
-
-        const response = await fetch(CORE_AI_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bodyPayload),
-          signal: controller.signal,
+        const rawJson = await directClientAiService.chatCompletion({
+          systemPrompt,
+          userPrompt: userMessage,
+          providerId: activeId,
         });
+        parsed = repairAndParseJson(rawJson);
+      } else {
+        // 1. Tier 1: Evaluate via CELAEST-English Backend (Auth, Caching, Rate Limiting, Telemetry)
+        try {
+          let byokHeaders: Record<string, string> = {};
+          let byokBody: Record<string, string> = {};
+          try {
+            const activeId = await providerKeyVault.getActiveProviderId();
+            if (activeId) {
+              const cfg = await providerKeyVault.getConfig(activeId);
+              const hasKey = await providerKeyVault.hasKey(activeId);
+              byokHeaders["X-Active-Provider"] = activeId;
+              if (cfg?.defaultModel) byokHeaders["X-Provider-Model"] = cfg.defaultModel;
+              if (cfg?.endpoint) byokHeaders["X-Provider-Endpoint"] = cfg.endpoint;
+              byokHeaders["X-Provider-Has-Key"] = hasKey ? "1" : "0";
+              byokBody = {
+                providerId: activeId,
+                ...(cfg?.defaultModel ? { providerModel: cfg.defaultModel } : {}),
+                ...(cfg?.endpoint ? { providerEndpoint: cfg.endpoint } : {}),
+              };
+            }
+          } catch {
+            // Vault read failure must never block evaluation
+          }
 
-        clearTimeout(timeoutId);
+          parsed = await HttpClient.post<LlmEvaluationPayload>(
+            "/interview/evaluate",
+            {
+              spokenText: cleanText,
+              question: currentQuestion.question,
+              questionId: String(currentQuestion.id),
+              roleName: roleName,
+              targetLevel: effectiveLevel,
+              ...byokBody,
+            },
+            { timeoutMs: 25_000, headers: byokHeaders },
+          );
+        } catch (backendErr) {
+          logger.warn(
+            "[CoreAiEvaluator] Go Backend failed, trying direct Core AI Mesh fallback:",
+            backendErr,
+          );
 
-        if (response.ok) {
-          const data = (await response.json()) as { response?: string; content?: string };
-          parsed = repairAndParseJson(data.response || data.content || "");
+          // 2. Tier 2: Direct Core AI fallback — respect BYOK provider if set
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+          let fallbackProvider = "groq";
+          try {
+            const a = await providerKeyVault.getActiveProviderId();
+            if (a) fallbackProvider = a;
+          } catch {
+            // ignore
+          }
+
+          const bodyPayload = {
+            system: systemPrompt,
+            message: userMessage,
+            provider: fallbackProvider,
+            max_tokens: 4096,
+          };
+
+          const response = await fetch(CORE_AI_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(bodyPayload),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = (await response.json()) as { response?: string; content?: string };
+            parsed = repairAndParseJson(data.response || data.content || "");
+          }
         }
       }
 
@@ -537,19 +586,27 @@ Candidate Spoken Answer: "${cleanText}"`;
             strategicFeedback = localEngine.strategicFeedback;
           }
 
+          const sanitizeTypos = (str?: string): string => {
+            if (!str) return "";
+            return str.replace(/\b([a-zA-Z]{2,}k)d\b/g, "$1ed");
+          };
+
           const sanitizedErrors = errors.map((err) => ({
             ...err,
-            explanation: sanitizeFeedbackTone(err.explanation),
-            translationSpanish: sanitizeFeedbackTone(err.translationSpanish),
+            correctWord: sanitizeTypos(err.correctWord),
+            betterWay: sanitizeTypos(err.betterWay),
+            explanation: sanitizeFeedbackTone(sanitizeTypos(err.explanation)),
+            translationSpanish: sanitizeFeedbackTone(sanitizeTypos(err.translationSpanish)),
           }));
 
-          return {
+          const finalResult = {
             overallScore: overall,
             grammarScore: grammar,
             clarityScore: clarity,
             vocabularyScore: vocab,
             estimatedCefrLevel: parsed.estimatedCefrLevel,
-            userSpokenText: cleanText,
+            userSpokenText: parsed.reconciledTranscript?.trim() || cleanText,
+            reconciledTranscript: parsed.reconciledTranscript?.trim() || cleanText,
             improvedFullAnswer:
               parsed.improvedFullAnswer ||
               UniversalLinguisticParser.parse(cleanText, currentQuestion).improvedFullAnswer,
@@ -561,6 +618,14 @@ Candidate Spoken Answer: "${cleanText}"`;
             ),
             strategicFeedback,
           };
+
+          if (EVALUATION_CACHE.size >= MAX_CACHE_SIZE) {
+            const firstKey = EVALUATION_CACHE.keys().next().value;
+            if (firstKey) EVALUATION_CACHE.delete(firstKey);
+          }
+          EVALUATION_CACHE.set(cacheKey, finalResult);
+
+          return finalResult;
         }
     } catch (err) {
       logger.warn(`[CoreAiEvaluator] IA-Mesh call error or timeout:`, err);
@@ -569,6 +634,12 @@ Candidate Spoken Answer: "${cleanText}"`;
     // High-fidelity local fallback if remote provider fails or times out.
     // Prefer the comprehensive pattern engine over the minimal parser.
     logger.warn("[CoreAiEvaluator] Falling back to MasterAiFeedbackEngine.");
-    return MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion);
+    const fallbackResult = MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion);
+    if (EVALUATION_CACHE.size >= MAX_CACHE_SIZE) {
+      const firstKey = EVALUATION_CACHE.keys().next().value;
+      if (firstKey) EVALUATION_CACHE.delete(firstKey);
+    }
+    EVALUATION_CACHE.set(cacheKey, fallbackResult);
+    return fallbackResult;
   }
 }

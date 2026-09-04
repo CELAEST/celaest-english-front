@@ -1,6 +1,6 @@
 import React from "react";
 import { X, Check } from "lucide-react";
-import { LevelA2Icon, LevelB1Icon, LevelB2Icon, LevelC1Icon, LevelC2Icon } from "./SettingsModalIcons";
+import { LevelA1Icon, LevelA2Icon, LevelB1Icon, LevelB2Icon, LevelC1Icon, LevelC2Icon } from "./SettingsModalIcons";
 
 export interface SettingsLevelModalProps {
   isOpen: boolean;
@@ -10,6 +10,12 @@ export interface SettingsLevelModalProps {
 }
 
 const CEFR_LEVELS = [
+  {
+    code: "A1",
+    title: "A1 — Beginner",
+    desc: "Foundational vocabulary, simple introductions, and basic everyday workplace expressions.",
+    Icon: LevelA1Icon,
+  },
   {
     code: "A2",
     title: "A2 — Elementary",

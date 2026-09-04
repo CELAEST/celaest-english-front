@@ -17,7 +17,7 @@ vi.mock("../services/audioCaptureService", () => ({
     stopAndGetAudio: vi.fn(() =>
       Promise.resolve({ audioBlob: null, audioUrl: null, durationSeconds: 0 }),
     ),
-    transcribeAudio: vi.fn(() => Promise.resolve("")),
+    transcribeAudio: vi.fn(() => Promise.resolve(null)),
     cleanup: vi.fn(),
   },
 }));
@@ -26,6 +26,7 @@ vi.mock("../services/speechSynthesisService", () => ({
   SpeechSynthesisService: {
     stop: vi.fn(),
     speak: vi.fn(() => Promise.resolve()),
+    prefetch: vi.fn(),
   },
 }));
 

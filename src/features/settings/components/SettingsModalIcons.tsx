@@ -5,6 +5,12 @@ type IconProps = { className?: string };
 /* Skill: 24x24, stroke 1.75, round caps/joins, safe padding ~2px, violet cosmic palette */
 
 // ── CEFR Levels — staircase progression ──
+export const LevelA1Icon: React.FC<IconProps> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <path d="M4 16.5 h6 V19 H4 Z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="7" cy="12.5" r="1.4" stroke="#A27FF3" strokeWidth="1.75" />
+  </svg>
+);
 export const LevelA2Icon: React.FC<IconProps> = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
     <path d="M4 16.5 h10 V19 H4 Z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />

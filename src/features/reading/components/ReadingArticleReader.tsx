@@ -58,6 +58,13 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
       );
     }, [rawWords]);
 
+    const lemmatizeToken = (w: string) => {
+      if (w.endsWith("ies") && w.length > 4) return w.slice(0, -3) + "y";
+      if (w.endsWith("es") && w.length > 4) return w.slice(0, -2);
+      if (w.endsWith("s") && !w.endsWith("ss") && w.length > 3) return w.slice(0, -1);
+      return w;
+    };
+
     // Pre-calculate genuine phrasal verb & idiom spans from curated dictionary
     const phrasalSpans = useMemo(() => {
       const map = new Map<number, WordRange>();
@@ -67,8 +74,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         // 1. 4-word Idioms
         if (i + 3 < n) {
           const phrase4 = `${cleanTokens[i]} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]} ${cleanTokens[i + 3]}`;
-          if (activePhrasalSet.has(phrase4)) {
-            const range: WordRange = { start: i, end: i + 3, phrase: phrase4 };
+          const lemma4 = `${lemmatizeToken(cleanTokens[i])} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]} ${cleanTokens[i + 3]}`;
+          if (activePhrasalSet.has(phrase4) || activePhrasalSet.has(lemma4)) {
+            const canonical = activePhrasalSet.has(phrase4) ? phrase4 : lemma4;
+            const range: WordRange = { start: i, end: i + 3, phrase: canonical };
             for (let k = i; k <= i + 3; k++) map.set(k, range);
             i += 3;
             continue;
@@ -78,8 +87,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         // 2. 3-word Continuous Phrasal Verbs & Idioms
         if (i + 2 < n) {
           const phrase3 = `${cleanTokens[i]} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]}`;
-          if (activePhrasalSet.has(phrase3)) {
-            const range: WordRange = { start: i, end: i + 2, phrase: phrase3 };
+          const lemma3 = `${lemmatizeToken(cleanTokens[i])} ${cleanTokens[i + 1]} ${cleanTokens[i + 2]}`;
+          if (activePhrasalSet.has(phrase3) || activePhrasalSet.has(lemma3)) {
+            const canonical = activePhrasalSet.has(phrase3) ? phrase3 : lemma3;
+            const range: WordRange = { start: i, end: i + 2, phrase: canonical };
             for (let k = i; k <= i + 2; k++) map.set(k, range);
             i += 2;
             continue;
@@ -88,8 +99,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           // 3. Separable Phrasal Verbs with Object Pronoun
           if (OBJECT_PRONOUNS_SET.has(cleanTokens[i + 1])) {
             const splitVerb = `${cleanTokens[i]} ${cleanTokens[i + 2]}`;
-            if (activePhrasalSet.has(splitVerb)) {
-              const range: WordRange = { start: i, end: i + 2, phrase: splitVerb };
+            const lemmaSplit = `${lemmatizeToken(cleanTokens[i])} ${cleanTokens[i + 2]}`;
+            if (activePhrasalSet.has(splitVerb) || activePhrasalSet.has(lemmaSplit)) {
+              const canonical = activePhrasalSet.has(splitVerb) ? splitVerb : lemmaSplit;
+              const range: WordRange = { start: i, end: i + 2, phrase: canonical };
               for (let k = i; k <= i + 2; k++) map.set(k, range);
               i += 2;
               continue;
@@ -100,8 +113,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         // 4. 2-word Phrasal Verbs & Collocations
         if (i + 1 < n) {
           const phrase2 = `${cleanTokens[i]} ${cleanTokens[i + 1]}`;
-          if (activePhrasalSet.has(phrase2)) {
-            const range: WordRange = { start: i, end: i + 1, phrase: phrase2 };
+          const lemma2 = `${lemmatizeToken(cleanTokens[i])} ${cleanTokens[i + 1]}`;
+          if (activePhrasalSet.has(phrase2) || activePhrasalSet.has(lemma2)) {
+            const canonical = activePhrasalSet.has(phrase2) ? phrase2 : lemma2;
+            const range: WordRange = { start: i, end: i + 1, phrase: canonical };
             map.set(i, range);
             map.set(i + 1, range);
             i += 1;
@@ -237,6 +252,23 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
       }
     }, [performLookup]);
 
+    // Calculate sentence index for each word (splits on terminal punctuation: '.', '!', '?', ';')
+    const wordSentenceIndices = useMemo(() => {
+      const map: number[] = [];
+      let currentSentence = 0;
+      for (let i = 0; i < rawWords.length; i++) {
+        map.push(currentSentence);
+        if (/[.!?…;]$/.test(rawWords[i])) {
+          currentSentence++;
+        }
+      }
+      return map;
+    }, [rawWords]);
+
+    const isListening = activeKaraokeWordIndex !== null && activeKaraokeWordIndex !== undefined;
+    const activeSentenceIdx =
+      isListening && activeKaraokeWordIndex !== null ? wordSentenceIndices[activeKaraokeWordIndex] : null;
+
     return (
       <article
         role="article"
@@ -254,10 +286,16 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             const isEnd = phrasalMatch ? idx === phrasalMatch.end : false;
             const isSingle = phrasalMatch ? phrasalMatch.start === phrasalMatch.end : true;
 
-            const isKaraokeSpoken =
-              activeKaraokeWordIndex !== null &&
-              activeKaraokeWordIndex !== undefined &&
-              idx === activeKaraokeWordIndex;
+            const wordSentenceIdx = wordSentenceIndices[idx];
+            const isWordInActiveSentence = isListening && wordSentenceIdx === activeSentenceIdx;
+            const isPastSentence =
+              isListening && activeSentenceIdx !== null && wordSentenceIdx < activeSentenceIdx;
+            const isFutureSentence =
+              isListening && activeSentenceIdx !== null && wordSentenceIdx > activeSentenceIdx;
+
+            const isKaraokeCurrentWord = isListening && idx === activeKaraokeWordIndex;
+            const isKaraokeAlreadySpoken = isListening && idx < activeKaraokeWordIndex;
+
             const isHovered =
               hoveredRange !== null && idx >= hoveredRange.start && idx <= hoveredRange.end;
             const isSelected =
@@ -277,6 +315,36 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
                 : "rounded-md";
 
             const spacingClass = isPhrasalPart && !isSingle && !isEnd ? "mr-[2px]" : "mr-1.5";
+
+            let visualStyle = "";
+            if (isSelected) {
+              visualStyle =
+                "transition-colors duration-150 bg-[#7048E8]/35 text-white ring-1 ring-[#A27FF3] shadow-[0_0_12px_rgba(162,127,243,0.35)]";
+            } else if (isKaraokeCurrentWord) {
+              visualStyle =
+                "transition-none bg-[#7048E8]/35 text-white ring-1 ring-[#A27FF3]/60 shadow-[0_0_12px_rgba(162,127,243,0.35)] font-medium";
+            } else if (isHovered) {
+              visualStyle =
+                "transition-colors duration-150 bg-[#7048E8]/25 text-white shadow-[0_0_8px_rgba(162,127,243,0.25)]";
+            } else if (isListening) {
+              if (isWordInActiveSentence) {
+                if (isKaraokeAlreadySpoken) {
+                  visualStyle = "transition-colors duration-150 text-white font-normal";
+                } else {
+                  visualStyle = "transition-colors duration-150 text-white/70 font-light";
+                }
+              } else if (isPastSentence) {
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/45 font-light";
+              } else if (isFutureSentence) {
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/30 font-light";
+              }
+            } else if (isPhrasalPart) {
+              visualStyle =
+                "transition-colors duration-150 text-[#e2d9fc] underline decoration-[#A27FF3]/65 decoration-[1.5px] underline-offset-[4px] hover:text-white hover:bg-[#7048E8]/20 hover:decoration-[#A27FF3]";
+            } else {
+              visualStyle =
+                "transition-colors duration-150 text-[#c5c6d0] hover:text-white hover:bg-white/[0.08]";
+            }
 
             return (
               <span
@@ -298,17 +366,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
                   }}
                   aria-label={`Look up vocabulary word ${rawWord}`}
                   aria-expanded={isSelected}
-                  className={`px-1.5 py-0.5 transition-colors duration-150 cursor-pointer focus:outline-none font-normal inline-flex items-center text-left ${roundingClass} ${
-                    isSelected
-                      ? "bg-[#7048E8]/35 text-white ring-1 ring-[#A27FF3] shadow-[0_0_12px_rgba(162,127,243,0.35)]"
-                      : isKaraokeSpoken
-                        ? "bg-[#7048E8]/40 text-white ring-1 ring-[#A27FF3]/70 shadow-[0_0_10px_rgba(162,127,243,0.35)] font-medium"
-                        : isHovered
-                          ? "bg-[#7048E8]/25 text-white shadow-[0_0_8px_rgba(162,127,243,0.25)]"
-                          : isPhrasalPart
-                            ? "text-[#e2d9fc] underline decoration-[#A27FF3]/65 decoration-[1.5px] underline-offset-[4px] hover:text-white hover:bg-[#7048E8]/20 hover:decoration-[#A27FF3]"
-                            : "text-[#c5c6d0] hover:text-white hover:bg-white/[0.08]"
-                  }`}
+                  className={`px-1.5 py-0.5 cursor-pointer focus:outline-none inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
                 >
                   {rawWord}
                 </button>

@@ -1,5 +1,15 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { AiEngineErrorsLuxuryStudio } from "./AiEngineErrorsLuxuryStudio";
+import { AdaptiveLuxuryLevelStudio } from "./AdaptiveLuxuryLevelStudio";
+import { MasterCleanVoiceNarratorStudioShowcase } from "./MasterCleanVoiceNarratorStudioShowcase";
+import { NeuralVoiceAuditionStudioShowcase } from "./NeuralVoiceAuditionStudioShowcase";
+import { VoiceNarratorLuxuryVariantsShowcase } from "./VoiceNarratorLuxuryVariantsShowcase";
+import { InterviewControlsShowcase } from "./InterviewControlsShowcase";
+import { WritingAssistShowcase } from "./WritingAssistShowcase";
+import { AntiAiLuxuryAlertsShowcase } from "./AntiAiLuxuryAlertsShowcase";
+import { LuxurySegmentedControlsShowcase } from "./LuxurySegmentedControlsShowcase";
+import { LinguisticShieldSimulationShowcase } from "./LinguisticShieldSimulationShowcase";
 import { WorkspaceHeroEvolutionShowcase } from "./WorkspaceHeroEvolutionShowcase";
 import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
 import { QuantumProgressGauge } from "./QuantumProgressGauge";
@@ -27,6 +37,133 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
 
+        {/* SECTION 00.ADAPTIVE: Adaptive CEFR Level Intelligence & Pedagogical Engine (VERY TOP) */}
+        <div className="flex flex-col space-y-4">
+          <AdaptiveLuxuryLevelStudio />
+        </div>
+
+        {/* SECTION 00.ERRORS: Centralized AI Engine Errors & Resilience Studio */}
+        <div className="flex flex-col space-y-4">
+          <AiEngineErrorsLuxuryStudio />
+        </div>
+
+        {/* SECTION 00.TOP: Master Anti-IA Clean Voice Narrator Studio (VERY TOP) */}
+        <div className="flex flex-col space-y-4">
+          <MasterCleanVoiceNarratorStudioShowcase />
+        </div>
+
+        {/* Section 00.A: Neural Voice Audition Studio & Matrix Lab (Top Priority) */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>00.A Neural Voice Audition Studio & Human Resonance Matrix</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#7DD3FC]">
+                Edge Neural High-Fidelity · 10 Real Human Voices · 24kHz MP3 Streaming
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Audiciona, compara y calibra en vivo las 10 voces neuronales más humanas y fluidas del
+              mundo (American, British, Australian). Prueba la entonación, modulación y latencia con
+              guiones reales de tecnología y conversación.
+            </p>
+          </div>
+          <NeuralVoiceAuditionStudioShowcase />
+        </div>
+
+        {/* Section 00.A2: Voice Narrator Luxury UI/UX Design Variants */}
+        <div className="flex flex-col space-y-4">
+          <VoiceNarratorLuxuryVariantsShowcase />
+        </div>
+
+        {/* Section 00: Interview Controls & Action Hierarchy Studio */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>00. Interview Controls & Action Studio</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#C4B5FD]">
+                6 Luxury Architectural Concepts · Repeat / Slower / Time / Next
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Compara y prueba 6 alternativas ultra-luxury para la tarjeta de controles de Speaking
+              (Repeat question, Repeat question slower, +15s Take my time, Next question) con
+              colores dinámicos no saturados, micro-carriles luminosos y alta ergonomía.
+            </p>
+          </div>
+          <InterviewControlsShowcase />
+        </div>
+
+        {/* Section 00.B: Writing Assist & Tools Studio (New) */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>00.B Writing Assist & Tools Studio</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#10B981]/20 border border-[#10B981]/40 text-[#6EE7B7]">
+                4 Interactive Writing Tool Concepts · Polish / Simplify / Connectors / Cockpit
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Experimenta y evalúa 4 conceptos interactivos para enriquecer la experiencia de
+              Writing: pulido sintáctico, simplificación ejecutiva, banco de conectores discursivos
+              en 1 clic y selector de tono/registro.
+            </p>
+          </div>
+          <WritingAssistShowcase />
+        </div>
+
+        {/* Section 0A: Luxury Segmented Controls & Tab Switcher Studio (Speaking · Reading · Writing) */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>0A. Luxury Segmented Controls & Mode Switcher Studio</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#7DD3FC]">
+                6 Filter Tab Concepts · Speaking / Reading / Writing
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Calibra y compara 6 alternativas para los selectores de pestañas (Speaking 10 ·
+              Reading 5 · Writing 10) eliminando bloques blancos pesados y reemplazándolos por
+              rieles láser, obsidiana biselada y cristal translúcido.
+            </p>
+          </div>
+          <LuxurySegmentedControlsShowcase />
+        </div>
+
+        {/* Section 0B: Anti-AI Luxury Toast & Alert Studio */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>0B. Anti-AI Luxury Toast & Alert Studio</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#C084FC]">
+                6 Bespoke Concepts · Zero Containers
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Compara 6 conceptos arquitectónicos sin contenedores toscos, con luces de aura
+              atmosférica, gradientes vibrantes y tipografía de precisión. Puedes probar cada una
+              flotando en vivo en la pantalla.
+            </p>
+          </div>
+          <AntiAiLuxuryAlertsShowcase />
+        </div>
+
+        {/* Section 0C: Linguistic Intelligibility Shield & 0-Token Error Simulator */}
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
+              <span>0C. Linguistic Shield & 0-Token Error Simulator</span>
+              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#10B981]/20 border border-[#10B981]/40 text-[#6EE7B7]">
+                Live Shield · 0 Tokens
+              </span>
+            </h2>
+            <p className="text-xs text-[#8a8a9e]">
+              Simulador interactivo para testear todos los casos borde de error, alucinaciones
+              Whisper, gibberish multipalabra, español y alertas ultra-luxury.
+            </p>
+          </div>
+          <LinguisticShieldSimulationShowcase />
+        </div>
+
         {/* Section 1: Workspace Hero Banner Evolution (Top Priority) */}
         <div className="flex flex-col space-y-4">
           <div>
@@ -37,8 +174,9 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Calibrate and compare ultra-luxury, borderless obsidian glass variants with atmospheric
-              backlights behind the cosmic orb, pure editorial typography, and high-contrast callout nodes.
+              Calibrate and compare ultra-luxury, borderless obsidian glass variants with
+              atmospheric backlights behind the cosmic orb, pure editorial typography, and
+              high-contrast callout nodes.
             </p>
           </div>
           <WorkspaceHeroEvolutionShowcase />
@@ -155,7 +293,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Live feature cards mapped to CELAEST Lingua modules (Memory Deck, Lexicon Codex, Writing Evaluator, Mock Interview, and AI Mentor).
+              Live feature cards mapped to CELAEST Lingua modules (Memory Deck, Lexicon Codex,
+              Writing Evaluator, Mock Interview, and AI Mentor).
             </p>
           </div>
           <ProductFeatureCardsShowcase />
@@ -171,7 +310,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Zero nested box clutter, breathable typography, interactive 3D mathematical physics, phoneme scrubber, and Ebbinghaus decay curve.
+              Zero nested box clutter, breathable typography, interactive 3D mathematical physics,
+              phoneme scrubber, and Ebbinghaus decay curve.
             </p>
           </div>
           <Spatial3DStudioShowcase />
@@ -187,7 +327,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Full 3D physical perspective tilt with specular reflection, 180° flip animation, and 28-band speech formant spectrum.
+              Full 3D physical perspective tilt with specular reflection, 180° flip animation, and
+              28-band speech formant spectrum.
             </p>
           </div>
           <ClassicSpatial3DShowcase />
@@ -203,7 +344,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Vocabulary synapse constellation graph, conversational turn-taking telemetry, executive pitch diagnostics, and tactile IPA phoneme matrix.
+              Vocabulary synapse constellation graph, conversational turn-taking telemetry,
+              executive pitch diagnostics, and tactile IPA phoneme matrix.
             </p>
           </div>
           <NextGenSpatialStudioShowcase />
@@ -219,7 +361,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Dynamic pitch contour & intonation maestro, morphological word-family matrix, executive debate arena, and auditory shadowing phase worklet.
+              Dynamic pitch contour & intonation maestro, morphological word-family matrix,
+              executive debate arena, and auditory shadowing phase worklet.
             </p>
           </div>
           <HolographicNeuralStudioShowcase />
@@ -235,7 +378,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Re-engineered core software primitives: Memory Vault SRS Nexus, Pentagonal Lexical Density Radar, Neural Resonance Orb HUD, and Tachistoscopic RSVP Reader.
+              Re-engineered core software primitives: Memory Vault SRS Nexus, Pentagonal Lexical
+              Density Radar, Neural Resonance Orb HUD, and Tachistoscopic RSVP Reader.
             </p>
           </div>
           <HyperEvolvedMasterpiecesShowcase />
@@ -251,7 +395,9 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              High-engineering bespoke vectors: IPA Vowel Quadrilateral & Formant Resonator, Synaptic Consolidation Vault, Aristotelian Rhetoric Compass, and Global Dialect Vector Radar.
+              High-engineering bespoke vectors: IPA Vowel Quadrilateral & Formant Resonator,
+              Synaptic Consolidation Vault, Aristotelian Rhetoric Compass, and Global Dialect Vector
+              Radar.
             </p>
           </div>
           <HyperVectorQuantumStudioShowcase />
@@ -267,7 +413,8 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
               </span>
             </h2>
             <p className="text-xs text-[#8a8a9e]">
-              Exact Section 7 gold standard: Executive prosody scope, fluid semantic restructuring, tactile phoneme synthesizer, and synaptic stability horizon.
+              Exact Section 7 gold standard: Executive prosody scope, fluid semantic restructuring,
+              tactile phoneme synthesizer, and synaptic stability horizon.
             </p>
           </div>
           <MasterLuxurySpatialShowcase />

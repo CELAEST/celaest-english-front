@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { SpecificErrorItem } from "../services/interviewEngineService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
+import { LevelSelectorPill } from "./LevelSelectorPill";
+import { CefrLevelCode } from "../services/dynamicQuestionService";
 
 const SPEED_OPTIONS = [
   { label: "0.75x Slow", value: 0.75 },
@@ -16,11 +18,15 @@ export interface ConversationRightPanelProps {
   remainingSeconds?: number;
   speakingSeconds?: number;
   roleName?: string;
+  userLevel?: string;
   speechRate?: number;
+  isListening?: boolean;
+  isPaused?: boolean;
   turnFeedback?: ComprehensiveTurnFeedback | null;
   savedErrorIds?: Set<string>;
   onClose?: () => void;
   onSetSpeechRate?: (rate: number) => void;
+  onSetLevel?: (level: CefrLevelCode) => void;
   onSkipQuestion?: () => void;
   onRepeatQuestion?: (slow?: boolean) => void;
   onPauseInterview?: () => void;
@@ -37,11 +43,15 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   totalQuestions = 5,
   speakingSeconds = 0,
   roleName = "Product Manager",
+  userLevel,
   speechRate = 0.95,
+  isListening = false,
+  isPaused = false,
   turnFeedback,
   savedErrorIds = new Set(),
   onClose,
   onSetSpeechRate,
+  onSetLevel,
   onSkipQuestion,
   onRepeatQuestion,
   onPauseInterview,
@@ -161,13 +171,20 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               {formattedQuestionIndex} / {totalQuestions.toString().padStart(2, "0")}
             </span>
             <span className="text-white/20 text-xs">·</span>
-            <span className="text-white/60 text-xs font-light tracking-wide truncate max-w-[140px]">
+            <span className="text-white/60 text-xs font-light tracking-wide truncate max-w-[120px] sm:max-w-[140px]">
               {roleName}
             </span>
           </div>
-          <span className="text-[10px] uppercase font-mono tracking-wider text-white/30">
-            {Math.round((currentQuestion / totalQuestions) * 100)}%
-          </span>
+          {onSetLevel ? (
+            <LevelSelectorPill
+              currentLevel={userLevel || "B1"}
+              onSelectLevel={onSetLevel}
+            />
+          ) : (
+            <span className="text-[10px] uppercase font-mono tracking-wider text-white/30">
+              {Math.round((currentQuestion / totalQuestions) * 100)}%
+            </span>
+          )}
         </div>
 
         <div className="flex space-x-1.5 pt-0.5 z-10">
@@ -289,7 +306,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         </div>
       </div>
 
-      {/* CARD 3: Interactive Options Menu Card */}
+      {/* CARD 3: Interactive Options Menu Card (Concept #14: Cosmos Minimalist Wireframe Standard) */}
       <div
         className="relative bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 rounded-3xl p-4 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col space-y-1 shrink-0 overflow-hidden animate-[fadeSlideUp_0.4s_ease-out_both]"
         style={{ animationDelay: "300ms" }}
@@ -297,174 +314,78 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         {/* Top Specular Hairline */}
         <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
 
-        <div className="flex items-center space-x-1.5 pb-1 text-white/40 z-10">
-          <span className="text-[10px] font-mono uppercase tracking-widest">Controls</span>
+        <div className="flex items-center justify-between pb-1.5 text-white/40 z-10 border-b border-white/[0.04]">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">Controls</span>
+          <span className="text-[9px] font-mono text-white/25 uppercase tracking-wider">Session Flow</span>
         </div>
 
-        {/* Repeat Question (Normal) */}
+        {/* Repeat Audio Question */}
         <button
           onClick={() => onRepeatQuestion && onRepeatQuestion(false)}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-all text-left group cursor-pointer z-10"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
         >
-          <svg
-            className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-all duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M3 3v5h5"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="font-light">Repeat question</span>
+          <span className="text-white/80 group-hover:text-white font-light tracking-wide">
+            <span className="font-normal text-white">Repeat</span> audio question
+          </span>
+          <span className="text-[10px] font-mono text-white/30 group-hover:text-white transition-colors">
+            1.0x
+          </span>
         </button>
 
-        {/* Repeat Question (Slow) */}
+        {/* Repeat Slower Pace */}
         <button
           onClick={() => onRepeatQuestion && onRepeatQuestion(true)}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-all text-left group cursor-pointer z-10"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
         >
-          <svg
-            className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-all duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
-            <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-            <path
-              d="M7 16c1.5-1 3.5-1 5 0s3.5 1 5 0"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeOpacity="0.8"
-            />
-          </svg>
-          <span className="font-light">Repeat question slower</span>
-          <span className="text-[10px] text-white/30 group-hover:text-white font-mono ml-auto transition-colors">
+          <span className="text-white/80 group-hover:text-white font-light tracking-wide">
+            <span className="font-normal text-white">Repeat</span> slower pace
+          </span>
+          <span className="text-[9.5px] font-mono font-medium px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-[#7DD3FC] group-hover:border-[#38BDF8]/40 transition-colors">
             0.7x
           </span>
         </button>
 
+        {/* Add Thinking Time */}
         <button
           onClick={onTakeTime}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-all text-left group cursor-pointer z-10"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
         >
-          <svg
-            className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-all duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M12 2v3M12 19v3M2 12h3M19 12h3"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.75" />
-            <path
-              d="M12 8v4l2.5 2.5"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="font-light">+15s Take my time</span>
+          <span className="text-white/80 group-hover:text-white font-light tracking-wide">
+            Add thinking time
+          </span>
+          <span className="text-[9.5px] font-mono font-medium px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-amber-300 group-hover:border-amber-400/40 transition-colors">
+            +15s
+          </span>
         </button>
 
+        {/* Advance Turn */}
         <button
           onClick={onSkipQuestion}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-all text-left group cursor-pointer z-10"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
         >
-          <svg
-            className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-all duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M5 4l10 8-10 8V4z"
-              fill="currentColor"
-              fillOpacity="0.3"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinejoin="round"
-            />
-            <path d="M19 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <span className="font-light">Next question</span>
+          <span className="text-white/80 group-hover:text-white font-light tracking-wide">
+            Advance turn
+          </span>
+          <span className="text-[10px] font-mono text-[#6EE7B7] group-hover:translate-x-0.5 transition-transform">
+            NEXT →
+          </span>
         </button>
 
-        <button
-          onClick={onPauseInterview}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-all text-left group cursor-pointer z-10"
-        >
-          <svg
-            className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-colors duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
+        {/* Bottom Utility Row */}
+        <div className="pt-2 flex items-center justify-between border-t border-white/[0.04] px-1 z-10">
+          <button
+            onClick={onPauseInterview}
+            className="text-[11px] font-light text-white/45 hover:text-white transition-colors cursor-pointer py-1"
           >
-            <rect
-              x="5.5"
-              y="4.5"
-              width="4"
-              height="15"
-              rx="1.5"
-              fill="currentColor"
-              fillOpacity="0.4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <rect
-              x="14.5"
-              y="4.5"
-              width="4"
-              height="15"
-              rx="1.5"
-              fill="currentColor"
-              fillOpacity="0.4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-          </svg>
-          <span className="font-light">Pause / Resume</span>
-        </button>
-
-        <button
-          onClick={onEndInterview}
-          className="flex items-center space-x-2.5 px-2 py-1.5 rounded-xl text-xs text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all text-left group cursor-pointer pt-1 z-10"
-        >
-          <svg
-            className="w-3.5 h-3.5 text-rose-400/60 group-hover:text-rose-400 group-hover:scale-110 transition-transform duration-300 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
+            {isListening ? "⏸ Pause" : isPaused ? "▶ Resume" : "⏸ Pause / Resume"}
+          </button>
+          <button
+            onClick={onEndInterview}
+            className="text-[11px] font-light text-rose-400/80 hover:text-rose-300 transition-colors cursor-pointer py-1"
           >
-            <path
-              d="M18.36 6.64a9 9 0 11-12.73 0"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <line
-              x1="12"
-              y1="2"
-              x2="12"
-              y2="12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="font-light">End interview</span>
-        </button>
+            ⏻ End interview
+          </button>
+        </div>
       </div>
 
       {/* CARD 4: Dedicated Deep AI Analysis Trigger Card */}
@@ -754,8 +675,10 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
               })}
             </div>
           ) : (
-            <div className="py-2 text-center text-[11px] font-mono text-white/40 z-10">
-              Perfect grammar. No errors detected.
+            <div className="py-2 text-center text-[11px] font-sans text-white/45 z-10 px-2 leading-relaxed">
+              {(turnFeedback?.userSpokenText || "").split(/\s+/).filter(Boolean).length < 20
+                ? "Respuesta breve sin errores gramaticales directos."
+                : "Precisión gramatical excelente. Sin errores sintácticos."}
             </div>
           )}
 

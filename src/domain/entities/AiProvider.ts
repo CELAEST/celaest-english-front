@@ -4,6 +4,7 @@
  */
 
 export type AiProviderId =
+  | "groq"
   | "openai"
   | "anthropic"
   | "gemini"

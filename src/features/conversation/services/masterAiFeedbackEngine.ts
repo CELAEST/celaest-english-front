@@ -682,6 +682,234 @@ export class MasterAiFeedbackEngine {
     }
 
     // =========================================================================
+    // PILLAR 3: UNIVERSAL ESL GRAMMAR DETECTION (catches common errors
+    // not covered by Spanglish-specific patterns above)
+    // =========================================================================
+
+    // U1. Missing past tense in past-narrative context
+    // Detects: "we have a big problem" when context implies past ("one time", "last year", "previous", "past job")
+    const hasPastContext =
+      /\b(one time|last (year|month|week|time)|in my (past|previous|last)|previously|ago|back then|when i was)\b/i.test(
+        lower,
+      );
+    if (hasPastContext) {
+      // "we have" → "we had" in past context
+      if (/\bwe\s+have\s+(?:a|an|the|some|many|big|serious|major)\b/i.test(lower)) {
+        detectedErrors.push({
+          id: `err-u1-have-had-${Date.now()}`,
+          errorType: "GRAMMAR",
+          errorWord: "we have",
+          correctWord: "we had",
+          userSaidContext: text.match(/we\s+have\s+\w+\s+\w+/i)?.[0] ?? "we have a problem",
+          betterWay: "we had a significant challenge",
+          explanation:
+            "When narrating a past event, use the past simple tense ('we had'), not the present ('we have').",
+          translationSpanish:
+            "Al narrar eventos pasados usa el pasado simple: 'we had' en vez de 'we have'.",
+          cefrLevel: "A2",
+          savedToMemory: false,
+        });
+      }
+
+      // "I learn much" → "I learned a lot"
+      if (/\bi\s+learn\s+(much|a\s+lot|many\s+things)\b/i.test(lower)) {
+        detectedErrors.push({
+          id: `err-u1-learn-${Date.now()}`,
+          errorType: "GRAMMAR",
+          errorWord: "I learn",
+          correctWord: "I learned",
+          userSaidContext: text.match(/I\s+learn\s+\w+/i)?.[0] ?? "I learn much",
+          betterWay: "I learned a great deal from that experience",
+          explanation:
+            "Use past tense 'learned' when describing what you gained from a past experience, not present tense 'learn'.",
+          translationSpanish:
+            "Usa el pasado 'I learned' al hablar de lo que aprendiste, no el presente 'I learn'.",
+          cefrLevel: "A2",
+          savedToMemory: false,
+        });
+      }
+    }
+
+    // U2. Subject-verb disagreement: plural noun + "was"
+    // "connections was" → "connections were", "users was" → "users were", "systems was", etc.
+    if (
+      /\b(connections|users|systems|servers|requests|developers|engineers|teams|problems|issues|bugs|errors|services|features|members|customers|employees)\s+was\b/i.test(
+        lower,
+      )
+    ) {
+      const svMatch = lower.match(
+        /\b(connections|users|systems|servers|requests|developers|engineers|teams|problems|issues|bugs|errors|services|features|members|customers|employees)\s+was\b/i,
+      );
+      const subject = svMatch ? svMatch[1] : "connections";
+      detectedErrors.push({
+        id: `err-u2-sv-agreement-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `${subject} was`,
+        correctWord: `${subject} were`,
+        userSaidContext: text.match(new RegExp(`${subject}\\s+was\\s+\\w+`, "i"))?.[0] ?? `${subject} was full`,
+        betterWay: `the ${subject} were fully utilized`,
+        explanation: `'${subject}' is plural and requires the plural past tense verb 'were', not 'was'.`,
+        translationSpanish: `'${subject}' es plural y requiere 'were' (eran/estaban), no 'was'.`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // Also: "the system go down" → "the system went down"
+    if (/\b(the\s+)?(system|server|app|application|database|service)\s+go\s+(down|up|off|out)\b/i.test(lower)) {
+      const goMatch = lower.match(
+        /\b(?:the\s+)?(system|server|app|application|database|service)\s+go\s+(down|up|off|out)\b/i,
+      );
+      const subj = goMatch ? goMatch[1] : "system";
+      const dir = goMatch ? goMatch[2] : "down";
+      detectedErrors.push({
+        id: `err-u2-go-went-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `${subj} go ${dir}`,
+        correctWord: `${subj} went ${dir}`,
+        userSaidContext: `the ${subj} go ${dir}`,
+        betterWay: `the ${subj} went ${dir} for approximately two hours`,
+        explanation: `When narrating a past event, use past simple 'went' instead of present 'go'.`,
+        translationSpanish: `Usa el pasado 'went ${dir}' en vez del presente 'go ${dir}' al narrar eventos pasados.`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // U3. "for + verb" instead of "to + verb" (Spanish interference: "para mitigar" → "for mitigate")
+    if (
+      /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate)\b/i.test(
+        lower,
+      )
+    ) {
+      const forMatch = lower.match(
+        /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate)\b/i,
+      );
+      const verb = forMatch ? forMatch[1] : "mitigate";
+      detectedErrors.push({
+        id: `err-u3-for-to-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `for ${verb}`,
+        correctWord: `to ${verb}`,
+        userSaidContext: `for ${verb} this`,
+        betterWay: `to ${verb} this issue effectively`,
+        explanation:
+          "In English, use 'to' (not 'for') before an infinitive verb to express purpose: 'to mitigate', 'to solve', 'to prevent'.",
+        translationSpanish:
+          "Interferencia del español 'para + verbo'. En inglés se usa 'to + verbo': 'to mitigate', 'to solve'.",
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U4. "we decide implement" / "we decide put" → "we decided to implement"
+    // Missing past tense AND missing "to" before second verb
+    if (
+      /\bwe\s+(decide|start|want|need|try|plan|choose|agree|hope)\s+(implement|put|build|create|use|deploy|install|add|remove|change|move|make|send)\b/i.test(
+        lower,
+      )
+    ) {
+      const chainMatch = lower.match(
+        /\bwe\s+(decide|start|want|need|try|plan|choose|agree|hope)\s+(implement|put|build|create|use|deploy|install|add|remove|change|move|make|send)\b/i,
+      );
+      const v1 = chainMatch ? chainMatch[1] : "decide";
+      const v2 = chainMatch ? chainMatch[2] : "implement";
+      detectedErrors.push({
+        id: `err-u4-chain-verb-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `we ${v1} ${v2}`,
+        correctWord: `we ${v1}d to ${v2}`,
+        userSaidContext: `we ${v1} ${v2}`,
+        betterWay: `we ${v1}d to ${v2} the solution`,
+        explanation: `Two errors: 1) Past tense needed ('${v1}d'). 2) The verb '${v1}' requires 'to' before the next verb ('${v1}d to ${v2}').`,
+        translationSpanish: `Doble error: falta el pasado ('${v1}d') y el 'to' infinitivo ('${v1}d to ${v2}').`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U5. "very stressing" → "very stressful" (adjective/participle confusion)
+    if (/\b(very|really|so|quite|extremely)\s+(stressing|boring|confusing|interesting|exciting|tiring|annoying)\b/i.test(lower)) {
+      // Only flag "stressing" → "stressful" since others might be valid
+      if (/\b(very|really|so|quite|extremely)\s+stressing\b/i.test(lower)) {
+        detectedErrors.push({
+          id: `err-u5-stressing-${Date.now()}`,
+          errorType: "VOCABULARY",
+          errorWord: "stressing",
+          correctWord: "stressful",
+          userSaidContext: "it was very stressing",
+          betterWay: "it was an incredibly stressful situation, but I learned a great deal",
+          explanation:
+            "'Stressing' is not a standard adjective in English. The correct adjective is 'stressful' (meaning 'causing stress').",
+          translationSpanish:
+            "'Stressing' no es adjetivo estándar. El adjetivo correcto es 'stressful' (estresante).",
+          cefrLevel: "B1",
+          savedToMemory: false,
+        });
+      }
+    }
+
+    // U6. "learn much" → "learned a lot" (unnatural quantifier)
+    if (/\blearn(ed)?\s+much\b/i.test(lower) && !/\bhow\s+much\b/i.test(lower)) {
+      detectedErrors.push({
+        id: `err-u6-learn-much-${Date.now()}`,
+        errorType: "VOCABULARY",
+        errorWord: "learn much",
+        correctWord: "learned a lot / learned a great deal",
+        userSaidContext: "I learn much",
+        betterWay: "I learned a great deal from that experience",
+        explanation:
+          "'Learn much' is unnatural in affirmative sentences. Native speakers say 'learned a lot' or 'learned a great deal'.",
+        translationSpanish:
+          "'Learn much' es antinatural en afirmativas. Se dice 'I learned a lot' o 'I learned a great deal'.",
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U7. "many users try to login at same time" → "many users tried to log in at the same time"
+    if (/\b(users|people|customers|clients)\s+(try|start|begin|want)\s+to\b/i.test(lower) && hasPastContext) {
+      const tryMatch = lower.match(/\b(users|people|customers|clients)\s+(try|start|begin|want)\s+to\b/i);
+      const subj2 = tryMatch ? tryMatch[1] : "users";
+      const verb2 = tryMatch ? tryMatch[2] : "try";
+      // Only flag if it's clearly present tense in a past context
+      if (!/\b(tried|started|began|wanted)\b/i.test(lower)) {
+        detectedErrors.push({
+          id: `err-u7-past-tense-${Date.now()}`,
+          errorType: "GRAMMAR",
+          errorWord: `${subj2} ${verb2} to`,
+          correctWord: `${subj2} ${verb2 === "try" ? "tried" : verb2 + "ed"} to`,
+          userSaidContext: `${subj2} ${verb2} to login`,
+          betterWay: `many ${subj2} tried to log in simultaneously`,
+          explanation: `When narrating past events, use past tense '${verb2 === "try" ? "tried" : verb2 + "ed"}' instead of present '${verb2}'.`,
+          translationSpanish: `Usa el pasado '${verb2 === "try" ? "tried" : verb2 + "ed"}' al narrar eventos pasados, no el presente '${verb2}'.`,
+          cefrLevel: "A2",
+          savedToMemory: false,
+        });
+      }
+    }
+
+    // U8. "I diagnose the bug looking" → "I diagnosed the bug by looking" (missing past + missing "by")
+    if (/\bi\s+(diagnose|investigate|analyze|check|monitor|review|examine)\s+(the|a|this|that)\b/i.test(lower) && hasPastContext) {
+      const diagMatch = lower.match(
+        /\bi\s+(diagnose|investigate|analyze|check|monitor|review|examine)\s+(?:the|a|this|that)\b/i,
+      );
+      const diagVerb = diagMatch ? diagMatch[1] : "diagnose";
+      detectedErrors.push({
+        id: `err-u8-past-verb-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `I ${diagVerb}`,
+        correctWord: `I ${diagVerb}d`,
+        userSaidContext: `I ${diagVerb} the issue`,
+        betterWay: `I ${diagVerb}d the root cause by analyzing the logs`,
+        explanation: `Use past tense '${diagVerb}d' when describing a completed action in a past narrative.`,
+        translationSpanish: `Usa el pasado '${diagVerb}d' al describir acciones completadas.`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // =========================================================================
     // 3. ACCURATE SCORING & QUESTION-SPECIFIC MODEL ANSWER
     // =========================================================================
     const errorCount = detectedErrors.length;

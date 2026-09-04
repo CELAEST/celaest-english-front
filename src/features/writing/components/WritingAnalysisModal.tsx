@@ -756,8 +756,10 @@ export const WritingAnalysisModal: React.FC<WritingAnalysisModalProps> = ({
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
               <CircleCheck className="h-6 w-6 text-[#6ce2a3]" strokeWidth={2.5} />
             </span>
-            <p className="text-[15.5px] font-normal text-white tracking-wide">
-              Excellent! Your writing is native-level. No errors detected.
+            <p className="text-[14px] sm:text-[15px] font-normal text-white/90 tracking-wide max-w-xl text-center sm:text-left leading-relaxed">
+              {submission.wordCount < 25
+                ? "Clean syntax with no immediate grammar errors detected. To reach advanced B2/C1 fluency, expand your paragraphs with transition connectors, structured reasoning, and supporting context."
+                : "Excellent! Your writing is native-level and comprehensive. No errors detected."}
             </p>
           </div>
         )}

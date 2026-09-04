@@ -1,15 +1,14 @@
-import React, { useState } from "react";
-import { Eye, EyeOff, KeyRound, Globe2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff, KeyRound, Globe2, Cpu } from "lucide-react";
 import { AiProviderId } from "../../../domain/entities/AiProvider";
 import { useAiProviders } from "../hooks/useAiProviders";
 import { providerKeyVault } from "../services/providerKeyVault";
-import {
-  SettingsProviderTestButton,
-} from "./SettingsProviderPrimitives";
+import { SettingsProviderTestButton } from "./SettingsProviderPrimitives";
 import { ProviderMark } from "./SettingsProviderIcons";
 import { SettingsSection } from "./SettingsSection";
 
 const PROVIDER_HINTS: Record<AiProviderId, string> = {
+  groq: "gsk_…",
   openai: "sk-…",
   anthropic: "sk-ant-…",
   gemini: "AIza…",
@@ -40,6 +39,19 @@ export const SettingsAiProvidersSection: React.FC = () => {
   const [showKeyFor, setShowKeyFor] = useState<AiProviderId | null>(null);
   const [endpointDrafts, setEndpointDrafts] = useState<Partial<Record<AiProviderId, string>>>({});
   const [modelSelections, setModelSelections] = useState<Partial<Record<AiProviderId, string>>>({});
+  const [isCoreEnabled, setIsCoreEnabled] = useState<boolean>(true);
+
+  useEffect(() => {
+    void providerKeyVault.isCentralCoreEnabled().then((enabled) => {
+      setIsCoreEnabled(enabled);
+    });
+  }, []);
+
+  const handleToggleCore = async () => {
+    const next = !isCoreEnabled;
+    setIsCoreEnabled(next);
+    await providerKeyVault.setCentralCoreEnabled(next);
+  };
 
   const handleExpand = async (providerId: AiProviderId) => {
     if (expandedId === providerId) {
@@ -76,9 +88,62 @@ export const SettingsAiProvidersSection: React.FC = () => {
 
   return (
     <SettingsSection label="AI PROVIDERS">
+      {/* 1. Master CELAEST-CORE Central Cluster Toggle */}
+      <div className="mb-5 rounded-2xl border border-white/[0.08] bg-[#070714]/70 backdrop-blur-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+        <div className="flex items-start gap-3.5">
+          <div
+            className={`p-2.5 rounded-xl border transition-colors ${
+              isCoreEnabled
+                ? "bg-[#7048E8]/15 border-[#7048E8]/30 text-[#A78BFA]"
+                : "bg-white/[0.04] border-white/[0.08] text-white/40"
+            }`}
+          >
+            <Cpu className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white tracking-wide">
+                Clúster Central CELAEST-CORE
+              </span>
+              <span
+                className={`px-2 py-0.5 text-[10px] font-mono rounded-full border ${
+                  isCoreEnabled
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                }`}
+              >
+                {isCoreEnabled ? "Activo" : "Bypass BYOK"}
+              </span>
+            </div>
+            <p className="text-xs text-white/50 font-light mt-1 max-w-xl leading-relaxed">
+              {isCoreEnabled
+                ? "Utiliza los servidores y el pool de claves públicas de la plataforma. Si se agotan los tokens, podrás usar tu propia clave como respaldo."
+                : "Desactivado para pruebas. Lingua evaluará tus ejercicios EXCLUSIVAMENTE con la API Key privada que configures abajo."}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleToggleCore}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            isCoreEnabled ? "bg-[#7048E8]" : "bg-white/20"
+          }`}
+          role="switch"
+          aria-checked={isCoreEnabled}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+              isCoreEnabled ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
       {isProvidersOffline ? (
         <div className="mb-2 rounded-xl border border-zinc-500/20 bg-zinc-500/[0.06] px-3 py-2 text-xs leading-relaxed text-zinc-400">
-          Local catalog — backend offline. Keys stay on this device; live health checks will sync when online.
+          Local catalog — backend offline. Keys stay on this device; live health checks will sync
+          when online.
         </div>
       ) : null}
       {/* Borderless accordion — each provider is a quiet row that expands in place */}
@@ -148,7 +213,9 @@ export const SettingsAiProvidersSection: React.FC = () => {
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs leading-none text-zinc-400">
                           <span>
-                            {provider.type === "cloud" ? "Cloud · bring your own key" : "Local · offline"}
+                            {provider.type === "cloud"
+                              ? "Cloud · bring your own key"
+                              : "Local · offline"}
                           </span>
                           <span className="text-white/20">·</span>
                           <span>{provider.models.length} models</span>
@@ -202,7 +269,9 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                 setShowKeyFor(showKeyFor === provider.id ? null : provider.id)
                               }
                               className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-lg text-zinc-400 hover:bg-white/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                              aria-label={showKeyFor === provider.id ? "Hide API key" : "Show API key"}
+                              aria-label={
+                                showKeyFor === provider.id ? "Hide API key" : "Show API key"
+                              }
                               aria-pressed={showKeyFor === provider.id}
                             >
                               {showKeyFor === provider.id ? (
@@ -255,7 +324,11 @@ export const SettingsAiProvidersSection: React.FC = () => {
                       <legend className="text-[11px] font-medium tracking-[0.14em] uppercase text-zinc-400">
                         Default model
                       </legend>
-                      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={`${provider.name} model`}>
+                      <div
+                        className="flex flex-wrap gap-2"
+                        role="radiogroup"
+                        aria-label={`${provider.name} model`}
+                      >
                         {provider.models.map((model) => {
                           const isSelected = selectedModel === model.id;
                           return (

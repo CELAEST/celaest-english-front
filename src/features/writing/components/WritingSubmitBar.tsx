@@ -4,6 +4,8 @@ export interface WritingSubmitBarProps {
   hasContent?: boolean;
   isEvaluating?: boolean;
   hasAnalysis?: boolean;
+  wordCount?: number;
+  minWords?: number;
   onSubmit?: () => void;
   onViewAnalysis?: () => void;
 }
@@ -12,6 +14,8 @@ export const WritingSubmitBar: React.FC<WritingSubmitBarProps> = ({
   hasContent = false,
   isEvaluating = false,
   hasAnalysis = false,
+  wordCount = 0,
+  minWords = 8,
   onSubmit,
   onViewAnalysis,
 }) => {
@@ -19,9 +23,11 @@ export const WritingSubmitBar: React.FC<WritingSubmitBarProps> = ({
     ? "Evaluating with AI..."
     : hasAnalysis
       ? "Analysis ready · Click to view feedback"
-      : hasContent
-        ? "Ready for feedback"
-        : "Start writing to get feedback";
+      : wordCount === 0
+        ? "Start writing to get feedback"
+        : wordCount < minWords
+          ? `Write at least ${minWords} words to evaluate (${wordCount}/${minWords})`
+          : "Ready for feedback";
 
   return (
     <div className="w-full flex items-center justify-between pt-4 sm:pt-6 select-none shrink-0 animate-[slideUp_0.45s_ease-out_0.25s_both] gap-3">

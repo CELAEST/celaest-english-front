@@ -81,21 +81,16 @@ const buildSpec = (
       };
 
     default: {
-      // OpenAI-compatible: openai, grok (xAI), perplexity, openrouter,
+      // OpenAI-compatible: groq, openai, grok (xAI), perplexity, openrouter,
       // deepseek, qwen, meta (Llama API).
+      // Testing with GET /models authenticates the key and verifies the endpoint
+      // without depending on a specific model ID existing in the account tier.
       return {
-        url: `${base}/chat/completions`,
-        method: "POST",
+        url: `${base}/models`,
+        method: "GET",
         headers: {
-          "content-type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: "ping" }],
-          max_tokens: 1,
-          stream: false,
-        }),
       };
     }
   }

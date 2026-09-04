@@ -10,7 +10,11 @@ export interface ReadingArticleHeaderProps {
   isPlayingAudio?: boolean | undefined;
   isPausedAudio?: boolean | undefined;
   playbackRate?: number | undefined;
+  selectedVoice?: "en-US-AriaNeural" | "en-US-ChristopherNeural" | undefined;
+  onSelectVoice?: ((voice: "en-US-AriaNeural" | "en-US-ChristopherNeural") => void) | undefined;
+  onToggleVoice?: (() => void) | undefined;
   onToggleAudio?: (() => void) | undefined;
+  onRestartAudio?: (() => void) | undefined;
   onCycleAudioRate?: (() => void) | undefined;
 }
 
@@ -24,7 +28,11 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     isPlayingAudio = false,
     isPausedAudio = false,
     playbackRate = 1.0,
+    selectedVoice = "en-US-AriaNeural",
+    onSelectVoice,
+    onToggleVoice,
     onToggleAudio,
+    onRestartAudio,
     onCycleAudioRate,
   }) => {
     return (
@@ -40,7 +48,11 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
               isPlaying={isPlayingAudio}
               isPaused={isPausedAudio}
               playbackRate={playbackRate}
+              selectedVoice={selectedVoice}
+              onSelectVoice={onSelectVoice}
+              onToggleVoice={onToggleVoice}
               onTogglePlay={onToggleAudio}
+              onRestart={onRestartAudio}
               onCycleRate={onCycleAudioRate ?? (() => {})}
             />
           )}

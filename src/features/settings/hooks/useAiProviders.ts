@@ -244,22 +244,16 @@ export const useAiProviders = () => {
       if (!hasKey) {
         return { ok: false, latencyMs: null, message: "No API key stored in vault." };
       }
-      try {
-        const result = await apiSettingsRepository.testAiProvider(providerId);
-        return result;
-      } catch {
-        // Backend offline (or no provider endpoint) — run a real, provider-correct
-        // connection probe against the stored key + endpoint as a best-effort check.
-        const apiKey = await providerKeyVault.getKey(providerId);
-        const config = await providerKeyVault.getConfig(providerId);
-        const catalog = (providers ?? LOCAL_PROVIDER_CATALOG).find((p) => p.id === providerId);
-        const endpoint = config?.endpoint ?? catalog?.defaultEndpoint ?? "";
-        const model = config?.defaultModel ?? catalog?.models?.[0]?.id ?? "";
-        if (!apiKey || !endpoint) {
-          return { ok: false, latencyMs: null, message: "Missing API key or endpoint." };
-        }
-        return await probeProviderConnection(providerId, apiKey, endpoint, model);
+      const apiKey = await providerKeyVault.getKey(providerId);
+      const config = await providerKeyVault.getConfig(providerId);
+      const catalog = (providers ?? LOCAL_PROVIDER_CATALOG).find((p) => p.id === providerId);
+      const endpoint = config?.endpoint ?? catalog?.defaultEndpoint ?? "";
+      const model = config?.defaultModel ?? catalog?.models?.[0]?.id ?? "";
+      if (!apiKey || !endpoint) {
+        return { ok: false, latencyMs: null, message: "Missing API key or endpoint." };
       }
+      // Run real, provider-correct authentication probe with the stored key
+      return await probeProviderConnection(providerId, apiKey, endpoint, model);
     },
   });
 

@@ -10,6 +10,7 @@ import { EncryptedLocalStorageVault } from "../../../infrastructure/adapters/sto
 const KEY_PREFIX = "celaest:provider-key:";
 const CONFIG_PREFIX = "celaest:provider-config:";
 const ACTIVE_PROVIDER_KEY = "celaest:active-provider";
+const USE_CENTRAL_CORE_KEY = "celaest:use-central-core";
 
 export interface StoredProviderConfig {
   endpoint?: string;
@@ -17,6 +18,17 @@ export interface StoredProviderConfig {
 }
 
 export const providerKeyVault = {
+  async isCentralCoreEnabled(): Promise<boolean> {
+    const entry = await EncryptedLocalStorageVault.getItem<{ enabled: boolean }>(
+      USE_CENTRAL_CORE_KEY,
+    );
+    return entry?.enabled ?? true;
+  },
+
+  async setCentralCoreEnabled(enabled: boolean): Promise<void> {
+    await EncryptedLocalStorageVault.setItem(USE_CENTRAL_CORE_KEY, { enabled });
+  },
+
   async saveKey(providerId: AiProviderId, apiKey: string): Promise<void> {
     await EncryptedLocalStorageVault.setItem(`${KEY_PREFIX}${providerId}`, {
       apiKey,
@@ -67,3 +79,4 @@ export const providerKeyVault = {
     EncryptedLocalStorageVault.removeItem(ACTIVE_PROVIDER_KEY);
   },
 };
+

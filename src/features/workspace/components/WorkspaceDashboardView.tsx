@@ -28,12 +28,14 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
   const { settings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
-  const activeUserLevel = settings.cefrLevel || userLevel || "";
+  const activeUserLevel = settings.cefrLevel || userLevel || "B1";
+  const userProfession = settings.profession || settings.learningGoal || "Professional";
   const profile = {
     learningGoal: settings.learningGoal,
     preferenceStyle: settings.preferenceStyle,
     dailyFocus: settings.dailyFocus,
-  } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string };
+    profession: userProfession,
+  } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string; profession?: string };
 
   const handleSelectNav = (route: string) => {
     setActiveTab(route);
@@ -86,7 +88,8 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
         {activeTab === "interview" && (
           <div key="interview" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <InterviewPracticeView
-              roleName={profile?.learningGoal || "Software Engineer"}
+              roleName={userProfession}
+              userLevel={activeUserLevel}
               onBackToWorkspace={() => handleSelectNav("workspace")}
             />
           </div>
@@ -94,13 +97,20 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
 
         {activeTab === "writing" && (
           <div key="writing" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
-            <WritingPracticeView onBackToWorkspace={() => handleSelectNav("workspace")} />
+            <WritingPracticeView
+              roleName={userProfession}
+              userLevel={activeUserLevel}
+              onBackToWorkspace={() => handleSelectNav("workspace")}
+            />
           </div>
         )}
 
         {activeTab === "reading" && (
           <div key="reading" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
-            <ReadingPracticeView onBackToWorkspace={() => handleSelectNav("workspace")} />
+            <ReadingPracticeView
+              roleName={userProfession}
+              onBackToWorkspace={() => handleSelectNav("workspace")}
+            />
           </div>
         )}
 
@@ -121,7 +131,7 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
             key="workspace"
             className="flex flex-col justify-between h-full p-4 sm:p-6 lg:p-8 pt-2 sm:pt-4 animate-[fadeIn_0.4s_ease-out_both]"
           >
-            <div className="flex flex-col md:flex-row items-start justify-between w-full max-w-7xl mx-auto pt-0 sm:pt-1 gap-4 sm:gap-6 relative z-10">
+            <div className="flex flex-col lg:flex-row items-start justify-between w-full max-w-[1380px] mx-auto px-4 sm:px-8 lg:px-12 pt-2 sm:pt-4 gap-8 lg:gap-14 relative z-10">
               <WorkspaceHeroSection
                 userName={activeUserName}
                 learningGoal={profile?.learningGoal}

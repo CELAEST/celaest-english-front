@@ -11,6 +11,7 @@ export interface InterviewQuestionItem {
   starHint: string;
   expectedKeywords: string[];
   round?: number;
+  targetLevel?: string;
 }
 
 export interface SpecificErrorItem {
@@ -33,6 +34,7 @@ export interface TurnEvaluationFeedback {
   vocabularyScore: number; // 0 - 100
   estimatedCefrLevel?: string | undefined;
   userSpokenText: string;
+  reconciledTranscript?: string | undefined;
   improvedFullAnswer: string;
   unclearOrErrorWords: SpecificErrorItem[];
   keyStrengths: string[];

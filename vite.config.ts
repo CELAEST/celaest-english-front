@@ -31,19 +31,35 @@ function createSecurityPolicy(mode: string, command: string): string {
   const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "http://127.0.0.1:8085");
   const isDev = command === "serve";
 
-  const connectSrc = ["'self'", apiOrigin, coreAiOrigin];
+  const connectSrc = [
+    "'self'",
+    apiOrigin,
+    coreAiOrigin,
+    "https://huggingface.co",
+    "https://*.huggingface.co",
+    "https://cdn-lfs.huggingface.co",
+    "https://*.hf.co",
+    "https://hf.co",
+    "https://cdn.jsdelivr.net",
+    "https://*.jsdelivr.net",
+    "https://unpkg.com",
+    "https://*.unpkg.com",
+    "https://raw.githubusercontent.com",
+    "https://*.githubusercontent.com",
+  ];
   if (isDev) {
-    // HMR websocket + local service discovery during development only.
-    connectSrc.push("ws:", "wss:", "http://localhost:*", "http://127.0.0.1:*");
+    // HMR websocket + local service discovery + AI model CDNs during development
+    connectSrc.push("https:", "ws:", "wss:", "http://localhost:*", "http://127.0.0.1:*");
   }
 
   return [
     "default-src 'self'",
-    `script-src ${isDev ? "'self' 'unsafe-inline'" : "'self'"}`,
+    `script-src ${isDev ? "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:" : "'self' 'wasm-unsafe-eval' blob:"}`,
+    "worker-src 'self' blob: data:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob:",
-    "media-src 'self' blob:",
+    "media-src 'self' blob: data: http://localhost:* http://127.0.0.1:* https://translate.google.com https:",
     `connect-src ${connectSrc.join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",

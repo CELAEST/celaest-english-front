@@ -43,6 +43,13 @@ export const useCurrentUser = () => {
 
   const settings: UserSettings = useMemo(() => {
     if (profile) {
+      if (profile.profession && typeof window !== "undefined") {
+        try {
+          localStorage.setItem("celaest:active_profession", profile.profession);
+        } catch {
+          // ignore
+        }
+      }
       return {
         name: profile.name ?? "",
         email: profile.email ?? user?.email ?? "",
@@ -55,7 +62,11 @@ export const useCurrentUser = () => {
         streakDays: profile.streakDays ?? 0,
       };
     }
-    // Offline / no backend — honest empty, no fake Esteban
+    // Offline / loading: recover persisted active profession so child components don't flash default
+    const cachedProf =
+      typeof window !== "undefined"
+        ? localStorage.getItem("celaest:active_profession") || ""
+        : "";
     return {
       name: user?.name ?? "",
       email: user?.email ?? "",
@@ -63,7 +74,7 @@ export const useCurrentUser = () => {
       dailyFocus: "",
       learningGoal: "",
       preferenceStyle: "",
-      profession: "",
+      profession: cachedProf,
       onboardingCompleted: false,
       streakDays: 0,
     };

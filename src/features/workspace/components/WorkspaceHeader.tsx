@@ -6,7 +6,7 @@ export interface WorkspaceHeaderProps {
 }
 
 export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
-  streakDays = 12,
+  streakDays = 1,
   onPracticeClick,
 }) => {
   return (

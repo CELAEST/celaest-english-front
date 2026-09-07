@@ -19,10 +19,10 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
       <div className="relative">
         <button
           onClick={() => setShowTipsModal((prev) => !prev)}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#060713] border border-[#14152b] text-[#f8f8f8] hover:border-[#A27FF3]/60 hover:scale-105 active:scale-95 text-xs font-light transition-all duration-300 cursor-pointer shadow-lg group whitespace-nowrap shrink-0"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#060713] border border-[#14152b] text-[#f8f8f8] hover:border-white/30 hover:scale-105 active:scale-95 text-xs font-light transition-all duration-300 cursor-pointer shadow-lg group whitespace-nowrap shrink-0"
         >
           <svg
-            className="w-3.5 h-3.5 text-[#A27FF3] group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 shrink-0"
+            className="w-3.5 h-3.5 text-white/70 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 shrink-0"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -47,7 +47,7 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
             />
             <div className="absolute left-0 bottom-10 w-72 sm:w-80 bg-[#060713] border border-[#14152b] rounded-2xl p-4 shadow-2xl z-50 animate-[fadeSlideUp_0.25s_ease-out_both]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-[#A27FF3]">
+                <span className="text-xs font-semibold text-white/90">
                   STAR Interview Strategy
                 </span>
                 <button
@@ -58,18 +58,18 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
               <p className="text-xs text-white/90 font-light leading-relaxed mb-3">{starHint}</p>
               <div className="space-y-1.5 text-[11px] text-neutral-400">
                 <p>
-                  <strong className="text-[#A27FF3]">S</strong>ituation: Set the scene in 1
+                  <strong className="text-white font-semibold">S</strong>ituation: Set the scene in 1
                   sentence.
                 </p>
                 <p>
-                  <strong className="text-[#A27FF3]">T</strong>ask: What was the goal or obstacle?
+                  <strong className="text-white font-semibold">T</strong>ask: What was the goal or obstacle?
                 </p>
                 <p>
-                  <strong className="text-[#A27FF3]">A</strong>ction: What specific action did YOU
+                  <strong className="text-white font-semibold">A</strong>ction: What specific action did YOU
                   take?
                 </p>
                 <p>
-                  <strong className="text-[#A27FF3]">R</strong>esult: What was the measurable
+                  <strong className="text-white font-semibold">R</strong>esult: What was the measurable
                   positive outcome?
                 </p>
               </div>

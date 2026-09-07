@@ -342,11 +342,11 @@ export class AiLinguisticEvaluator {
         correctWord: "Mention frameworks like RICE, MoSCoW, or Value vs. Effort matrix",
         userSaidContext: text,
         betterWay:
-          "I prioritize competing feature requests by evaluating customer value versus engineering effort using the RICE scoring model.",
+          "I prioritize competing requests by evaluating urgency versus impact using clear objective criteria.",
         explanation:
-          "The question asked HOW you prioritize competing requests between engineering, sales, and executives. Stating only that you want 'organization' is too vague. In a Product Manager interview, explicitly mention prioritization criteria or frameworks (RICE, customer impact, engineering effort).",
+          "The question asked HOW you prioritize competing demands. Stating only that you want 'organization' is too vague. In professional interviews, explicitly mention concrete criteria (urgency, stakeholder impact, effort, or structured decision frameworks).",
         translationSpanish:
-          "Respuesta demasiado vaga. En entrevistas de PM debes mencionar marcos concretos como RICE (Reach, Impact, Confidence, Effort) o matriz de valor vs. esfuerzo.",
+          "Respuesta demasiado vaga. En entrevistas profesionales debes mencionar criterios objetivos o marcos concretos (urgencia, impacto en clientes o pacientes, esfuerzo).",
         cefrLevel: "B2",
         savedToMemory: false,
       });

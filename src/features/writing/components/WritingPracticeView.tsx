@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { WritingTaskHeader } from "./WritingTaskHeader";
 import { WritingEditor } from "./WritingEditor";
 import { WritingSubmitBar } from "./WritingSubmitBar";
@@ -21,7 +21,7 @@ import {
   ERROR_DATA,
 } from "../../lab/components/AiEngineErrorsLuxuryStudio";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
-import { directClientAiService } from "../../settings/services/directClientAiService";
+import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 
@@ -30,98 +30,148 @@ export interface WritingPracticeViewProps {
   onNavigateToMemory?: () => void;
   roleName?: string;
   userLevel?: string;
+  onSelectLevel?: (level: CefrLevelCode) => void;
 }
 
-export const WritingPracticeView: React.FC<WritingPracticeViewProps> = ({
-  onNavigateToMemory,
-  roleName = "Professional",
-  userLevel,
-}) => {
-  const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
-  const initialStored = DynamicWritingTaskService.loadActiveSubmission();
+export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.memo(
+  function WritingPracticeView({
+    onNavigateToMemory,
+    roleName = "Professional",
+    userLevel,
+    onSelectLevel,
+  }) {
+    const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
+    const initialStored = DynamicWritingTaskService.loadActiveSubmission();
 
-  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
-  const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
-    ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
-  );
-  const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
-  const [isGeneratingTask, setIsGeneratingTask] = useState<boolean>(false);
+    const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
+    const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
+      ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
+    );
+    const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
+    const [isGeneratingTask] = useState<boolean>(false);
 
-  const [activeCefrLevel, setActiveCefrLevel] = useState<string>(() => {
-    if (userLevel) return normalizeCefr(userLevel);
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("celaest:writing:cefrLevel");
-        if (saved) return normalizeCefr(saved);
-      } catch {
-        // ignore
-      }
-    }
-    return "B1";
-  });
-
-  const [currentTask, setCurrentTask] = useState<WritingTaskItem>(() =>
-    DynamicWritingTaskService.getActiveTask(activeCefrLevel, roleName),
-  );
-
-  const handleSelectLevel = React.useCallback(
-    (newLevel: CefrLevelCode) => {
-      const norm = normalizeCefr(newLevel);
-      setActiveCefrLevel(norm);
+    const [activeCefrLevel, setActiveCefrLevel] = useState<string>(() => {
+      if (userLevel) return normalizeCefr(userLevel);
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("celaest:writing:cefrLevel", norm);
+          const saved = localStorage.getItem("celaest:writing:cefrLevel");
+          if (saved) return normalizeCefr(saved);
         } catch {
           // ignore
         }
       }
-      const task = DynamicWritingTaskService.getActiveTask(norm, roleName);
-      setCurrentTask(task);
-      setEditorText(DynamicWritingTaskService.loadDraft(task.id));
-      setPersistedSubmission(null);
-      DynamicWritingTaskService.clearActiveSubmission();
-    },
-    [roleName],
-  );
+      return "B1";
+    });
 
-  useEffect(() => {
-    if (userLevel && normalizeCefr(userLevel) !== normalizeCefr(activeCefrLevel)) {
-      handleSelectLevel(normalizeCefr(userLevel) as CefrLevelCode);
-    }
-  }, [userLevel, activeCefrLevel, handleSelectLevel]);
+    const roleNameRef = useRef(roleName);
+    const isReplenishingRef = useRef<boolean>(false);
+    useEffect(() => {
+      roleNameRef.current = roleName;
+    }, [roleName]);
 
-  useEffect(() => {
-    let isCancelled = false;
-    // If active task is already an AI task matching level and role, don't overwrite on refresh
-    if (currentTask && currentTask.id.startsWith("ai-") && currentTask.level === activeCefrLevel) {
-      return;
-    }
+    const [taskBatch, setTaskBatch] = useState<WritingTaskItem[]>(() =>
+      AiWritingTaskGenerator.getCachedOrSeedBatch(roleName, activeCefrLevel),
+    );
+    const [taskIndex, setTaskIndex] = useState<number>(0);
 
-    AiWritingTaskGenerator.generateWritingTask({
-      profession: roleName,
-      cefrLevel: activeCefrLevel,
-    })
-      .then((aiTask) => {
-        if (!isCancelled && aiTask) {
-          setCurrentTask(aiTask);
-          DynamicWritingTaskService.persistActiveTask(aiTask);
+    const [currentTask, setCurrentTask] = useState<WritingTaskItem>(() => {
+      const active = DynamicWritingTaskService.getActiveTask(activeCefrLevel, roleName);
+      return active || taskBatch[0];
+    });
+
+    const handleSelectLevel = React.useCallback(
+      (newLevel: CefrLevelCode) => {
+        const norm = normalizeCefr(newLevel);
+        setActiveCefrLevel(norm);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("celaest:writing:cefrLevel", norm);
+            localStorage.setItem("celaest:cefrLevel", norm);
+          } catch {
+            // ignore
+          }
         }
-      })
-      .catch((err) => {
-        logger.warn("[WritingPracticeView] AI task generation error:", err);
-      });
+        const curRole = roleNameRef.current || "Professional";
+        const newBatch = AiWritingTaskGenerator.getCachedOrSeedBatch(curRole, norm);
+        setTaskBatch(newBatch);
+        setTaskIndex(0);
+        const task = newBatch[0] || DynamicWritingTaskService.getActiveTask(norm, curRole);
+        setCurrentTask(task);
+        DynamicWritingTaskService.persistActiveTask(task);
+        setEditorText(DynamicWritingTaskService.loadDraft(task.id));
+        setPersistedSubmission(null);
+        DynamicWritingTaskService.clearActiveSubmission();
+        if (onSelectLevel) {
+          onSelectLevel(norm as CefrLevelCode);
+        }
+      },
+      [onSelectLevel],
+    );
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeCefrLevel, roleName]);
-  // Restore the draft saved for the active task or submission content (survives page reloads)
-  const [editorText, setEditorText] = useState<string>(() => {
-    if (initialStored?.submission?.content) {
-      return initialStored.submission.content;
-    }
-    return DynamicWritingTaskService.loadDraft(currentTask.id);
-  });
+    // Synchronize ONLY when userLevel prop genuinely changes externally from parent (e.g. Settings)
+    const prevUserLevelPropRef = useRef<string | undefined>(userLevel);
+    useEffect(() => {
+      if (userLevel && userLevel !== prevUserLevelPropRef.current) {
+        prevUserLevelPropRef.current = userLevel;
+        const norm = normalizeCefr(userLevel);
+        handleSelectLevel(norm as CefrLevelCode);
+      }
+    }, [userLevel, handleSelectLevel]);
+
+    const fetchedBatchKeyRef = useRef<string>("");
+
+    useEffect(() => {
+      let isCancelled = false;
+      const normProf = (roleName || "Professional").trim().toLowerCase();
+      const batchKey = `${normProf}:${activeCefrLevel}`;
+
+      // STRICT ANTI-DUPLICATE GUARD: If we already requested this exact role + level, STOP immediately!
+      if (fetchedBatchKeyRef.current === batchKey) {
+        return;
+      }
+
+      // Check if current batch is already populated with AI tasks for current level
+      const hasAiTasks = taskBatch.some((t) => t.id.startsWith("ai-") && t.level === activeCefrLevel);
+      if (hasAiTasks) {
+        fetchedBatchKeyRef.current = batchKey;
+        return;
+      }
+
+      fetchedBatchKeyRef.current = batchKey;
+
+      // Silent background pre-generation of a diverse batch (6 tasks in 1 call)
+      AiWritingTaskGenerator.generateBatchTasks({
+        profession: roleName,
+        cefrLevel: activeCefrLevel,
+      })
+        .then((aiBatch) => {
+          if (!isCancelled && aiBatch && aiBatch.length > 0) {
+            setTaskBatch(aiBatch);
+            setEditorText((curr) => {
+              if (!curr || !curr.trim()) {
+                setCurrentTask(aiBatch[0]);
+                DynamicWritingTaskService.persistActiveTask(aiBatch[0]);
+              }
+              return curr;
+            });
+          }
+        })
+        .catch((err) => {
+          logger.warn("[WritingPracticeView] AI batch task pregeneration error:", err);
+        });
+
+      return () => {
+        isCancelled = true;
+      };
+    }, [activeCefrLevel, roleName]);
+
+    // Restore the draft saved for the active task or submission content (survives page reloads)
+    const [editorText, setEditorText] = useState<string>(() => {
+      if (initialStored?.submission?.content) {
+        return initialStored.submission.content;
+      }
+      return DynamicWritingTaskService.loadDraft(currentTask.id);
+    });
   const [persistedSubmission, setPersistedSubmission] = useState<WritingSubmission | null>(
     () => initialStored?.submission ?? null,
   );
@@ -206,16 +256,27 @@ Return raw JSON with exact keys:
   "grammarExplanation": string (1 concise sentence in Spanish explaining the rule, max 15 words),
   "cefrLevel": string ("A1", "A2", "B1", "B2", "C1")
 
-Extract all real grammar errors. If there are no real grammar errors, "extractedErrors" MUST be an empty array []. Return ONLY raw valid JSON.`;
+Extract all real grammar errors. If there are no real grammar errors, "extractedErrors" MUST be an empty array []. Return ONLY raw valid JSON. CRITICAL: Output exactly ONE valid JSON object matching this schema. Do not output multiple JSON blocks, markdown backticks, or trailing commentary.`;
 
         const rawJson = await directClientAiService.chatCompletion({
           systemPrompt,
           userPrompt,
           providerId: activeProvider,
+          maxTokens: 4096,
         });
 
         const cleaned = rawJson.replace(/```json/g, "").replace(/```/g, "").trim();
-        const parsed = JSON.parse(cleaned);
+        let parsed: any;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {
+          const salvaged = extractFirstJsonObject(cleaned);
+          if (salvaged) {
+            parsed = JSON.parse(salvaged);
+          } else {
+            throw new Error("El modelo devolvió un formato JSON no estructurado.");
+          }
+        }
 
         const wordCount = editorText.trim().split(/\s+/).length;
         const rawErrors = Array.isArray(parsed.extractedErrors) ? parsed.extractedErrors : [];
@@ -266,19 +327,24 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       logger.warn("Writing evaluation failed", err);
       const errMsg = err?.message || String(err);
       let errorType: AiApiErrorType = "rate-limit-429";
-      if (errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
+      if (err?.code === "AUTH_DECLINED_KEY" || errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
         errorType = "invalid-key-401";
-      } else if (errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
+      } else if (err?.code === "RATE_LIMIT_COOLDOWN" || errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
         errorType = "rate-limit-429";
-      } else if (errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
+      } else if (err?.code === "AI_KEYS_EXHAUSTED" || errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
         errorType = "keys-exhausted-pool";
-      } else if (errMsg.includes("504") || errMsg.includes("timeout")) {
+      } else if (err?.code === "GATEWAY_TIMEOUT" || errMsg.includes("504") || errMsg.includes("timeout")) {
         errorType = "gateway-timeout-504";
       } else {
         errorType = "server-outage-503";
       }
-      setRecoveryScenario(ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"]);
-      setRecoveryCooldown(ERROR_DATA[errorType]?.cooldownDefault || 14);
+      const baseScenario = ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"];
+      const scenarioWithApiDetails = {
+        ...baseScenario,
+        humanSubtext: err?.message && err.message.length > 5 ? err.message : baseScenario.humanSubtext,
+      };
+      setRecoveryScenario(scenarioWithApiDetails);
+      setRecoveryCooldown(baseScenario.cooldownDefault || 14);
       setIsRecoveryModalOpen(true);
     }
   };
@@ -295,8 +361,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     }
   };
 
-  // When clicking "Continue Practicing": Advance to the next task and clear the editor
-  const handleContinuePracticing = async () => {
+  // Advance to the next task in the pre-generated batch (0ms latency, zero token burn on click)
+  const advanceToNextBatchTask = (toastTitle?: string) => {
     setShowResultModal(false);
     setPersistedSubmission(null);
     DynamicWritingTaskService.clearActiveSubmission();
@@ -304,54 +370,51 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     setEditorText("");
     setSavedErrorIds(new Set());
 
-    try {
-      const freshAiTask = await AiWritingTaskGenerator.generateWritingTask({
+    if (!taskBatch || taskBatch.length === 0) return;
+
+    const nextIndex = (taskIndex + 1) % taskBatch.length;
+    setTaskIndex(nextIndex);
+    const nextTask = taskBatch[nextIndex];
+
+    if (nextTask) {
+      setCurrentTask(nextTask);
+      DynamicWritingTaskService.persistActiveTask(nextTask);
+      if (toastTitle) {
+        appToast.success(toastTitle, nextTask.title);
+      }
+    }
+
+    // Trigger silent background replenishment ONLY after cycling through the entire batch (at the last task)
+    const isAiBatch = taskBatch.some((t) => t.id.startsWith("ai-"));
+    if (isAiBatch && nextIndex >= taskBatch.length - 1 && !isReplenishingRef.current) {
+      isReplenishingRef.current = true;
+      AiWritingTaskGenerator.generateBatchTasks({
         profession: roleName,
         cefrLevel: activeCefrLevel,
         forceFresh: true,
-      });
-      setCurrentTask(freshAiTask);
-      DynamicWritingTaskService.persistActiveTask(freshAiTask);
-    } catch {
-      const fallbackTask = DynamicWritingTaskService.completeTaskAndNext(
-        currentTask.id,
-        activeCefrLevel,
-        roleName,
-      );
-      setCurrentTask(fallbackTask);
+      })
+        .then((freshBatch) => {
+          if (freshBatch && freshBatch.length > 0) {
+            setTaskBatch(freshBatch);
+          }
+        })
+        .catch((err) => {
+          logger.warn("[WritingPracticeView] Batch replenishment error:", err);
+        })
+        .finally(() => {
+          isReplenishingRef.current = false;
+        });
     }
   };
 
-  const handleNewTask = async () => {
-    if (isEvaluating || isGeneratingTask) return;
-    setIsGeneratingTask(true);
-    setShowResultModal(false);
-    setPersistedSubmission(null);
-    DynamicWritingTaskService.clearActiveSubmission();
-    DynamicWritingTaskService.clearDraft();
-    setEditorText("");
-    setSavedErrorIds(new Set());
+  // When clicking "Continue Practicing": Advance to the next task and clear the editor
+  const handleContinuePracticing = () => {
+    advanceToNextBatchTask();
+  };
 
-    try {
-      const freshAiTask = await AiWritingTaskGenerator.generateWritingTask({
-        profession: roleName,
-        cefrLevel: activeCefrLevel,
-        forceFresh: true,
-      });
-      setCurrentTask(freshAiTask);
-      DynamicWritingTaskService.persistActiveTask(freshAiTask);
-      appToast.success("Nueva tarea generada", freshAiTask.title);
-    } catch {
-      const fallbackTask = DynamicWritingTaskService.completeTaskAndNext(
-        currentTask.id,
-        activeCefrLevel,
-        roleName,
-      );
-      setCurrentTask(fallbackTask);
-      appToast.info("Nueva tarea lista", fallbackTask.title);
-    } finally {
-      setIsGeneratingTask(false);
-    }
+  const handleNewTask = () => {
+    if (isEvaluating) return;
+    advanceToNextBatchTask("Nueva tarea lista");
   };
 
   const handleOpenModal = () => {
@@ -427,8 +490,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       {/* Main Workspace Content Canvas */}
       <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-6 sm:px-10 lg:px-14 py-3 sm:py-5 pt-3 sm:pt-4 gap-6 sm:gap-8 z-10 overflow-hidden">
         {/* Left Column: Task Header, Editor & Submit Bar */}
-        <div className="flex-1 w-full flex flex-col justify-between h-full min-h-0 overflow-hidden">
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 w-full flex flex-col justify-between h-full min-h-0 overflow-visible">
+          <div className="flex flex-col flex-1 min-h-0 overflow-visible">
             <React.Fragment key={currentTask.id}>
               <WritingTaskHeader
                 category={`WRITING TASK · ${currentTask.category}`}
@@ -544,4 +607,4 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       />
     </div>
   );
-};
+});

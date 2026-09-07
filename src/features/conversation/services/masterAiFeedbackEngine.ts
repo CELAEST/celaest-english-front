@@ -135,11 +135,11 @@ export class MasterAiFeedbackEngine {
           "Acknowledge disagreements as healthy collaboration ('While I avoid toxic conflict, I embrace constructive technical debate...')",
         userSaidContext: text.slice(0, 50),
         betterWay:
-          "While I maintain collaborative relationships, healthy technical disagreements happen. My approach is always to sit down with the engineer, align on user goals, and use data to find consensus.",
+          "While I maintain collaborative relationships, healthy professional disagreements happen. My approach is always to sit down with the colleague or stakeholder, align on shared goals, and use evidence to find consensus.",
         explanation:
-          "In leadership and Product Manager interviews, reframe conflict as constructive collaboration.",
+          "In leadership and professional interviews, reframe conflict as constructive collaboration.",
         translationSpanish:
-          "Consejo estratégico: Aborda los desacuerdos técnicos como debates constructivos orientados a datos.",
+          "Consejo estratégico: Aborda los desacuerdos profesionales como debates constructivos orientados a evidencia.",
         cefrLevel: "C1",
         savedToMemory: false,
       });
@@ -150,7 +150,7 @@ export class MasterAiFeedbackEngine {
       currentQuestion.question,
     );
     const mentionsPrioritizationFramework =
-      /rice|moscow|matrix|framework|impact|effort|trade-off|tradeoff|roi|business value|customer value/i.test(
+      /rice|moscow|matrix|framework|impact|effort|trade-off|tradeoff|roi|business value|customer value|urgency|criteria/i.test(
         lower,
       );
 
@@ -162,24 +162,24 @@ export class MasterAiFeedbackEngine {
     ) {
       strategicFeedback = {
         type: "CONTENT_TIP",
-        title: "Impulso de Seniority: Marcos de Priorización",
+        title: "Impulso de Seniority: Criterios y Marcos de Decisión",
         explanation:
-          "Identificamos buenas ideas sobre cómo equilibras peticiones. Integrar un marco estructurado te ayudará a proyectar mayor solidez y metodología.",
+          "Identificamos buenas ideas sobre cómo equilibras prioridades. Integrar criterios estructurados te ayudará a proyectar mayor solidez y metodología.",
         recommendation:
-          "Paso a paso: Menciona marcos reconocidos como el modelo RICE (Reach, Impact, Confidence, Effort) o la matriz de Valor vs. Esfuerzo para respaldar tus decisiones.",
+          "Paso a paso: Menciona criterios objetivos (impacto en clientes o pacientes, urgencia, matriz de valor vs. esfuerzo) para respaldar tus decisiones.",
       };
       detectedErrors.push({
         id: `err-strat-prio-${Date.now()}`,
         errorType: "VOCABULARY",
         errorWord: "Vague prioritization without metrics or frameworks",
-        correctWord: "Use structured frameworks (RICE model, Value vs. Effort matrix)",
+        correctWord: "Use structured criteria or decision frameworks (Impact vs. Effort, Urgency matrix)",
         userSaidContext: text.slice(0, 60),
         betterWay:
-          "I prioritize competing requests using the RICE framework (Reach, Impact, Confidence, Effort) to balance urgent sales requests with technical debt and executive goals.",
+          "I prioritize competing demands by assessing urgency versus stakeholder impact to balance immediate requests with strategic quality.",
         explanation:
-          "Product Managers demonstrate structured decision-making rather than vague intuition.",
+          "Leaders and professionals demonstrate structured decision-making rather than vague intuition.",
         translationSpanish:
-          "Tip de metodología: Apóyate en marcos como RICE para estructurar tu proceso de decisión.",
+          "Tip de metodología: Apóyate en criterios claros de impacto y urgencia para estructurar tu proceso de decisión.",
         cefrLevel: "B2",
         savedToMemory: false,
       });

@@ -116,129 +116,21 @@ const NON_INTERVIEW_FILLER_PATTERNS = [
   /^(good\s+morning|good\s+afternoon|good\s+evening|hello\s+there|hey\s+there)\.?$/i,
 ];
 
-// Common English words & Technical/Engineering vocabulary (~500 high-frequency tokens)
-const COMMON_ENGLISH_LEXICON = new Set([
+
+
+// Universal closed-class grammatical function words of the English language (~80 tokens)
+// These are structural language constants (pronouns, prepositions, auxiliaries, conjunctions)
+// that exist in every authentic English sentence regardless of domain or profession.
+const UNIVERSAL_ENGLISH_FUNCTION_WORDS = new Set([
   "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", "he", "as",
   "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will",
   "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which",
-  "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", "take", "people", "into", "year",
+  "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", "take", "into", "year",
   "your", "good", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only", "come", "its",
-  "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even",
+  "over", "think", "also", "back", "after", "use", "two", "how", "our", "first", "well", "way", "even",
   "new", "want", "because", "any", "these", "give", "day", "most", "us", "is", "are", "was", "were", "been", "has",
-  "had", "doing", "did", "does", "said", "making", "made", "going", "went", "gone", "taking", "took", "taken",
-  "seeing", "saw", "seen", "getting", "got", "gotten", "knowing", "knew", "known", "thinking", "thought",
-  "giving", "gave", "given", "working", "worked", "using", "used", "trying", "tried", "calling", "called",
-  "asking", "asked", "needing", "needed", "feeling", "felt", "becoming", "became", "leaving", "left", "putting",
-  "meaning", "meant", "keeping", "kept", "letting", "let", "beginning", "began", "begun", "seeming", "seemed",
-  "helping", "helped", "talking", "talked", "turning", "turned", "starting", "started", "showing", "showed", "shown",
-  "hearing", "heard", "playing", "played", "running", "ran", "moving", "moved", "living", "lived", "believing",
-  "believed", "bringing", "brought", "happening", "happened", "writing", "wrote", "written", "providing", "provided",
-  "sitting", "sat", "standing", "stood", "losing", "lost", "paying", "paid", "meeting", "met", "including", "included",
-  "continuing", "continued", "setting", "set", "learning", "learned", "changing", "changed", "leading", "led",
-  "understanding", "understood", "watching", "watched", "following", "followed", "stopping", "stopped", "creating",
-  "created", "speaking", "spoke", "spoken", "reading", "read", "allowing", "allowed", "adding", "added", "spending",
-  "spent", "growing", "grew", "grown", "opening", "opened", "walking", "walked", "winning", "won", "offering", "offered",
-  "remembering", "remembered", "loving", "loved", "considering", "considered", "appearing", "appeared", "buying",
-  "bought", "serving", "served", "die", "died", "sending", "sent", "expecting", "expected", "building", "built",
-  "staying", "stayed", "falling", "fell", "fallen", "cutting", "cut", "reaching", "reached", "killing", "killed",
-  "remaining", "remained", "suggesting", "suggested", "raising", "raised", "passing", "passed", "selling", "sold",
-  "requiring", "required", "reporting", "reported", "deciding", "decided", "pulling", "pulled",
-  "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "hundred", "thousand", "million",
-  "year", "years", "month", "months", "week", "weeks", "day", "days", "hour", "hours", "minute", "minutes",
-  "first", "second", "third", "next", "last", "previous", "future", "past", "present",
-  // Common greetings, titles, proper address, conversational markers
-  "hello", "hi", "hey", "dear", "smith", "john", "mary", "dr", "mr", "mrs", "ms", "miss", "sir", "madam",
-  "please", "thank", "thanks", "welcome", "sorry", "excuse", "pardon", "yes", "no", "okay", "fine", "sure",
-  "alright", "maybe", "perhaps", "inside", "outside", "between", "around", "near", "far", "top", "bottom",
-  "upper", "lower", "front", "back", "left", "right", "under", "over", "into", "onto", "behind", "without",
-  // Time, days, dates, calendar
-  "today", "tomorrow", "yesterday", "tonight", "morning", "afternoon", "evening", "night", "noon", "midnight",
-  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "weekend", "weekdays",
-  "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
-  "daily", "weekly", "monthly", "yearly", "am", "pm", "clock", "early", "late", "soon", "now", "always",
-  "never", "often", "sometimes", "usually", "already", "still", "yet", "again", "together", "apart", "alone",
-  // Modals & essential verbs (present, past, participles, contractions)
-  "must", "should", "shall", "ought", "might", "may", "can", "could", "would", "will",
-  "dont", "cant", "wont", "didnt", "isnt", "arent", "wasnt", "werent", "havent", "hasnt", "couldnt", "shouldnt", "wouldnt",
-  "eat", "ate", "eaten", "eating", "eats", "drink", "drank", "drunk", "drinking", "drinks",
-  "sleep", "slept", "sleeping", "sleeps", "wake", "woke", "woken", "feel", "felt", "feeling", "feels",
-  "hurt", "hurts", "hurting", "pain", "pains", "ache", "aches", "aching",
-  "clean", "cleaned", "cleaning", "cleans", "wash", "washed", "washing", "washes",
-  "brush", "brushed", "brushing", "brushes", "floss", "flossed", "flossing", "flosses",
-  "rinse", "rinsed", "rinsing", "rinses", "spit", "spat", "spitting", "swallow", "swallowed", "swallowing",
-  "bite", "bit", "bitten", "biting", "chew", "chewed", "chewing", "chews",
-  "rest", "rested", "resting", "rests", "call", "called", "calling", "calls",
-  "visit", "visited", "visiting", "visits", "arrive", "arrived", "arriving", "arrives",
-  "stay", "stayed", "staying", "stays", "wait", "waited", "waiting", "waits",
-  "stop", "stopped", "stopping", "stops", "avoid", "avoided", "avoiding", "avoids",
-  "open", "opened", "opening", "opens", "close", "closed", "closing", "closes",
-  "check", "checked", "checking", "checks", "examine", "examined", "examining", "examines",
-  "treat", "treated", "treating", "treats", "heal", "healed", "healing", "heals",
-  "cure", "cured", "curing", "cures", "prescribe", "prescribed", "prescribing",
-  // Healthcare, medical, dental, clinical terms
-  "tooth", "teeth", "clinic", "clinics", "clinical", "hospital", "hospitals", "patient", "patients",
-  "dentist", "dentists", "dental", "doctor", "doctors", "medical", "medicine", "medicines",
-  "medication", "medications", "pill", "pills", "tablet", "tablets", "capsule", "capsules", "dose", "doses", "dosage",
-  "nurse", "nurses", "assistant", "assistants", "hygienist", "hygienists", "hygiene",
-  "sterilize", "sterilized", "sterilizing", "sterilization", "autoclave", "disinfect", "disinfected",
-  "surgery", "surgeries", "surgical", "surgeon", "operation", "procedure", "procedures", "treatment", "treatments",
-  "therapy", "diagnosis", "prognosis", "painful", "painless", "painkiller", "painkillers", "toothache", "headache",
-  "appointment", "appointments", "care", "health", "healthy", "mouth", "oral", "gum", "gums", "gingival",
-  "periodontal", "food", "foods", "diet", "meal", "meals", "hot", "cold", "warm", "water", "salt", "saline",
-  "blood", "bleeding", "bled", "bleed", "extraction", "extractions", "extract", "extracted", "extracting",
-  "swelling", "swollen", "swell", "infection", "infections", "infected", "anesthesia", "anesthetic",
-  "numb", "numbness", "needle", "needles", "syringe", "injection", "injections", "suture", "sutures",
-  "gauze", "cotton", "ice", "pack", "packs", "crown", "crowns", "filling", "fillings", "composite",
-  "root", "roots", "canal", "canals", "decay", "cavity", "cavities", "caries", "plaque", "tartar",
-  "scaler", "scaling", "ultrasonic", "mirror", "drill", "handpiece", "instrument", "instruments",
-  "tool", "tools", "equipment", "xray", "xrays", "radiograph", "scan", "scans", "impression", "trays",
-  "denture", "dentures", "bridge", "bridges", "implant", "implants", "orthodontic", "braces", "aligner",
-  "retainer", "sensitivity", "sensitive", "nerve", "nerves", "tissue", "tissues", "bone", "bones",
-  "jaw", "jaws", "mandible", "maxilla", "enamel", "dentin", "pulp", "molar", "molars", "premolar",
-  "canine", "canines", "incisor", "incisors", "wisdom", "impacted", "occlusion", "smile", "aesthetic",
-  "whitening", "veneer", "veneers", "followup", "protocol", "protocols", "guideline", "guidelines",
-  "straw", "straws", "smoke", "smoking", "smoker", "alcohol", "press", "pressed", "pressure", "fever",
-  "emergency", "regards", "sincerely", "prescription", "prescriptions", "antibiotic", "antibiotics",
-  "ibuprofen", "paracetamol", "aspirin", "complication", "complications", "socket", "clot", "clots",
-  // Adjectives, descriptors, adverbs
-  "fast", "faster", "fastest", "slow", "slower", "slowest", "hard", "soft", "heavy", "light",
-  "gentle", "gently", "careful", "carefully", "bad", "worse", "worst", "better", "best", "easy", "difficult",
-  "clear", "clearly", "simple", "simply", "safe", "safely", "normal", "abnormal", "real", "really",
-  "enough", "too", "very", "quite", "rather", "pretty", "fairly", "almost", "nearly",
-  // Common workplace, document, communication tokens
-  "office", "desk", "room", "rooms", "building", "person", "people", "man", "woman", "child", "children",
-  "family", "friend", "friends", "colleague", "colleagues", "partner", "manager", "boss", "staff",
-  "employee", "employees", "worker", "workers", "case", "cases", "task", "tasks", "job", "jobs",
-  "email", "emails", "message", "messages", "letter", "letters", "note", "notes", "report", "reports",
-  "file", "files", "document", "documents", "paper", "papers", "form", "forms", "schedule", "schedules",
-  "calendar", "phone", "number", "numbers", "address", "location", "place", "places", "question", "questions",
-  "answer", "answers", "detail", "details", "reason", "reasons", "result", "results", "step", "steps",
-  "instruction", "instructions", "advice", "tip", "tips", "information", "info", "fact", "facts", "idea", "ideas",
-  "plan", "plans", "goal", "goals", "hope", "wish", "head", "face", "eye", "eyes", "ear", "ears",
-  "nose", "lip", "lips", "tongue", "neck", "throat", "chest", "arm", "arms", "hand", "hands", "finger",
-  "fingers", "leg", "legs", "foot", "feet",
-  // Technical & software ecosystem
-  "software", "hardware", "frontend", "backend", "fullstack", "data", "application", "applications", "app", "apps",
-  "platform", "platforms", "infrastructure", "scalable", "scaling", "scalability", "designing", "designed",
-  "developing", "developer", "developers", "development", "program", "programs", "programming", "programmer",
-  "typescript", "javascript", "python", "golang", "java", "rust", "c", "cpp", "csharp", "ruby", "php", "swift", "kotlin",
-  "api", "apis", "gateway", "gateways", "service", "services", "microservice", "microservices", "system", "systems",
-  "architecture", "architectures", "server", "servers", "client", "clients", "database", "databases", "sql", "nosql",
-  "redis", "cache", "caches", "caching", "kubernetes", "docker", "load", "balancer", "balancers", "balancing",
-  "throughput", "latency", "spike", "spikes", "performance", "http", "https", "rest",
-  "graphql", "grpc", "cloud", "aws", "gcp", "azure", "ci", "cd", "pipeline", "pipelines", "product", "products",
-  "feature", "features", "user", "users", "customer", "customers", "stakeholder",
-  "stakeholders", "team", "teams", "lead", "leader", "leaders", "leadership", "engineer", "engineers", "engineering",
-  "code", "coding", "design", "designs", "framework", "frameworks", "metrics", "metric", "retention", "conversion",
-  "growth", "roadmap", "roadmaps", "agile", "scrum", "sprint", "sprints", "priority", "prioritize", "priorities",
-  "deliver", "delivery", "delivered", "outcome", "outcomes", "impact", "business", "value", "solution", "solutions",
-  "problem", "problems", "test", "tests", "testing", "deploy", "deployed", "deployment", "monitor", "monitored",
-  "monitoring", "telemetry", "log", "logs", "logging", "traffic", "sub", "response", "responses", "request", "requests",
-  "rate", "limit", "limits", "limiting", "queue", "queues", "kafka", "event", "events", "driven", "async", "sync",
-  "thread", "threads", "memory", "cpu", "io", "proxy", "reverse", "security", "auth", "oauth", "token", "tokens",
-  "jwt", "session", "sessions", "interview", "interviews", "role", "roles", "experience", "experiences", "company",
-  "companies", "project", "projects", "responsible", "achieved", "improved", "increased", "decreased", "reduced",
-  "optimized", "implemented", "collaborated", "managed", "resolved", "handled", "worked", "led", "built", "created",
+  "had", "doing", "did", "does", "said", "must", "should", "shall", "might", "may", "can", "could", "would",
+  "dont", "cant", "wont", "didnt", "isnt", "arent", "wasnt", "werent", "yes", "please", "thank", "thanks", "hello", "hi"
 ]);
 
 // Common QWERTY keyboard mash sequences (consecutive key runs of 5+ letters)
@@ -275,8 +167,7 @@ export function isGibberishWord(rawWord: string): boolean {
   const word = rawWord.toLowerCase().replace(/[^a-z]/g, "");
   if (!word || word.length < 2) return false;
 
-  // Recognized common English word or technical token
-  if (COMMON_ENGLISH_LEXICON.has(word)) return false;
+
 
   // Check known short vowel-less English words
   const validNoVowelWords = new Set(["by", "my", "fly", "dry", "why", "try", "cry", "shy", "gym", "sync", "lynx", "myth", "rhythm", "crypt", "nth"]);
@@ -357,18 +248,17 @@ export function validateSpeechIntelligibility(
   if (detectedLanguage) {
     const lang = detectedLanguage.toLowerCase().trim();
     if (lang && lang !== "english" && lang !== "en") {
-      let recognizedEnglish = 0;
       let spanishMarkers = 0;
       for (const word of rawWords) {
-        if (COMMON_ENGLISH_LEXICON.has(word) || /^\d+$/.test(word)) recognizedEnglish++;
         if (SPANISH_MARKERS.has(word)) spanishMarkers++;
       }
       const hasSpanishDiacritics = /[áéíóúñ¿¡]/.test(clean.toLowerCase());
       const hasRealSpanish = hasSpanishDiacritics || spanishMarkers >= 2 || (rawWords.length <= 3 && spanishMarkers >= 1);
-      const isEnglishContent = rawWords.length >= 3 && recognizedEnglish >= 2 && spanishMarkers === 0 && !hasSpanishDiacritics;
+      const nonGibberishCount = rawWords.filter((w) => !isGibberishWord(w)).length;
+      const isEnglishContent = rawWords.length >= 3 && nonGibberishCount >= 2 && spanishMarkers === 0 && !hasSpanishDiacritics;
 
-      // Only reject if the text actually contains Spanish or lacks recognizable English words
-      if (hasRealSpanish || (!isEnglishContent && recognizedEnglish === 0)) {
+      // Only reject if the text actually contains Spanish or is not English
+      if (hasRealSpanish || (!isEnglishContent && nonGibberishCount === 0)) {
         return {
           isValid: false,
           reason: "SPANISH_DETECTED",
@@ -454,23 +344,11 @@ export function validateSpeechIntelligibility(
     };
   }
 
-  // 5. Gibberish & Keyboard Mash Detection (e.g. "gergewg r we erg wer er we ewg wer weewr", "asdfghjkl")
-  let gibberishWordCount = 0;
-  let recognizedEnglishCount = 0;
-
-  for (const word of rawWords) {
-    if (isGibberishWord(word)) {
-      gibberishWordCount++;
-    }
-    if (COMMON_ENGLISH_LEXICON.has(word) || /^\d+$/.test(word)) {
-      recognizedEnglishCount++;
-    }
-  }
-
-  const englishRatio = recognizedEnglishCount / rawWords.length;
-
-  // If any single word is severe keyboard mash or > 30% of the words are gibberish
-  if (gibberishWordCount > 0 && (gibberishWordCount / rawWords.length >= 0.3 || gibberishWordCount >= 2)) {
+  // 5. Universal Gibberish & Keyboard Mash Detection (e.g. "gergewg r we erg wer er we ewg wer weewr", "asdfghjkl")
+  // 5a. Spatial keyboard clustering check (low letter entropy across multi-word input)
+  const alphaCharsOnly = clean.toLowerCase().replace(/[^a-z]/g, "");
+  const uniqueAlpha = new Set(alphaCharsOnly);
+  if (alphaCharsOnly.length >= 15 && uniqueAlpha.size <= 5) {
     return {
       isValid: false,
       reason: "NONSENSE_OR_GIBBERISH",
@@ -479,14 +357,45 @@ export function validateSpeechIntelligibility(
     };
   }
 
-  // If text has 3+ words and English ratio is low (< 40%), or short phrase (<= 6 words) with ratio < 50%
-  if (rawWords.length >= 3 && (englishRatio < 0.40 || (rawWords.length <= 6 && englishRatio < 0.50))) {
+  // 5b. Phonetic gibberish word count
+  let gibberishWordCount = 0;
+  for (const word of rawWords) {
+    if (isGibberishWord(word)) {
+      gibberishWordCount++;
+    }
+  }
+
+  // Reject if single word is pure mash, or >= 35% of words are mash, or >= 2 mash words in a phrase
+  if (
+    gibberishWordCount > 0 &&
+    (gibberishWordCount / rawWords.length >= 0.35 || gibberishWordCount >= 2)
+  ) {
     return {
       isValid: false,
       reason: "NONSENSE_OR_GIBBERISH",
-      message: "Texto no reconocible como inglés coherente. Por favor formula una respuesta estructurada en inglés.",
+      message: "Texto o audio no comprensible. Por favor formula una respuesta coherente en inglés.",
       cleanTranscript: clean,
     };
+  }
+
+  // 5c. Universal English structural grammar ratio (shields against alien pseudo-words like "blorp fleep zorp we qux")
+  let structuralCount = 0;
+  for (const word of rawWords) {
+    if (UNIVERSAL_ENGLISH_FUNCTION_WORDS.has(word) || /^\d+$/.test(word)) {
+      structuralCount++;
+    }
+  }
+
+  if (rawWords.length >= 4 && (structuralCount / rawWords.length < 0.25 || structuralCount === 0)) {
+    const unknownWords = rawWords.filter((w) => !UNIVERSAL_ENGLISH_FUNCTION_WORDS.has(w) && !/^\d+$/.test(w));
+    if (unknownWords.length >= 3 && structuralCount <= 1) {
+      return {
+        isValid: false,
+        reason: "NONSENSE_OR_GIBBERISH",
+        message: "Texto no reconocible como inglés coherente. Por favor formula una respuesta estructurada en inglés.",
+        cleanTranscript: clean,
+      };
+    }
   }
 
   // 6. Check for single character repetitive spam (e.g. "aaaaaa", ".........", "asdfasdf")

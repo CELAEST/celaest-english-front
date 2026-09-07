@@ -499,7 +499,7 @@ export const AiEngineErrorsLuxuryStudio: React.FC = () => {
       {isModalOpen && (
         <>
           {/* ========================================================================= */}
-          {scenario.category === "infra" && activeVariant === "apple-spatial-bespoke-icons" ? (
+          {scenario.category === "infra" ? (
             <AiInfrastructureRecoveryModal
               isOpen={isModalOpen}
               scenario={scenario}
@@ -530,7 +530,7 @@ export const AiEngineErrorsLuxuryStudio: React.FC = () => {
               onClick={(e) => {
                 if (e.target === e.currentTarget) setIsModalOpen(false);
               }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.25s_ease-out]"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-3xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
             >
               {/* ========================================================================= */}
               {/* 2. CASOS NO-INFRAESTRUCTURA: HARDWARE, PEDAGOGÍA, SESIÓN (BESPOKE ICONS)  */}
@@ -538,10 +538,10 @@ export const AiEngineErrorsLuxuryStudio: React.FC = () => {
               {activeVariant === "apple-spatial-bespoke-icons" && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-xl rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-8 sm:p-9 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
+                  className="relative w-full max-w-xl max-h-[min(92dvh,760px)] my-auto rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-5 sm:p-7 flex flex-col space-y-4 text-left animate-[scaleUp_0.25s_ease-out]"
                 >
                   {/* Top Specular Hairline matching Reading/Writing Card Standard */}
-                  <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+                  <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none z-10" />
 
                   {/* Header */}
                   <div className="flex items-start justify-between">

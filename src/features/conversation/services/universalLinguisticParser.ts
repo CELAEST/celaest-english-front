@@ -15,40 +15,16 @@ import {
 } from "./interviewEngineService";
 import { StrategicFeedbackItem } from "./masterAiFeedbackEngine";
 
-export const ROLE_MODEL_ANSWERS: Record<number, string> = {
-  // --- ROUND 1: CORE PRODUCT LEADERSHIP ---
-  1: "I am deeply interested in this Product Manager role because I have four years of experience leading cross-functional squads in high-growth SaaS environments. My approach centers on deep customer empathy, data-informed roadmapping, and driving measurable business outcomes like increasing Day-30 retention by 22%.",
+export function generateDynamicModelAnswer(question: InterviewQuestionItem): string {
+  if (question.starHint) {
+    const cleanHint = question.starHint.replace(/^(Situation|Action|Result|Highlight|Discuss|Detail|Emphasize|Explain|Mention):\s*/i, "").trim();
+    return `In my professional practice, I approach this methodically: ${cleanHint}`;
+  }
+  return `In this situation, I communicate clearly, follow established professional protocols, collaborate with relevant stakeholders, and ensure a high-quality outcome.`;
+}
 
-  2: "My priority is to apply structured product frameworks when handling competing requests. For me, it is a core principle that my team uses a transparent model like RICE (Reach, Impact, Confidence, Effort) to objectively balance urgent sales demands with long-term engineering scalability and executive goals.",
+export const ROLE_MODEL_ANSWERS: Record<number, string> = {};
 
-  3: "In a previous product launch, we faced an unexpected delay when critical edge-case bugs surfaced in staging QA. Rather than pushing an unstable release to hit an arbitrary deadline, I took immediate ownership, conducted a rapid triaging session with engineering to de-scope secondary features, and proactively updated executive stakeholders with a revised rollout plan.",
-
-  4: "I define feature success by establishing clear leading and lagging indicators before development begins. For our onboarding redesign, our North Star metric was Day-7 user retention, while leading metrics included step completion rates and time-to-first-value. We validated these via A/B cohorts before full rollout.",
-
-  5: "While I maintain collaborative relationships, I frequently engage in constructive technical debates. In my previous role, a lead engineer and I disagreed on whether to build a custom auth microservice or integrate Auth0. I scheduled a 1-on-1 alignment meeting, anchored our discussion on our core quarterly goals and maintenance cost, and we mutually agreed to use the third-party solution to save two months of engineering bandwidth.",
-
-  // --- ROUND 2: PRODUCT DISCOVERY & ADVANCED STRATEGY ---
-  6: "Before writing a single line of code, I conduct continuous user discovery: running 5 to 8 qualitative customer interviews per sprint, building clickable Figma prototypes, and testing our riskiest assumptions first to ensure strong problem-solution fit and validated customer demand.",
-
-  7: "I manage technical debt by establishing a dedicated 20% capacity allocation in every sprint for refactoring and infrastructure reliability. Rather than viewing tech debt as a blocker, I partner with engineering leads to quantify its impact on developer velocity and system uptime, framing it to leadership as an essential investment in scalability.",
-
-  8: "When saying 'no' to an executive or enterprise client, I frame it as a strategic trade-off discussion. I present quantitative data on our current sprint commitments, illustrate the opportunity cost to our North Star OKRs, and propose placing their request in the upcoming discovery cycle with clear evaluation criteria.",
-
-  9: "I build product roadmaps using an outcome-driven 'Now / Next / Later' framework rather than rigid feature timelines. This aligns stakeholders around strategic business problems and customer value while giving engineering the flexibility to discover the optimal technical solutions.",
-
-  10: "If user retention dropped by 15%, I would immediately initiate a structured triaging process: first segmenting the data by user cohorts, device types, and geographies to isolate the drop, cross-referencing recent code deployments and telemetry logs, and conducting 5 urgent exit interviews with churned users to uncover root causes.",
-
-  // --- ROUND 3: EXECUTIVE LEADERSHIP & PRODUCT GROWTH ---
-  11: "When pricing and monetizing a SaaS tier, I anchor our strategy on a clear value metric that scales with customer usage. I conduct willingness-to-pay Van Westendorp research, optimize our CAC-to-LTV ratio, and test self-serve freemium conversion funnels against high-touch sales tiers.",
-
-  12: "I foster psychological safety by establishing blameless retrospectives, encouraging team members to surface failure early as a learning opportunity, and delegating clear ownership of problem domains rather than micromanaging feature specifications.",
-
-  13: "When balancing legacy code refactoring against aggressive deadlines, I negotiate with product stakeholders by quantifying technical risk and developer velocity. Rather than proposing a risky full rewrite, I implement an incremental refactoring strategy: dedicating 15-20% of each sprint to modularize critical bottlenecks while maintaining our delivery cadence for customer-facing features.",
-
-  14: "I execute A/B experiments by formulating crisp hypotheses, calculating required sample sizes for 95% statistical power, establishing primary conversion metrics alongside guardrail latency metrics, and running tests for at least two business cycles to avoid novelty bias.",
-
-  15: "I view AI as a powerful force multiplier for product discovery: using LLMs to synthesize thousands of customer feedback tickets, generate synthetic user personas for rapid stress-testing, and automate telemetry anomaly detection while keeping humans in the loop for core strategic decisions.",
-};
 
 export class UniversalLinguisticParser {
   public static parse(
@@ -66,7 +42,7 @@ export class UniversalLinguisticParser {
         userSpokenText: "(No speech detected)",
         improvedFullAnswer:
           ROLE_MODEL_ANSWERS[currentQuestion.id] ||
-          "State your framework, share an example with real users, and highlight measurable outcomes.",
+          generateDynamicModelAnswer(currentQuestion),
         unclearOrErrorWords: [
           {
             id: `err-no-mic-${Date.now()}`,
@@ -161,46 +137,46 @@ export class UniversalLinguisticParser {
           "Anchor on continuous customer discovery ('Users articulate pain points while we validate solutions with prototypes...')",
         userSaidContext: "waste of time to talk with the users before",
         betterWay:
-          "While users may not design the technical solution, deep user interviews are essential to uncover unmet needs before engineering starts.",
-        explanation: "Los Product Managers escuchan los dolores del usuario para evitar construir funciones innecesarias.",
+          "While clients or users may not know the exact technical solution, deep consultations are essential to uncover unmet needs before execution starts.",
+        explanation: "Los líderes y profesionales escuchan las necesidades de los usuarios para evitar construir soluciones innecesarias.",
         translationSpanish:
-          "Aunque los usuarios no diseñen la solución técnica, las entrevistas a profundidad son esenciales para descubrir necesidades antes de comenzar a programar.",
+          "Aunque los usuarios no conozcan la solución exacta, las entrevistas y consultas son esenciales para descubrir necesidades antes de comenzar la ejecución.",
         cefrLevel: "C1",
         savedToMemory: false,
       });
     }
 
-    // C. Question 3: Failed Launch (Blaming Developers)
+    // C. Question 3: Failed Launch (Blaming Team or Colleagues)
     const isLaunchFailureTheme =
       currentQuestion.id === 3 ||
       /didn't go as planned|failed launch|delay/i.test(currentQuestion.question);
-    const blamesDevelopers =
-      /developers didn't|developers did not|their fault|need to work more fast|told them to work faster|didn't do his job/i.test(
+    const blamesTeam =
+      /developers didn't|developers did not|colleagues didn't|their fault|need to work more fast|told them to work faster|didn't do his job/i.test(
         lower,
       );
 
-    if (isLaunchFailureTheme && blamesDevelopers) {
+    if (isLaunchFailureTheme && blamesTeam) {
       strategicFeedback = {
         type: "STRATEGIC_WARNING",
         title: "Oportunidad de Liderazgo: Responsabilidad Compartida",
         explanation:
-          "Identificamos que buscaste describir un momento de retraso técnico. Explicar cómo facilitaste la comunicación y ajustaste el alcance del proyecto proyecta un liderazgo maduro y colaborativo.",
+          "Identificamos que buscaste describir un momento de retraso en el proyecto. Explicar cómo facilitaste la comunicación y ajustaste el alcance proyecta un liderazgo maduro y colaborativo.",
         recommendation:
-          "Paso a paso: Asume la responsabilidad compartida del cronograma y describe cómo realizaste una sesión de priorización para proteger la calidad del lanzamiento.",
+          "Paso a paso: Asume la responsabilidad compartida del cronograma y describe cómo realizaste una sesión de priorización para proteger la calidad final.",
       };
       detectedErrors.push({
         id: `err-strat-blame-${Date.now()}`,
         errorType: "VOCABULARY",
-        errorWord: "Blaming developers ('developers didn't do their job on time / work faster')",
+        errorWord: "Blaming team members ('team didn't do their job on time / work faster')",
         correctWord:
-          "Take shared ownership and run a blameless post-mortem ('We encountered unforeseen technical complexity...')",
-        userSaidContext: "developers didn't do his job on time",
+          "Take shared ownership and collaborate constructively ('We encountered unforeseen complexity...')",
+        userSaidContext: "they didn't do his job on time",
         betterWay:
-          "We encountered unexpected technical complexity during QA, so I worked with engineering leads to de-scope secondary features.",
+          "We encountered unexpected operational complexity, so I worked with team leads and colleagues to adjust our scope and timeline.",
         explanation:
-          "Describe los retrasos como complejidad técnica gestionada con liderazgo colaborativo y ajuste de alcance.",
+          "Describe los retrasos como complejidades gestionadas con liderazgo colaborativo y ajuste de prioridades.",
         translationSpanish:
-          "Encontramos una complejidad técnica inesperada durante el QA, así que colaboré con los líderes de ingeniería para acotar funcionalidades secundarias.",
+          "Encontramos una complejidad inesperada, así que colaboré con los líderes de equipo para ajustar prioridades y proteger la calidad.",
         cefrLevel: "C1",
         savedToMemory: false,
       });
@@ -568,10 +544,10 @@ export class UniversalLinguisticParser {
 
     const overallScore = Math.round((grammarScore + clarityScore + vocabularyScore) / 3);
 
-    // Exact C2 Model Answer for active question ID
+    // Dynamic Model Answer tailored to active question
     const modelAnswer =
       ROLE_MODEL_ANSWERS[currentQuestion.id] ||
-      "I manage technical debt by establishing a dedicated 20% capacity allocation in every sprint for refactoring and infrastructure reliability. Rather than viewing tech debt as a blocker, I partner with engineering leads to quantify its impact on developer velocity and system uptime, framing it to leadership as an essential investment in scalability.";
+      generateDynamicModelAnswer(currentQuestion);
 
     const keyStrengths: string[] = [];
     if (errorCount === 0) {

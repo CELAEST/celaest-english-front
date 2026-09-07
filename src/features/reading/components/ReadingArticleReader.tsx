@@ -275,9 +275,9 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         aria-label="Reading content"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
-        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-left text-[#c5c6d0] font-sans text-[15px] sm:text-[16px] lg:text-[17px] font-light leading-[1.65] sm:leading-[1.7] select-text overflow-visible relative transition-all pt-0.5 pb-1 sm:pb-2"
+        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-left text-[#d1d2dc] font-sans text-[15px] sm:text-[16px] lg:text-[17px] font-light leading-[1.75] sm:leading-[1.8] select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2"
       >
-        <div className="tracking-wide text-[#c5c6d0] leading-[1.65] sm:leading-[1.7] animate-[fadeSlideUp_0.4s_ease-out_both] relative z-10 text-left w-full overflow-visible">
+        <div className="tracking-[0.01em] text-[#d1d2dc] leading-[1.75] sm:leading-[1.8] animate-[fadeSlideUp_0.4s_ease-out_both] relative z-10 text-left w-full overflow-hidden">
           {rawWords.map((rawWord, idx) => {
             const cleanWord = cleanTokens[idx];
             const phrasalMatch = phrasalSpans.get(idx);
@@ -319,31 +319,32 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             let visualStyle = "";
             if (isSelected) {
               visualStyle =
-                "transition-colors duration-150 bg-[#7048E8]/35 text-white ring-1 ring-[#A27FF3] shadow-[0_0_12px_rgba(162,127,243,0.35)]";
+                "transition-colors duration-150 bg-white/20 text-white font-medium ring-1 ring-white/30";
             } else if (isKaraokeCurrentWord) {
               visualStyle =
-                "transition-none bg-[#7048E8]/35 text-white ring-1 ring-[#A27FF3]/60 shadow-[0_0_12px_rgba(162,127,243,0.35)] font-medium";
+                "transition-none bg-white/[0.14] text-white font-medium";
             } else if (isHovered) {
-              visualStyle =
-                "transition-colors duration-150 bg-[#7048E8]/25 text-white shadow-[0_0_8px_rgba(162,127,243,0.25)]";
+              visualStyle = isPhrasalPart
+                ? "transition-colors duration-150 bg-white/[0.08] text-white underline decoration-[#C4B5FD] decoration-[1.5px] underline-offset-[4px]"
+                : "transition-colors duration-150 bg-white/[0.08] text-white";
             } else if (isListening) {
               if (isWordInActiveSentence) {
                 if (isKaraokeAlreadySpoken) {
                   visualStyle = "transition-colors duration-150 text-white font-normal";
                 } else {
-                  visualStyle = "transition-colors duration-150 text-white/70 font-light";
+                  visualStyle = "transition-colors duration-150 text-white/80 font-light";
                 }
               } else if (isPastSentence) {
-                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/45 font-light";
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/50 font-light";
               } else if (isFutureSentence) {
-                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/30 font-light";
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/60 font-light";
               }
             } else if (isPhrasalPart) {
               visualStyle =
-                "transition-colors duration-150 text-[#e2d9fc] underline decoration-[#A27FF3]/65 decoration-[1.5px] underline-offset-[4px] hover:text-white hover:bg-[#7048E8]/20 hover:decoration-[#A27FF3]";
+                "transition-colors duration-150 text-[#ede9fe] underline decoration-[#C4B5FD]/75 decoration-[1.5px] underline-offset-[4px] hover:text-white hover:decoration-[#C4B5FD] hover:bg-white/[0.06]";
             } else {
               visualStyle =
-                "transition-colors duration-150 text-[#c5c6d0] hover:text-white hover:bg-white/[0.08]";
+                "transition-colors duration-150 text-[#d1d2dc] hover:text-white hover:bg-white/[0.06]";
             }
 
             return (
@@ -364,9 +365,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
                   onMouseLeave={() => {
                     if (hoveredRange) setHoveredRange(null);
                   }}
-                  aria-label={`Look up vocabulary word ${rawWord}`}
+                  title={cleanWord ? `Click to look up "${cleanWord}"` : undefined}
+                  aria-haspopup="dialog"
                   aria-expanded={isSelected}
-                  className={`px-1.5 py-0.5 cursor-pointer focus:outline-none inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
+                  className={`px-1.5 py-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-black inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
                 >
                   {rawWord}
                 </button>

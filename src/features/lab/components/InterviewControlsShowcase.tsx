@@ -323,9 +323,9 @@ export const InterviewControlsShowcase: React.FC = () => {
                     className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group"
                   >
                     <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-                      <span className="font-normal text-white">Repeat</span> slower pace
+                      <span className="font-normal text-white">Repeat</span> slowly
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/10 text-[#7DD3FC]">0.7x</span>
+                    <span className="text-xs font-mono text-white/40 group-hover:text-white transition-colors">0.7x</span>
                   </button>
 
                   <button
@@ -333,9 +333,9 @@ export const InterviewControlsShowcase: React.FC = () => {
                     className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group"
                   >
                     <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-                      Add thinking time
+                      <span className="font-normal text-white">Add</span> thinking time
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/10 text-amber-300">+15s</span>
+                    <span className="text-xs font-mono text-white/40 group-hover:text-white transition-colors">+15s</span>
                   </button>
 
                   <button
@@ -343,9 +343,9 @@ export const InterviewControlsShowcase: React.FC = () => {
                     className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group"
                   >
                     <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-                      Advance turn
+                      <span className="font-normal text-white">Next</span> question
                     </span>
-                    <span className="text-[10px] font-mono text-[#6EE7B7] group-hover:translate-x-0.5 transition-transform">NEXT →</span>
+                    <span className="text-xs font-mono text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all">NEXT →</span>
                   </button>
                 </div>
               </div>

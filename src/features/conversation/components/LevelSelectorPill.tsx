@@ -5,118 +5,149 @@ export interface LevelSelectorPillProps {
   currentLevel: string;
   onSelectLevel: (level: CefrLevelCode) => void;
   roleName?: string;
+  align?: "left" | "right";
+  className?: string;
 }
 
 const CEFR_LEVELS: Array<{
   code: CefrLevelCode;
   label: string;
   sublabel: string;
-  badgeColor: string;
 }> = [
-  { code: "A1", label: "A1 — Acceso", sublabel: "Vocabulario básico y frases sencillas", badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-  { code: "A2", label: "A2 — Plataforma", sublabel: "Situaciones y tareas directas de equipo", badgeColor: "bg-teal-500/20 text-teal-300 border-teal-500/30" },
-  { code: "B1", label: "B1 — Umbral", sublabel: "Comunicación y flujos de trabajo en equipo", badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
-  { code: "B2", label: "B2 — Avanzado", sublabel: "Fluidez profesional y metodología STAR", badgeColor: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
-  { code: "C1", label: "C1 — Dominio", sublabel: "Arquitectura, compensaciones y estrategia", badgeColor: "bg-violet-500/20 text-violet-300 border-violet-500/30" },
-  { code: "C2", label: "C2 — Maestría", sublabel: "Liderazgo ejecutivo nativo de alta escala", badgeColor: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30" },
+  { code: "A1", label: "A1 — Acceso", sublabel: "Vocabulario básico y frases sencillas" },
+  { code: "A2", label: "A2 — Plataforma", sublabel: "Situaciones y tareas directas de equipo" },
+  { code: "B1", label: "B1 — Umbral", sublabel: "Comunicación y flujos de trabajo en equipo" },
+  { code: "B2", label: "B2 — Avanzado", sublabel: "Fluidez profesional y metodología STAR" },
+  { code: "C1", label: "C1 — Dominio", sublabel: "Arquitectura, compensaciones y estrategia" },
+  { code: "C2", label: "C2 — Maestría", sublabel: "Liderazgo ejecutivo nativo de alta escala" },
 ];
 
-export const LevelSelectorPill: React.FC<LevelSelectorPillProps> = ({
-  currentLevel,
-  onSelectLevel,
-  roleName,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const activeCode = normalizeCefr(currentLevel);
-  const activeMeta = CEFR_LEVELS.find((l) => l.code === activeCode) || CEFR_LEVELS[2];
+export const LevelSelectorPill: React.FC<LevelSelectorPillProps> = React.memo(
+  function LevelSelectorPill({ currentLevel, onSelectLevel, roleName, align = "left", className = "" }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const activeCode = normalizeCefr(currentLevel);
+    const activeMeta = CEFR_LEVELS.find((l) => l.code === activeCode) || CEFR_LEVELS[2];
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsOpen(false);
+        }
+      };
+      if (isOpen) {
+        window.addEventListener("mousedown", handleClickOutside);
+        window.addEventListener("keydown", handleKeyDown);
       }
-    };
-    if (isOpen) {
-      window.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+      return () => {
+        window.removeEventListener("mousedown", handleClickOutside);
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [isOpen]);
 
-  return (
-    <div ref={containerRef} className="relative inline-flex items-center gap-2 select-none z-30">
-      {/* Role Tag (if provided) */}
-      {roleName && (
-        <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-white/5 border border-white/10 text-slate-300">
-          {roleName}
-        </span>
-      )}
+    return (
+      <div ref={containerRef} className={`relative inline-flex items-center gap-2 select-none z-30 ${className}`}>
+        {/* Role Tag (if provided) — 100% Borderless & Monochrome */}
+        {roleName && (
+          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono tracking-wider uppercase text-white/40 bg-white/[0.03]">
+            {roleName}
+          </span>
+        )}
 
-      {/* Level Selector Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium tracking-wide transition-all duration-200 border cursor-pointer ${activeMeta.badgeColor} hover:brightness-125 focus:outline-none focus:ring-1 focus:ring-violet-400/50 backdrop-blur-md shadow-sm`}
-        title="Cambiar nivel de dificultad adaptativo"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        <span className="font-semibold">{activeMeta.code}</span>
-        <span className="hidden xs:inline text-[11px] opacity-90">· {activeMeta.label.split(" — ")[1] || "Nivel"}</span>
-        <svg
-          className={`w-3 h-3 opacity-70 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
+        {/* Level Selector Button — 100% Backgroundless, Only Letters and Icon */}
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="group inline-flex items-center gap-1 text-xs font-mono tracking-wide bg-transparent hover:bg-transparent border-0 p-0 text-white/80 hover:text-white transition-all duration-200 cursor-pointer focus:outline-none"
+          title="Cambiar nivel de dificultad adaptativo"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          <span className="font-semibold text-white/90">{activeMeta.code}</span>
+          <svg
+            className={`w-3 h-3 text-white/40 group-hover:text-white/70 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-72 rounded-2xl bg-[#0d0d1b]/95 backdrop-blur-xl border border-white/15 shadow-2xl p-2 z-50 flex flex-col gap-1 animate-[fadeSlideDown_0.2s_ease-out_both]">
-          <div className="px-3 py-1.5 border-b border-white/10 mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Nivel Adaptativo
-            </span>
-            <span className="text-[10px] text-violet-400 font-medium">CEFR Standard</span>
-          </div>
+        {/* Dropdown Popover — 100% Borderless, Zero AI Dots, Pure Monochrome Typography */}
+        {isOpen && (
+          <div
+            role="menu"
+            aria-label="Selección de nivel adaptativo CEFR"
+            className={`absolute top-full mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#09090E]/98 backdrop-blur-3xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-1.5 z-50 flex flex-col gap-0.5 overflow-hidden transition-all duration-200 ${
+              align === "right" ? "right-0" : "left-0"
+            }`}
+          >
+            {/* Header */}
+            <div className="px-3 py-2 flex items-center justify-between mb-0.5">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
+                Nivel Adaptativo
+              </span>
+              <span className="text-[10px] font-mono text-white/20">CEFR Standard</span>
+            </div>
 
-          {CEFR_LEVELS.map((item) => {
-            const isSelected = item.code === activeCode;
-            return (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => {
-                  onSelectLevel(item.code);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-start justify-between transition-all ${
-                  isSelected
-                    ? "bg-violet-600/30 text-white border border-violet-500/40"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white border border-transparent"
-                }`}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold text-slate-100 flex items-center gap-1.5">
-                    {item.label}
-                    {isSelected && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-                    )}
+            {/* Level Items — Pure Monochrome, Zero Borders, Zero AI Dots */}
+            {CEFR_LEVELS.map((item) => {
+              const isSelected = item.code === activeCode;
+              return (
+                <button
+                  key={item.code}
+                  role="menuitem"
+                  type="button"
+                  onClick={() => {
+                    onSelectLevel(item.code);
+                    setIsOpen(false);
+                  }}
+                  className={`group w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between transition-colors duration-150 cursor-pointer ${
+                    isSelected
+                      ? "bg-white/[0.08] text-white"
+                      : "text-white/60 hover:text-white hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span
+                      className={`text-xs ${
+                        isSelected ? "text-white font-medium" : "text-white/80 group-hover:text-white font-normal"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    <span
+                      className={`text-[11px] font-light leading-snug ${
+                        isSelected ? "text-white/40" : "text-white/25 group-hover:text-white/40"
+                      }`}
+                    >
+                      {item.sublabel}
+                    </span>
+                  </div>
+
+                  {/* Clean Monospace Level Code — Pure typography, zero box, zero color */}
+                  <span
+                    className={`font-mono text-xs tracking-wider ${
+                      isSelected ? "text-white font-semibold" : "text-white/20 group-hover:text-white/50"
+                    }`}
+                  >
+                    {item.code}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-light">{item.sublabel}</span>
-                </div>
-                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${item.badgeColor}`}>
-                  {item.code}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+

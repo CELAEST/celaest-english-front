@@ -27,12 +27,12 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
   const activeMemoryTitle =
     memoryCount > 0 && topCard
       ? `“${topCard.betterWay || topCard.correctWord || topCard.userSaid}”`
-      : "“Distributed systems & latency review”";
+      : "Personalized Lexicon Deck";
   const activeMemoryMeta =
     memoryCount > 0
       ? `Ready for practice · ${memoryCount} ${memoryCount === 1 ? "card" : "cards"}`
-      : "Ready for practice · 14 cards";
-  const activeMemoryStat = memoryCount > 0 ? "88% Stability" : "88% Stability";
+      : "Empty deck · Click 'Add to Memory' during practice";
+  const activeMemoryStat = memoryCount > 0 ? `${memoryCount} Due` : "Deck Ready";
 
   // Dynamic reading article from real repository/cache
   const targetArticle = currentArticle || articles[0];
@@ -51,7 +51,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
     ? `${learningGoal} Simulation`
     : profession
       ? `${profession} Simulation`
-      : "Tech Career & AI Simulation";
+      : "Professional Fluency Simulation";
   const activeInterviewMeta = "Live AI Simulation · Round 01";
   const activeInterviewStat = "48kHz Live Audio";
 

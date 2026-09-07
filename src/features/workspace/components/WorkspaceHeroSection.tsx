@@ -47,9 +47,9 @@ export const WorkspaceHeroSection: React.FC<WorkspaceHeroSectionProps> = ({
     }
     return (
       <>
-        Your customized session for{" "}
-        <span className="text-[#C4B5FD] font-medium">Conversation First</span> is centered on{" "}
-        <span className="text-[#C4B5FD] font-medium">Tech Career & AI</span>. <br className="hidden sm:inline" />
+        Your customized session is centered on{" "}
+        <span className="text-[#C4B5FD] font-medium">Professional Fluency & Spoken Confidence</span>.{" "}
+        <br className="hidden sm:inline" />
         Shall we continue from where we left off?
       </>
     );

@@ -15,15 +15,15 @@ export const useOnboardingFlow = () => {
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfileData>({
     name: storedUser?.name || "Learner",
     email: storedUser?.email || "",
-    learningGoal: "Tech Career & AI",
+    learningGoal: "Professional Fluency & Spoken Confidence",
     preferenceStyle: "Conversation First",
     dailyFocus: "20 min",
-    profession: "Software & Technology",
+    profession: "Professional",
     speakingConfidence: "Medium",
     cefrLevel: "B1 — Intermediate",
     conversationStyle: "Direct & Structured",
     pronunciationScore: "Good",
-    topics: ["Programming", "AI", "Technology"],
+    topics: ["Professional Communication", "Career Growth", "Global Collaboration"],
   });
 
   const nextStep = () => {

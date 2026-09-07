@@ -7,7 +7,7 @@ import {
 import { HttpClient } from "../http/HttpClient";
 
 export class ApiInterviewRepository implements IInterviewRepository {
-  async createSession(roleName: string = "Product Manager"): Promise<InterviewSession> {
+  async createSession(roleName: string = "Professional"): Promise<InterviewSession> {
     return HttpClient.post<InterviewSession>("/interview/session", {
       roleName,
       totalQuestions: 8,

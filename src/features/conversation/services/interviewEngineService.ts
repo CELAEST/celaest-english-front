@@ -48,31 +48,22 @@ export interface InterviewRoleData {
   companyContext: string;
   questions: InterviewQuestionItem[];
 }
+ 
+import { DynamicQuestionService } from "./dynamicQuestionService";
 
-export const INTERVIEW_ROLES_BANK: Record<string, InterviewRoleData> = {
-  "Product Manager": {
-    roleName: "Product Manager",
-    companyContext: "FinTech & SaaS Scale-up",
-    questions: [
-      // --- ROUND 1: CORE PRODUCT LEADERSHIP ---
-      {
-        id: 1,
-        question:
-          "Tell me about yourself and why you are interested in this Product Manager position.",
-        category: "WARMUP",
-        starHint: "Highlight your key accomplishments, product mindset, and what motivates you.",
-        expectedKeywords: ["experience", "roadmap", "user-centric", "cross-functional", "impact"],
-        round: 1,
-      },
-    ],
-  },
-};
+export const INTERVIEW_ROLES_BANK: Record<string, InterviewRoleData> = {};
 
 export class InterviewEngineService {
   /**
-   * Retrieves role data or falls back to Product Manager
+   * Dynamically generates role data for any profession and CEFR level.
    */
-  public static getRoleData(roleName: string): InterviewRoleData {
-    return INTERVIEW_ROLES_BANK[roleName] || INTERVIEW_ROLES_BANK["Product Manager"];
+  public static getRoleData(roleName: string = "Professional", userCefr: string = "B1"): InterviewRoleData {
+    const role = roleName?.trim() || "Professional";
+    return {
+      roleName: role,
+      companyContext: `${role} Professional Practice`,
+      questions: DynamicQuestionService.getRoundQuestions(1, role, userCefr, 5),
+    };
   }
 }
+

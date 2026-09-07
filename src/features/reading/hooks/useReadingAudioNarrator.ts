@@ -64,13 +64,26 @@ function alignBoundariesToDomWords(
     const rawWord = rawWords[wIdx];
     const cleanWord = rawWord.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+    // Pure standalone punctuation/symbol (e.g. "—", "--", "***")
+    // Neural TTS does not pronounce standalone symbols and generates no boundary for them.
+    if (!cleanWord) {
+      const prevEnd = result.length > 0 ? result[result.length - 1].endTimeMs : 0;
+      result.push({
+        wordIndex: wIdx,
+        word: rawWord,
+        startTimeMs: prevEnd,
+        endTimeMs: prevEnd,
+      });
+      continue;
+    }
+
     if (bIdx >= numBoundaries) {
       const lastStart = result.length > 0 ? result[result.length - 1].endTimeMs : 0;
       result.push({
         wordIndex: wIdx,
         word: rawWord,
         startTimeMs: lastStart,
-        endTimeMs: lastStart + 300,
+        endTimeMs: lastStart + 250,
       });
       continue;
     }
@@ -106,6 +119,47 @@ function alignBoundariesToDomWords(
   }
 
   return result;
+}
+
+/**
+ * High-performance O(log N) binary search finding the precise active word for currMs.
+ * Perfectly synchronizes visual karaoke highlighting with acoustic onset.
+ */
+function findCurrentWordIndex(
+  timestamps: DOMWordTimestamp[],
+  currMs: number,
+): number | null {
+  const n = timestamps.length;
+  if (n === 0) return null;
+
+  if (currMs < timestamps[0].startTimeMs) {
+    return 0;
+  }
+  if (currMs >= timestamps[n - 1].startTimeMs) {
+    return n - 1;
+  }
+
+  let low = 0;
+  let high = n - 1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    const item = timestamps[mid];
+    const nextStart = mid + 1 < n ? timestamps[mid + 1].startTimeMs : item.endTimeMs;
+
+    if (currMs >= item.startTimeMs && currMs < nextStart) {
+      if (item.startTimeMs === item.endTimeMs && mid + 1 < n) {
+        return mid + 1;
+      }
+      return mid;
+    } else if (currMs < item.startTimeMs) {
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -318,24 +372,10 @@ export function useReadingAudioNarrator(
 
       // 1. High-Precision Neural Timestamps Path (100% Sub-Millisecond Exact)
       if (domTimestamps && domTimestamps.length > 0) {
-        const currMs = (audio.currentTime * 1000) + (50 * playbackRate);
-        let matchedIndex: number | null = null;
-        const n = domTimestamps.length;
-
-        for (let i = 0; i < n; i++) {
-          const item = domTimestamps[i];
-          const nextStart = i + 1 < n ? domTimestamps[i + 1].startTimeMs : item.endTimeMs + 200;
-
-          if (currMs >= item.startTimeMs && currMs < nextStart) {
-            matchedIndex = i;
-            break;
-          }
-        }
-
+        const currMs = audio.currentTime * 1000;
+        const matchedIndex = findCurrentWordIndex(domTimestamps, currMs);
         if (matchedIndex !== null) {
           setCurrentWordIndex(matchedIndex);
-        } else if (currMs >= domTimestamps[n - 1].startTimeMs) {
-          setCurrentWordIndex(n - 1);
         }
       } else {
         // 2. Multi-Anchor Sentence Acoustic Fallback
@@ -428,18 +468,23 @@ export function useReadingAudioNarrator(
       stop();
 
       try {
-        const cached = readingAudioPrefetcher.get(trimmed, voiceToUse);
+        let cached = readingAudioPrefetcher.get(trimmed, voiceToUse);
         if (cached && cached.wordBoundaries && cached.wordBoundaries.length > 0) {
           domTimestampsRef.current = alignBoundariesToDomWords(rawWords, cached.wordBoundaries);
         } else {
           domTimestampsRef.current = [];
+          readingAudioPrefetcher.prefetchText(trimmed, voiceToUse).then((item) => {
+            if (item && item.wordBoundaries && item.wordBoundaries.length > 0) {
+              domTimestampsRef.current = alignBoundariesToDomWords(rawWords, item.wordBoundaries);
+            }
+          });
         }
 
         const audioSource = cached
           ? cached.blobUrl
           : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
               voiceToUse,
-            )}&rate=0%`;
+            )}&rate=%2B0%25`;
 
         const audio = new Audio(audioSource);
         audio.playbackRate = playbackRate;

@@ -38,13 +38,13 @@ describe("SettingsView — real flow, no mocks in UI", () => {
     localStorage.clear();
     vi.mocked(apiSettingsRepository.getProfile).mockResolvedValue({
       id: "u1",
-      name: "Esteban",
-      email: "esteban@celaest.com",
+      name: "Camila",
+      email: "camila@celaest.com",
       cefrLevel: "B1 — Intermediate",
       dailyFocus: "Clarity & Vocabulary",
       learningGoal: "Business Communication",
       preferenceStyle: "Balanced",
-      streakDays: 12,
+      streakDays: 1,
       lastActiveAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     } as any);
@@ -52,7 +52,7 @@ describe("SettingsView — real flow, no mocks in UI", () => {
   });
 
   it("renders Learning and Personal with real profile data", async () => {
-    render(<SettingsView userName="Esteban" />, { wrapper: createWrapper() });
+    render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
     expect(await screen.findByText("LEARNING")).toBeInTheDocument();
     expect(await screen.findByText("PERSONAL")).toBeInTheDocument();
     expect(await screen.findByText("Current Level")).toBeInTheDocument();
@@ -62,15 +62,15 @@ describe("SettingsView — real flow, no mocks in UI", () => {
     const wrapper = createWrapper();
     vi.mocked(apiSettingsRepository.updateSettings).mockResolvedValue({
       id: "u1",
-      name: "Esteban",
+      name: "Learner",
       cefrLevel: "C1 — Advanced",
-      dailyFocus: "Clarity & Vocabulary",
-      learningGoal: "Business Communication",
-      preferenceStyle: "Balanced",
-      streakDays: 12,
+      dailyFocus: "20 min",
+      learningGoal: "Professional Communication & Fluency",
+      preferenceStyle: "Conversation First",
+      streakDays: 1,
     } as any);
 
-    render(<SettingsView userName="Esteban" />, { wrapper });
+    render(<SettingsView userName="Learner" />, { wrapper });
     const levelRow = await screen.findByText("Current Level");
     fireEvent.click(levelRow.closest("button")!);
     expect(await screen.findByText("Select your CEFR target")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("SettingsView — real flow, no mocks in UI", () => {
   it("opens Profile modal and saves name (real, not prompt)", async () => {
     const wrapper = createWrapper();
     vi.mocked(apiSettingsRepository.updateSettings).mockResolvedValue({} as any);
-    render(<SettingsView userName="Esteban" />, { wrapper });
+    render(<SettingsView userName="Learner" />, { wrapper });
     const profileRow = await screen.findByText("Profile");
     fireEvent.click(profileRow.closest("button")!);
     expect(await screen.findByText("Edit profile")).toBeInTheDocument();

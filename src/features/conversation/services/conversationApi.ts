@@ -10,7 +10,7 @@ export interface InterviewSession {
 }
 
 export const conversationApi = {
-  createSession: (roleName: string = "Product Manager"): Promise<InterviewSession> => {
+  createSession: (roleName: string = "Professional"): Promise<InterviewSession> => {
     return HttpClient.post<InterviewSession>("/interview/session", {
       roleName,
       totalQuestions: 8,

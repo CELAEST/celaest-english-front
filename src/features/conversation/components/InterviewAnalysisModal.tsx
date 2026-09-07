@@ -36,10 +36,105 @@ const WAVEFORM_BARS = [
 ];
 
 const formatPlaybackTime = (sec: number): string => {
-  const safeSec = Math.max(0, Math.floor(sec));
+  if (!Number.isFinite(sec) || isNaN(sec) || sec <= 0) return "00:00";
+  const safeSec = Math.floor(sec);
   const m = Math.floor(safeSec / 60);
   const s = Math.floor(safeSec % 60);
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
+
+interface ParsedRecommendation {
+  intro: string;
+  steps: { num: number; text: string }[];
+  spokenExample: string;
+  practiceTip: string;
+}
+
+function parseRecommendation(raw: string): ParsedRecommendation {
+  if (!raw || typeof raw !== "string") {
+    return { intro: "", steps: [], spokenExample: "", practiceTip: "" };
+  }
+
+  let cleaned = raw.trim();
+  if (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  // 1. Extract practice tip (e.g. "Practica diciendo esta frase varias veces hasta que fluya.")
+  let practiceTip = "";
+  const tipMatch = cleaned.match(/(Practica(?:\s+diciendo)?\s+[^.]+\.?)$/i);
+  if (tipMatch && tipMatch.index !== undefined) {
+    practiceTip = tipMatch[1].trim();
+    cleaned = cleaned.slice(0, tipMatch.index).trim();
+  }
+
+  // 2. Extract spoken example (e.g. "Ejemplo en voz alta: ...", "Dilo en voz alta: ...", "Ejemplo: ...")
+  let spokenExample = "";
+  const exampleMatch = cleaned.match(
+    /(?:Ejemplo\s+en\s+voz\s+alta|Dilo\s+en\s+voz\s+alta|Ejemplo)\s*:\s*([\s\S]+)$/i,
+  );
+  if (exampleMatch && exampleMatch.index !== undefined) {
+    spokenExample = exampleMatch[1].trim().replace(/^["'\s]+|["'\s]+$/g, "");
+    cleaned = cleaned.slice(0, exampleMatch.index).trim();
+  }
+
+  // 3. Extract numbered steps (e.g. 1. "..." 2. "...")
+  const stepRegex = /(?:^|\s)(\d+)[\.\)]\s*(["']?[^0-9\n]+?["']?)(?=(?:\s+\d+[\.\)]|$))/g;
+  const steps: { num: number; text: string }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = stepRegex.exec(cleaned)) !== null) {
+    const num = parseInt(match[1], 10);
+    const stepText = match[2].trim().replace(/^["']|["']$/g, "").trim();
+    if (stepText.length > 0) {
+      steps.push({ num, text: stepText });
+    }
+  }
+
+  // 4. Fallback if no numbered steps found but contains bracketed template
+  if (steps.length === 0) {
+    const templateMatch = cleaned.match(/['"]([^'"]*\[[^'"]+\][^'"]*)['"]/);
+    if (templateMatch) {
+      steps.push({ num: 1, text: templateMatch[1].trim() });
+    }
+  }
+
+  // 5. Extract intro text
+  let intro = cleaned;
+  if (steps.length > 0) {
+    const firstStepIndex = cleaned.search(/(?:^|\s)1[\.\)]/);
+    if (firstStepIndex !== -1) {
+      intro = cleaned.slice(0, firstStepIndex).trim();
+    } else if (steps[0]) {
+      const templateIndex = cleaned.indexOf(steps[0].text);
+      if (templateIndex > 0) {
+        intro = cleaned.slice(0, templateIndex).replace(/['"]\s*$/, "").trim();
+      }
+    }
+  }
+
+  intro = intro.replace(/^Paso\s+a\s+paso\s*:\s*/i, "").trim();
+
+  return { intro, steps, spokenExample, practiceTip };
+}
+
+function renderHighlightedTokens(text: string): React.ReactNode {
+  const parts = text.split(/(\[[^\]]+\])/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("[") && part.endsWith("]")) {
+      return (
+        <span
+          key={idx}
+          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md bg-white/[0.08] text-white font-mono text-[11px] border border-white/[0.1] font-medium tracking-tight"
+        >
+          {part}
+        </span>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
 };
 
 function TopHighlight() {
@@ -238,14 +333,27 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
   const [index, setIndex] = useState<number>(0);
   const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
   const [isPlayingModelAudio, setIsPlayingModelAudio] = useState<boolean>(false);
+  const [isPlayingRecommendationAudio, setIsPlayingRecommendationAudio] = useState<boolean>(false);
 
   // Real user audio recording player states
   const userAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlayingUserAudio, setIsPlayingUserAudio] = useState<boolean>(false);
   const [userAudioCurrentTime, setUserAudioCurrentTime] = useState<number>(0);
-  const [userAudioDuration, setUserAudioDuration] = useState<number>(
-    feedback.recordingDurationSeconds || 0,
-  );
+  const [userAudioDuration, setUserAudioDuration] = useState<number>(() => {
+    const raw = feedback.recordingDurationSeconds;
+    return raw && Number.isFinite(raw) && raw > 0 ? raw : 0;
+  });
+
+  const effectiveDuration = (() => {
+    if (Number.isFinite(userAudioDuration) && userAudioDuration > 0) {
+      return userAudioDuration;
+    }
+    const raw = feedback.recordingDurationSeconds;
+    if (raw && Number.isFinite(raw) && raw > 0) {
+      return raw;
+    }
+    return 0;
+  })();
 
   // Stop user audio and TTS on unmount or close
   useEffect(() => {
@@ -288,6 +396,10 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
         SpeechSynthesisService.stop();
         setIsPlayingModelAudio(false);
       }
+      if (isPlayingRecommendationAudio) {
+        SpeechSynthesisService.stop();
+        setIsPlayingRecommendationAudio(false);
+      }
       userAudioRef.current.play().catch((e) => logger.warn("Audio play notice:", e));
       setIsPlayingUserAudio(true);
     }
@@ -295,16 +407,53 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
 
   const handleSeekUserAudio = (fraction: number) => {
     if (!userAudioRef.current) return;
-    const duration = userAudioDuration || userAudioRef.current.duration || 1;
-    const targetTime = fraction * duration;
+    const duration = effectiveDuration || userAudioRef.current.duration || 1;
+    const targetTime = Math.max(0, Math.min(duration, fraction * duration));
     userAudioRef.current.currentTime = targetTime;
     setUserAudioCurrentTime(targetTime);
+  };
+
+  const handleSkipUserAudio = (deltaSeconds: number) => {
+    if (!userAudioRef.current) return;
+    const duration = effectiveDuration || userAudioRef.current.duration || 0;
+    const current = userAudioRef.current.currentTime || 0;
+    const targetTime = Math.max(0, Math.min(duration > 0 ? duration : current + deltaSeconds, current + deltaSeconds));
+    userAudioRef.current.currentTime = targetTime;
+    setUserAudioCurrentTime(targetTime);
+  };
+
+  const handlePlayRecommendationExample = (exampleText: string) => {
+    if (isPlayingUserAudio && userAudioRef.current) {
+      userAudioRef.current.pause();
+      setIsPlayingUserAudio(false);
+    }
+    if (isPlayingModelAudio) {
+      SpeechSynthesisService.stop();
+      setIsPlayingModelAudio(false);
+    }
+
+    if (isPlayingRecommendationAudio) {
+      SpeechSynthesisService.stop();
+      setIsPlayingRecommendationAudio(false);
+      return;
+    }
+
+    setIsPlayingRecommendationAudio(true);
+    SpeechSynthesisService.speak(exampleText, {
+      rate: 0.9,
+      onEnd: () => setIsPlayingRecommendationAudio(false),
+      onError: () => setIsPlayingRecommendationAudio(false),
+    });
   };
 
   const handlePlayModelAnswer = () => {
     if (isPlayingUserAudio && userAudioRef.current) {
       userAudioRef.current.pause();
       setIsPlayingUserAudio(false);
+    }
+    if (isPlayingRecommendationAudio) {
+      SpeechSynthesisService.stop();
+      setIsPlayingRecommendationAudio(false);
     }
 
     if (isPlayingModelAudio) {
@@ -540,7 +689,7 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
           {/* Card 2: Strategy Recommendation */}
           <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
             <div>
-              <div className="flex items-center justify-between gap-3 mb-3.5">
+              <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-[#A27FF3] shrink-0" />
                   <h3 className="text-[15px] font-semibold text-white tracking-tight">
@@ -552,18 +701,98 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-start gap-3.5 pl-1 pr-2">
-                <svg
-                  className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]"
-                  viewBox="0 0 28 22"
-                  fill="currentColor"
-                >
-                  <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
-                </svg>
-                <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
-                  "{getDynamicRecommendation(feedback)}"
-                </p>
-              </div>
+              {(() => {
+                const recText = getDynamicRecommendation(feedback);
+                const parsed = parseRecommendation(recText);
+                const hasStructuredContent = parsed.steps.length > 0 || Boolean(parsed.spokenExample);
+
+                if (!hasStructuredContent) {
+                  return (
+                    <div className="flex items-start gap-3.5 pl-1 pr-2">
+                      <svg
+                        className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]"
+                        viewBox="0 0 28 22"
+                        fill="currentColor"
+                      >
+                        <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
+                      </svg>
+                      <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
+                        "{recText}"
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="flex flex-col gap-3">
+                    {/* Intro text */}
+                    {parsed.intro && (
+                      <p className="text-[13px] sm:text-[13.5px] text-white/70 leading-relaxed font-normal">
+                        {parsed.intro}
+                      </p>
+                    )}
+
+                    {/* Step Cards with 01, 02 and highlighted placeholder tokens */}
+                    {parsed.steps.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {parsed.steps.map((step) => (
+                          <div
+                            key={step.num}
+                            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+                          >
+                            <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] font-mono font-medium text-white/80">
+                              {String(step.num).padStart(2, "0")}
+                            </span>
+                            <div className="flex-1 text-[13px] sm:text-[13.5px] text-white/90 leading-relaxed font-normal pt-0.5">
+                              {renderHighlightedTokens(step.text)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Spoken Example Box with Audio Preview */}
+                    {parsed.spokenExample && (
+                      <div className="rounded-xl bg-white/[0.025] border border-white/[0.08] p-3">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+                            <Volume2 className="w-3.5 h-3.5 text-white/40" />
+                            Ejemplo en voz alta
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handlePlayRecommendationExample(parsed.spokenExample)}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-white/80 hover:text-white px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] transition-all cursor-pointer"
+                          >
+                            {isPlayingRecommendationAudio ? (
+                              <>
+                                <Pause className="w-2.5 h-2.5 fill-current" />
+                                <span>Detener</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                                <span>Escuchar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-[13px] sm:text-[13.5px] italic text-white/85 leading-relaxed">
+                          "{parsed.spokenExample}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Practice Tip / Footer CTA */}
+                    {parsed.practiceTip && (
+                      <div className="flex items-center gap-2 pt-0.5 text-xs text-white/45 font-normal">
+                        <Lightbulb className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                        <span>{parsed.practiceTip}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </article>
         </div>
@@ -584,8 +813,20 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                   }
                 }}
                 onLoadedMetadata={() => {
-                  if (userAudioRef.current && userAudioRef.current.duration) {
-                    setUserAudioDuration(userAudioRef.current.duration);
+                  const audio = userAudioRef.current;
+                  if (!audio) return;
+                  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                    setUserAudioDuration(audio.duration);
+                  } else if (audio.duration === Infinity) {
+                    const onSeeked = () => {
+                      audio.removeEventListener("seeked", onSeeked);
+                      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                        setUserAudioDuration(audio.duration);
+                      }
+                      audio.currentTime = 0;
+                    };
+                    audio.addEventListener("seeked", onSeeked, { once: true });
+                    audio.currentTime = 1e101;
                   }
                 }}
                 onEnded={() => {
@@ -639,33 +880,64 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
 
             {/* Audio Player Bar (Only if user recorded with mic) */}
             {feedback.userAudioUrl ? (
-              <div className="flex items-center gap-4 pl-2 sm:pl-5 pr-4 sm:pr-14 max-w-[740px] pt-1">
-                <button
-                  onClick={handleToggleUserAudio}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#171233] border border-[#2a2057] text-white hover:scale-105 hover:bg-[#221a47] transition-all cursor-pointer shadow-md"
-                  aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
-                >
-                  {isPlayingUserAudio ? (
-                    <Pause className="h-4 w-4 fill-white text-white" />
-                  ) : (
-                    <Play className="h-4 w-4 ml-0.5 fill-white text-white" />
-                  )}
-                </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pl-2 sm:pl-5 pr-4 sm:pr-8 max-w-[760px] pt-1">
+                {/* Audio Controls: -5s, Play/Pause, +5s */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Skip backward 5s */}
+                  <button
+                    type="button"
+                    onClick={() => handleSkipUserAudio(-5)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
+                    title="Retroceder 5 segundos"
+                    aria-label="Retroceder 5 segundos"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                  </button>
 
-                {/* Dynamic interactive waveform */}
+                  {/* Play / Pause Primary Button */}
+                  <button
+                    type="button"
+                    onClick={handleToggleUserAudio}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.15)]"
+                    aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
+                  >
+                    {isPlayingUserAudio ? (
+                      <Pause className="h-4 w-4 fill-black text-black" />
+                    ) : (
+                      <Play className="h-4 w-4 ml-0.5 fill-black text-black" />
+                    )}
+                  </button>
+
+                  {/* Skip forward 5s */}
+                  <button
+                    type="button"
+                    onClick={() => handleSkipUserAudio(5)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
+                    title="Adelantar 5 segundos"
+                    aria-label="Adelantar 5 segundos"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Dynamic interactive waveform with seek/scrub support */}
                 <div
-                  className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-6 overflow-hidden cursor-pointer group"
+                  className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-7 px-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.1] overflow-hidden cursor-pointer group transition-colors"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const clickX = e.clientX - rect.left;
                     const fraction = Math.max(0, Math.min(1, clickX / rect.width));
                     handleSeekUserAudio(fraction);
                   }}
-                  title="Haz clic en cualquier punto para reproducir"
+                  title="Haz clic en cualquier punto para adelantar o atrasar"
                 >
                   {WAVEFORM_BARS.map((h, i) => {
-                    const effectiveDuration = userAudioDuration || 1;
-                    const progress = userAudioCurrentTime / effectiveDuration;
+                    const dur = effectiveDuration > 0 ? effectiveDuration : 1;
+                    const progress = userAudioCurrentTime / dur;
                     const barProgress = i / WAVEFORM_BARS.length;
                     const isPassed = barProgress <= progress;
 
@@ -674,8 +946,8 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                         key={i}
                         className={`w-[1.5px] rounded-full shrink-0 transition-colors ${
                           isPassed
-                            ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.8)]"
-                            : "bg-[#674ee6]/35 group-hover:bg-[#674ee6]/60"
+                            ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                            : "bg-white/20 group-hover:bg-white/35"
                         }`}
                         style={{ height: `${h}px` }}
                       />
@@ -683,15 +955,20 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
                   })}
                 </div>
 
-                <span className="text-[13px] font-medium text-[#7c7b94] ml-2 shrink-0 font-mono">
-                  {formatPlaybackTime(
-                    userAudioCurrentTime > 0 ? userAudioCurrentTime : userAudioDuration || 0,
-                  )}
-                </span>
+                {/* High-Contrast Clear Time Display (Current / Total) */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] font-mono text-xs text-white/90 shrink-0 self-end sm:self-auto">
+                  <span className="text-white font-medium">
+                    {formatPlaybackTime(userAudioCurrentTime)}
+                  </span>
+                  <span className="text-white/30">/</span>
+                  <span className="text-white/60">
+                    {formatPlaybackTime(effectiveDuration)}
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 pl-2 sm:pl-5 pt-1 text-xs text-white/40 font-mono">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A27FF3]/60" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/40" />
                 <span>Respuesta ingresada por texto</span>
               </div>
             )}

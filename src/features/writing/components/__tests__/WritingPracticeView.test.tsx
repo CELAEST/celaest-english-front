@@ -9,8 +9,8 @@ const mockSubmission = {
   id: "sub-123",
   userId: "user-test",
   taskCategory: "EMAIL",
-  title: "Sprint Update Email",
-  content: "Our team has been focus on launching the new authentication module yesterday.",
+  title: "Professional Status Update",
+  content: "Our organization has been focus on delivering high quality service to all clients.",
   wordCount: 12,
   scoreClarity: 78,
   scoreGrammar: 72,
@@ -21,10 +21,10 @@ const mockSubmission = {
     improvements: ["Review past participle usage after has been."],
     extractedErrors: [
       {
-        userSaid: "our team has been focus on launching",
+        userSaid: "our organization has been focus on delivering",
         errorWord: "has been focus",
         correctWord: "has been focused",
-        betterWay: "Our team has been focused on launching the new authentication module.",
+        betterWay: "Our organization has been focused on delivering high quality service to all clients.",
         translationSpanish: "se ha centrado en",
         grammarExplanation: "After 'has been', use past participle.",
         cefrLevel: "B1",
@@ -108,7 +108,7 @@ describe("Writing Feature - Full Use Case Suite", () => {
 
     fireEvent.change(editor, {
       target: {
-        value: "Our team has been focus on launching the new authentication module yesterday.",
+        value: "Our organization has been focus on delivering high quality service to all clients.",
       },
     });
 
@@ -136,7 +136,7 @@ describe("Writing Feature - Full Use Case Suite", () => {
 
     fireEvent.change(editor, {
       target: {
-        value: "Our team has been focus on launching the new authentication module yesterday.",
+        value: "Our organization has been focus on delivering high quality service to all clients.",
       },
     });
 
@@ -167,7 +167,7 @@ describe("Writing Feature - Full Use Case Suite", () => {
 
     fireEvent.change(editor, {
       target: {
-        value: "Our team has been focus on launching the new authentication module yesterday.",
+        value: "Our organization has been focus on delivering high quality service to all clients.",
       },
     });
 
@@ -201,7 +201,7 @@ describe("Writing Feature - Full Use Case Suite", () => {
 
     fireEvent.change(editor, {
       target: {
-        value: "Our team has been focus on launching the new authentication module yesterday.",
+        value: "Our organization has been focus on delivering high quality service to all clients.",
       },
     });
 
@@ -330,6 +330,8 @@ describe("Writing Feature - Full Use Case Suite", () => {
     fireEvent.click(phraseBtn);
 
     // Editor should now contain the inserted phrase
-    expect(editor.value).toContain("Furthermore, this aligns with");
+    await waitFor(() => {
+      expect(editor.value).toContain("Furthermore, this aligns with");
+    });
   });
 });

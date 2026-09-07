@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:hardcode": "node scripts/audit-anti-hardcode.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

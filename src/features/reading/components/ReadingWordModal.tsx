@@ -106,7 +106,9 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           audioRef.current.pause();
         }
 
-        const audioUrl = wordData.audioUrl || `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(wordData.word)}&voice=en-US-AriaNeural`;
+        const audioUrl =
+          wordData.audioUrl ||
+          `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(wordData.word)}&voice=en-US-AriaNeural`;
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
 
@@ -253,12 +255,14 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               {/* Part of Speech */}
               <span
                 className={`text-[10px] uppercase tracking-widest font-mono font-semibold mt-2 pl-2 ${
-                  wordData.partOfSpeech?.toLowerCase().includes("phrasal") || wordData.word.includes(" ")
+                  wordData.partOfSpeech?.toLowerCase().includes("phrasal") ||
+                  wordData.word.includes(" ")
                     ? "text-[#A27FF3]"
                     : "text-[#6b6c82]"
                 }`}
               >
-                {wordData.partOfSpeech?.toLowerCase().includes("phrasal") || wordData.word.includes(" ")
+                {wordData.partOfSpeech?.toLowerCase().includes("phrasal") ||
+                wordData.word.includes(" ")
                   ? "phrasal verb"
                   : wordData.partOfSpeech || "vocabulary"}
               </span>

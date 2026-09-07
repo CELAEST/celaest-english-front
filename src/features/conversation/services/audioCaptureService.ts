@@ -102,7 +102,8 @@ export class AudioCaptureService {
         this.audioContext = new AudioCtx();
         const source = this.audioContext.createMediaStreamSource(stream);
         this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 64;
+        this.analyser.fftSize = 128;
+        this.analyser.smoothingTimeConstant = 0.72;
         source.connect(this.analyser);
       }
 
@@ -148,11 +149,26 @@ export class AudioCaptureService {
         }
         const source = this.audioContext.createMediaStreamSource(stream);
         this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 64;
+        this.analyser.fftSize = 128;
+        this.analyser.smoothingTimeConstant = 0.72;
         source.connect(this.analyser);
       } catch (err) {
         logger.warn("Error connecting external microphone stream to AudioContext:", err);
       }
+    }
+  }
+
+  /**
+   * Populates targetArray with live frequency bin bytes (0..255) from the active microphone.
+   * Returns true if analyser was active, false otherwise.
+   */
+  public static getByteFrequencyData(targetArray: Uint8Array): boolean {
+    if (!this.analyser) return false;
+    try {
+      this.analyser.getByteFrequencyData(targetArray as any);
+      return true;
+    } catch {
+      return false;
     }
   }
 

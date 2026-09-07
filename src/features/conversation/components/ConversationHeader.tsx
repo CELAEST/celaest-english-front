@@ -18,7 +18,7 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
           onClick={onOpenAudioSettings}
           aria-label="Audio & mic settings"
           title="Audio & mic settings"
-          className="p-2 rounded-full bg-[#060713]/80 border border-[#14152b] hover:bg-[#14152b] hover:border-[#A27FF3]/40 text-neutral-300 hover:text-white transition-all shadow-lg backdrop-blur-md pointer-events-auto cursor-pointer"
+          className="p-2 rounded-full bg-[#060713]/80 border border-[#14152b] hover:bg-[#14152b] hover:border-white/30 text-neutral-300 hover:text-white transition-all shadow-lg backdrop-blur-md pointer-events-auto cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path

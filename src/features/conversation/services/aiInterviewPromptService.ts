@@ -61,7 +61,7 @@ You must ALWAYS respond with a strictly valid JSON object matching the Comprehen
   public static createUserPrompt(
     userSpokenText: string,
     question: InterviewQuestionItem,
-    roleName: string = "Product Manager",
+    roleName: string = "Professional",
   ): string {
     return JSON.stringify({
       role: roleName,

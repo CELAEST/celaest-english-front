@@ -43,10 +43,10 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
               <span className="h-px w-8 bg-gradient-to-r from-[#8264C3]/50 to-transparent inline-block" />
             </div>
 
-            {/* Dual Mentor Switcher (Pure Typography & Clean Micro Sparks) */}
+            {/* Dual Mentor Switcher (Pure Typography & Clean Micro Dot) */}
             {onSelectVoice && (
               <div className="inline-flex items-center gap-1.5 leading-none select-none">
-                {/* Aria Spark */}
+                {/* Aria */}
                 <button
                   type="button"
                   onClick={() => onSelectVoice("en-US-AriaNeural")}
@@ -54,28 +54,19 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
                   aria-label="Select Aria interviewer voice"
                   className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
                     selectedVoice === "en-US-AriaNeural"
-                      ? "text-[#C4B5FD] font-semibold drop-shadow-[0_0_8px_rgba(196,181,253,0.5)]"
-                      : "text-white/35 hover:text-white/70 font-normal"
+                      ? "text-white font-semibold"
+                      : "text-white/40 hover:text-white/70 font-normal"
                   }`}
                 >
-                  <svg
-                    width={9}
-                    height={9}
-                    viewBox="0 0 24 24"
-                    fill={selectedVoice === "en-US-AriaNeural" ? "#C4B5FD" : "currentColor"}
-                    className={`shrink-0 ${
-                      selectedVoice === "en-US-AriaNeural" ? "animate-pulse" : "opacity-30"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                  </svg>
+                  {selectedVoice === "en-US-AriaNeural" && (
+                    <span className="w-1 h-1 rounded-full bg-white shrink-0" aria-hidden="true" />
+                  )}
                   <span>Aria</span>
                 </button>
 
                 <span className="text-white/20 text-[10px] select-none font-light leading-none">|</span>
 
-                {/* Chris Spark */}
+                {/* Chris */}
                 <button
                   type="button"
                   onClick={() => onSelectVoice("en-US-ChristopherNeural")}
@@ -83,22 +74,13 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
                   aria-label="Select Christopher interviewer voice"
                   className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
                     selectedVoice === "en-US-ChristopherNeural"
-                      ? "text-[#7DD3FC] font-semibold drop-shadow-[0_0_8px_rgba(125,211,252,0.5)]"
-                      : "text-white/35 hover:text-white/70 font-normal"
+                      ? "text-white font-semibold"
+                      : "text-white/40 hover:text-white/70 font-normal"
                   }`}
                 >
-                  <svg
-                    width={9}
-                    height={9}
-                    viewBox="0 0 24 24"
-                    fill={selectedVoice === "en-US-ChristopherNeural" ? "#7DD3FC" : "currentColor"}
-                    className={`shrink-0 ${
-                      selectedVoice === "en-US-ChristopherNeural" ? "animate-pulse" : "opacity-30"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                  </svg>
+                  {selectedVoice === "en-US-ChristopherNeural" && (
+                    <span className="w-1 h-1 rounded-full bg-white shrink-0" aria-hidden="true" />
+                  )}
                   <span>Chris</span>
                 </button>
 
@@ -113,7 +95,7 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
                       className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none active:scale-95 ml-0.5"
                     >
                       <svg
-                        className="w-3 h-3 text-[#A27FF3]"
+                        className="w-3 h-3 text-white/60 hover:text-white transition-colors"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -132,9 +114,12 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
               </div>
             )}
           </div>
-          <p className="text-[clamp(18px,2.5vh,25px)] font-sans font-light text-[#f8f8f8] tracking-wide leading-relaxed select-text">
+          <h2
+            aria-live="polite"
+            className="text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.6] select-text"
+          >
             {currentQuestionText}
-          </p>
+          </h2>
         </div>
       )}
 
@@ -147,9 +132,6 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
           <div className="flex items-center space-x-2.5 min-w-0">
             <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.22em] uppercase font-sans text-white/40 shrink-0">
               LIVE TRANSCRIPT
-            </span>
-            <span className="text-[9.5px] font-medium text-purple-300/70 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 tracking-normal shrink-0 hidden sm:inline-block">
-              Editable antes de enviar
             </span>
             <span className="h-px w-8 bg-gradient-to-r from-white/20 to-transparent inline-block shrink-0" />
           </div>
@@ -192,7 +174,7 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
           }}
           placeholder="Start speaking with the mic or type your answer here (Click green OK or press Enter to submit)..."
           style={{ outline: "none", boxShadow: "none" }}
-          className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(80px,13vh,160px)] bg-transparent font-sans text-[clamp(15px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
+          className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(85px,14vh,180px)] bg-transparent font-sans text-[clamp(15px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
         />
       </div>
     </div>

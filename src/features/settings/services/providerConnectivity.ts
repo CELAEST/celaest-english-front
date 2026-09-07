@@ -18,6 +18,8 @@ export interface ProviderProbeResult {
   ok: boolean;
   latencyMs: number | null;
   message: string;
+  discoveredModel?: string | undefined;
+  availableModels?: string[] | undefined;
 }
 
 interface RequestSpec {
@@ -44,6 +46,7 @@ const buildSpec = (
           "content-type": "application/json",
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
           model,
@@ -122,7 +125,49 @@ export const probeProviderConnection = async (
     const latencyMs = Math.round(performance.now() - startedAt);
 
     if (res.ok) {
-      return { ok: true, latencyMs, message: "Connected" };
+      let discoveredModel: string | undefined;
+      let availableModels: string[] | undefined;
+      try {
+        const data = await res.json();
+        if (Array.isArray(data?.data)) {
+          const list: string[] = data.data
+            .map((m: any) => (typeof m?.id === "string" ? m.id : ""))
+            .filter(Boolean);
+          availableModels = list;
+          if (providerId === "groq") {
+            const groqRank = [
+              "openai/gpt-oss-20b",
+              "openai/gpt-oss-120b",
+              "llama-3.3-70b-versatile",
+              "llama-3.1-70b-versatile",
+              "llama-3.1-8b-instant",
+              "llama3-70b-8192",
+              "llama3-8b-8192",
+              "deepseek-r1-distill-llama-70b",
+              "mixtral-8x7b-32768",
+              "gemma2-9b-it",
+            ];
+            discoveredModel =
+              groqRank.find((id) => list.includes(id)) ||
+              list.find(
+                (id) =>
+                  (id.includes("gpt-oss") ||
+                    id.includes("llama") ||
+                    id.includes("mixtral") ||
+                    id.includes("gemma") ||
+                    id.includes("deepseek")) &&
+                  !id.includes("allam") &&
+                  !id.includes("whisper") &&
+                  !id.includes("guard") &&
+                  !id.includes("vision"),
+              ) ||
+              "openai/gpt-oss-20b";
+          }
+        }
+      } catch {
+        // Probe endpoint response was non-JSON or tags list
+      }
+      return { ok: true, latencyMs, message: "Connected", discoveredModel, availableModels };
     }
     if (res.status === 401 || res.status === 403) {
       return { ok: false, latencyMs, message: "Invalid API key" };

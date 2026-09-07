@@ -7,8 +7,8 @@ export interface TodaysFocusCardProps {
 }
 
 export const TodaysFocusCard: React.FC<TodaysFocusCardProps> = ({
-  title = "Business Meeting",
-  duration = "25 min",
+  title = "Daily Focus",
+  duration = "20 min",
   onStartFocus,
 }) => {
   return (

@@ -70,7 +70,7 @@ class ReadingAudioPrefetcher {
       try {
         const streamUrl = `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(
           trimmed,
-        )}&voice=${encodeURIComponent(voice)}&rate=0%`;
+        )}&voice=${encodeURIComponent(voice)}&rate=%2B0%25`;
 
         const response = await fetch(streamUrl, {
           method: "GET",

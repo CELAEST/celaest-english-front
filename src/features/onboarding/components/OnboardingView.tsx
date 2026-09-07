@@ -91,9 +91,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                       email: (profile.email || authUser?.email || "") as string,
                       cefrLevel: profile.cefrLevel,
                       dailyFocus: profile.dailyFocus,
-                      learningGoal: profile.learningGoal || "Tech Career",
+                      learningGoal: profile.learningGoal || "Professional Fluency & Career Growth",
                       preferenceStyle: profile.preferenceStyle || "Conversation First",
-                      profession: profile.profession || "Software & Technology",
+                      profession: profile.profession || "Professional",
                     });
                     localStorage.setItem("lingua_onboarding_completed", "true");
                     if (onFinish) {

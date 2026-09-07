@@ -55,10 +55,10 @@ export const OnboardingReadyStep: React.FC<OnboardingReadyStepProps> = ({
 }) => {
   const dynamicMetrics: ProfileMetric[] = [
     { icon: <LevelIcon />, label: "Calibrated CEFR", value: profile.cefrLevel || "B1 — Intermediate" },
-    { icon: <ProfessionIcon />, label: "Profession / Specialty", value: profile.profession || "Software & Technology" },
+    { icon: <ProfessionIcon />, label: "Profession / Specialty", value: profile.profession || "Professional" },
     { icon: <ConversationIcon />, label: "Conversation Style", value: profile.conversationStyle || "Analytical & Direct" },
     { icon: <ConfidenceIcon />, label: "Speaking Confidence", value: profile.speakingConfidence || "Medium" },
-    { icon: <TopicsIcon />, label: "Tailored Focus", value: profile.learningGoal || "Tech Career & AI" },
+    { icon: <TopicsIcon />, label: "Tailored Focus", value: profile.learningGoal || "Professional Fluency & Spoken Confidence" },
     { icon: <LearningStyleIcon />, label: "Pedagogical Mode", value: profile.preferenceStyle || "Conversation First" },
   ];
 

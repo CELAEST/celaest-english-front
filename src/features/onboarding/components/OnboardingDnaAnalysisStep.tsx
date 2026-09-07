@@ -26,12 +26,12 @@ export const OnboardingDnaAnalysisStep: React.FC<OnboardingDnaAnalysisStepProps>
     {
       id: "career",
       title: "Career focus calibrated",
-      subtitle: `Targeted for: ${profile.profession || "Software & Technology"}`,
+      subtitle: `Targeted for: ${profile.profession || "Professional Specialty"}`,
     },
     {
       id: "goal",
       title: "Primary goal configured",
-      subtitle: profile.learningGoal || "Tech Career & AI",
+      subtitle: profile.learningGoal || "Professional Fluency & Spoken Confidence",
     },
     {
       id: "style",

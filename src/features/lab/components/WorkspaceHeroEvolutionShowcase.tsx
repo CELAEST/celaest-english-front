@@ -265,7 +265,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               <div className="flex items-center gap-3">
                 <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
                 <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
-                  Good Afternoon, Esteban Perez
+                  Good Afternoon, Learner
                 </span>
               </div>
 
@@ -305,7 +305,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               <div className="flex items-center gap-3">
                 <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
                 <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
-                  Good Afternoon, Esteban Perez
+                  Good Afternoon, Learner
                 </span>
               </div>
 
@@ -342,7 +342,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               <div className="flex items-center gap-3 font-sans">
                 <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
                 <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
-                  Good Afternoon, Esteban Perez
+                  Good Afternoon, Learner
                 </span>
               </div>
 
@@ -379,7 +379,7 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
               <div className="flex items-center gap-3 font-sans">
                 <span className="h-px w-6 bg-gradient-to-r from-[#9375E6] to-transparent" />
                 <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.22em] text-[#B197FF] uppercase">
-                  Good Afternoon, Esteban Perez
+                  Good Afternoon, Learner
                 </span>
               </div>
 

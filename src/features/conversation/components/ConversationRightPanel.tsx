@@ -42,7 +42,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   currentQuestion = 1,
   totalQuestions = 5,
   speakingSeconds = 0,
-  roleName = "Product Manager",
+  roleName = "Professional",
   userLevel,
   speechRate = 0.95,
   isListening = false,
@@ -179,6 +179,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
             <LevelSelectorPill
               currentLevel={userLevel || "B1"}
               onSelectLevel={onSetLevel}
+              align="right"
             />
           ) : (
             <span className="text-[10px] uppercase font-mono tracking-wider text-white/30">
@@ -319,54 +320,66 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
           <span className="text-[9px] font-mono text-white/25 uppercase tracking-wider">Session Flow</span>
         </div>
 
-        {/* Repeat Audio Question */}
+        {/* Repeat Question (Normal Pace) */}
         <button
+          type="button"
           onClick={() => onRepeatQuestion && onRepeatQuestion(false)}
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
+          aria-label="Repeat current interview question at normal speed (1.0x)"
+          title="Repeat question (1.0x)"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-            <span className="font-normal text-white">Repeat</span> audio question
+            <span className="font-normal text-white">Repeat</span> question
           </span>
-          <span className="text-[10px] font-mono text-white/30 group-hover:text-white transition-colors">
+          <span className="text-xs font-mono text-white/35 group-hover:text-white transition-colors select-none">
             1.0x
           </span>
         </button>
 
-        {/* Repeat Slower Pace */}
+        {/* Repeat Slowly (0.7x) */}
         <button
+          type="button"
           onClick={() => onRepeatQuestion && onRepeatQuestion(true)}
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
+          aria-label="Repeat current interview question at a slower pace (0.7x)"
+          title="Repeat slowly (0.7x pace)"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-            <span className="font-normal text-white">Repeat</span> slower pace
+            <span className="font-normal text-white">Repeat</span> slowly
           </span>
-          <span className="text-[9.5px] font-mono font-medium px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-[#7DD3FC] group-hover:border-[#38BDF8]/40 transition-colors">
+          <span className="text-xs font-mono text-white/40 group-hover:text-white transition-colors select-none">
             0.7x
           </span>
         </button>
 
         {/* Add Thinking Time */}
         <button
+          type="button"
           onClick={onTakeTime}
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
+          aria-label="Add 15 seconds of thinking time to your response window"
+          title="Add 15 seconds (+15s)"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-            Add thinking time
+            <span className="font-normal text-white">Add</span> thinking time
           </span>
-          <span className="text-[9.5px] font-mono font-medium px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-amber-300 group-hover:border-amber-400/40 transition-colors">
+          <span className="text-xs font-mono text-white/40 group-hover:text-white transition-colors select-none">
             +15s
           </span>
         </button>
 
-        {/* Advance Turn */}
+        {/* Next Question (Replaces jargon Advance Turn) */}
         <button
+          type="button"
           onClick={onSkipQuestion}
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10"
+          aria-label="Skip or advance to the next interview question"
+          title="Next question (Skip turn)"
+          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
-            Advance turn
+            <span className="font-normal text-white">Next</span> question
           </span>
-          <span className="text-[10px] font-mono text-[#6EE7B7] group-hover:translate-x-0.5 transition-transform">
+          <span className="text-xs font-mono text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all select-none">
             NEXT →
           </span>
         </button>
@@ -374,14 +387,18 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         {/* Bottom Utility Row */}
         <div className="pt-2 flex items-center justify-between border-t border-white/[0.04] px-1 z-10">
           <button
+            type="button"
             onClick={onPauseInterview}
-            className="text-[11px] font-light text-white/45 hover:text-white transition-colors cursor-pointer py-1"
+            aria-label={isListening ? "Pause interview session" : isPaused ? "Resume interview session" : "Pause or resume interview"}
+            className="text-[11px] font-light text-white/45 hover:text-white transition-colors cursor-pointer py-1 focus-visible:outline-none focus-visible:underline"
           >
             {isListening ? "⏸ Pause" : isPaused ? "▶ Resume" : "⏸ Pause / Resume"}
           </button>
           <button
+            type="button"
             onClick={onEndInterview}
-            className="text-[11px] font-light text-rose-400/80 hover:text-rose-300 transition-colors cursor-pointer py-1"
+            aria-label="End interview session and view diagnostic report"
+            className="text-[11px] font-light text-rose-400/80 hover:text-rose-300 transition-colors cursor-pointer py-1 focus-visible:outline-none focus-visible:underline"
           >
             ⏻ End interview
           </button>

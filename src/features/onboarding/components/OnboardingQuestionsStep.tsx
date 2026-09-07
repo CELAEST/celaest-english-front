@@ -39,11 +39,11 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
   const [subStep, setSubStep] = useState<0 | 1 | 2 | 3>(0);
   const [professionInput, setProfessionInput] = useState(profile.profession || "");
 
-  const handleNextSubStep = () => {
+  const handleNextSubStep = async () => {
     if (subStep < 3) {
       setSubStep((prev) => (prev + 1) as 0 | 1 | 2 | 3);
     } else {
-      const cleanProfession = ProfessionNormalizerService.normalize(professionInput);
+      const cleanProfession = await ProfessionNormalizerService.normalizeAsync(professionInput);
       onUpdateProfile({ profession: cleanProfession });
       onNext();
     }

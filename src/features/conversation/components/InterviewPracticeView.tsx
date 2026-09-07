@@ -12,11 +12,14 @@ import { ResponsiveInterviewHUD } from "./ResponsiveInterviewHUD";
 import { SessionCardsSidenav } from "./SessionCardsSidenav";
 import { useInterviewSession } from "../hooks/useInterviewSession";
 
+import { CefrLevelCode, normalizeCefr } from "../services/dynamicQuestionService";
+
 export interface InterviewPracticeViewProps {
   onBackToWorkspace?: () => void;
   onNavigateToMemory?: () => void;
   roleName?: string;
   userLevel?: string;
+  onSelectLevel?: (level: CefrLevelCode) => void;
 }
 
 export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
@@ -24,6 +27,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   onNavigateToMemory,
   roleName = "Professional",
   userLevel,
+  onSelectLevel,
 }) => {
   const {
     isListening,
@@ -76,19 +80,15 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const activeEl = document.activeElement as HTMLElement | null;
-      const isEditableOrInteractive =
+      const isTextEditing =
         activeEl?.tagName === "INPUT" ||
         activeEl?.tagName === "TEXTAREA" ||
-        activeEl?.tagName === "SELECT" ||
-        activeEl?.tagName === "BUTTON" ||
         activeEl?.isContentEditable ||
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
-        target?.tagName === "BUTTON" ||
-        target?.tagName === "SELECT" ||
         target?.isContentEditable;
 
-      if (isEditableOrInteractive || showAnalysisModal || showAudioSettings || showControlsDrawer) {
+      if (isTextEditing || showAnalysisModal || showAudioSettings || showControlsDrawer) {
         return;
       }
 
@@ -130,6 +130,17 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     return "Ready for your answer";
   };
 
+  const handleSetLevel = useCallback(
+    (level: string) => {
+      const norm = normalizeCefr(level);
+      setActiveCefrLevel(norm);
+      if (onSelectLevel) {
+        onSelectLevel(norm as CefrLevelCode);
+      }
+    },
+    [setActiveCefrLevel, onSelectLevel],
+  );
+
   const panelProps = useMemo(
     () => ({
       currentRound,
@@ -145,7 +156,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       turnFeedback,
       savedErrorIds,
       onSetSpeechRate: setSpeechRate,
-      onSetLevel: setActiveCefrLevel,
+      onSetLevel: handleSetLevel,
       onSkipQuestion: skipQuestion,
       onRepeatQuestion: repeatQuestion,
       onPauseInterview: toggleListening,
@@ -169,7 +180,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       turnFeedback,
       savedErrorIds,
       setSpeechRate,
-      setActiveCefrLevel,
+      handleSetLevel,
       skipQuestion,
       repeatQuestion,
       toggleListening,
@@ -192,7 +203,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         userLevel={activeCefrLevel}
         speechRate={speechRate}
         onSetSpeechRate={setSpeechRate}
-        onSetLevel={setActiveCefrLevel}
+        onSetLevel={handleSetLevel}
         onRepeatQuestion={repeatQuestion}
         onNextQuestion={skipQuestion}
         onOpenDrawer={() => setShowControlsDrawer(true)}

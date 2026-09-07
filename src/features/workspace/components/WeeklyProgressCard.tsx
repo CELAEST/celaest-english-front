@@ -8,10 +8,10 @@ export interface WeeklyProgressCardProps {
 }
 
 export const WeeklyProgressCard: React.FC<WeeklyProgressCardProps> = ({
-  speakingProgress = 75,
-  speakingChange = "+14%",
-  vocabularyProgress = 65,
-  overallPercentage = 82,
+  speakingProgress = 0,
+  speakingChange = "0%",
+  vocabularyProgress = 0,
+  overallPercentage = 0,
 }) => {
   return (
     <div className="relative p-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex items-center justify-between select-none min-h-[140px] overflow-hidden">

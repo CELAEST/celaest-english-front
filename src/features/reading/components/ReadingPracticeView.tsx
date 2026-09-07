@@ -185,7 +185,9 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
             {/* Central Reader / Completion / Loading Switcher */}
             <div
               className={`w-full flex-1 min-h-0 flex flex-col overflow-visible ${
-                isSpecialView ? "items-center justify-center" : "items-start justify-start text-left"
+                isSpecialView
+                  ? "items-center justify-center"
+                  : "items-start justify-start text-left"
               }`}
             >
               {isLoading ? (

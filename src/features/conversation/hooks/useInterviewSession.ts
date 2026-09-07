@@ -5,7 +5,7 @@ import {
 } from "../../reading/services/readingAudioPrefetcher";
 import { MENTOR_VOICE_STORAGE_KEY } from "../../reading/hooks/useReadingAudioNarrator";
 import { InterviewQuestionItem, SpecificErrorItem } from "../services/interviewEngineService";
-import { DynamicQuestionService, classifyProfession, normalizeCefr } from "../services/dynamicQuestionService";
+import { DynamicQuestionService, normalizeCefr } from "../services/dynamicQuestionService";
 import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
@@ -177,34 +177,16 @@ export const useInterviewSession = (
 
   // Session-level pre-generated questions tailored to exact (effectiveRoleName, activeCefrLevel)
   const [sessionQuestions, setSessionQuestions] = useState<InterviewQuestionItem[]>(() => {
-    const expectedCat = classifyProfession(effectiveRoleName);
-    const hasCategoryMismatch = (questions: InterviewQuestionItem[]) => {
-      if (expectedCat === "HEALTHCARE") {
-        return questions.some((q) => {
-          const lower = (q.question || "").toLowerCase();
-          return (
-            lower.includes("client meeting") ||
-            lower.includes("presentation for a client") ||
-            lower.includes("pull request") ||
-            lower.includes("standup") ||
-            lower.includes("sprint")
-          );
-        });
-      }
-      return false;
-    };
-
     const normActiveLevel = normalizeCefr(activeCefrLevel);
     const hasLevelMismatch = (questions: InterviewQuestionItem[]) => {
       return questions.some((q) => q.targetLevel && normalizeCefr(q.targetLevel) !== normActiveLevel);
     };
 
-    // Only restore persisted session questions if they EXACTLY match current profession, domain, and level
+    // Only restore persisted session questions if they EXACTLY match current profession and level
     if (
       professionMatchesPersisted &&
       restoredRef.current?.sessionQuestions &&
       restoredRef.current.sessionQuestions.length > 0 &&
-      !hasCategoryMismatch(restoredRef.current.sessionQuestions) &&
       !hasLevelMismatch(restoredRef.current.sessionQuestions)
     ) {
       return restoredRef.current.sessionQuestions;
@@ -234,19 +216,35 @@ export const useInterviewSession = (
       setCurrentQuestionIndex(0);
       setUserTranscriptRaw("");
       setTurnFeedback(null);
+
+      // Trigger background generation of 12 fresh AI questions for the newly selected level
+      AiInterviewQuestionGenerator.generateSessionQuestions({
+        profession: effectiveRoleName,
+        cefrLevel: norm,
+        count: 12,
+        forceFresh: true,
+      })
+        .then((freshQuestions) => {
+          if (freshQuestions && freshQuestions.length >= 5) {
+            setSessionQuestions(freshQuestions);
+          }
+        })
+        .catch((err) => {
+          logger.warn("[useInterviewSession] Level switch AI question generation error:", err);
+        });
     },
     [effectiveRoleName],
   );
 
-  // Synchronize when initialLevel changes from props (e.g. updated in Settings)
+  // Synchronize ONLY when initialLevel prop genuinely changes externally from parent (e.g. updated in Settings)
+  const prevInitialLevelRef = useRef<string | undefined>(initialLevel);
   useEffect(() => {
-    if (initialLevel) {
+    if (initialLevel && initialLevel !== prevInitialLevelRef.current) {
+      prevInitialLevelRef.current = initialLevel;
       const norm = normalizeCefr(initialLevel);
-      if (norm !== normalizeCefr(activeCefrLevel)) {
-        setActiveCefrLevel(norm);
-      }
+      setActiveCefrLevel(norm);
     }
-  }, [initialLevel, activeCefrLevel, setActiveCefrLevel]);
+  }, [initialLevel, setActiveCefrLevel]);
 
   const lastGeneratedKeyRef = useRef<string>("");
 
@@ -255,21 +253,6 @@ export const useInterviewSession = (
     let isCancelled = false;
 
     const normLevel = normalizeCefr(activeCefrLevel);
-    const expectedCat = classifyProfession(effectiveRoleName);
-    const hasCategoryMismatch = sessionQuestions.some((q) => {
-      if (expectedCat === "HEALTHCARE") {
-        const lower = (q.question || "").toLowerCase();
-        return (
-          lower.includes("client meeting") ||
-          lower.includes("presentation for a client") ||
-          lower.includes("pull request") ||
-          lower.includes("standup") ||
-          lower.includes("sprint")
-        );
-      }
-      return false;
-    });
-
     const hasLevelMismatch = sessionQuestions.some((q) => {
       if (!q.targetLevel) return false;
       return normalizeCefr(q.targetLevel) !== normLevel;
@@ -277,7 +260,6 @@ export const useInterviewSession = (
 
     const generationKey = `${effectiveRoleName}::${normLevel}`;
     if (
-      !hasCategoryMismatch &&
       !hasLevelMismatch &&
       lastGeneratedKeyRef.current === generationKey
     ) {
@@ -305,12 +287,52 @@ export const useInterviewSession = (
     };
   }, [effectiveRoleName, activeCefrLevel, sessionQuestions]);
 
+  const isReplenishingRef = useRef<boolean>(false);
+
+  // Background question replenishment when approaching the end of the session pool ("ya casi a lo último")
+  useEffect(() => {
+    const normLevel = normalizeCefr(activeCefrLevel);
+    const remaining = sessionQuestions.length - currentQuestionIndex;
+
+    if (
+      sessionQuestions.length > 0 &&
+      remaining <= 3 &&
+      !isReplenishingRef.current
+    ) {
+      isReplenishingRef.current = true;
+      AiInterviewQuestionGenerator.generateSessionQuestions({
+        profession: effectiveRoleName,
+        cefrLevel: normLevel,
+        count: 6,
+        forceFresh: true,
+      })
+        .then((newBatch) => {
+          if (newBatch && newBatch.length > 0) {
+            setSessionQuestions((prev) => {
+              const existingTexts = new Set(prev.map((q) => q.question.trim().toLowerCase()));
+              const filtered = newBatch.filter((q) => !existingTexts.has(q.question.trim().toLowerCase()));
+              return filtered.length > 0 ? [...prev, ...filtered] : prev;
+            });
+          }
+        })
+        .catch((err) => {
+          logger.warn("[useInterviewSession] Background question replenishment error:", err);
+        })
+        .finally(() => {
+          isReplenishingRef.current = false;
+        });
+    }
+  }, [currentQuestionIndex, sessionQuestions.length, effectiveRoleName, activeCefrLevel]);
+
   // Dynamically generate question for the current question index (Continuous infinite rounds).
   // Memoized so the returned object reference is stable across renders that don't change the
   // question — this keeps every callback depending on it referentially stable.
   const currentQuestion = useMemo<InterviewQuestionItem>(() => {
     if (sessionQuestions.length > 0) {
-      const q = sessionQuestions[currentQuestionIndex % sessionQuestions.length];
+      const q =
+        currentQuestionIndex < sessionQuestions.length
+          ? sessionQuestions[currentQuestionIndex]
+          : sessionQuestions[currentQuestionIndex % sessionQuestions.length];
       return {
         ...q,
         id: currentQuestionIndex + 1,
@@ -475,19 +497,24 @@ export const useInterviewSession = (
         logger.warn("Interview turn evaluation failed:", err);
         const errMsg = err?.message || String(err);
         let errorType: AiApiErrorType = "rate-limit-429";
-        if (errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
+        if (err?.code === "AUTH_DECLINED_KEY" || errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
           errorType = "invalid-key-401";
-        } else if (errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
+        } else if (err?.code === "RATE_LIMIT_COOLDOWN" || errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
           errorType = "rate-limit-429";
-        } else if (errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
+        } else if (err?.code === "AI_KEYS_EXHAUSTED" || errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
           errorType = "keys-exhausted-pool";
-        } else if (errMsg.includes("504") || errMsg.includes("timeout")) {
+        } else if (err?.code === "GATEWAY_TIMEOUT" || errMsg.includes("504") || errMsg.includes("timeout")) {
           errorType = "gateway-timeout-504";
         } else {
           errorType = "server-outage-503";
         }
-        setInfrastructureErrorScenario(ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"]);
-        setRecoveryCooldown(ERROR_DATA[errorType]?.cooldownDefault || 14);
+        const baseScenario = ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"];
+        const scenarioWithApiDetails = {
+          ...baseScenario,
+          humanSubtext: err?.message && err.message.length > 5 ? err.message : baseScenario.humanSubtext,
+        };
+        setInfrastructureErrorScenario(scenarioWithApiDetails);
+        setRecoveryCooldown(baseScenario.cooldownDefault || 14);
         setIsRecoveryModalOpen(true);
       } finally {
         if (isMountedRef.current) {
@@ -1069,18 +1096,8 @@ export const useInterviewSession = (
         const localTime = restoredRef.current?.updatedAt ?? 0;
         if (!Number.isFinite(backendTime) || backendTime <= localTime) return;
 
-        // Domain sanity check: If cloud data has mismatched corporate questions for healthcare, sanitize it
-        const expectedCat = classifyProfession(effectiveRoleName);
-        const cloudQuestion = String((dto.latestTurn as any)?.question || "").toLowerCase();
-        const hasDomainConflict =
-          expectedCat === "HEALTHCARE" &&
-          (cloudQuestion.includes("client meeting") ||
-            cloudQuestion.includes("presentation for a client") ||
-            cloudQuestion.includes("standup") ||
-            cloudQuestion.includes("pull request"));
-
-        const sanitizedIndex = hasDomainConflict ? 0 : dto.currentQuestionIndex;
-        const sanitizedTurn = hasDomainConflict ? null : dto.latestTurn;
+        const sanitizedIndex = dto.currentQuestionIndex || 0;
+        const sanitizedTurn = dto.latestTurn;
 
         // Adopt the cloud copy, but flag this exact snapshot as already-saved so
         // the persist effect does NOT fire a redundant POST just for the restore.

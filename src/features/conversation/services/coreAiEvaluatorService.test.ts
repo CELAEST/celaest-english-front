@@ -122,4 +122,16 @@ describe("CoreAiEvaluatorService enrichment", () => {
     expect(typeof feedback.improvedFullAnswer).toBe("string");
     expect(Array.isArray(feedback.unclearOrErrorWords)).toBe(true);
   });
+
+  it("strictly enforces zero simulated mocks and re-throws when Central Core is disabled", async () => {
+    const { providerKeyVault } = await import("../../settings/services/providerKeyVault");
+    await providerKeyVault.setCentralCoreEnabled(false);
+    await providerKeyVault.saveActiveProviderId("groq");
+
+    await expect(
+      CoreAiEvaluatorService.evaluate("I have work during 5 years in security operations", baseQuestion),
+    ).rejects.toThrow();
+
+    await providerKeyVault.setCentralCoreEnabled(true);
+  });
 });

@@ -17,15 +17,12 @@ describe("DynamicWritingTaskService - Profession and CEFR Level Adaptation", () 
       });
     });
 
-    it("returns high-level tasks like RFCs and Post-Mortems for C1/C2 engineers", () => {
+    it("returns high-level tasks with advanced word limits for C1/C2 engineers", () => {
       const tasks = DynamicWritingTaskService.filterTasks("C1", "Software Engineer");
       expect(tasks.length).toBeGreaterThan(0);
-      const hasRfcOrPostmortem = tasks.some(
-        (t) => t.id.includes("rfc") || t.id.includes("postmortem") || t.id.includes("incident"),
-      );
-      expect(hasRfcOrPostmortem).toBe(true);
       tasks.forEach((t) => {
         expect(["B2", "C1", "C2"]).toContain(t.level);
+        expect(t.minWords).toBeGreaterThanOrEqual(60);
       });
     });
 

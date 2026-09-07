@@ -12,7 +12,7 @@
 
 import { InterviewQuestionItem } from "./interviewEngineService";
 import { DynamicQuestionService } from "./dynamicQuestionService";
-import { directClientAiService } from "../../settings/services/directClientAiService";
+import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
@@ -33,6 +33,8 @@ function getCacheKey(profession: string, cefrLevel: string): string {
 }
 
 export class AiInterviewQuestionGenerator {
+  private static inFlightQuestionPromises = new Map<string, Promise<InterviewQuestionItem[]>>();
+
   /**
    * Returns cached questions if available, otherwise generates a rich instant seed batch
    * matching the profession and CEFR level so rendering is 100% instantaneous.
@@ -63,6 +65,7 @@ export class AiInterviewQuestionGenerator {
   /**
    * Pre-generates 10 to 15 questions with AI for the given profession and CEFR level.
    * If BYOK is active or CELAEST-CORE is reachable, calls the LLM with structured output.
+   * Guarantees ZERO duplicate network calls via an in-flight singleton promise lock.
    */
   public static async generateSessionQuestions(
     params: GenerateSessionQuestionsParams,
@@ -83,6 +86,11 @@ export class AiInterviewQuestionGenerator {
       } catch {
         // ignore
       }
+    }
+
+    // In-flight singleton promise lock: If already in progress, reuse the existing promise!
+    if (!forceFresh && this.inFlightQuestionPromises.has(cacheKey)) {
+      return this.inFlightQuestionPromises.get(cacheKey)!;
     }
 
     const level = cefrLevel.toUpperCase().trim() || "B1";
@@ -119,69 +127,85 @@ Output format: Return ONLY valid raw JSON with the following structure:
 }`;
 
     const userPrompt = `Generate ${count} progressive interview questions for an ${role} at CEFR ${level} level.`;
+    const executeRequest = (async (): Promise<InterviewQuestionItem[]> => {
+      try {
+        const isCore = await providerKeyVault.isCentralCoreEnabled();
+        const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+        const hasKey = await providerKeyVault.hasKey(activeProvider);
+
+        let rawResponse = "";
+
+        if (!isCore) {
+          if (!hasKey) {
+            throw new AiInfrastructureError(
+              "AI_KEYS_EXHAUSTED",
+              `El Clúster Central está desactivado y no hay clave configurada para ${activeProvider.toUpperCase()}.`,
+              401,
+              activeProvider,
+            );
+          }
+          rawResponse = await directClientAiService.chatCompletion({
+            systemPrompt,
+            userPrompt,
+            maxTokens: 3500,
+          });
+        } else {
+          // Route through CELAEST-CORE IA Mesh
+          try {
+            const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            const response = await fetch(CORE_AI_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                system: systemPrompt,
+                message: userPrompt,
+                provider: activeProvider,
+                max_tokens: 3500,
+              }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+              const data = (await response.json()) as { response?: string; content?: string };
+              rawResponse = data.response || data.content || "";
+            }
+          } catch {
+            if (hasKey) {
+              rawResponse = await directClientAiService.chatCompletion({
+                systemPrompt,
+                userPrompt,
+                maxTokens: 3500,
+              });
+            }
+          }
+        }
+
+        const parsed = this.parseAiQuestionsResponse(rawResponse, count, role, level);
+
+        if (parsed.length > 0 && typeof window !== "undefined") {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(parsed));
+          } catch {
+            // ignore storage quota error
+          }
+        }
+
+        return parsed;
+      } catch (err) {
+        logger.warn("[AiInterviewQuestionGenerator] Failed to generate AI questions, using procedural seed", err);
+        // Fallback to rich procedural seeds
+        return DynamicQuestionService.getRoundQuestions(1, role, level, count);
+      }
+    })();
+
+    this.inFlightQuestionPromises.set(cacheKey, executeRequest);
 
     try {
-      const isCore = await providerKeyVault.isCentralCoreEnabled();
-      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-      const hasKey = await providerKeyVault.hasKey(activeProvider);
-
-      let rawResponse = "";
-
-      if (!isCore && hasKey) {
-        // Use direct BYOK provider (e.g. Groq with llama-3.1-8b-instant)
-        rawResponse = await directClientAiService.chatCompletion({
-          systemPrompt,
-          userPrompt,
-          maxTokens: 3500,
-        });
-      } else {
-        // Use CELAEST-CORE IA-Mesh evaluator or direct provider if key exists
-        try {
-          const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
-          const response = await fetch(CORE_AI_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              system: systemPrompt,
-              message: userPrompt,
-              provider: activeProvider,
-              max_tokens: 4096,
-            }),
-            signal: controller.signal,
-          });
-          clearTimeout(timeoutId);
-          if (response.ok) {
-            const data = (await response.json()) as { response?: string; content?: string };
-            rawResponse = data.response || data.content || "";
-          }
-        } catch {
-          if (hasKey) {
-            rawResponse = await directClientAiService.chatCompletion({
-              systemPrompt,
-              userPrompt,
-              maxTokens: 3500,
-            });
-          }
-        }
-      }
-
-      const parsed = this.parseAiQuestionsResponse(rawResponse, count, role, level);
-
-      if (parsed.length > 0 && typeof window !== "undefined") {
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(parsed));
-        } catch {
-          // ignore storage quota error
-        }
-      }
-
-      return parsed;
-    } catch (err) {
-      logger.warn("[AiInterviewQuestionGenerator] Failed to generate AI questions, using procedural seed", err);
-      // Fallback to rich procedural seeds
-      return DynamicQuestionService.getRoundQuestions(1, role, level, count);
+      return await executeRequest;
+    } finally {
+      this.inFlightQuestionPromises.delete(cacheKey);
     }
   }
 
@@ -209,10 +233,15 @@ Output format: Return ONLY valid raw JSON with the following structure:
     level: string,
   ): InterviewQuestionItem[] {
     let clean = raw.trim();
-    if (clean.startsWith("```json")) clean = clean.slice(7);
-    if (clean.startsWith("```")) clean = clean.slice(3);
-    if (clean.endsWith("```")) clean = clean.slice(0, -3);
-    clean = clean.trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/) || clean.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      clean = jsonMatch[0];
+    } else {
+      if (clean.startsWith("```json")) clean = clean.slice(7);
+      if (clean.startsWith("```")) clean = clean.slice(3);
+      if (clean.endsWith("```")) clean = clean.slice(0, -3);
+      clean = clean.trim();
+    }
 
     try {
       const data = JSON.parse(clean);
@@ -226,7 +255,7 @@ Output format: Return ONLY valid raw JSON with the following structure:
           starHint: String(item.starHint || "Explain the situation, your actions, and the outcome."),
           expectedKeywords: Array.isArray(item.expectedKeywords)
             ? item.expectedKeywords.map(String)
-            : [role.toLowerCase(), "patient", "clinical"],
+            : [role.toLowerCase(), "communication", "analysis", "outcome"],
           round: Math.floor(idx / 5) + 1,
           targetLevel: (item.targetLevel || level) as any,
         }));

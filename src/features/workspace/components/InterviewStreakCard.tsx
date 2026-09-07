@@ -7,10 +7,10 @@ export interface DayBar {
 
 const DEFAULT_DAYS: DayBar[] = [
   { day: "M", active: true },
-  { day: "T", active: true },
-  { day: "W", active: true },
-  { day: "T", active: true },
-  { day: "F", active: true },
+  { day: "T", active: false },
+  { day: "W", active: false },
+  { day: "T", active: false },
+  { day: "F", active: false },
   { day: "S", active: false },
   { day: "S", active: false },
 ];
@@ -21,7 +21,7 @@ export interface InterviewStreakCardProps {
 }
 
 export const InterviewStreakCard: React.FC<InterviewStreakCardProps> = ({
-  streakDays = 5,
+  streakDays = 1,
   days = DEFAULT_DAYS,
 }) => {
   return (

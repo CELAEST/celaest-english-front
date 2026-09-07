@@ -298,7 +298,8 @@ JSON schema:
   ],
   "keyStrengths": string[],
   "tipsForNextTurn": string
-}`;
+}
+CRITICAL: Return exactly ONE valid JSON object matching the schema above. Do NOT output multiple JSON blocks, markdown backticks, or trailing commentary.`;
 
     const userMessage = `Interview Question: "${currentQuestion.question}"
 Candidate Role: ${roleName}
@@ -317,14 +318,24 @@ Candidate Spoken Answer: "${cleanText}"`;
             "AI_KEYS_EXHAUSTED",
             `No se encontró una clave privada para ${activeId.toUpperCase()} y el Clúster Central está desactivado.`,
             401,
+            activeId,
           );
         }
         const rawJson = await directClientAiService.chatCompletion({
           systemPrompt,
           userPrompt: userMessage,
           providerId: activeId,
+          maxTokens: 4096,
         });
         parsed = repairAndParseJson(rawJson);
+        if (!parsed) {
+          throw new AiInfrastructureError(
+            "GATEWAY_TIMEOUT",
+            `El modelo ${activeId.toUpperCase()} no devolvió una estructura JSON válida.`,
+            500,
+            activeId,
+          );
+        }
       } else {
         // 1. Tier 1: Evaluate via CELAEST-English Backend (Auth, Caching, Rate Limiting, Telemetry)
         try {
@@ -628,11 +639,26 @@ Candidate Spoken Answer: "${cleanText}"`;
           return finalResult;
         }
     } catch (err) {
-      logger.warn(`[CoreAiEvaluator] IA-Mesh call error or timeout:`, err);
+      logger.warn(`[CoreAiEvaluator] Error in evaluation pipeline:`, err);
+      const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => true);
+      // When Central Core is deactivated, NEVER simulate or fall back to MasterAiFeedbackEngine!
+      // Strict rule: only real BYOK execution; re-throw so recovery modal opens cleanly.
+      if (!isCore || err instanceof AiInfrastructureError) {
+        throw err;
+      }
     }
 
-    // High-fidelity local fallback if remote provider fails or times out.
-    // Prefer the comprehensive pattern engine over the minimal parser.
+    // When Central Core is deactivated, NEVER simulate or fall back to MasterAiFeedbackEngine!
+    const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => true);
+    if (!isCore) {
+      throw new AiInfrastructureError(
+        "GATEWAY_TIMEOUT",
+        "No se pudo completar la evaluación con la clave de IA configurada. Por favor verifica tu cuota o el modelo seleccionado.",
+        500,
+      );
+    }
+
+    // High-fidelity local fallback ONLY when remote Central Core cluster fails or times out.
     logger.warn("[CoreAiEvaluator] Falling back to MasterAiFeedbackEngine.");
     const fallbackResult = MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion);
     if (EVALUATION_CACHE.size >= MAX_CACHE_SIZE) {

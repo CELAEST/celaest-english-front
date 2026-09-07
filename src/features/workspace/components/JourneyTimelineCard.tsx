@@ -8,10 +8,10 @@ export interface TimelineNode {
 }
 
 const DEFAULT_TIMELINE_NODES: TimelineNode[] = [
-  { id: "1", status: "completed", label: "Yesterday", topic: "Remote work" },
-  { id: "2", status: "active", label: "Today", topic: "Business Meeting" },
-  { id: "3", status: "future", label: "Tomorrow", topic: "Travel Scenario" },
-  { id: "4", status: "goal", label: "Next Goal", topic: "Improve Fluency" },
+  { id: "1", status: "completed", label: "Diagnostic", topic: "Baseline Calibrated" },
+  { id: "2", status: "active", label: "Today", topic: "First Spoken Session" },
+  { id: "3", status: "future", label: "Upcoming", topic: "Lexical Expansion" },
+  { id: "4", status: "goal", label: "Next Milestone", topic: "Fluency Assessment" },
 ];
 
 export interface JourneyTimelineCardProps {

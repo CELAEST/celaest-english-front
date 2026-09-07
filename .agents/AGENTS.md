@@ -35,8 +35,11 @@ Every file and feature must strictly adhere to the top-level architecture define
 ### 4. Design System & Visual Asset Supremacy
 
 - **Colors**: Strictly consume CSS variable tokens (`var(--bg-app)`, `var(--surface-1)`, `var(--accent-violet-500)`) from `docs/04_DESIGN_SYSTEM.md`. Zero hardcoded hex colors or unapproved inline styles.
-- **Theme**: Deep Cosmic Dark (`#04040A`), Glassmorphism (`rgba(12, 12, 28, 0.65)` with `blur(20px)`), and glowing violet energy accents (`#7048E8`).
-- **Asset Rendering Integrity (Zero Shadows on Images)**: NEVER add artificial CSS `drop-shadow`, `shadow-`, or blur filters directly to PNG/SVG/Orb images or asset icons. Always preserve the clean, native transparent rendering of the asset graphic itself.
+### 5. Zero Hardcoded Content Banks & Closed Whitelists (Universal Pedagogy)
+
+- **Zero Content Banks**: NEVER embed static arrays of questions, writing prompts, or vocabulary lists (`TECH_POOL`, `WRITING_TASKS_POOL`, etc.). All content MUST be generated procedurally from parameterized templates or via real-time AI generation (`AiInterviewQuestionGenerator`, `AiWritingTaskGenerator`).
+- **Universal Linguistic Verification**: NEVER build closed-vocabulary whitelists or static allowed-word sets. English language validity MUST be evaluated using closed-class functional tokens (~80 structural words), universal phonotactics (vowels, consonant clusters), spatial entropy, and Spanish screening.
+- **Zero Role-Biased Defaults**: NEVER default user roles to "Product Manager" or "Software & Technology". Always use neutral ("Professional") or dynamically inferred values.
 
 ---
 
@@ -46,6 +49,8 @@ Before declaring any task or file modification complete:
 
 - [ ] Is the codebase 100% free of TypeScript errors (`npx tsc --noEmit` passes with 0 errors)?
 - [ ] Does the project build cleanly (`npm run build` succeeds)?
+- [ ] Did the anti-hardcode audit pass with zero violations (`npm run audit:hardcode`)?
+- [ ] Did the multi-domain invariance tests pass (`npx vitest run src/features/conversation/services/__tests__/multiDomainInvariance.test.ts`)?
 - [ ] Is the feature modularized into single-responsibility sub-components instead of a monolithic file?
 - [ ] Does the new/modified file sit in its exact location per `docs/07_FOLDER_STRUCTURE.md`?
 - [ ] Are all exports cleanly exposed via feature barrel `index.ts` files?

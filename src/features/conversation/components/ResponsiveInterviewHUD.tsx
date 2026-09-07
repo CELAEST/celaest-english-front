@@ -30,7 +30,7 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
   currentRound = 1,
   currentQuestion = 1,
   totalQuestions = 5,
-  roleName = "Product Manager",
+  roleName = "Professional",
   userLevel,
   speechRate = 0.95,
   onSetSpeechRate,
@@ -54,7 +54,7 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
           ROUND {currentRound.toString().padStart(2, "0")}
         </span>
         <span className="text-white/20 font-sans">·</span>
-        <span className="font-sans text-xs font-bold tracking-tight bg-gradient-to-r from-[#A78BFA] via-[#C4B5FD] to-[#DDD6FE] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(167,139,250,0.25)]">
+        <span className="font-sans text-xs font-semibold tracking-tight text-white/95">
           {currentQuestion.toString().padStart(2, "0")}/{totalQuestions.toString().padStart(2, "0")}
         </span>
         <span className="text-white/20 font-sans hidden sm:inline">·</span>
@@ -224,11 +224,11 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
             className="h-6 inline-flex items-center space-x-1.5 transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
             title="Pasar a la siguiente pregunta"
           >
-            <span className="text-xs font-bold font-sans tracking-tight bg-gradient-to-r from-[#A78BFA] via-[#C4B5FD] to-[#DDD6FE] bg-clip-text text-transparent group-hover:brightness-125 transition-all duration-200 drop-shadow-[0_1px_4px_rgba(167,139,250,0.25)] hidden sm:inline">
+            <span className="text-xs font-medium font-sans tracking-tight text-white/80 group-hover:text-white transition-colors hidden sm:inline">
               Siguiente
             </span>
             <svg
-              className="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform duration-200 text-[#C4B5FD] group-hover:text-[#EDE9FE] shrink-0"
+              className="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform duration-200 text-white/70 group-hover:text-white shrink-0"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

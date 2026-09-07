@@ -10,6 +10,7 @@ import { MemoryView } from "../../memory";
 import { SettingsView } from "../../settings";
 import { LabView } from "../../lab";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
+import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
 
 export interface WorkspaceDashboardViewProps {
   userName?: string | undefined;
@@ -25,7 +26,7 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const { settings } = useCurrentUser();
+  const { settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
   const activeUserLevel = settings.cefrLevel || userLevel || "B1";
@@ -37,10 +38,34 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
     profession: userProfession,
   } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string; profession?: string };
 
-  const handleSelectNav = (route: string) => {
-    setActiveTab(route);
-    if (onNavigate) onNavigate(route);
-  };
+  const handleSelectNav = React.useCallback(
+    (route: string) => {
+      setActiveTab(route);
+      if (onNavigate) onNavigate(route);
+    },
+    [onNavigate],
+  );
+
+  const handleBackToWorkspace = React.useCallback(() => {
+    handleSelectNav("workspace");
+  }, [handleSelectNav]);
+
+  const handleGlobalSelectLevel = React.useCallback(
+    (newLevel: CefrLevelCode) => {
+      const norm = normalizeCefr(newLevel);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("celaest:cefrLevel", norm);
+          localStorage.setItem("celaest:writing:cefrLevel", norm);
+          localStorage.setItem("celaest:interview:cefrLevel", norm);
+        } catch {
+          // ignore
+        }
+      }
+      void updateProfileSettings({ cefrLevel: norm });
+    },
+    [updateProfileSettings],
+  );
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#030208] text-slate-100 font-sans flex overflow-hidden select-none">
@@ -90,7 +115,8 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
             <InterviewPracticeView
               roleName={userProfession}
               userLevel={activeUserLevel}
-              onBackToWorkspace={() => handleSelectNav("workspace")}
+              onSelectLevel={handleGlobalSelectLevel}
+              onBackToWorkspace={handleBackToWorkspace}
             />
           </div>
         )}
@@ -100,7 +126,8 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
             <WritingPracticeView
               roleName={userProfession}
               userLevel={activeUserLevel}
-              onBackToWorkspace={() => handleSelectNav("workspace")}
+              onSelectLevel={handleGlobalSelectLevel}
+              onBackToWorkspace={handleBackToWorkspace}
             />
           </div>
         )}
@@ -109,20 +136,20 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
           <div key="reading" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <ReadingPracticeView
               roleName={userProfession}
-              onBackToWorkspace={() => handleSelectNav("workspace")}
+              onBackToWorkspace={handleBackToWorkspace}
             />
           </div>
         )}
 
         {activeTab === "memory" && (
           <div key="memory" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
-            <MemoryView onBackToWorkspace={() => handleSelectNav("workspace")} />
+            <MemoryView onBackToWorkspace={handleBackToWorkspace} />
           </div>
         )}
 
         {activeTab === "lab" && (
           <div key="lab" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
-            <LabView onBackToWorkspace={() => handleSelectNav("workspace")} />
+            <LabView onBackToWorkspace={handleBackToWorkspace} />
           </div>
         )}
 
@@ -135,13 +162,13 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
               <WorkspaceHeroSection
                 userName={activeUserName}
                 learningGoal={profile?.learningGoal}
-                profession={profile?.preferenceStyle}
+                profession={profile?.profession}
                 dailyFocus={profile?.dailyFocus}
                 onContinueTopic={() => handleSelectNav("interview")}
               />
               <WorkspaceOrbCallouts
                 learningGoal={profile?.learningGoal}
-                profession={profile?.preferenceStyle}
+                profession={profile?.profession}
                 onSelectNode={handleSelectNav}
               />
             </div>
@@ -155,7 +182,7 @@ export const WorkspaceDashboardView: React.FC<WorkspaceDashboardViewProps> = ({
         {activeTab === "settings" && (
           <div key="settings" className="w-full h-full animate-[fadeIn_0.4s_ease-out_both]">
             <SettingsView
-              userName={userName}
+              userName={activeUserName}
               onBackToWorkspace={() => handleSelectNav("workspace")}
             />
           </div>

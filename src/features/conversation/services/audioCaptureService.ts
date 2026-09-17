@@ -6,6 +6,7 @@
 
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
 
 export interface SpeechRecognitionResultItem {
@@ -430,8 +431,11 @@ export class AudioCaptureService {
   }
 
   /**
-   * Transcribes recorded audio via Groq Whisper large-v3-turbo (running on CELAEST-CORE IA-Mesh)
-   * Returns transcription text along with acoustic language detection and audio duration.
+   * Transcribes recorded audio via Whisper Large V3 Turbo.
+   * Multi-Tier Architecture:
+   * 1. Direct Edge Groq Whisper (client-to-cloud, ~150ms, zero server proxy bottleneck)
+   * 2. Direct Edge OpenAI Whisper (fallback if user configured OpenAI key)
+   * 3. Backend Proxies (ENV.apiUrl / CELAEST-CORE) with multi-provider failover
    */
   public static async transcribeAudio(
     audioBlob: Blob,
@@ -439,47 +443,164 @@ export class AudioCaptureService {
   ): Promise<AudioTranscriptionResult | null> {
     if (!audioBlob || audioBlob.size < 200) return null;
 
+    const extension = audioBlob.type.includes("mp4")
+      ? "mp4"
+      : audioBlob.type.includes("ogg")
+        ? "ogg"
+        : audioBlob.type.includes("wav")
+          ? "wav"
+          : "webm";
+
+    const roleName = context?.roleName || "";
+    const question = context?.question || "";
+    const prompt = question
+      ? `ESL non-native English learner practice${roleName ? ` for ${roleName}` : ""}. Question: "${question}". Transcribe VERBATIM exactly as spoken, preserving all broken grammar, tense mistakes, and ungrammatical phrases without correcting them (e.g. it use, for to, most challenge, I design, we has):`
+      : `ESL non-native English learner practice${roleName ? ` for ${roleName}` : ""}. Transcribe VERBATIM exactly as spoken, preserving all broken grammar, tense mistakes, and ungrammatical phrases without correcting them (e.g. it use, for to, most challenge, I design, we has):`;
+
+    // 1. Direct Edge/Browser Groq Whisper (Ultra-fast, ~150ms, zero backend dependence)
     try {
-      const formData = new FormData();
-      const extension = audioBlob.type.includes("mp4")
-        ? "mp4"
-        : audioBlob.type.includes("ogg")
-          ? "ogg"
-          : audioBlob.type.includes("wav")
-            ? "wav"
-            : "webm";
+      const groqKeys = await providerKeyVault.getKeys("groq");
+      for (const key of groqKeys) {
+        if (!key || !key.trim()) continue;
+        try {
+          const directFormData = new FormData();
+          directFormData.append("file", audioBlob, `speech.${extension}`);
+          directFormData.append("model", "whisper-large-v3-turbo");
+          directFormData.append("language", "en");
+          directFormData.append("temperature", "0");
+          directFormData.append("response_format", "verbose_json");
+          directFormData.append("prompt", prompt);
 
-      formData.append("file", audioBlob, `recording.${extension}`);
-      if (context?.roleName) {
-        formData.append("role", context.roleName);
-      }
-      if (context?.question) {
-        formData.append("question", context.question);
-      }
+          const groqResp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${key.trim()}`,
+            },
+            body: directFormData,
+          });
 
-      const response = await fetch(`${ENV.coreAiUrl}/ai/audio/transcribe`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as {
-          text?: string;
-          transcript?: string;
-          language?: string;
-          duration?: number;
-        };
-        const text = (data.transcript || data.text || "").trim();
-        if (text) {
-          return {
-            text,
-            language: (data.language || "").toLowerCase().trim(),
-            duration: data.duration,
-          };
+          if (groqResp.ok) {
+            const data = (await groqResp.json()) as {
+              text?: string;
+              language?: string;
+              duration?: number;
+            };
+            const text = (data.text || "").trim();
+            if (text) {
+              logger.info("[AudioCaptureService] Edge Whisper transcription successful via Groq:", {
+                duration: data.duration,
+                length: text.length,
+              });
+              return {
+                text,
+                language: (data.language || "en").toLowerCase().trim(),
+                duration: data.duration,
+              };
+            }
+          } else {
+            const errBody = await groqResp.text().catch(() => "");
+            logger.warn(`[AudioCaptureService] Groq Whisper returned ${groqResp.status}:`, errBody);
+          }
+        } catch (keyErr) {
+          logger.warn("[AudioCaptureService] Direct Groq key error:", keyErr);
         }
       }
-    } catch (err) {
-      logger.warn("Whisper transcription via core error:", err);
+    } catch (edgeErr) {
+      logger.warn("[AudioCaptureService] Edge Groq Whisper attempt failed:", edgeErr);
+    }
+
+    // 2. Direct Edge OpenAI Whisper (if user configured an OpenAI key)
+    try {
+      const openaiKeys = await providerKeyVault.getKeys("openai");
+      for (const key of openaiKeys) {
+        if (!key || !key.trim()) continue;
+        try {
+          const directFormData = new FormData();
+          directFormData.append("file", audioBlob, `speech.${extension}`);
+          directFormData.append("model", "whisper-1");
+          directFormData.append("language", "en");
+          directFormData.append("temperature", "0");
+          directFormData.append("response_format", "verbose_json");
+          directFormData.append("prompt", prompt);
+
+          const openAiResp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${key.trim()}`,
+            },
+            body: directFormData,
+          });
+
+          if (openAiResp.ok) {
+            const data = (await openAiResp.json()) as {
+              text?: string;
+              language?: string;
+              duration?: number;
+            };
+            const text = (data.text || "").trim();
+            if (text) {
+              return {
+                text,
+                language: (data.language || "en").toLowerCase().trim(),
+                duration: data.duration,
+              };
+            }
+          }
+        } catch (openAiErr) {
+          logger.warn("[AudioCaptureService] Direct OpenAI key error:", openAiErr);
+        }
+      }
+    } catch (edgeOpenAiErr) {
+      logger.warn("[AudioCaptureService] Edge OpenAI Whisper attempt failed:", edgeOpenAiErr);
+    }
+
+    // 3. Backend Proxies: Try apiUrl first (celaest-english-back on Render), then coreAiUrl
+    const candidateEndpoints: string[] = [];
+    if (ENV.apiUrl) {
+      candidateEndpoints.push(`${ENV.apiUrl}/interview/transcribe`);
+      candidateEndpoints.push(`${ENV.apiUrl}/ai/audio/transcribe`);
+    }
+
+    const isLocalhostInProd =
+      typeof window !== "undefined" &&
+      window.location.protocol === "https:" &&
+      ENV.coreAiUrl.includes("127.0.0.1");
+
+    if (ENV.coreAiUrl && !isLocalhostInProd && !candidateEndpoints.includes(`${ENV.coreAiUrl}/ai/audio/transcribe`)) {
+      candidateEndpoints.push(`${ENV.coreAiUrl}/ai/audio/transcribe`);
+    }
+
+    for (const endpoint of candidateEndpoints) {
+      try {
+        const formData = new FormData();
+        formData.append("file", audioBlob, `recording.${extension}`);
+        if (context?.roleName) formData.append("role", context.roleName);
+        if (context?.question) formData.append("question", context.question);
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            text?: string;
+            transcript?: string;
+            language?: string;
+            duration?: number;
+          };
+          const text = (data.transcript || data.text || "").trim();
+          if (text) {
+            return {
+              text,
+              language: (data.language || "").toLowerCase().trim(),
+              duration: data.duration,
+            };
+          }
+        }
+      } catch (proxyErr) {
+        logger.warn(`[AudioCaptureService] Proxy transcription failed for ${endpoint}:`, proxyErr);
+      }
     }
 
     return null;

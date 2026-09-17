@@ -709,8 +709,8 @@ Candidate Spoken Answer: "${cleanText}"`;
             clarityScore: clarity,
             vocabularyScore: vocab,
             estimatedCefrLevel: parsed.estimatedCefrLevel,
-            userSpokenText: parsed.reconciledTranscript?.trim() || cleanText,
-            reconciledTranscript: parsed.reconciledTranscript?.trim() || cleanText,
+            userSpokenText: cleanText,
+            reconciledTranscript: cleanText,
             improvedFullAnswer:
               parsed.improvedFullAnswer ||
               UniversalLinguisticParser.parse(cleanText, currentQuestion).improvedFullAnswer,

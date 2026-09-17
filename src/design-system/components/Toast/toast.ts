@@ -30,7 +30,7 @@ function createCyberKineticToast(
         "div",
         {
           className:
-            "relative w-full sm:w-[410px] max-w-[calc(100vw-32px)] py-3.5 px-4.5 bg-[#030208]/95 backdrop-blur-2xl rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95),0_0_25px_rgba(112,72,232,0.12)] border border-white/[0.06] select-none font-sans animate-[slideUp_0.3s_ease-out] pointer-events-auto",
+            "relative w-full sm:w-[410px] max-w-[calc(100vw-40px)] px-[22px] py-[16px] bg-[#06040c]/95 backdrop-blur-2xl rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95),0_0_25px_rgba(112,72,232,0.15)] border border-white/[0.08] select-none font-sans animate-[slideUp_0.3s_ease-out] pointer-events-auto",
         },
         [
           // Top Header Bar
@@ -38,29 +38,29 @@ function createCyberKineticToast(
             "div",
             {
               key: "header",
-              className: "flex items-center justify-between gap-2 mb-1.5",
+              className: "flex items-center justify-between gap-3 mb-2",
             },
             [
               React.createElement(
                 "div",
                 {
                   key: "tag-group",
-                  className: "flex items-center gap-2 min-w-0",
+                  className: "flex items-center gap-2.5 min-w-0",
                 },
                 [
                   React.createElement("span", {
                     key: "dot",
-                    className: "w-1.5 h-1.5 rounded-full shrink-0 animate-pulse",
+                    className: "w-2 h-2 rounded-full shrink-0 animate-pulse",
                     style: {
                       backgroundColor: accentColor,
-                      boxShadow: `0 0 8px ${accentColor}`,
+                      boxShadow: `0 0 10px ${accentColor}`,
                     },
                   }),
                   React.createElement(
                     "span",
                     {
                       key: "tag-text",
-                      className: "text-[10.5px] font-mono tracking-[0.22em] uppercase font-bold truncate",
+                      className: "text-[11px] font-mono tracking-[0.20em] uppercase font-bold truncate",
                       style: { color: accentColor },
                     },
                     tag,
@@ -74,7 +74,7 @@ function createCyberKineticToast(
                   type: "button",
                   onClick: () => sonnerToast.dismiss(id),
                   className:
-                    "text-white/30 hover:text-white p-0.5 rounded transition-colors cursor-pointer hover:bg-white/[0.06]",
+                    "text-white/40 hover:text-white p-1 rounded-lg transition-colors cursor-pointer hover:bg-white/[0.08] ml-2 shrink-0",
                   title: "Cerrar",
                   "aria-label": "Cerrar",
                 },
@@ -101,7 +101,7 @@ function createCyberKineticToast(
             "h4",
             {
               key: "title",
-              className: "text-[13.5px] font-semibold text-white tracking-tight leading-snug",
+              className: "text-[14px] font-semibold text-white tracking-tight leading-snug mt-1",
             },
             title,
           ),
@@ -112,7 +112,7 @@ function createCyberKineticToast(
                 "p",
                 {
                   key: "desc",
-                  className: "text-xs text-[#9E9EBD] font-light leading-relaxed mt-1 select-text",
+                  className: "text-[12.5px] text-[#9E9EBD] font-light leading-relaxed mt-1.5 select-text",
                 },
                 description,
               )
@@ -121,7 +121,7 @@ function createCyberKineticToast(
           // Kinetic Laser Line Underneath
           React.createElement("div", {
             key: "laser-line",
-            className: "mt-3 h-[2px] w-full rounded-full animate-[pulse_2s_infinite]",
+            className: "mt-3.5 h-[2px] w-full rounded-full animate-[pulse_2s_infinite]",
             style: {
               background: `linear-gradient(90deg, ${accentColor} 0%, rgba(162,127,243,0.3) 70%, transparent 100%)`,
             },

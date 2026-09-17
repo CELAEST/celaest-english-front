@@ -17,8 +17,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ position = "bottom
       richColors={false}
       closeButton={false}
       duration={4500}
-      offset={24}
-      gap={10}
+      offset={32}
+      mobileOffset={{ bottom: 24, left: 16, right: 16 }}
+      gap={12}
       toastOptions={{
         unstyled: true,
         className: "pointer-events-auto select-none",

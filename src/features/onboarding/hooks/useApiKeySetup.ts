@@ -31,7 +31,7 @@ const DEFAULT_ENDPOINTS: Record<string, string> = {
 };
 
 const DEFAULT_MODELS: Record<string, string> = {
-  groq: "llama-3.3-70b-versatile",
+  groq: "openai/gpt-oss-120b",
   gemini: "gemini-3.6-flash",
   grok: "grok-2",
   openai: "gpt-4o-mini",

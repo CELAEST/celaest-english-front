@@ -63,6 +63,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const handleSelectNav = React.useCallback(
     (route: string) => {
+      if (route === "lab" && !import.meta.env.DEV) {
+        setActiveTab("workspace");
+        return;
+      }
       setActiveTab(route);
       if (onNavigate) onNavigate(route);
     },
@@ -245,7 +249,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           </div>
         )}
 
-        {mountedTabs.has("lab") && (
+        {import.meta.env.DEV && mountedTabs.has("lab") && (
           <div
             key="lab"
             className={`w-full h-full ${activeTab === "lab" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}

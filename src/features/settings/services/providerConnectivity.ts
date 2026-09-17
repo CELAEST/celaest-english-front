@@ -144,28 +144,27 @@ export const probeProviderConnection = async (
           availableModels = list;
           if (providerId === "groq") {
             const groqRank = [
+              "openai/gpt-oss-120b",
+              "openai/gpt-oss-20b",
+              "qwen/qwen3.8-27b",
               "llama-3.3-70b-versatile",
               "llama-3.1-8b-instant",
-              "llama-3.1-70b-versatile",
-              "deepseek-r1-distill-llama-70b",
               "mixtral-8x7b-32768",
-              "gemma2-9b-it",
             ];
             discoveredModel =
               groqRank.find((id) => list.includes(id)) ||
               list.find(
                 (id) =>
-                  (id.includes("llama") ||
-                    id.includes("mixtral") ||
-                    id.includes("gemma") ||
-                    id.includes("deepseek") ||
-                    id.includes("qwen")) &&
+                  (id.includes("gpt-oss") ||
+                    id.includes("qwen") ||
+                    id.includes("llama") ||
+                    id.includes("mixtral")) &&
                   !id.includes("allam") &&
                   !id.includes("whisper") &&
                   !id.includes("guard") &&
                   !id.includes("vision"),
               ) ||
-              "llama-3.3-70b-versatile";
+              "openai/gpt-oss-120b";
           }
         }
       } catch {
@@ -193,14 +192,14 @@ export const probeProviderConnection = async (
             avail = modelsData.data.map((m: any) => m?.id).filter(Boolean);
             if (providerId === "groq") {
               const groqRank = [
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+                "qwen/qwen3.8-27b",
                 "llama-3.3-70b-versatile",
                 "llama-3.1-8b-instant",
-                "llama-3.1-70b-versatile",
-                "deepseek-r1-distill-llama-70b",
                 "mixtral-8x7b-32768",
-                "gemma2-9b-it",
               ];
-              discovered = groqRank.find((id) => avail?.includes(id)) || avail?.[0] || "llama-3.3-70b-versatile";
+              discovered = groqRank.find((id) => avail?.includes(id)) || avail?.[0] || "openai/gpt-oss-120b";
             } else {
               discovered = avail?.[0];
             }

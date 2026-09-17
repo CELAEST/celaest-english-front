@@ -33,7 +33,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     { id: "interview", icon: <StudioVoiceMicIcon className="w-5 h-5" />, label: "Interview" },
     { id: "reading", icon: <PrecisionOpenBookIcon className="w-5 h-5" />, label: "Reading" },
     { id: "writing", icon: <TechnicalWritingQuillIcon className="w-5 h-5" />, label: "Writing" },
-    { id: "lab", icon: <QuantumNeuralGaugeIcon className="w-5 h-5" />, label: "Design Lab" },
+    ...(import.meta.env.DEV
+      ? [{ id: "lab", icon: <QuantumNeuralGaugeIcon className="w-5 h-5" />, label: "Design Lab" }]
+      : []),
     { id: "settings", icon: <SettingsIcon />, label: "Settings" },
   ];
 

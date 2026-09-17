@@ -27,10 +27,10 @@ const LOCAL_PROVIDER_CATALOG: AiProvider[] = [
     latencyMs: null,
     defaultEndpoint: "https://api.groq.com/openai/v1",
     models: [
-      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", bestFor: "Ultra-rápido, calidad insignia (Recomendado)" },
-      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B", bestFor: "Ultra-baja latencia (~80 ms)" },
-      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B", bestFor: "Alta ventana de contexto" },
-      { id: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 70B", bestFor: "Razonamiento analítico profundo" },
+      { id: "openai/gpt-oss-120b", label: "GPT OSS 120B", bestFor: "Ultra-rápido, calidad insignia (Recomendado)" },
+      { id: "openai/gpt-oss-20b", label: "GPT OSS 20B", bestFor: "Ultra-baja latencia (~100 ms)" },
+      { id: "qwen/qwen3.8-27b", label: "Qwen 3.8 27B", bestFor: "Alta capacidad de razonamiento" },
+      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", bestFor: "Insignia de Meta" },
     ],
   },
   {

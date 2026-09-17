@@ -247,8 +247,8 @@ export const directClientAiService = {
       resolvedModel.includes("guard");
 
     if (activeProvider === "groq" && isInvalidGroqModel && !params.overrideModel) {
-      resolvedModel = "qwen/qwen3.8-27b";
-      await providerKeyVault.saveConfig("groq", { ...config, defaultModel: "qwen/qwen3.8-27b" }).catch(() => {});
+      resolvedModel = "openai/gpt-oss-120b";
+      await providerKeyVault.saveConfig("groq", { ...config, defaultModel: "openai/gpt-oss-120b" }).catch(() => {});
     }
 
     const model = resolvedModel;
@@ -553,7 +553,7 @@ export function extractFirstJsonObject(str: string): string | null {
 function getDefaultModel(provider: AiProviderId): string {
   switch (provider) {
     case "groq":
-      return "qwen/qwen3.8-27b";
+      return "openai/gpt-oss-120b";
     case "gemini":
       return "gemini-3.6-flash";
     case "openai":

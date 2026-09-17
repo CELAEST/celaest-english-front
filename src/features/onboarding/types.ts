@@ -1,14 +1,31 @@
 export type OnboardingStep =
   | "welcome"
   | "auth"
+  | "api-key"
+  | "beginner-check"
   | "questions"
   | "dna-analysis"
+  | "placement-quiz"
   | "first-conversation"
   | "ready";
 
 export interface UserAnswer {
   questionId: string;
   answer: string;
+}
+
+export interface PlacementQuizAnswer {
+  questionId: string;
+  selectedOptionIndex: number;
+  isCorrect: boolean;
+}
+
+export interface PlacementQuizResult {
+  score: number;
+  totalQuestions: number;
+  estimatedLevel: "A1" | "A2" | "B1" | "B2";
+  levelTitle: string;
+  answers: PlacementQuizAnswer[];
 }
 
 export interface LearnerProfileData {
@@ -23,6 +40,7 @@ export interface LearnerProfileData {
   conversationStyle: string;
   pronunciationScore: string;
   topics: string[];
+  placementQuiz?: PlacementQuizResult;
 }
 
 export interface LearningDnaSummary {

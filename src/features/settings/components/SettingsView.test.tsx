@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SettingsView } from "./SettingsView";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
+import { apiAiMentorRepository } from "../../../infrastructure/repositories/ApiAiMentorRepository";
 
 vi.mock("../../../infrastructure/repositories/ApiSettingsRepository", () => ({
   apiSettingsRepository: {
@@ -15,11 +16,17 @@ vi.mock("../../../infrastructure/repositories/ApiSettingsRepository", () => ({
   },
 }));
 
+vi.mock("../../../infrastructure/repositories/ApiAiMentorRepository", () => ({
+  apiAiMentorRepository: {
+    getFeedback: vi.fn(),
+  },
+}));
+
 vi.mock("../../../infrastructure/adapters/auth/SupabaseAuthAdapter", () => ({
   SupabaseAuthAdapter: {
     getInstance: () => ({
       getStoredUser: () => ({ name: "Test User", email: "test@celaest.com" }),
-      getStoredToken: () => "fake-token",
+      getStoredToken: () => "valid-test-jwt-token",
     }),
   },
 }));
@@ -32,10 +39,11 @@ const createWrapper = () => {
   return Wrapper;
 };
 
-describe("SettingsView — real flow, no mocks in UI", () => {
+describe("SettingsView — real flow, verified authentication & contracts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    localStorage.setItem("auth_token", "valid-test-jwt-token");
     vi.mocked(apiSettingsRepository.getProfile).mockResolvedValue({
       id: "u1",
       name: "Camila",
@@ -49,13 +57,21 @@ describe("SettingsView — real flow, no mocks in UI", () => {
       createdAt: new Date().toISOString(),
     } as any);
     vi.mocked(apiSettingsRepository.getAiProviders).mockResolvedValue([]);
+    vi.mocked(apiAiMentorRepository.getFeedback).mockResolvedValue({
+      id: "fb-1",
+      messageTitle: "Great consistency!",
+      messageBody: "You have completed your daily practice session.",
+      active: true,
+      updatedAt: new Date().toISOString(),
+    });
   });
 
-  it("renders Learning and Personal with real profile data", async () => {
+  it("renders Learning and Personal with real profile data and AI Mentor feedback", async () => {
     render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
     expect(await screen.findByText("LEARNING")).toBeInTheDocument();
     expect(await screen.findByText("PERSONAL")).toBeInTheDocument();
     expect(await screen.findByText("Current Level")).toBeInTheDocument();
+    expect(await screen.findByText("Great consistency!")).toBeInTheDocument();
   });
 
   it("opens Level modal and persists via updateSettings (real)", async () => {
@@ -89,5 +105,11 @@ describe("SettingsView — real flow, no mocks in UI", () => {
     fireEvent.change(input, { target: { value: "Alex" } });
     fireEvent.click(screen.getByText("Save"));
     await waitFor(() => expect(apiSettingsRepository.updateSettings).toHaveBeenCalledWith(expect.objectContaining({ name: "Alex" })));
+  });
+
+  it("renders informative fallback message when AI Mentor is offline without crashing", async () => {
+    vi.mocked(apiAiMentorRepository.getFeedback).mockRejectedValue(new Error("Network timeout"));
+    render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
+    expect(await screen.findByText("I adapt to you.")).toBeInTheDocument();
   });
 });

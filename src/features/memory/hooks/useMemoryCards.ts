@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
@@ -33,13 +34,19 @@ export const useMemoryCards = (category?: string) => {
     },
   });
 
-  const reviewCard = async (cardId: string, score: number) => {
-    return reviewMutation.mutateAsync({ cardId, score });
-  };
+  const reviewCard = useCallback(
+    async (cardId: string, score: number) => {
+      return reviewMutation.mutateAsync({ cardId, score });
+    },
+    [reviewMutation],
+  );
 
-  const deleteCard = async (cardId: string) => {
-    return deleteMutation.mutateAsync(cardId);
-  };
+  const deleteCard = useCallback(
+    async (cardId: string) => {
+      return deleteMutation.mutateAsync(cardId);
+    },
+    [deleteMutation],
+  );
 
   const safeCards = Array.isArray(cards) ? cards : [];
 

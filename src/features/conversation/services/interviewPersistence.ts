@@ -29,6 +29,19 @@ export function loadPersistedInterview(): PersistedInterviewState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PersistedInterviewState;
     if (!parsed || (parsed.version !== 1 && parsed.version !== 2)) return null;
+
+    // Automatic TTL Invalidation (24 hours) to prevent stale/ghost interview sessions
+    const isExpired = !parsed.updatedAt || Date.now() - parsed.updatedAt > 24 * 60 * 60 * 1000;
+    const isFinished =
+      typeof parsed.currentQuestionIndex === "number" &&
+      parsed.sessionQuestions &&
+      parsed.currentQuestionIndex >= parsed.sessionQuestions.length;
+
+    if (isExpired || isFinished) {
+      clearPersistedInterview();
+      return null;
+    }
+
     return parsed;
   } catch {
     return null;

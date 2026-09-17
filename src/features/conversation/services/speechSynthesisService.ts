@@ -19,6 +19,7 @@ export class SpeechSynthesisService {
   private static audioCtx: AudioContext | null = null;
   private static aiAnalyser: AnalyserNode | null = null;
   private static mediaSourceMap = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>();
+  private static activePlaybackId: number = 0;
 
   /**
    * Proactively prefetch text with high-fidelity neural voice into memory.
@@ -40,8 +41,9 @@ export class SpeechSynthesisService {
       return;
     }
 
-    // Stop any ongoing speech immediately
+    // Stop any ongoing speech immediately & record unique playback token
     this.stop();
+    const playbackId = this.activePlaybackId;
 
     const voiceId: FlagshipVoiceId =
       options.voice === "en-US-ChristopherNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
@@ -91,6 +93,7 @@ export class SpeechSynthesisService {
 
       let hasEnded = false;
       const handleEnd = () => {
+        if (this.activePlaybackId !== playbackId) return;
         if (hasEnded) return;
         hasEnded = true;
         this.currentAudio = null;
@@ -98,22 +101,29 @@ export class SpeechSynthesisService {
       };
 
       audio.onplay = () => {
+        if (this.activePlaybackId !== playbackId) return;
         if (options.onStart) options.onStart();
       };
 
       audio.onended = handleEnd;
 
       audio.onerror = (e) => {
+        if (this.activePlaybackId !== playbackId) return;
         logger.warn("[SpeechSynthesisService] Neural stream failed, falling back to browser speech synthesis:", e);
         this.currentAudio = null;
-        this.speakFallback(trimmed, options);
+        this.speakFallback(trimmed, options, playbackId);
       };
 
       await audio.play();
-    } catch (err) {
+    } catch (err: any) {
+      if (this.activePlaybackId !== playbackId) return;
+      if (err?.name === "AbortError") {
+        // Deliberate user navigation or audio interruption — do not trigger fallback voice
+        return;
+      }
       logger.warn("[SpeechSynthesisService] Error initiating audio, falling back to browser speech synthesis:", err);
       this.currentAudio = null;
-      this.speakFallback(trimmed, options);
+      this.speakFallback(trimmed, options, playbackId);
     }
   }
 
@@ -197,7 +207,12 @@ export class SpeechSynthesisService {
   /**
    * Browser Speech Synthesis Fallback if backend TTS is unreachable
    */
-  private static async speakFallback(text: string, options: SpeakOptions): Promise<void> {
+  private static async speakFallback(
+    text: string,
+    options: SpeakOptions,
+    playbackId: number,
+  ): Promise<void> {
+    if (this.activePlaybackId !== playbackId) return;
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       if (options.onEnd) options.onEnd();
       return;
@@ -206,6 +221,7 @@ export class SpeechSynthesisService {
     window.speechSynthesis.cancel();
 
     const voice = await this.getBestVoice();
+    if (this.activePlaybackId !== playbackId) return;
     const utterance = new SpeechSynthesisUtterance(text);
 
     if (voice) {
@@ -219,14 +235,20 @@ export class SpeechSynthesisService {
     utterance.pitch = options.pitch ?? 1.0;
 
     utterance.onstart = () => {
+      if (this.activePlaybackId !== playbackId) {
+        window.speechSynthesis.cancel();
+        return;
+      }
       if (options.onStart) options.onStart();
     };
 
     utterance.onend = () => {
+      if (this.activePlaybackId !== playbackId) return;
       if (options.onEnd) options.onEnd();
     };
 
     utterance.onerror = (e) => {
+      if (this.activePlaybackId !== playbackId) return;
       logger.warn("Speech synthesis notice:", e);
       if (options.onEnd) options.onEnd();
       if (options.onError) options.onError(e);
@@ -239,13 +261,40 @@ export class SpeechSynthesisService {
    * Stops any ongoing speech immediately across both Neural Audio and browser synthesis
    */
   public static stop(): void {
+    this.activePlaybackId++;
     if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
+      const audio = this.currentAudio;
+      audio.onplay = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onpause = null;
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = "";
+      } catch {
+        // ignore
+      }
       this.currentAudio = null;
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+    }
+  }
+
+  /**
+   * Completely cleans up speech synthesis resources, closing Web Audio Context
+   */
+  public static cleanup(): void {
+    this.stop();
+    if (this.audioCtx && this.audioCtx.state !== "closed") {
+      try {
+        this.audioCtx.close();
+      } catch {
+        // ignore
+      }
+      this.audioCtx = null;
+      this.aiAnalyser = null;
     }
   }
 

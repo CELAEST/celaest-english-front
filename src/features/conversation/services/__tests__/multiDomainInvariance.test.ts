@@ -27,11 +27,15 @@ describe("Multi-Domain Invariance & Anti-Hardcoded Gate", () => {
       expect(ProfessionNormalizerService.normalize("apicultor")).toBe("Beekeeper");
       expect(ProfessionNormalizerService.normalize("astrofísico")).toBe("Astrophysicist");
       expect(ProfessionNormalizerService.normalize("carpintero")).toBe("Carpenter");
+      expect(ProfessionNormalizerService.normalize("cocinero")).toBe("Chef");
     });
 
     it("normalizes professions asynchronously via normalizeAsync", async () => {
       const result = await ProfessionNormalizerService.normalizeAsync("carpintero");
       expect(result).toBe("Carpenter");
+
+      const chef = await ProfessionNormalizerService.normalizeAsync("cocinero");
+      expect(chef).toBe("Chef");
 
       const luthier = await ProfessionNormalizerService.normalizeAsync("luthier");
       expect(luthier).toBe("Luthier");

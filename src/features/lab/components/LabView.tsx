@@ -1,5 +1,6 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { AuthCallbackLuxuryShowcase } from "./AuthCallbackLuxuryShowcase";
 import { AiEngineErrorsLuxuryStudio } from "./AiEngineErrorsLuxuryStudio";
 import { AdaptiveLuxuryLevelStudio } from "./AdaptiveLuxuryLevelStudio";
 import { MasterCleanVoiceNarratorStudioShowcase } from "./MasterCleanVoiceNarratorStudioShowcase";
@@ -36,6 +37,16 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
       <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
+
+        {/* SECTION 00.WORKSPACE_STUDIO: Enterprise Top Architecture Studio (VERY TOP PRIORITY) */}
+        <div className="flex flex-col space-y-4">
+          <WorkspaceHeroEvolutionShowcase />
+        </div>
+
+        {/* SECTION 00.AUTH: Google OAuth Handshake & Spatial Clearance Studio */}
+        <div className="flex flex-col space-y-4">
+          <AuthCallbackLuxuryShowcase />
+        </div>
 
         {/* SECTION 00.ADAPTIVE: Adaptive CEFR Level Intelligence & Pedagogical Engine (VERY TOP) */}
         <div className="flex flex-col space-y-4">
@@ -164,23 +175,6 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
           <LinguisticShieldSimulationShowcase />
         </div>
 
-        {/* Section 1: Workspace Hero Banner Evolution (Top Priority) */}
-        <div className="flex flex-col space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
-              <span>1. Workspace Hero Banner Evolution & Spatial Lighting</span>
-              <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-[#A27FF3]/20 border border-[#A27FF3]/40 text-[#C4B5FD]">
-                New · Top Priority
-              </span>
-            </h2>
-            <p className="text-xs text-[#8a8a9e]">
-              Calibrate and compare ultra-luxury, borderless obsidian glass variants with
-              atmospheric backlights behind the cosmic orb, pure editorial typography, and
-              high-contrast callout nodes.
-            </p>
-          </div>
-          <WorkspaceHeroEvolutionShowcase />
-        </div>
 
         {/* Section 2: Reading Generation Loading States */}
         <div className="flex flex-col space-y-4">

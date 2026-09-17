@@ -7,20 +7,17 @@ import { SilenceShieldLuxuryModal } from "./SilenceShieldLuxuryModal";
 import { JwtSessionRecoveryModal } from "./JwtSessionRecoveryModal";
 import { HardwareSessionLuxuryCardsShowcase } from "./HardwareSessionLuxuryCardsShowcase";
 
-export type SimulationCategory = "all" | "infra" | "acoustic" | "security";
+/**
+ * Re-export shared error scenario types and data.
+ * The canonical source is `shared/constants/errorScenarios.ts`.
+ * This re-export preserves backward compatibility for Lab-internal imports.
+ */
+export type { SimulationCategory, AiApiErrorType, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
+export { getDynamicUtcResetText, ERROR_DATA } from "../../../shared/constants/errorScenarios";
 
-export type AiApiErrorType =
-  // 1. Infraestructura & Proveedores de IA
-  | "rate-limit-429"
-  | "keys-exhausted-pool"
-  | "invalid-key-401"
-  | "gateway-timeout-504"
-  | "server-outage-503"
-  // 2. Acústica & Hardware (Audio / Whisper)
-  | "mic-blocked-permission"
-  | "silence-ambient-hallucination"
-  // 3. Seguridad & Sesión
-  | "jwt-expired-mid-interview";
+// Local imports for usage within this file
+import type { AiApiErrorType } from "../../../shared/constants/errorScenarios";
+import { ERROR_DATA } from "../../../shared/constants/errorScenarios";
 
 export type MasterVariantId =
   | "pure-horological"
@@ -30,206 +27,6 @@ export type MasterVariantId =
   | "apple-spatial-bespoke-icons"
   | "enterprise-fluid-monolith"
   | "cosmic-zen-capsule";
-
-export interface ErrorScenarioData {
-  id: AiApiErrorType;
-  category: SimulationCategory;
-  categoryLabel: string;
-  httpLabel: string;
-  codeName: string;
-  humanHeadline: string;
-  humanSubtext: string;
-  reassurance: string;
-  cooldownDefault: number;
-  bufferWords: number;
-  dial1Label: string;
-  dial1Value: string;
-  dial1Subtext: string;
-  dial2Label: string;
-  dial2Value: string;
-  dial2Subtext: string;
-  specialActionType?:
-    "provider-swap" | "mic-test" | "resume-english" | "star-expand" | "celebrate" | "re-auth";
-}
-
-export function getDynamicUtcResetText(): string {
-  const now = new Date();
-  const nextUtc = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0),
-  );
-  const diffMs = nextUtc.getTime() - now.getTime();
-  const hours = Math.floor(diffMs / 3600000);
-  const minutes = Math.floor((diffMs % 3600000) / 60000);
-  return `Reinicio de cuota en ${hours}h ${minutes}m (UTC 00:00)`;
-}
-
-export const ERROR_DATA: Record<AiApiErrorType, ErrorScenarioData> = {
-  "rate-limit-429": {
-    id: "rate-limit-429",
-    category: "infra",
-    categoryLabel: "Infraestructura & IA",
-    httpLabel: "429",
-    codeName: "RATE_LIMIT_COOLDOWN",
-    humanHeadline: "El clúster de IA está en ciclo de enfriamiento",
-    humanSubtext:
-      "Alta concurrencia en los servidores compartidos de inferencia. La reanudación es automática.",
-    reassurance: "Tu respuesta hablada está 100% a salvo y congelada en memoria local.",
-    cooldownDefault: 14,
-    bufferWords: 48,
-    dial1Label: "TU AUDIO",
-    dial1Value: "01:42 min",
-    dial1Subtext: "100% seguro en memoria",
-    dial2Label: "REANUDACIÓN",
-    dial2Value: "seg",
-    dial2Subtext: "Automática sin tocar nada",
-    specialActionType: "provider-swap",
-  },
-  "keys-exhausted-pool": {
-    id: "keys-exhausted-pool",
-    category: "infra",
-    categoryLabel: "Infraestructura & IA",
-    httpLabel: "POOL",
-    codeName: "AI_KEYS_EXHAUSTED",
-    humanHeadline: "Límite diario alcanzado en el clúster público",
-    humanSubtext:
-      "Todas las claves del pool compartido completaron su cupo de hoy. Puedes continuar al instante activando Groq gratis.",
-    reassurance:
-      "Tu audio permanece cifrado en tu navegador. Solo ingresa una clave gratuita para continuar.",
-    cooldownDefault: 0,
-    bufferWords: 52,
-    dial1Label: "POOL PÚBLICO",
-    dial1Value: "100% AGOTADO",
-    dial1Subtext: getDynamicUtcResetText(),
-    dial2Label: "BYPASS VIP",
-    dial2Value: "GROQ GRATIS",
-    dial2Subtext: "Sin esperas ni tarjeta",
-    specialActionType: "provider-swap",
-  },
-  "invalid-key-401": {
-    id: "invalid-key-401",
-    category: "infra",
-    categoryLabel: "Infraestructura & IA",
-    httpLabel: "401",
-    codeName: "AUTH_DECLINED",
-    humanHeadline: "Tu clave privada de IA no pudo ser verificada",
-    humanSubtext:
-      "El proveedor reportó que la clave expiró o no tiene saldo. Puedes cambiar a Groq gratis con un solo clic.",
-    reassurance: "Tu respuesta está segura en tu navegador y continuará automáticamente.",
-    cooldownDefault: 0,
-    bufferWords: 42,
-    dial1Label: "ESTADO CLAVE",
-    dial1Value: "NO VÁLIDA",
-    dial1Subtext: "Error de autenticación",
-    dial2Label: "RESPALDO",
-    dial2Value: "DISPONIBLE",
-    dial2Subtext: "Groq 100% Gratuito",
-    specialActionType: "provider-swap",
-  },
-  "gateway-timeout-504": {
-    id: "gateway-timeout-504",
-    category: "infra",
-    categoryLabel: "Infraestructura & IA",
-    httpLabel: "504",
-    codeName: "GATEWAY_TIMEOUT",
-    humanHeadline: "La conexión de red tardó más de lo habitual",
-    humanSubtext:
-      "Hubo una fluctuación en la conexión mientras transmitías tus datos, pero tu grabación sigue intacta.",
-    reassurance: "Tu micrófono y transcripción están guardados en tu navegador sin ningún corte.",
-    cooldownDefault: 8,
-    bufferWords: 34,
-    dial1Label: "PAQUETES LOCALES",
-    dial1Value: "100% RETENIDOS",
-    dial1Subtext: "Cero pérdida de voz",
-    dial2Label: "AUTO-REINTENTO",
-    dial2Value: "seg",
-    dial2Subtext: "Conexión reestablecida",
-    specialActionType: "provider-swap",
-  },
-  "server-outage-503": {
-    id: "server-outage-503",
-    category: "infra",
-    categoryLabel: "Infraestructura & IA",
-    httpLabel: "503",
-    codeName: "CLUSTER_OUTAGE",
-    humanHeadline: "Mantenimiento temporal del servidor de IA",
-    humanSubtext:
-      "El clúster central se está actualizando. Puedes desviar tu respuesta en 1 clic a otro modelo.",
-    reassurance:
-      "No tienes que volver a hablar; el motor de respaldo puede evaluarte de inmediato.",
-    cooldownDefault: 18,
-    bufferWords: 55,
-    dial1Label: "NODO REMOTO",
-    dial1Value: "ACTUALIZANDO",
-    dial1Subtext: "Cluster en mantenimiento",
-    dial2Label: "IA ALTERNATIVA",
-    dial2Value: "LISTA",
-    dial2Subtext: "Failover inmediato",
-    specialActionType: "provider-swap",
-  },
-  "mic-blocked-permission": {
-    id: "mic-blocked-permission",
-    category: "acoustic",
-    categoryLabel: "Hardware & Acústica",
-    httpLabel: "MIC",
-    codeName: "MIC_PERMISSION_DENIED",
-    humanHeadline: "El acceso al micrófono está deshabilitado",
-    humanSubtext:
-      "Tu navegador no tiene permiso para capturar audio. Solo necesitas presionar el ícono de candado para activarlo.",
-    reassurance:
-      "No se requiere reiniciar la sesión; el sistema detectará el micrófono en tiempo real.",
-    cooldownDefault: 0,
-    bufferWords: 0,
-    dial1Label: "PERMISOS",
-    dial1Value: "BLOQUEADO",
-    dial1Subtext: "Navegador / Sistema",
-    dial2Label: "DESBLOQUEO",
-    dial2Value: "1 CLIC",
-    dial2Subtext: "Ícono de candado 🔒",
-    specialActionType: "mic-test",
-  },
-  "silence-ambient-hallucination": {
-    id: "silence-ambient-hallucination",
-    category: "acoustic",
-    categoryLabel: "Hardware & Acústica",
-    httpLabel: "SHIELD",
-    codeName: "SILENCE_FILTERED",
-    humanHeadline: "El micrófono detectó silencio o ruido ambiental",
-    humanSubtext:
-      "Whisper captó estática de fondo sin voz inteligible. El 0-Token Shield protegió tu turno sin penalizaciones.",
-    reassurance:
-      "Tu puntaje se mantiene intacto. Solo habla con un volumen constante para registrar tu respuesta.",
-    cooldownDefault: 0,
-    bufferWords: 0,
-    dial1Label: "SEÑAL ACÚSTICA",
-    dial1Value: "ESTÁTICA AMBIENTAL",
-    dial1Subtext: "Filtrado por 0-Token Shield",
-    dial2Label: "PENALIZACIÓN",
-    dial2Value: "0% (NEUTRAL)",
-    dial2Subtext: "Turno sin penalización",
-    specialActionType: "mic-test",
-  },
-  "jwt-expired-mid-interview": {
-    id: "jwt-expired-mid-interview",
-    category: "security",
-    categoryLabel: "Sesión & Bóveda",
-    httpLabel: "AUTH",
-    codeName: "JWT_SESSION_REFRESH",
-    humanHeadline: "Renovación transparente de tu sesión activa",
-    humanSubtext:
-      "Tu credencial de autenticación caducó mientras respondías. La bóveda local protegió tu avance en la pregunta 4 de 5.",
-    reassurance:
-      "Se refrescó tu sesión sin reiniciar la entrevista ni perder ninguna de tus respuestas previas.",
-    cooldownDefault: 0,
-    bufferWords: 76,
-    dial1Label: "SESIÓN SUPABASE",
-    dial1Value: "TOKEN REFRESCADO",
-    dial1Subtext: "Renovación silenciosa",
-    dial2Label: "PROGRESO PRESERVADO",
-    dial2Value: "4 / 5 PREGUNTAS",
-    dial2Subtext: "Cero pérdida de datos",
-    specialActionType: "re-auth",
-  },
-};
 
 interface ProviderOption {
   id: AiProviderId;

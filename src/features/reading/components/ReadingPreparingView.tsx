@@ -41,14 +41,18 @@ export const ReadingPreparingView: React.FC = React.memo(() => {
       aria-live="polite"
       className="w-full max-w-[620px] h-full flex flex-col items-center justify-center py-4 select-none animate-[fadeSlideUp_0.5s_ease-out_both] overflow-visible mx-auto"
     >
-      {/* 1. Top Orb & Hero Title */}
+      {/* 1. Top Orb & Hero Title — orve video — fluido sin salto */}
       <div className="flex flex-col items-center text-center space-y-2.5 shrink-0">
         <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center pointer-events-none shrink-0">
-          <img
-            src="/assets/ChatGPT Image Aug 2, 2026, 05_08_26 PM.png"
-            alt="Glowing Purple Orb"
-            aria-hidden="true"
-            className="w-44 h-44 sm:w-52 sm:h-52 object-contain max-w-none -mt-8 pointer-events-none"
+          <video
+            src="/assets/orve.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="w-44 h-44 sm:w-52 sm:h-52 object-contain max-w-none -mt-8 pointer-events-none mix-blend-screen"
+            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           />
         </div>
 

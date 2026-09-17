@@ -31,6 +31,11 @@ export const SettingsLearningSection: React.FC<SettingsLearningSectionProps> = (
   onOpenFocusModal,
   onItemClick,
 }) => {
+  const goalValue = learningGoals?.trim() || "Daily Conversation";
+  const levelValue = currentLevel?.trim() || "B1 — Intermediate";
+  const prefValue = preferenceStyle?.trim() || "Conversation First";
+  const focusValue = dailyFocus?.trim() || "Clarity & Vocabulary";
+
   return (
     <SettingsSection label="LEARNING">
       <div className="divide-y divide-white/[0.06]">
@@ -38,14 +43,14 @@ export const SettingsLearningSection: React.FC<SettingsLearningSectionProps> = (
           icon={<GoalTargetIcon className="w-6 h-6" />}
           title="Learning Goals"
           subtitle="Define what you want to achieve with Lingua."
-          value={learningGoals ?? "—"}
+          value={goalValue}
           onClick={() => (onOpenGoalsModal ? onOpenGoalsModal() : onItemClick?.("learning-goals"))}
         />
         <SettingsListItem
           icon={<LevelSummitIcon className="w-6 h-6" />}
           title="Current Level"
           subtitle="Your proficiency level and learning path."
-          value={currentLevel ?? "—"}
+          value={levelValue}
           onClick={() => {
             if (onOpenLevelModal) onOpenLevelModal();
             else onItemClick?.("current-level");
@@ -55,14 +60,14 @@ export const SettingsLearningSection: React.FC<SettingsLearningSectionProps> = (
           icon={<TuningFadersIcon className="w-6 h-6" />}
           title="Preferences"
           subtitle="Customize how Lingua teaches and communicates."
-          value={preferenceStyle ?? "—"}
+          value={prefValue}
           onClick={() => (onOpenPreferencesModal ? onOpenPreferencesModal() : onItemClick?.("preferences"))}
         />
         <SettingsListItem
           icon={<FocusChronoIcon className="w-6 h-6" />}
           title="Daily Focus"
           subtitle="What Lingua helps you improve every day."
-          value={dailyFocus ?? "—"}
+          value={focusValue}
           onClick={() => (onOpenFocusModal ? onOpenFocusModal() : onItemClick?.("daily-focus"))}
         />
       </div>

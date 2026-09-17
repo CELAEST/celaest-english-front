@@ -70,11 +70,17 @@ export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ on
         </div>
       </div>
 
-      {/* Right Side Step Visualization */}
+      {/* Right Side Step Visualization — begin1 video — fluido */}
       <div className="flex justify-center">
-        <div
-          className="w-56 h-56 sm:w-72 sm:h-72 bg-center bg-contain bg-no-repeat drop-shadow-[0_0_40px_rgba(124,58,237,0.5)]"
-          style={{ backgroundImage: "url('/assets/pure_hero_orb_bg.png')" }}
+        <video
+          src="/assets/begin1.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="w-56 h-56 sm:w-72 sm:h-72 object-contain drop-shadow-[0_0_40px_rgba(124,58,237,0.5)] pointer-events-none mix-blend-screen"
+          style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
         />
       </div>
     </div>

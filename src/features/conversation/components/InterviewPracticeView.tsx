@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion } from "framer-motion";
 import { ConversationRightPanel } from "./ConversationRightPanel";
 import { ConversationOrbHero } from "./ConversationOrbHero";
 import { ConversationPromptArea } from "./ConversationPromptArea";
@@ -118,7 +119,19 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     }
   }, [onBackToWorkspace]);
 
-  const getStatusTitle = () => {
+  const handleOpenAnalysisModal = useCallback(() => setShowAnalysisModal(true), []);
+  const handleCloseAnalysisModal = useCallback(() => {
+    setShowAnalysisModal(false);
+    setUserTranscript("");
+  }, [setUserTranscript]);
+  const handleOpenControlsDrawer = useCallback(() => setShowControlsDrawer(true), []);
+  const handleCloseControlsDrawer = useCallback(() => setShowControlsDrawer(false), []);
+  const handleRepeatQuestion = useCallback(() => repeatQuestion(), [repeatQuestion]);
+  const handleSubmitAnswer = useCallback((text?: string) => {
+    finishTurnManual(text);
+  }, [finishTurnManual]);
+
+  const statusTitle = useMemo(() => {
     if (isAiSpeaking) return "Interviewer speaking...";
     if (processingStage === "TRANSCRIBING") return "Transcribiendo con Whisper AI...";
     if (processingStage === "ANALYZING") return "Analizando con Mentor IA...";
@@ -128,7 +141,14 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     if (isListening) return "Listening to your answer...";
     if (speechNotice) return "Micrófono en pausa";
     return "Ready for your answer";
-  };
+  }, [
+    isAiSpeaking,
+    processingStage,
+    isThinking,
+    isPaused,
+    isListening,
+    speechNotice,
+  ]);
 
   const handleSetLevel = useCallback(
     (level: string) => {
@@ -164,7 +184,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       onTakeTime: takeTime,
       onSaveSpecificError: saveSpecificErrorToMemory,
       onSaveAllErrors: saveAllErrorsToMemory,
-      onOpenAnalysisModal: () => setShowAnalysisModal(true),
+      onOpenAnalysisModal: handleOpenAnalysisModal,
     }),
     [
       currentRound,
@@ -188,26 +208,31 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       takeTime,
       saveSpecificErrorToMemory,
       saveAllErrorsToMemory,
-      setShowAnalysisModal,
+      handleOpenAnalysisModal,
     ],
   );
 
   return (
-    <div className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 animate-[fadeIn_0.4s_ease-out_both] p-1 sm:p-2">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 p-1 sm:p-2"
+    >
       {/* 1. Clean Responsive HUD (Screens < xl, completely backgroundless and balanced) */}
       <ResponsiveInterviewHUD
         currentRound={currentRound}
-        currentQuestion={currentQuestionIndex + 1}
+        currentQuestion={currentQuestionIndex}
         totalQuestions={totalQuestions}
         roleName={roleName}
         userLevel={activeCefrLevel}
         speechRate={speechRate}
         onSetSpeechRate={setSpeechRate}
         onSetLevel={handleSetLevel}
-        onRepeatQuestion={repeatQuestion}
+        onRepeatQuestion={handleRepeatQuestion}
         onNextQuestion={skipQuestion}
-        onOpenDrawer={() => setShowControlsDrawer(true)}
-        onOpenAnalysisModal={() => setShowAnalysisModal(true)}
+        onOpenDrawer={handleOpenControlsDrawer}
+        onOpenAnalysisModal={handleOpenAnalysisModal}
         hasFeedback={!!turnFeedback}
       />
 
@@ -219,25 +244,23 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
           <div className="w-full flex flex-col items-center justify-start gap-2 sm:gap-3 shrink-0">
             {/* Glowing Orb & Status */}
             <ConversationOrbHero
-              statusText={getStatusTitle()}
+              statusText={statusTitle}
               isListening={isListening}
               isAiSpeaking={isAiSpeaking}
               isThinking={isThinking}
               processingStage={processingStage}
             />
 
-            {/* Question & Live Transcript */}
+            {/* Question & Live Transcript — blindado contra crash si currentQuestion aún no hidrata */}
             <ConversationPromptArea
-              currentQuestionText={currentQuestion.question}
+              currentQuestionText={currentQuestion?.question ?? "Tell me about your recent project and your role in it."}
               userTranscript={userTranscript}
               selectedVoice={selectedVoice}
               onSelectVoice={setSelectedVoice}
-              onRepeatQuestion={() => repeatQuestion()}
+              onRepeatQuestion={handleRepeatQuestion}
               onClearTranscript={clearTranscript}
               onTranscriptChange={setUserTranscript}
-              onSubmitAnswer={(text) => {
-                finishTurnManual(text);
-              }}
+              onSubmitAnswer={handleSubmitAnswer}
             />
           </div>
 
@@ -257,8 +280,8 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
               isThinking={isThinking}
               hasText={userTranscript.trim().length > 0}
               onToggleListening={toggleListening}
-              onFinishTurn={() => finishTurnManual()}
-              onSubmitText={() => finishTurnManual()}
+              onFinishTurn={handleSubmitAnswer}
+              onSubmitText={handleSubmitAnswer}
               onClearText={clearTranscript}
             />
           </div>
@@ -273,7 +296,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       {/* 3. Floating Sidenav Cards with Vignette Degradado (No container box) */}
       <SessionCardsSidenav
         isOpen={showControlsDrawer}
-        onClose={() => setShowControlsDrawer(false)}
+        onClose={handleCloseControlsDrawer}
         panelProps={panelProps}
       />
 
@@ -282,10 +305,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         <InterviewAnalysisModal
           feedback={turnFeedback}
           savedErrorIds={savedErrorIds}
-          onClose={() => {
-            setShowAnalysisModal(false);
-            setUserTranscript("");
-          }}
+          onClose={handleCloseAnalysisModal}
           onSaveSpecificError={saveSpecificErrorToMemory}
           onSaveAllErrors={saveAllErrorsToMemory}
           onNavigateToMemory={onNavigateToMemory}
@@ -317,6 +337,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         onClose={() => setIsRecoveryModalOpen(false)}
         onImmediateResume={resumeFromRecoveryModal}
       />
-    </div>
+    </motion.div>
   );
 };

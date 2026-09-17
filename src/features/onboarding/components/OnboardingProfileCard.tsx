@@ -1,6 +1,5 @@
 import React from "react";
 
-/** Single row in the profile summary card */
 export interface ProfileMetric {
   icon: React.ReactNode;
   label: string;
@@ -11,32 +10,24 @@ export interface OnboardingProfileCardProps {
   metrics: ProfileMetric[];
 }
 
-/**
- * OnboardingProfileCard — Ultra-clean luxury glass card displaying evaluated metrics.
- */
 export const OnboardingProfileCard: React.FC<OnboardingProfileCardProps> = ({ metrics }) => (
-  <div className="relative w-full rounded-3xl bg-[#04040A] border border-white/[0.07] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
-    {/* Top Specular Hairline */}
-    <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
-
-    {metrics.map((metric, index) => (
-      <div
-        key={metric.label}
-        className={`flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 ${
-          index < metrics.length - 1 ? "border-b border-white/[0.04]" : ""
-        }`}
-      >
-        {/* Left: Icon + Label */}
-        <div className="flex items-center gap-3">
-          <span className="text-white/50 w-4 h-4 flex items-center justify-center shrink-0">
-            {metric.icon}
+  <div className="w-full py-4 sm:py-5 px-0.5 border-y border-white/[0.08] my-2 sm:my-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 sm:gap-y-4.5">
+      {metrics.map((metric) => (
+        <div key={metric.label} className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2 text-white/40 mb-1">
+            <span className="w-4 h-4 flex items-center justify-center shrink-0 opacity-70">
+              {metric.icon}
+            </span>
+            <span className="text-[10px] sm:text-[10.5px] font-mono uppercase tracking-wider">
+              {metric.label}
+            </span>
+          </div>
+          <span className="text-xs sm:text-[13.5px] font-light text-white/95 leading-normal" title={metric.value}>
+            {metric.value}
           </span>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-white/40">{metric.label}</span>
         </div>
-
-        {/* Right: Value */}
-        <span className="text-xs sm:text-[13px] font-mono text-white/90">{metric.value}</span>
-      </div>
-    ))}
+      ))}
+    </div>
   </div>
 );

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MemoryHeader } from "./MemoryHeader";
 import { MemoryFilterTabs } from "./MemoryFilterTabs";
 import { MemoryCardCarousel } from "./MemoryCardCarousel";
 import { MemoryEmptyState } from "./MemoryEmptyState";
 import { MemoryCompletionView } from "./MemoryCompletionView";
+import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 import { useMemoryCards } from "../hooks/useMemoryCards";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
@@ -21,6 +23,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewedSessionCount, setReviewedSessionCount] = useState(0);
   const [isSessionCompleted, setIsSessionCompleted] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<number>(1);
 
   const { cards = [], isLoading, reviewCard, deleteCard } = useMemoryCards();
 
@@ -78,6 +81,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
   const handleTabSwitch = useCallback((idx: number) => {
     setActiveTab(idx);
     setSelectedIdx(0);
+    setSlideDirection(1);
     setIsFlipped(false);
     setIsSessionCompleted(false);
   }, []);
@@ -90,12 +94,14 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
 
   const handleNextCard = useCallback(() => {
     if (totalCards === 0) return;
+    setSlideDirection(1);
     setIsFlipped(false);
     setSelectedIdx((prev) => (prev + 1) % totalCards);
   }, [totalCards]);
 
   const handlePrevCard = useCallback(() => {
     if (totalCards === 0) return;
+    setSlideDirection(-1);
     setIsFlipped(false);
     setSelectedIdx((prev) => (prev - 1 + totalCards) % totalCards);
   }, [totalCards]);
@@ -222,89 +228,114 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
         }}
       />
 
-      {/* Root Background Glowing Memory Sphere */}
-      <div className="pointer-events-none absolute right-8 sm:right-28 lg:right-[260px] -top-1 sm:top-1 w-[155px] sm:w-[190px] lg:w-[230px] h-[155px] sm:h-[190px] lg:h-[230px] z-0 opacity-90">
-        <img
-          src="/assets/ChatGPT Image Aug 2, 2026, 05_08_26 PM.png"
-          alt="Glowing memory sphere background"
-          className="h-full w-full object-contain scale-110"
-        />
-      </div>
+      {/* Root Background Glowing Memory Sphere — Visible alongside video backdrop */}
+      {!isSessionCompleted && (
+        <div className="pointer-events-none absolute right-8 sm:right-28 lg:right-[260px] -top-1 sm:top-1 w-[140px] sm:w-[180px] lg:w-[220px] h-[140px] sm:h-[180px] lg:h-[220px] z-0 opacity-90 overflow-hidden hidden sm:block">
+          <VideoOrb className="h-full w-full object-contain scale-110 pointer-events-none mix-blend-screen" />
+        </div>
+      )}
 
-      <main className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-between overflow-hidden z-10 min-h-0">
-        {/* Header */}
-        <MemoryHeader onBack={onBackToWorkspace} />
-
-        {/*  State 1: Session Completed Screen  */}
-        {isSessionCompleted ? (
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <MemoryCompletionView
-              reviewedCount={reviewedSessionCount || totalCards}
-              category={currentCategory}
-              onRestart={() => {
-                setIsSessionCompleted(false);
-                setSelectedIdx(0);
-                setIsFlipped(false);
-              }}
-              onReturnToOverview={() => {
-                setIsSessionCompleted(false);
-                setSelectedIdx(0);
-                setIsFlipped(false);
-                if (hasAnyCardsInOtherTabs) {
-                  handleSwitchToAvailableCategory();
-                }
-              }}
-            />
-          </div>
-        ) : totalCards === 0 && !isLoading ? (
-          /*  State 2: Empty State (0 Cards in active category)  */
-          <div className="flex flex-col flex-1 min-h-0 justify-between overflow-hidden animate-[fadeIn_0.35s_ease-out_both]">
-            <MemoryFilterTabs
-              activeTab={activeTab}
-              speakingCount={speakingCount}
-              readingCount={readingCount}
-              writingCount={writingCount}
-              onTabChange={handleTabSwitch}
-            />
-            <MemoryEmptyState
-              category={currentCategory}
-              hasOtherCards={hasAnyCardsInOtherTabs}
-              onSwitchCategory={handleSwitchToAvailableCategory}
-              onStartPractice={onBackToWorkspace}
-            />
-          </div>
+      <motion.main
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-between overflow-hidden z-10 min-h-0"
+      >
+        {/* Header — cuando vacío, muestra “Your Personalized Memory Deck” arriba y deja solo botón abajo */}
+        {totalCards === 0 && !isLoading && !isSessionCompleted ? (
+          <MemoryHeader
+            title="Your Personalized Memory Deck"
+            subtitle='Click "Add to Memory" during practice to curate your deck.'
+            onBack={onBackToWorkspace}
+          />
         ) : (
-          /*  State 3: Master Grand Carousel Deck with 3D Flip & Peek Cards  */
-          <div
-            key={`deck-${activeTab}`}
-            className="flex flex-col flex-1 min-h-0 justify-between overflow-hidden animate-[fadeIn_0.35s_ease-out_both]"
-          >
-            {/* Category Filter Tabs */}
-            <MemoryFilterTabs
-              activeTab={activeTab}
-              speakingCount={speakingCount}
-              readingCount={readingCount}
-              writingCount={writingCount}
-              onTabChange={handleTabSwitch}
-            />
-
-            {/* Center Carousel Row with Grand Active 3D Flip Card & Side Peek Cards */}
-            <div className="flex-1 min-h-0 flex items-center justify-center my-auto py-2">
-              <MemoryCardCarousel
-                cards={filteredCards}
-                activeIndex={selectedIdx}
-                isFlipped={isFlipped}
-                onFlip={onFlip}
-                onPrev={handlePrevCard}
-                onNext={handleNextCard}
-                onBookmark={onBookmark}
-                onDelete={handleDeleteCard}
-                onReviewScore={handleReviewScore}
-              />
-            </div>
-          </div>
+          <MemoryHeader onBack={onBackToWorkspace} />
         )}
-      </main>
+
+        {/* Category Filter Tabs — Persistent in DOM, never unmounts, kinetic laser line glides seamlessly */}
+        <div className="relative z-20 shrink-0 pt-1">
+          <MemoryFilterTabs
+            activeTab={activeTab}
+            speakingCount={speakingCount}
+            readingCount={readingCount}
+            writingCount={writingCount}
+            onTabChange={handleTabSwitch}
+          />
+        </div>
+
+        {/* Content Deck Area with AnimatePresence & luxury entrance animation */}
+        <div className="relative flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+          <AnimatePresence mode="wait">
+            {isSessionCompleted ? (
+              <motion.div
+                key="completed"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="flex-1 min-h-0 flex items-center justify-center"
+              >
+                <MemoryCompletionView
+                  reviewedCount={reviewedSessionCount || totalCards}
+                  category={currentCategory}
+                  onRestart={() => {
+                    setIsSessionCompleted(false);
+                    setSelectedIdx(0);
+                    setIsFlipped(false);
+                  }}
+                  onReturnToOverview={() => {
+                    setIsSessionCompleted(false);
+                    setSelectedIdx(0);
+                    setIsFlipped(false);
+                    if (hasAnyCardsInOtherTabs) {
+                      handleSwitchToAvailableCategory();
+                    }
+                  }}
+                />
+              </motion.div>
+            ) : totalCards === 0 && !isLoading ? (
+              <motion.div
+                key={`empty-${activeTab}`}
+                initial={{ opacity: 0, y: 12, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.99 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="relative flex-1 min-h-0 flex flex-col w-full"
+              >
+                <MemoryEmptyState
+                  category={currentCategory}
+                  hasOtherCards={hasAnyCardsInOtherTabs}
+                  onSwitchCategory={handleSwitchToAvailableCategory}
+                  onStartPractice={onBackToWorkspace}
+                  hideHeader={true}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`deck-${activeTab}`}
+                initial={{ opacity: 0, y: 12, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.99 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="flex-1 min-h-0 flex items-center justify-center my-auto py-2"
+              >
+                <MemoryCardCarousel
+                  cards={filteredCards}
+                  activeIndex={selectedIdx}
+                  isFlipped={isFlipped}
+                  onFlip={onFlip}
+                  onPrev={handlePrevCard}
+                  onNext={handleNextCard}
+                  onBookmark={onBookmark}
+                  onDelete={handleDeleteCard}
+                  onReviewScore={handleReviewScore}
+                  direction={slideDirection}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.main>
     </div>
   );
 };

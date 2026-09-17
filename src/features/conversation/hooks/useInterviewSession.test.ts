@@ -27,6 +27,7 @@ vi.mock("../services/speechSynthesisService", () => ({
     stop: vi.fn(),
     speak: vi.fn(() => Promise.resolve()),
     prefetch: vi.fn(),
+    cleanup: vi.fn(),
   },
 }));
 
@@ -51,7 +52,7 @@ const STORAGE_KEY = "celaest:interview-progress:v1";
 
 const seededSnapshot = {
   version: 1,
-  roleName: "Product Manager",
+  roleName: "Professional",
   speechRate: 0.95,
   currentQuestionIndex: 4,
   userTranscript: "I have worked on many projects",
@@ -69,7 +70,7 @@ const seededSnapshot = {
   },
   showAnalysisModal: true,
   savedErrorIds: ["err-1"],
-  updatedAt: 123456789,
+  updatedAt: Date.now() - 3600000,
 };
 
 const cloudSnapshot = {
@@ -96,7 +97,7 @@ const cloudSnapshot = {
       strategicFeedback: null,
     },
   },
-  updatedAt: "2026-01-01T00:00:00Z",
+  updatedAt: new Date().toISOString(),
 };
 
 describe("useInterviewSession memoization", () => {

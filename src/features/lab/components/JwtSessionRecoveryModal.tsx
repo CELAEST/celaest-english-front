@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, ChevronDown, ChevronUp, Terminal } from "lucide-react";
+import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 interface JwtSessionRecoveryModalProps {
   isOpen: boolean;
@@ -22,6 +23,11 @@ export const JwtSessionRecoveryModal: React.FC<JwtSessionRecoveryModalProps> = (
   const [showTerminalLog, setShowTerminalLog] = useState<boolean>(false);
   const [showVaultAudit, setShowVaultAudit] = useState<boolean>(false);
 
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose,
+  });
+
   if (!isOpen) return null;
 
   return (
@@ -32,6 +38,10 @@ export const JwtSessionRecoveryModal: React.FC<JwtSessionRecoveryModalProps> = (
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jwt-modal-title"
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-lg rounded-3xl bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] shadow-[0_32px_80px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.08)] overflow-hidden select-none p-7 sm:p-8 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
       >

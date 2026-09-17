@@ -316,7 +316,6 @@ describe("Writing Feature - Full Use Case Suite", () => {
 
   it("Use Case 12: Writing Tools toggle helper drawer and insert curated executive phrases into editor", async () => {
     renderComponent();
-    const editor = screen.getByPlaceholderText(/Start writing here/i) as HTMLTextAreaElement;
 
     // Click 'Expand' tool button
     const expandBtn = screen.getByRole("button", { name: /^expand$/i });
@@ -327,11 +326,13 @@ describe("Writing Feature - Full Use Case Suite", () => {
     expect(phraseBtn).toBeInTheDocument();
 
     // Click to insert phrase
-    fireEvent.click(phraseBtn);
+    const phraseButton = phraseBtn.closest("button") || phraseBtn;
+    fireEvent.click(phraseButton);
 
     // Editor should now contain the inserted phrase
     await waitFor(() => {
-      expect(editor.value).toContain("Furthermore, this aligns with");
+      const currentEditor = screen.getByPlaceholderText<HTMLTextAreaElement>(/Start writing here/i);
+      expect(currentEditor.value).toContain("Furthermore, this aligns with");
     });
   });
 });

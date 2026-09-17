@@ -1,4 +1,5 @@
 import React from "react";
+import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 
 export interface ConversationOrbHeroProps {
   statusText?: string;
@@ -11,19 +12,36 @@ export interface ConversationOrbHeroProps {
   totalQuestions?: number;
 }
 
-export const ConversationOrbHero: React.FC<ConversationOrbHeroProps> = ({
+const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
   statusText = "Ready for your answer",
+  isListening = false,
+  isAiSpeaking = false,
   isThinking = false,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center select-none w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto shrink-0 -mt-2 sm:-mt-3 lg:-mt-4 animate-[fadeIn_0.35s_ease-out_both] font-sans">
-      {/* 3D Glowing Purple Orb */}
-      <div className="relative w-[clamp(140px,28vh,340px)] h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300">
-        <img
-          src="/assets/ChatGPT Image Aug 2, 2026, 05_08_26 PM.png"
-          alt="Glowing Purple Orb"
-          className="w-full h-full object-contain pointer-events-none"
-        />
+      {/* Video Orb with dynamic ambient glow aura */}
+      <div className="relative w-[clamp(140px,28vh,340px)] h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300 overflow-hidden">
+        {/* Ambient reactive aura layers */}
+        {isListening && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-4 rounded-full pointer-events-none bg-gradient-to-r from-[#6366F1]/25 via-[#A27FF3]/30 to-[#6366F1]/25 blur-2xl animate-[softPulse_1.5s_ease-in-out_infinite]"
+          />
+        )}
+        {isAiSpeaking && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-2 rounded-full pointer-events-none bg-gradient-to-r from-[#8B5CF6]/35 via-[#C4B5FD]/40 to-[#7C3AED]/35 blur-2xl animate-[softPulse_1.2s_ease-in-out_infinite]"
+          />
+        )}
+        {isThinking && !isAiSpeaking && !isListening && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-6 rounded-full pointer-events-none bg-[#A78BFA]/20 blur-xl animate-[pulse_2s_infinite]"
+          />
+        )}
+        <VideoOrb className="w-full h-full object-contain pointer-events-none relative z-10" />
       </div>
 
       {/* Status Indicator - Siguiente-Style Radiant Amethyst/Lavender Cosmic Gradient */}
@@ -41,3 +59,6 @@ export const ConversationOrbHero: React.FC<ConversationOrbHeroProps> = ({
     </div>
   );
 };
+
+export const ConversationOrbHero = React.memo(ConversationOrbHeroInner);
+

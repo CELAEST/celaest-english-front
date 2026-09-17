@@ -13,7 +13,7 @@ function seeded(i: number) {
   return x - Math.floor(x);
 }
 
-export const ConversationWaveformSpectrum: React.FC<ConversationWaveformSpectrumProps> = ({
+const ConversationWaveformSpectrumInner: React.FC<ConversationWaveformSpectrumProps> = ({
   bars = 75,
   animated = true,
   isListening = true,
@@ -96,3 +96,6 @@ export const ConversationWaveformSpectrum: React.FC<ConversationWaveformSpectrum
     </div>
   );
 };
+
+export const ConversationWaveformSpectrum = React.memo(ConversationWaveformSpectrumInner);
+

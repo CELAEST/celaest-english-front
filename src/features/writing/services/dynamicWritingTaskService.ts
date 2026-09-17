@@ -97,7 +97,7 @@ export class DynamicWritingTaskService {
       if (typeof window === "undefined" || !taskId) return;
       const current = this.getCompletedTaskIds();
       if (!current.includes(taskId)) {
-        const updated = [...current, taskId];
+        const updated = [...current, taskId].slice(-30);
         window.localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify(updated));
       }
     } catch {

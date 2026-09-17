@@ -319,6 +319,10 @@ export function useReadingAudioNarrator(
   const stop = useCallback(() => {
     stopTracker();
     if (audioRef.current) {
+      audioRef.current.onplay = null;
+      audioRef.current.onpause = null;
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current = null;
@@ -522,7 +526,8 @@ export function useReadingAudioNarrator(
           .then(() => {
             startTracking();
           })
-          .catch(() => {
+          .catch((err: any) => {
+            if (err?.name === "AbortError") return;
             playSpeechSynthesisFallback(trimmed);
           });
       } catch {

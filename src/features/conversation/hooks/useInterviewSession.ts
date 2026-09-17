@@ -21,12 +21,10 @@ import {
 } from "../services/interviewPersistence";
 import { setMicVolume } from "./micVolumeStore";
 import { appToast } from "../../../design-system/components/Toast";
-import {
-  AiApiErrorType,
-  ErrorScenarioData,
-  ERROR_DATA,
-} from "../../lab/components/AiEngineErrorsLuxuryStudio";
+import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
+import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { ENV } from "../../../shared/constants/env";
 
 let interviewHydratedOnce = false;
 let interviewLastHydratedAt = 0;
@@ -216,22 +214,6 @@ export const useInterviewSession = (
       setCurrentQuestionIndex(0);
       setUserTranscriptRaw("");
       setTurnFeedback(null);
-
-      // Trigger background generation of 12 fresh AI questions for the newly selected level
-      AiInterviewQuestionGenerator.generateSessionQuestions({
-        profession: effectiveRoleName,
-        cefrLevel: norm,
-        count: 12,
-        forceFresh: true,
-      })
-        .then((freshQuestions) => {
-          if (freshQuestions && freshQuestions.length >= 5) {
-            setSessionQuestions(freshQuestions);
-          }
-        })
-        .catch((err) => {
-          logger.warn("[useInterviewSession] Level switch AI question generation error:", err);
-        });
     },
     [effectiveRoleName],
   );
@@ -246,60 +228,39 @@ export const useInterviewSession = (
     }
   }, [initialLevel, setActiveCefrLevel]);
 
-  const lastGeneratedKeyRef = useRef<string>("");
-
-  // Background AI pre-generation of full 12-question tailored session block
+  // Synchronize when role changes while user is at the initial question (e.g. after profile finishes loading)
+  const prevEffectiveRoleRef = useRef<string>(effectiveRoleName);
   useEffect(() => {
-    let isCancelled = false;
-
-    const normLevel = normalizeCefr(activeCefrLevel);
-    const hasLevelMismatch = sessionQuestions.some((q) => {
-      if (!q.targetLevel) return false;
-      return normalizeCefr(q.targetLevel) !== normLevel;
-    });
-
-    const generationKey = `${effectiveRoleName}::${normLevel}`;
-    if (
-      !hasLevelMismatch &&
-      lastGeneratedKeyRef.current === generationKey
-    ) {
-      return;
+    if (effectiveRoleName && effectiveRoleName !== prevEffectiveRoleRef.current) {
+      prevEffectiveRoleRef.current = effectiveRoleName;
+      if (currentQuestionIndex === 0) {
+        const newQuestions = AiInterviewQuestionGenerator.getCachedOrSeedQuestions(
+          effectiveRoleName,
+          normalizeCefr(activeCefrLevel),
+          12,
+        );
+        setSessionQuestions(newQuestions);
+      }
     }
-
-    lastGeneratedKeyRef.current = generationKey;
-
-    AiInterviewQuestionGenerator.generateSessionQuestions({
-      profession: effectiveRoleName,
-      cefrLevel: normLevel,
-      count: 12,
-    })
-      .then((aiQuestions) => {
-        if (!isCancelled && aiQuestions && aiQuestions.length >= 5) {
-          setSessionQuestions(aiQuestions);
-        }
-      })
-      .catch((err) => {
-        logger.warn("[useInterviewSession] Background AI questions error:", err);
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [effectiveRoleName, activeCefrLevel, sessionQuestions]);
+  }, [effectiveRoleName, activeCefrLevel, currentQuestionIndex]);
 
   const isReplenishingRef = useRef<boolean>(false);
+  const lastReplenishedIndexRef = useRef<number>(-1);
 
-  // Background question replenishment when approaching the end of the session pool ("ya casi a lo último")
+  // Background question replenishment ONLY when actively playing and approaching the end of the session pool
   useEffect(() => {
     const normLevel = normalizeCefr(activeCefrLevel);
     const remaining = sessionQuestions.length - currentQuestionIndex;
 
     if (
       sessionQuestions.length > 0 &&
+      currentQuestionIndex > 0 &&
       remaining <= 3 &&
+      lastReplenishedIndexRef.current !== currentQuestionIndex &&
       !isReplenishingRef.current
     ) {
       isReplenishingRef.current = true;
+      lastReplenishedIndexRef.current = currentQuestionIndex;
       AiInterviewQuestionGenerator.generateSessionQuestions({
         profession: effectiveRoleName,
         cefrLevel: normLevel,
@@ -366,7 +327,7 @@ export const useInterviewSession = (
 
     return () => {
       isMountedRef.current = false;
-      SpeechSynthesisService.stop();
+      SpeechSynthesisService.cleanup();
       AudioCaptureService.cleanup();
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
@@ -495,26 +456,9 @@ export const useInterviewSession = (
         }
       } catch (err: any) {
         logger.warn("Interview turn evaluation failed:", err);
-        const errMsg = err?.message || String(err);
-        let errorType: AiApiErrorType = "rate-limit-429";
-        if (err?.code === "AUTH_DECLINED_KEY" || errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
-          errorType = "invalid-key-401";
-        } else if (err?.code === "RATE_LIMIT_COOLDOWN" || errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
-          errorType = "rate-limit-429";
-        } else if (err?.code === "AI_KEYS_EXHAUSTED" || errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
-          errorType = "keys-exhausted-pool";
-        } else if (err?.code === "GATEWAY_TIMEOUT" || errMsg.includes("504") || errMsg.includes("timeout")) {
-          errorType = "gateway-timeout-504";
-        } else {
-          errorType = "server-outage-503";
-        }
-        const baseScenario = ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"];
-        const scenarioWithApiDetails = {
-          ...baseScenario,
-          humanSubtext: err?.message && err.message.length > 5 ? err.message : baseScenario.humanSubtext,
-        };
-        setInfrastructureErrorScenario(scenarioWithApiDetails);
-        setRecoveryCooldown(baseScenario.cooldownDefault || 14);
+        const { scenario, cooldownSeconds } = classifyAiError(err);
+        setInfrastructureErrorScenario(scenario);
+        setRecoveryCooldown(cooldownSeconds);
         setIsRecoveryModalOpen(true);
       } finally {
         if (isMountedRef.current) {
@@ -533,10 +477,17 @@ export const useInterviewSession = (
   const startRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
     if (isAiSpeakingRef.current) return;
-
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("celaest:interview:hasInteracted", "1");
+    } catch {}
     // Check if mic permission is granted, otherwise open luxury recovery modal
     if (!AudioCaptureService.hasActiveMic()) {
-      const granted = await AudioCaptureService.initMicrophone();
+      let granted = false;
+      try {
+        granted = await AudioCaptureService.initMicrophone();
+      } catch {
+        granted = false;
+      }
       if (!granted) {
         if (isMountedRef.current) {
           setStatus("IDLE");
@@ -846,14 +797,16 @@ export const useInterviewSession = (
         SpeechSynthesisService.prefetch(nextQ.question, selectedVoice);
       }
     }
-  }, [currentQuestion, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
+  }, [currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
-  // Trigger initial question on question change.
-  // Deferred via rAF so the status transition never happens synchronously
-  // inside the effect (avoids cascading renders).
+  // Trigger initial question on question change — blindado: no auto-play sin interacción para no crashear por autoplay policy
   useEffect(() => {
+    // Solo habla automáticamente si el usuario ya interactuó con el mic una vez; evita crash en primer mount
+    if (typeof window !== "undefined" && !window.localStorage.getItem("celaest:interview:hasInteracted")) {
+      return;
+    }
     const raf = requestAnimationFrame(() => {
-      void speakQuestion();
+      void speakQuestion().catch(() => {});
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-speak only when the question index advances
@@ -1073,7 +1026,7 @@ export const useInterviewSession = (
     turnFeedback,
     showAnalysisModal,
     savedErrorIds,
-    currentQuestion,
+    currentQuestion?.question,
   ]);
 
   // Hydrate from the backend on mount: if the cloud copy is newer than the
@@ -1168,6 +1121,12 @@ export const useInterviewSession = (
     recoveryCooldown,
     resumeFromRecoveryModal: useCallback(() => {
       setIsRecoveryModalOpen(false);
+      // Best-effort auto-reset of any cooldowns in central core so retry immediately succeeds
+      try {
+        void fetch(`${ENV.coreAiUrl}/ai/keys/reset`, { method: "POST" }).catch(() => {});
+      } catch {
+        // ignore
+      }
       setTimeout(() => {
         const textToSubmit = userTranscriptRef.current || userTranscript;
         if (textToSubmit && textToSubmit.trim()) {

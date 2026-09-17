@@ -11,10 +11,16 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto">
-      {/* High-Definition Hero Background Graphic Asset */}
-      <div
-        className="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat pointer-events-none z-0 opacity-95 blend-graphic-edges"
-        style={{ backgroundImage: "url('/assets/pure_hero_orb_bg.png')" }}
+      {/* High-Definition Hero Video Background — begin1 — fluido */}
+      <video
+        src="/assets/begin1.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 opacity-95 mix-blend-screen"
+        style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
       />
 
       {/* Micro End-Edge Softener */}

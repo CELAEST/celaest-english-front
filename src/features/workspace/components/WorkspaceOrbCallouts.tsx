@@ -1,9 +1,4 @@
-import React from "react";
-import {
-  CognitiveMemoryBrainIcon,
-  PrecisionOpenBookIcon,
-  StudioVoiceMicIcon,
-} from "./WorkspaceBespokeIcons";
+import React, { useState, useEffect } from "react";
 import { useMemoryCards } from "../../memory/hooks/useMemoryCards";
 import { useReadingArticles } from "../../reading/hooks/useReadingArticles";
 
@@ -28,11 +23,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
     memoryCount > 0 && topCard
       ? `“${topCard.betterWay || topCard.correctWord || topCard.userSaid}”`
       : "Personalized Lexicon Deck";
-  const activeMemoryMeta =
-    memoryCount > 0
-      ? `Ready for practice · ${memoryCount} ${memoryCount === 1 ? "card" : "cards"}`
-      : "Empty deck · Click 'Add to Memory' during practice";
-  const activeMemoryStat = memoryCount > 0 ? `${memoryCount} Due` : "Deck Ready";
+  const activeMemoryStat = memoryCount > 0 ? `${memoryCount} DUE` : "DECK READY";
 
   // Dynamic reading article from real repository/cache
   const targetArticle = currentArticle || articles[0];
@@ -40,88 +31,140 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
     ? targetArticle.content.trim().split(/\s+/).length
     : 480;
   const activeReadingTitle =
-    targetArticle?.title || "Mastering Modern Leadership & Alignment";
-  const activeReadingMeta = `${targetArticle?.readTimeMin || 3} min read · ${
-    targetArticle?.cefrLevel || "Technical C1"
-  }`;
-  const activeReadingStat = `${wordCount} Words`;
+    targetArticle?.title || "Architectural Paradigm Shifts in Business";
+  const activeReadingStat = `${targetArticle?.readTimeMin || 4} MIN`;
+  const activeReadingSub = `${targetArticle?.cefrLevel || "C1"} · ${wordCount} words`;
 
   // Dynamic interview simulation from real user settings
   const activeInterviewTitle = learningGoal
     ? `${learningGoal} Simulation`
     : profession
       ? `${profession} Simulation`
-      : "Professional Fluency Simulation";
-  const activeInterviewMeta = "Live AI Simulation · Round 01";
-  const activeInterviewStat = "48kHz Live Audio";
+      : "Tech Career & AI Simulation";
 
-  const callouts = [
-    {
-      id: "memory",
-      tag: "LAST MEMORY",
-      title: activeMemoryTitle,
-      meta: activeMemoryMeta,
-      stat: activeMemoryStat,
-      Icon: CognitiveMemoryBrainIcon,
-    },
-    {
-      id: "reading",
-      tag: "NEXT READING",
-      title: activeReadingTitle,
-      meta: activeReadingMeta,
-      stat: activeReadingStat,
-      Icon: PrecisionOpenBookIcon,
-    },
-    {
-      id: "interview",
-      tag: "UPCOMING INTERVIEW",
-      title: activeInterviewTitle,
-      meta: activeInterviewMeta,
-      stat: activeInterviewStat,
-      Icon: StudioVoiceMicIcon,
-    },
-  ];
+  // Dynamic approved contextual images (with user-selected overrides from localStorage)
+  const [memoryImg, setMemoryImg] = useState<string>("/assets/vocab_headphones_focus.jpg");
+  const [readingImg, setReadingImg] = useState<string>("/assets/reading_modern_architecture.jpg");
+  const [speakingImg, setSpeakingImg] = useState<string>("/assets/speaking_studio_mic.jpg");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedMem = localStorage.getItem("celaest_slot1_memory_img");
+      const savedRead = localStorage.getItem("celaest_slot2_reading_img");
+      const savedSpeak = localStorage.getItem("celaest_slot3_speaking_img");
+      if (savedMem) setMemoryImg(savedMem);
+      if (savedRead) setReadingImg(savedRead);
+      if (savedSpeak) setSpeakingImg(savedSpeak);
+    }
+  }, []);
 
   return (
-    <div className="flex flex-col select-none pt-0 divide-y divide-white/[0.08] w-full sm:w-auto lg:min-w-[320px] xl:min-w-[340px] shrink-0">
-      {callouts.map((item, index) => (
-        <div
-          key={item.id}
-          onClick={() => onSelectNode && onSelectNode(item.id)}
-          className={`group px-1 flex items-center justify-between cursor-pointer transition-all duration-300 hover:translate-x-[-4px] ${
-            index === 0 ? "pt-0 pb-4 sm:pb-5" : "py-4 sm:py-5"
-          }`}
-        >
-          <div className="flex items-center gap-5 min-w-0">
-            {/* Standalone Vector Artwork with Glowing Lavender Pearl Accent */}
-            <div className="text-white group-hover:text-[#DDD6FE] transition-all duration-300 shrink-0 group-hover:scale-105">
-              <item.Icon className="w-7 h-7 sm:w-8 sm:h-8" />
-            </div>
-
-            {/* High-Contrast Typography Hierarchy */}
-            <div className="flex flex-col text-left min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] sm:text-[10.5px] font-mono font-semibold tracking-[0.2em] text-[#B197FF] uppercase">
-                  {item.tag}
-                </span>
-                <span className="text-[9.5px] font-mono text-white/40">{item.stat}</span>
-              </div>
-              <span className="text-[14.5px] sm:text-[15px] text-white font-medium mt-0.5 tracking-wide group-hover:text-[#DDD6FE] transition-colors truncate">
-                {item.title}
-              </span>
-              <span className="text-[11.5px] text-[#8e90a5] font-light mt-0.5 truncate">
-                {item.meta}
-              </span>
-            </div>
+    <div className="flex flex-col space-y-3 sm:space-y-4 select-none pt-1 sm:pt-2 w-full max-w-[290px] sm:max-w-[315px] xl:max-w-[335px] shrink-0 font-['Plus_Jakarta_Sans',sans-serif] z-10">
+      {/* 01 // ACTIVE MEMORY */}
+      <div
+        onClick={() => onSelectNode?.("memory")}
+        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+            <img
+              src={memoryImg}
+              alt="Vocabulary Recall"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
 
-          <div className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 pl-3">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
+            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+              VOCABULARY DECK // {activeMemoryStat}
+            </span>
+            <span
+              className="text-xs sm:text-[14px] font-medium text-white truncate group-hover:text-[#CBD5E1] transition-colors block leading-tight"
+              title={activeMemoryTitle}
+            >
+              {activeMemoryTitle}
+            </span>
+            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+              Spaced repetition recall deck
+            </span>
           </div>
         </div>
-      ))}
+
+        <span className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all text-xs pl-1 shrink-0">
+          →
+        </span>
+      </div>
+
+      {/* 02 // EXECUTIVE READING */}
+      <div
+        onClick={() => onSelectNode?.("reading")}
+        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+            <img
+              src={readingImg}
+              alt="Executive Reading"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+
+          <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
+            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+              EXECUTIVE ARTICLE // {activeReadingStat}
+            </span>
+            <span
+              className="text-xs sm:text-[14px] font-medium text-white truncate group-hover:text-[#CBD5E1] transition-colors block leading-tight"
+              title={activeReadingTitle}
+            >
+              {activeReadingTitle}
+            </span>
+            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+              {activeReadingSub}
+            </span>
+          </div>
+        </div>
+
+        <span className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all text-xs pl-1 shrink-0">
+          →
+        </span>
+      </div>
+
+      {/* 03 // ORAL SIMULATION */}
+      <div
+        onClick={() => onSelectNode?.("interview")}
+        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+            <img
+              src={speakingImg}
+              alt="Oral Simulation"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+
+          <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
+            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+              ORAL SIMULATION // LIVE AUDIO
+            </span>
+            <span
+              className="text-xs sm:text-[14px] font-medium text-white truncate group-hover:text-[#CBD5E1] transition-colors block leading-tight"
+              title={activeInterviewTitle}
+            >
+              {activeInterviewTitle}
+            </span>
+            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+              Round 01 · Duplex conversation
+            </span>
+          </div>
+        </div>
+
+        <span className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all text-xs pl-1 shrink-0">
+          →
+        </span>
+      </div>
     </div>
   );
 };
+

@@ -11,7 +11,7 @@
 import { InterviewQuestionItem } from "./interviewEngineService";
 
 export type CefrLevelCode = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
-export type ProfessionCategory =
+export type KnownProfessionCategory =
   | "HEALTHCARE"
   | "LEGAL"
   | "EDUCATION"
@@ -20,6 +20,8 @@ export type ProfessionCategory =
   | "DESIGN"
   | "DATA"
   | "BUSINESS";
+
+export type ProfessionCategory = KnownProfessionCategory | (string & {});
 
 export interface DynamicQuestionTopic {
   category: "WARMUP" | "BEHAVIORAL" | "TECHNICAL" | "SITUATIONAL" | "STRATEGY" | "WRAPUP";

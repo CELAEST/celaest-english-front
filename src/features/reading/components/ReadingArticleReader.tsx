@@ -9,9 +9,12 @@ import {
 
 export interface ReadingArticleReaderProps {
   content: string;
+  fullContent?: string | undefined;
   articlePhrasalVerbs?: string[] | undefined;
   onLookupWord?: (word: string, context?: string) => Promise<WordLookup>;
   onAddToMemory?: (wordData: WordLookup) => Promise<void>;
+  onOpenRecoveryModal?: (word: string, context?: string) => void;
+  onDirectTranslate?: (word: string, context?: string) => Promise<string | null>;
   activeKaraokeWordIndex?: number | null | undefined;
 }
 
@@ -22,7 +25,15 @@ interface WordRange {
 }
 
 export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.memo(
-  ({ content, articlePhrasalVerbs, onLookupWord, onAddToMemory, activeKaraokeWordIndex }) => {
+  ({
+    content,
+    articlePhrasalVerbs,
+    onLookupWord,
+    onAddToMemory,
+    onOpenRecoveryModal,
+    onDirectTranslate,
+    activeKaraokeWordIndex,
+  }) => {
     const [hoveredRange, setHoveredRange] = useState<WordRange | null>(null);
     const [activeRange, setActiveRange] = useState<WordRange | null>(null);
     const [activeWordData, setActiveWordData] = useState<WordLookup | null>(null);
@@ -173,7 +184,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             logger.warn("Failed lookup for phrase:", phrase, err);
             setActiveWordData({
               word: phrase,
-              spanishTranslation: phrase,
+              spanishTranslation: "",
               phonetic: `/${phrase}/`,
               partOfSpeech: phrase.includes(" ") ? "phrasal verb" : "vocabulary",
               definition: `Contextual meaning for '${phrase}'.`,
@@ -319,10 +330,10 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             let visualStyle = "";
             if (isSelected) {
               visualStyle =
-                "transition-colors duration-150 bg-white/20 text-white font-medium ring-1 ring-white/30";
+                "transition-colors duration-150 bg-white/20 text-white ring-1 ring-white/30";
             } else if (isKaraokeCurrentWord) {
               visualStyle =
-                "transition-none bg-white/[0.14] text-white font-medium";
+                "transition-none bg-white/[0.14] text-white";
             } else if (isHovered) {
               visualStyle = isPhrasalPart
                 ? "transition-colors duration-150 bg-white/[0.08] text-white underline decoration-[#C4B5FD] decoration-[1.5px] underline-offset-[4px]"
@@ -330,14 +341,14 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             } else if (isListening) {
               if (isWordInActiveSentence) {
                 if (isKaraokeAlreadySpoken) {
-                  visualStyle = "transition-colors duration-150 text-white font-normal";
+                  visualStyle = "transition-colors duration-150 text-white";
                 } else {
-                  visualStyle = "transition-colors duration-150 text-white/80 font-light";
+                  visualStyle = "transition-colors duration-150 text-white/80";
                 }
               } else if (isPastSentence) {
-                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/50 font-light";
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/50";
               } else if (isFutureSentence) {
-                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/60 font-light";
+                visualStyle = "transition-colors duration-300 text-[#c5c6d0]/60";
               }
             } else if (isPhrasalPart) {
               visualStyle =
@@ -385,6 +396,15 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             coords={popoverCoords}
             onClose={handleCloseModal}
             onAddToMemory={onAddToMemory}
+            onOpenRecoveryModal={onOpenRecoveryModal}
+            onDirectTranslate={async (word: string, context?: string) => {
+              if (!onDirectTranslate) return null;
+              const tr = await onDirectTranslate(word, context);
+              if (tr) {
+                setActiveWordData((prev) => (prev ? { ...prev, spanishTranslation: tr } : null));
+              }
+              return tr;
+            }}
           />
         )}
       </article>

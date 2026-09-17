@@ -57,12 +57,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
           </p>
         </div>
 
-        {/* 3D Orb Hero (Positioned in Top Header section, clear of scroll canvas) */}
-        <div className="absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none flex items-center justify-center z-0">
-          <img
-            src="/assets/ChatGPT Image Aug 2, 2026, 05_08_26 PM.png"
-            alt="Glowing Orb"
-            className="w-full h-full object-contain"
+        {/* 3D Orb Hero — orve video — fluido */}
+        <div className="absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none flex items-center justify-center z-0 overflow-hidden">
+          <video
+            src="/assets/orve.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="w-full h-full object-contain pointer-events-none mix-blend-screen"
+            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           />
         </div>
       </div>
@@ -99,8 +104,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
           />
         </div>
 
-        {/* RIGHT COLUMN: Sidebar Cards Stack (Scrolls internally if height constrained, no scrollbar) */}
-        <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-4 sm:gap-5 pr-1 py-1">
+        {/* RIGHT COLUMN: Sidebar Cards Stack (Visible on wide screens, hidden on smaller viewports to prioritize AI Providers) */}
+        <div className="hidden xl:flex w-[340px] xl:w-[380px] shrink-0 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-col gap-4 sm:gap-5 pr-1 py-1">
           <SettingsAIMentorCard />
           <SettingsQuickActionsCard />
           <SettingsFooterMessage />

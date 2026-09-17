@@ -26,7 +26,7 @@ const sample: PersistedInterviewState = {
   } as unknown as PersistedInterviewState["turnFeedback"],
   showAnalysisModal: true,
   savedErrorIds: ["err-1"],
-  updatedAt: 123456789,
+  updatedAt: Date.now(),
 };
 
 describe("interviewPersistence", () => {

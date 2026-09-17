@@ -5,3 +5,4 @@ export * from "./components/QuantumProgressGauge";
 export * from "./components/BespokeIconsShowcase";
 export * from "./components/ReadingNavigationVariants";
 export * from "./components/ReadingGenerationStatesShowcase";
+export * from "./components/AuthCallbackLuxuryShowcase";

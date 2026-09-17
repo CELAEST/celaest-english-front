@@ -20,6 +20,20 @@ import { logger } from "../../../shared/utils/logger";
 
 const LOCAL_PROVIDER_CATALOG: AiProvider[] = [
   {
+    id: "groq",
+    name: "Groq (Recomendado)",
+    type: "cloud",
+    status: "available",
+    latencyMs: null,
+    defaultEndpoint: "https://api.groq.com/openai/v1",
+    models: [
+      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", bestFor: "Ultra-rápido, calidad insignia (Recomendado)" },
+      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B", bestFor: "Ultra-baja latencia (~80 ms)" },
+      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B", bestFor: "Alta ventana de contexto" },
+      { id: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 70B", bestFor: "Razonamiento analítico profundo" },
+    ],
+  },
+  {
     id: "openai",
     name: "OpenAI",
     type: "cloud",
@@ -50,11 +64,11 @@ const LOCAL_PROVIDER_CATALOG: AiProvider[] = [
     type: "cloud",
     status: "available",
     latencyMs: null,
-    defaultEndpoint: "https://generativelanguage.googleapis.com/v1",
+    defaultEndpoint: "https://generativelanguage.googleapis.com/v1beta",
     models: [
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", bestFor: "Complex reasoning" },
-      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", bestFor: "Fast everyday practice" },
-      { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", bestFor: "Balanced lightweight" },
+      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash", bestFor: "Rápido y oficial (Recomendado)" },
+      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", bestFor: "Razonamiento complejo" },
+      { id: "gemini-flash-latest", label: "Gemini Flash Latest", bestFor: "Última versión" },
     ],
   },
   {
@@ -168,7 +182,21 @@ export const useAiProviders = () => {
     queryKey: QUERY_KEYS.settings.providers,
     queryFn: async () => {
       try {
-        return await apiSettingsRepository.getAiProviders();
+        const remote = await apiSettingsRepository.getAiProviders();
+        if (!remote || !Array.isArray(remote) || remote.length === 0) {
+          return LOCAL_PROVIDER_CATALOG;
+        }
+        // Merge remote with local catalog ensuring canonical providers (Groq, Gemini, etc.) always exist
+        const remoteMap = new Map(remote.map((p) => [p.id, p]));
+        return LOCAL_PROVIDER_CATALOG.map((local) => {
+          const r = remoteMap.get(local.id);
+          if (!r) return local;
+          return {
+            ...local,
+            ...r,
+            models: r.models && r.models.length > 0 ? r.models : local.models,
+          };
+        });
       } catch (err) {
         logger.warn("Provider API offline, using local catalog", err);
         return LOCAL_PROVIDER_CATALOG;

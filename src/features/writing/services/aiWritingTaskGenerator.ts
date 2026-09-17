@@ -30,6 +30,7 @@ export interface GenerateBatchTasksParams {
   cefrLevel: string;
   count?: number | undefined;
   forceFresh?: boolean | undefined;
+  throwOnAuthError?: boolean | undefined;
 }
 
 const BATCH_STORAGE_PREFIX = "celaest:writing:ai_batch_tasks:v2";
@@ -231,6 +232,9 @@ Output format: Return ONLY valid raw JSON with this exact structure:
 
         return parsedBatch;
       } catch (err) {
+        if (params.throwOnAuthError && err instanceof AiInfrastructureError) {
+          throw err;
+        }
         logger.warn("[AiWritingTaskGenerator] AI batch generation failed, using procedural seed batch", err);
         return this.createProceduralSeedBatch(role, level, count);
       }

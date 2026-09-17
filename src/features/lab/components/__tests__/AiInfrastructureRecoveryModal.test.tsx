@@ -7,7 +7,7 @@ import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 vi.mock("../../../settings/services/providerConnectivity", () => ({
   probeProviderConnection: vi.fn(async (_providerId: string, key: string) => {
     if (key.includes("invalid")) {
-      return { ok: false, latencyMs: null, message: "Invalid API key" };
+      return { ok: false, latencyMs: null, message: "Clave no válida o incompleta. Revisa que no falten caracteres." };
     }
     return { ok: true, latencyMs: 85, message: "Connected" };
   }),
@@ -43,7 +43,8 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
     // Verify dials for writing context
     expect(screen.getByText(/TU TEXTO/i)).toBeInTheDocument();
     expect(screen.getByText(/45 PALABRAS/i)).toBeInTheDocument();
-    expect(screen.getByText(/14 seg/i)).toBeInTheDocument();
+    expect(screen.getByText(/PROVEEDOR IA/i)).toBeInTheDocument();
+    expect(screen.getByText(/BYOK Directo/i)).toBeInTheDocument();
 
     // Verify reassurance
     expect(

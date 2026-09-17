@@ -15,15 +15,13 @@ import { validateSpeechIntelligibility } from "../../conversation/services/speec
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
 import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
-import {
-  AiApiErrorType,
-  ErrorScenarioData,
-  ERROR_DATA,
-} from "../../lab/components/AiEngineErrorsLuxuryStudio";
+import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
+import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import { ENV } from "../../../shared/constants/env";
 
 export interface WritingPracticeViewProps {
   onBackToWorkspace?: () => void;
@@ -48,7 +46,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
     );
     const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
-    const [isGeneratingTask] = useState<boolean>(false);
+    const [isGeneratingTask, setIsGeneratingTask] = useState<boolean>(false);
 
     const [activeCefrLevel, setActiveCefrLevel] = useState<string>(() => {
       if (userLevel) return normalizeCefr(userLevel);
@@ -117,53 +115,6 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
         handleSelectLevel(norm as CefrLevelCode);
       }
     }, [userLevel, handleSelectLevel]);
-
-    const fetchedBatchKeyRef = useRef<string>("");
-
-    useEffect(() => {
-      let isCancelled = false;
-      const normProf = (roleName || "Professional").trim().toLowerCase();
-      const batchKey = `${normProf}:${activeCefrLevel}`;
-
-      // STRICT ANTI-DUPLICATE GUARD: If we already requested this exact role + level, STOP immediately!
-      if (fetchedBatchKeyRef.current === batchKey) {
-        return;
-      }
-
-      // Check if current batch is already populated with AI tasks for current level
-      const hasAiTasks = taskBatch.some((t) => t.id.startsWith("ai-") && t.level === activeCefrLevel);
-      if (hasAiTasks) {
-        fetchedBatchKeyRef.current = batchKey;
-        return;
-      }
-
-      fetchedBatchKeyRef.current = batchKey;
-
-      // Silent background pre-generation of a diverse batch (6 tasks in 1 call)
-      AiWritingTaskGenerator.generateBatchTasks({
-        profession: roleName,
-        cefrLevel: activeCefrLevel,
-      })
-        .then((aiBatch) => {
-          if (!isCancelled && aiBatch && aiBatch.length > 0) {
-            setTaskBatch(aiBatch);
-            setEditorText((curr) => {
-              if (!curr || !curr.trim()) {
-                setCurrentTask(aiBatch[0]);
-                DynamicWritingTaskService.persistActiveTask(aiBatch[0]);
-              }
-              return curr;
-            });
-          }
-        })
-        .catch((err) => {
-          logger.warn("[WritingPracticeView] AI batch task pregeneration error:", err);
-        });
-
-      return () => {
-        isCancelled = true;
-      };
-    }, [activeCefrLevel, roleName]);
 
     // Restore the draft saved for the active task or submission content (survives page reloads)
     const [editorText, setEditorText] = useState<string>(() => {
@@ -278,7 +229,6 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
           }
         }
 
-        const wordCount = editorText.trim().split(/\s+/).length;
         const rawErrors = Array.isArray(parsed.extractedErrors) ? parsed.extractedErrors : [];
         const formattedErrors: WritingErrorItem[] = rawErrors.map((e: any, idx: number) => ({
           id: `byok-err-${idx}-${Date.now()}`,
@@ -325,26 +275,9 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       DynamicWritingTaskService.saveActiveSubmission(result, true, []);
     } catch (err: any) {
       logger.warn("Writing evaluation failed", err);
-      const errMsg = err?.message || String(err);
-      let errorType: AiApiErrorType = "rate-limit-429";
-      if (err?.code === "AUTH_DECLINED_KEY" || errMsg.includes("401") || errMsg.includes("AUTH_DECLINED")) {
-        errorType = "invalid-key-401";
-      } else if (err?.code === "RATE_LIMIT_COOLDOWN" || errMsg.includes("429") || errMsg.includes("RATE_LIMIT")) {
-        errorType = "rate-limit-429";
-      } else if (err?.code === "AI_KEYS_EXHAUSTED" || errMsg.includes("EXHAUSTED") || errMsg.includes("pool") || errMsg.includes("sin saldo")) {
-        errorType = "keys-exhausted-pool";
-      } else if (err?.code === "GATEWAY_TIMEOUT" || errMsg.includes("504") || errMsg.includes("timeout")) {
-        errorType = "gateway-timeout-504";
-      } else {
-        errorType = "server-outage-503";
-      }
-      const baseScenario = ERROR_DATA[errorType] || ERROR_DATA["rate-limit-429"];
-      const scenarioWithApiDetails = {
-        ...baseScenario,
-        humanSubtext: err?.message && err.message.length > 5 ? err.message : baseScenario.humanSubtext,
-      };
-      setRecoveryScenario(scenarioWithApiDetails);
-      setRecoveryCooldown(baseScenario.cooldownDefault || 14);
+      const { scenario, cooldownSeconds } = classifyAiError(err);
+      setRecoveryScenario(scenario);
+      setRecoveryCooldown(cooldownSeconds);
       setIsRecoveryModalOpen(true);
     }
   };
@@ -412,9 +345,51 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     advanceToNextBatchTask();
   };
 
-  const handleNewTask = () => {
-    if (isEvaluating) return;
-    advanceToNextBatchTask("Nueva tarea lista");
+  const handleNewTask = async () => {
+    if (isEvaluating || isGeneratingTask) return;
+
+    try {
+      const isCore = await providerKeyVault.isCentralCoreEnabled();
+      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+      const hasKey = await providerKeyVault.hasKey(activeProvider);
+
+      if (!isCore && !hasKey) {
+        setRecoveryScenario(ERROR_DATA["keys-exhausted-pool"]);
+        setRecoveryCooldown(0);
+        setIsRecoveryModalOpen(true);
+        return;
+      }
+
+      setIsGeneratingTask(true);
+      const freshBatch = await AiWritingTaskGenerator.generateBatchTasks({
+        profession: roleName,
+        cefrLevel: activeCefrLevel,
+        forceFresh: true,
+        throwOnAuthError: true,
+      });
+
+      if (freshBatch && freshBatch.length > 0) {
+        setTaskBatch(freshBatch);
+        setTaskIndex(0);
+        setCurrentTask(freshBatch[0]);
+        DynamicWritingTaskService.persistActiveTask(freshBatch[0]);
+        DynamicWritingTaskService.clearActiveSubmission();
+        DynamicWritingTaskService.clearDraft();
+        setEditorText("");
+        setPersistedSubmission(null);
+        setSavedErrorIds(new Set());
+        appToast.success("Nueva tarea lista", freshBatch[0].title);
+      } else {
+        advanceToNextBatchTask("Nueva tarea lista");
+      }
+    } catch (err: any) {
+      const { scenario, cooldownSeconds } = classifyAiError(err);
+      setRecoveryScenario(scenario);
+      setRecoveryCooldown(cooldownSeconds);
+      setIsRecoveryModalOpen(true);
+    } finally {
+      setIsGeneratingTask(false);
+    }
   };
 
   const handleOpenModal = () => {
@@ -488,10 +463,10 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   return (
     <div className="relative w-full h-full min-h-screen bg-[#000001] text-white flex flex-col justify-between select-none z-10 overflow-hidden animate-[fadeIn_0.5s_ease-out_both]">
       {/* Main Workspace Content Canvas */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-6 sm:px-10 lg:px-14 py-3 sm:py-5 pt-3 sm:pt-4 gap-6 sm:gap-8 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-4 sm:px-6 lg:px-8 py-2 sm:py-3 gap-5 lg:gap-6 z-10 overflow-hidden">
         {/* Left Column: Task Header, Editor & Submit Bar */}
-        <div className="flex-1 w-full flex flex-col justify-between h-full min-h-0 overflow-visible">
-          <div className="flex flex-col flex-1 min-h-0 overflow-visible">
+        <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <React.Fragment key={currentTask.id}>
               <WritingTaskHeader
                 category={`WRITING TASK · ${currentTask.category}`}
@@ -511,12 +486,12 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
               />
               {/* Level-based Scaffolding & Starter Recommendations (Naked Typography) */}
               {currentTask.starterPhrases && currentTask.starterPhrases.length > 0 && (
-                <div className="flex items-center gap-2 sm:gap-3 py-2 px-1 text-xs overflow-x-auto no-scrollbar shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 py-1.5 px-1 text-xs overflow-x-auto no-scrollbar shrink-0 w-full min-w-0 max-w-full">
                   <span className="text-[10.5px] font-mono uppercase tracking-wider text-white/40 shrink-0 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
                     Pistas ({activeCefrLevel}):
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     {currentTask.starterPhrases.map((phrase, idx) => (
                       <button
                         key={idx}
@@ -545,8 +520,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
           />
         </div>
 
-        {/* Right Column: 4 Cards Stack (Hidden on smaller screens to keep editor 100% full-width & responsive) */}
-        <div className="hidden xl:flex w-80 xl:w-96 flex-col space-y-4 shrink-0 h-full max-h-full overflow-y-auto no-scrollbar py-1">
+        {/* Right Column: 4 Cards Stack (Balanced & strictly clamped so it's 100% visible inside viewport) */}
+        <div className="hidden xl:flex w-[290px] xl:w-[320px] 2xl:w-[340px] flex-col space-y-3.5 shrink-0 h-full max-h-full overflow-y-auto no-scrollbar py-1">
           <WritingAIMentorCard
             userLevel={activeCefrLevel}
             statusText={
@@ -600,6 +575,11 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         onClose={() => setIsRecoveryModalOpen(false)}
         onImmediateResume={() => {
           setIsRecoveryModalOpen(false);
+          try {
+            void fetch(`${ENV.coreAiUrl}/ai/keys/reset`, { method: "POST" }).catch(() => {});
+          } catch {
+            // ignore
+          }
           setTimeout(() => {
             void handleSubmit();
           }, 350);

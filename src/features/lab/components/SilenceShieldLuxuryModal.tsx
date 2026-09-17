@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Volume2 } from "lucide-react";
+import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 interface SilenceShieldLuxuryModalProps {
   isOpen: boolean;
@@ -61,6 +62,11 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
     };
   }, []);
 
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose,
+  });
+
   if (!isOpen) return null;
 
   return (
@@ -71,6 +77,10 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="silence-modal-title"
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-md rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-7 sm:p-8 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
       >
@@ -104,7 +114,7 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
               <span className="text-[10px] font-mono tracking-[0.2em] text-[#C4B5FD] uppercase block">
                 0-TOKEN SHIELD
               </span>
-              <h3 className="text-lg sm:text-xl font-light text-white tracking-tight leading-snug">
+              <h3 id="silence-modal-title" className="text-lg sm:text-xl font-light text-white tracking-tight leading-snug">
                 Detectamos ruido o silencio
               </h3>
             </div>

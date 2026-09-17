@@ -36,28 +36,48 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const [selectedScore, setSelectedScore] = useState<number | null>(null);
 
-    // 3D Mathematical Tilt & Specular Glare Physics
-    const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    // 3D Mathematical Tilt & Specular Glare Physics via CSS variables (Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
+    const rafIdRef = useRef<number | null>(null);
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      setTilt({
-        x: ((x - centerX) / centerX) * 5,
-        y: ((y - centerY) / centerY) * -5,
-        glareX: (x / rect.width) * 100,
-        glareY: (y / rect.height) * 100,
-        glareOpacity: 0.14,
+      const el = cardRef.current;
+      if (!el) return;
+
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const tiltX = ((x - centerX) / centerX) * 4.5;
+        const tiltY = ((y - centerY) / centerY) * -4.5;
+        const glareX = (x / rect.width) * 100;
+        const glareY = (y / rect.height) * 100;
+
+        el.style.setProperty("--tilt-x", `${tiltX}`);
+        el.style.setProperty("--tilt-y", `${tiltY}`);
+        el.style.setProperty("--glare-x", `${glareX}%`);
+        el.style.setProperty("--glare-y", `${glareY}%`);
+        el.style.setProperty("--glare-op", "0.14");
       });
     }, []);
 
     const handleMouseLeave = useCallback(() => {
-      setTilt({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      const el = cardRef.current;
+      if (!el) return;
+      el.style.setProperty("--tilt-x", "0");
+      el.style.setProperty("--tilt-y", "0");
+      el.style.setProperty("--glare-x", "50%");
+      el.style.setProperty("--glare-y", "50%");
+      el.style.setProperty("--glare-op", "0");
     }, []);
 
     const handleBookmarkToggle = (e: React.MouseEvent) => {
@@ -135,15 +155,15 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               ? "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(162, 127, 243, 0.22), rgba(52, 211, 153, 0.08) 45%, transparent 75%)"
               : "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(112, 72, 232, 0.22), rgba(162, 127, 243, 0.12) 45%, transparent 75%)",
             filter: "blur(40px)",
-            transform: `translate3d(${tilt.x * 2.5}px, ${tilt.y * -2.5}px, -10px)`,
+            transform: "translate3d(calc(var(--tilt-x, 0) * 2px), calc(var(--tilt-y, 0) * -2px), -10px)",
           }}
         />
 
         {/* ── 3D Card Shell ── */}
         <div
-          className="relative w-full h-full [transform-style:preserve-3d] transition-transform duration-500 ease-out z-10"
+          className="relative w-full h-full [transform-style:preserve-3d] transition-transform duration-[560ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] z-10"
           style={{
-            transform: `rotateY(${tilt.x + (isFlipped ? 180 : 0)}deg) rotateX(${tilt.y}deg)`,
+            transform: `rotateY(calc(var(--tilt-x, 0) * 1deg + ${isFlipped ? 180 : 0}deg)) rotateX(calc(var(--tilt-y, 0) * 1deg))`,
           }}
         >
           {/* Dynamic Specular Sheen (Shared Overlays) */}
@@ -151,21 +171,27 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             aria-hidden="true"
             className="absolute inset-0 rounded-3xl pointer-events-none z-30 transition-opacity duration-300"
             style={{
-              background: `radial-gradient(450px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,${tilt.glareOpacity}), transparent 70%)`,
+              background:
+                "radial-gradient(450px circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255,255,255,var(--glare-op, 0)), transparent 70%)",
             }}
           />
 
           {/* ═══════════════════════════════════════════════════════════════════
               FRONT FACE: Minimalist Luxury Glass
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-6 sm:p-8 bg-[#04040A] border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_40px_rgba(112,72,232,0.12),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#0e0c1b]/95 via-[#06050e]/98 to-[#020206] border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(162,127,243,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
 
             {/* Top Bar: Category + Syntax Tag + Counter + Bookmark */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
               <span className="tracking-widest uppercase">
-                {normalizedCategory} • {card.errorWord ? "SYNTAX & RETENTION" : "CORE LEXICON"}
+                {normalizedCategory} •{" "}
+                {normalizedCategory === "READING"
+                  ? "VOCABULARY & RETENTION"
+                  : card.errorWord
+                  ? "SYNTAX & RETENTION"
+                  : "CORE LEXICON"}
               </span>
 
               <div className="flex items-center gap-3">
@@ -222,10 +248,14 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             )}
 
             {/* Bottom Footer: Click to inspect + SM-2 Interval */}
-            <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
+            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
               <span className="flex items-center gap-1.5 hover:text-white transition-colors">
                 <RotateCw className="w-3 h-3 text-[#A27FF3]" />
-                Click to inspect grammar rule
+                {normalizedCategory === "READING"
+                  ? "Click to flip for definition & meaning"
+                  : normalizedCategory === "WRITING"
+                  ? "Click to inspect structural rules"
+                  : "Click to inspect grammar rule"}
               </span>
               <span>SM-2 Interval</span>
             </div>
@@ -234,14 +264,14 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
           {/* ═══════════════════════════════════════════════════════════════════
               BACK FACE: Minimalist Luxury Glass ($180^\circ$ Flip)
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-6 sm:p-8 bg-[#04040A] border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_40px_rgba(112,72,232,0.15),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#0e0c1b]/95 via-[#06050e]/98 to-[#020206] border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(162,127,243,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
 
             {/* Top Bar: Details + Audio + Actions */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
               <span className="tracking-widest uppercase">
-                Grammar Rule & Context • {normalizedCategory}
+                {normalizedCategory === "READING" ? "Definition & Lexicon Context" : "Grammar Rule & Context"} • {normalizedCategory}
               </span>
 
               <div className="flex items-center gap-3">

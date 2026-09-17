@@ -77,6 +77,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               return (
                 <button
                   key={item.id}
+                  aria-label={item.label}
                   onClick={() => onSelectNav && onSelectNav(item.id)}
                   className={`relative flex items-center w-full py-2.5 rounded-2xl transition-all duration-200 group/btn cursor-pointer ${
                     isHovered ? "px-3.5 justify-start" : "justify-center"

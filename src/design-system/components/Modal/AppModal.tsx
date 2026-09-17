@@ -1,5 +1,6 @@
-import React, { useEffect, useId, useRef } from "react";
+import React, { useEffect, useId } from "react";
 import { X } from "lucide-react";
+import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 /**
  * AppModal — the single source of truth for dialog surfaces.
@@ -47,50 +48,21 @@ export const AppModal: React.FC<AppModalProps> = ({
   footer,
   bodyClassName = "",
 }) => {
-  const panelRef = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-
-    // Focus management: move focus into the dialog on open, restore on close
     const previousOverflow = document.body.style.overflow;
-    const previousActiveElement = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
-      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
-        previousActiveElement.focus();
-      }
     };
-  }, [isOpen, onClose]);
-
-  // Minimal focus trap: keep Tab cycling inside the dialog
-  const handleTabTrap = (e: React.KeyboardEvent) => {
-    if (e.key !== "Tab" || !panelRef.current) return;
-    const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const active = document.activeElement;
-
-    if (e.shiftKey && (active === first || active === panelRef.current)) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && active === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -106,9 +78,8 @@ export const AppModal: React.FC<AppModalProps> = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-5 bg-black/80 backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
     >
       <div
-        ref={panelRef}
+        ref={trapRef}
         tabIndex={-1}
-        onKeyDown={handleTabTrap}
         onClick={(e) => e.stopPropagation()}
         className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${SIZE_WIDTHS[size]} flex-col overflow-hidden rounded-3xl border border-white/[0.08] animate-[scaleUp_0.3s_ease-out] outline-none`}
         style={{

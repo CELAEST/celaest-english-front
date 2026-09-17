@@ -62,7 +62,7 @@ const WHISPER_SILENCE_HALLUCINATIONS = new Set([
 ]);
 
 // Distinctive Spanish stopwords and vocabulary markers for real-time ESL pre-flight screening
-const SPANISH_MARKERS = new Set([
+export const SPANISH_MARKERS = new Set([
   "de", "la", "que", "el", "en", "y", "los", "se", "del", "las", "por", "un", "para", "con", "una",
   "su", "al", "lo", "como", "más", "mas", "pero", "sus", "le", "ya", "o", "fue", "este", "ha", "sí", "si", "porque",
   "esta", "son", "entre", "está", "cuando", "muy", "sin", "sobre", "ser", "tiene", "también", "tambien",

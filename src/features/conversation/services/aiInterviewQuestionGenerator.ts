@@ -170,6 +170,12 @@ Output format: Return ONLY valid raw JSON with the following structure:
             if (response.ok) {
               const data = (await response.json()) as { response?: string; content?: string };
               rawResponse = data.response || data.content || "";
+            } else if (hasKey) {
+              rawResponse = await directClientAiService.chatCompletion({
+                systemPrompt,
+                userPrompt,
+                maxTokens: 3500,
+              });
             }
           } catch {
             if (hasKey) {
@@ -180,6 +186,10 @@ Output format: Return ONLY valid raw JSON with the following structure:
               });
             }
           }
+        }
+
+        if (!rawResponse || !rawResponse.trim()) {
+          return DynamicQuestionService.getRoundQuestions(1, role, level, count);
         }
 
         const parsed = this.parseAiQuestionsResponse(rawResponse, count, role, level);
@@ -241,6 +251,10 @@ Output format: Return ONLY valid raw JSON with the following structure:
       if (clean.startsWith("```")) clean = clean.slice(3);
       if (clean.endsWith("```")) clean = clean.slice(0, -3);
       clean = clean.trim();
+    }
+
+    if (!clean) {
+      return DynamicQuestionService.getRoundQuestions(1, role, level, targetCount);
     }
 
     try {

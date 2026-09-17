@@ -173,6 +173,21 @@ function WorkspaceWrapper() {
 }
 
 export const AppRoutes: React.FC = () => {
+  const navigate = useNavigate();
+  const authAdapter = SupabaseAuthAdapter.getInstance();
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      authAdapter.clearDeadToken();
+      navigate(ROUTES.ONBOARDING, { replace: true });
+    };
+
+    window.addEventListener("celaest:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("celaest:unauthorized", handleUnauthorized);
+    };
+  }, [authAdapter, navigate]);
+
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>

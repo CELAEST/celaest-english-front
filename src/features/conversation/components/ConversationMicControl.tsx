@@ -11,7 +11,7 @@ export interface ConversationMicControlProps {
   onClearText?: () => void;
 }
 
-export const ConversationMicControl: React.FC<ConversationMicControlProps> = ({
+const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
   isListening = false,
   isAiSpeaking = false,
   isThinking = false,
@@ -160,3 +160,6 @@ export const ConversationMicControl: React.FC<ConversationMicControlProps> = ({
     </div>
   );
 };
+
+export const ConversationMicControl = React.memo(ConversationMicControlInner);
+

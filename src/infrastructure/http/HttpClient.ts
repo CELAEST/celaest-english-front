@@ -116,7 +116,17 @@ export class HttpClient {
           const code = typeof errorPayload.code === "string" ? errorPayload.code : undefined;
 
           if (response.status === 401 && typeof window !== "undefined") {
+            try {
+              localStorage.removeItem("lingua_access_token");
+              localStorage.removeItem("lingua_refresh_token");
+              localStorage.removeItem("lingua_auth_user");
+              localStorage.removeItem("lingua_onboarding_completed");
+            } catch {
+              // ignore
+            }
+            HttpClient.token = null;
             window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
+            window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
           }
 
           throw new ApiError(
@@ -127,7 +137,31 @@ export class HttpClient {
           );
         }
 
-        return (json.data !== undefined ? json.data : json) as T;
+        const rawData = (json.data !== undefined ? json.data : json) as any;
+        const isExpiredJwtBody =
+          typeof rawData === "object" &&
+          rawData !== null &&
+          rawData.success === false &&
+          typeof rawData.error === "string" &&
+          (rawData.error.toLowerCase().includes("jwt") ||
+            rawData.error.toLowerCase().includes("unauthorized"));
+
+        if (isExpiredJwtBody && typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("lingua_access_token");
+            localStorage.removeItem("lingua_refresh_token");
+            localStorage.removeItem("lingua_auth_user");
+            localStorage.removeItem("lingua_onboarding_completed");
+          } catch {
+            // ignore
+          }
+          HttpClient.token = null;
+          window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
+          window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
+          throw new ApiError(rawData.error, 401, "UNAUTHORIZED");
+        }
+
+        return rawData as T;
       } catch (error: unknown) {
         if (error instanceof ApiError) throw error;
         if (options.signal?.aborted && !timedOut()) {

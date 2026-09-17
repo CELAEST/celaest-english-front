@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { X, ExternalLink, Info, Check, Loader2, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { X, ExternalLink, Info, Check, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { ProviderMark } from "../../settings/components/SettingsProviderIcons";
 import { AiProviderId } from "../../../domain/entities/AiProvider";
-import { ErrorScenarioData } from "./AiEngineErrorsLuxuryStudio";
+import {
+  ErrorScenarioData,
+  getDynamicUtcResetText,
+} from "../../../shared/constants/errorScenarios";
+import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 import { probeProviderConnection } from "../../settings/services/providerConnectivity";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 
@@ -52,8 +56,8 @@ const PROVIDERS: ProviderOption[] = [
     id: "gemini",
     name: "Gemini",
     badge: "Flash Gratis",
-    placeholder: "AIza...",
-    url: "https://aistudio.google.com/apikey",
+    placeholder: "AIzaSy...",
+    url: "https://aistudio.google.com/app/apikey",
     isFree: true,
   },
   {
@@ -69,10 +73,10 @@ const PROVIDERS: ProviderOption[] = [
 export interface AiInfrastructureRecoveryModalProps {
   isOpen: boolean;
   scenario: ErrorScenarioData;
-  cooldown: number;
+  cooldown: number; // in seconds
   onClose: () => void;
   onImmediateResume: () => void;
-  contextType?: "writing" | "speaking";
+  contextType?: "writing" | "reading" | "speaking" | "general";
   bufferDetail?: {
     wordCount?: number;
     durationSeconds?: number;
@@ -80,57 +84,28 @@ export interface AiInfrastructureRecoveryModalProps {
   };
 }
 
-function getDynamicUtcResetText(): string {
-  const now = new Date();
-  const nextUtc = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0),
-  );
-  const diffMs = nextUtc.getTime() - now.getTime();
-  const hours = Math.floor(diffMs / 3600000);
-  const minutes = Math.floor((diffMs % 3600000) / 60000);
-  return `Reinicio de cuota en ${hours}h ${minutes}m (UTC 00:00)`;
-}
-
 export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryModalProps> = ({
   isOpen,
   scenario,
-  cooldown,
+  cooldown: _cooldown,
   onClose,
   onImmediateResume,
   contextType = "writing",
   bufferDetail,
 }) => {
+  const dialogRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose,
+  });
+
   const [selectedProvider, setSelectedProvider] = useState<AiProviderId>("groq");
   const [keyInput, setKeyInput] = useState<string>("");
+  const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const [isBespokeInfoHovered, setIsBespokeInfoHovered] = useState<boolean>(false);
   const [isResolved, setIsResolved] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [verifiedSuccessInfo, setVerifiedSuccessInfo] = useState<string | null>(null);
-
-  // Active real countdown timer
-  const [remainingCooldown, setRemainingCooldown] = useState<number>(cooldown);
-
-  useEffect(() => {
-    setRemainingCooldown(cooldown);
-  }, [cooldown, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || remainingCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setRemainingCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setTimeout(() => {
-            onImmediateResume();
-          }, 400);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOpen, remainingCooldown, onImmediateResume]);
 
   if (!isOpen) return null;
 
@@ -163,12 +138,12 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
     };
 
     const defaultModels: Record<AiProviderId, string> = {
-      groq: "openai/gpt-oss-20b",
-      gemini: "gemini-2.5-flash",
+      groq: "qwen/qwen3.8-27b",
+      gemini: "gemini-3.6-flash",
       openai: "gpt-4o-mini",
       anthropic: "claude-3-5-haiku-20241022",
       deepseek: "deepseek-chat",
-      grok: "grok-2-latest",
+      grok: "grok-2",
       ollama: "llama3",
       perplexity: "llama-3.1-sonar-small-128k-online",
       openrouter: "meta-llama/llama-3.3-70b-instruct",
@@ -202,9 +177,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         }
 
         setIsVerifying(false);
-        setVerificationError(
-          `Clave no válida (${probe.message}). Verifica que esté activa y copiada completa en ${currentProvider.name}.`,
-        );
+        setVerificationError(probe.message);
         return;
       }
 
@@ -226,34 +199,40 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       }, 900);
     } catch (err: any) {
       setIsVerifying(false);
-      setVerificationError(`Fallo al verificar clave: ${err?.message || "Error de conexión"}`);
+      setVerificationError(`No pudimos verificar la clave. Revisa tu conexión a internet o usa Groq (100% gratis).`);
     }
   };
 
   const isWriting = contextType === "writing";
-  const dial1Label = isWriting ? "TU TEXTO" : scenario.dial1Label;
+  const isReading = contextType === "reading";
+
+  const dial1Label = isWriting ? "TU TEXTO" : isReading ? "TU LECTURA" : scenario.dial1Label;
   const dial1Value = isWriting
     ? `${bufferDetail?.wordCount ?? 0} PALABRAS`
-    : bufferDetail?.durationSeconds !== undefined
-      ? `${bufferDetail.durationSeconds}s AUDIO`
-      : scenario.dial1Value;
+    : isReading
+      ? "IA GENERADOR"
+      : bufferDetail?.durationSeconds !== undefined
+        ? `${bufferDetail.durationSeconds}s AUDIO`
+        : scenario.dial1Value;
 
   const dial1Subtext =
     scenario.id === "keys-exhausted-pool"
       ? getDynamicUtcResetText()
       : isWriting
         ? "100% a salvo en el editor local"
-        : scenario.dial1Subtext;
+        : isReading
+          ? "Progreso de lectura seguro"
+          : scenario.dial1Subtext;
 
-  const dial2Label = scenario.dial2Label;
-  const dial2Value =
-    remainingCooldown > 0 ? `${remainingCooldown} seg` : scenario.dial2Value;
-  const dial2Subtext =
-    remainingCooldown > 0 ? "Reanudación automática al llegar a 0s" : scenario.dial2Subtext;
+  const dial2Label = "PROVEEDOR IA";
+  const dial2Value = "BYOK Directo";
+  const dial2Subtext = "Pega tu clave para continuar sin esperas";
 
   const reassuranceText = isWriting
     ? "Tu redacción permanece 100% intacta en el editor. No perderás ni una sola palabra."
-    : scenario.reassurance;
+    : isReading
+      ? "Tu sesión y progreso de lectura permanecen seguros. Ingresa una clave gratuita para continuar."
+      : scenario.reassurance;
 
   return (
     <div
@@ -263,8 +242,13 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-3xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recovery-modal-headline"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl max-h-[min(92dvh,760px)] my-auto rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none flex flex-col text-left animate-[scaleUp_0.25s_ease-out]"
+        className="relative w-full max-w-xl max-h-[min(92dvh,760px)] my-auto rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none flex flex-col text-left animate-[scaleUp_0.25s_ease-out] outline-none"
       >
         {/* Top Specular Hairline matching Reading/Writing Card Standard */}
         <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none z-10" />
@@ -275,7 +259,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
             <span className="text-[10px] font-mono tracking-[0.2em] text-[#C4B5FD] uppercase block">
               RECUPERACIÓN INTELIGENTE · CELAEST LINGUA
             </span>
-            <h3 className="text-lg sm:text-xl md:text-2xl font-light text-white tracking-tight leading-snug">
+            <h3 id="recovery-modal-headline" className="text-lg sm:text-xl md:text-2xl font-light text-white tracking-tight leading-snug">
               {scenario.humanHeadline}
             </h3>
           </div>
@@ -520,12 +504,24 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
                     <ProviderMark providerId={currentProvider.id} size="md" />
                   </div>
                   <input
-                    type="password"
+                    type={showKeyInput ? "text" : "password"}
                     placeholder={`Pega tu clave ${currentProvider.placeholder}`}
                     value={keyInput}
                     onChange={(e) => setKeyInput(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-white/30 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-white/20 outline-none font-mono"
+                    className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-white/30 rounded-xl pl-10 pr-10 py-2 text-xs text-white placeholder-white/20 outline-none font-mono"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowKeyInput((prev) => !prev)}
+                    className="absolute right-2.5 p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition cursor-pointer"
+                    title={showKeyInput ? "Ocultar clave" : "Ver clave"}
+                  >
+                    {showKeyInput ? (
+                      <EyeOff className="w-3.5 h-3.5 text-[#A78BFA]" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
                 <button
                   onClick={handleActivate}
@@ -565,7 +561,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         {/* Fixed Bottom Action (Always Visible, Never Cut Off) */}
         <div className="p-4 sm:p-5 pt-3 shrink-0 border-t border-white/[0.06] bg-[#04040A]/95 backdrop-blur-md flex flex-wrap items-center justify-between gap-2.5">
           <span className="text-xs text-[#8E8EA8] font-light">
-            No toques nada: continuará solo.
+            Elige un proveedor o ingresa tu clave para continuar.
           </span>
           <button
             onClick={onImmediateResume}

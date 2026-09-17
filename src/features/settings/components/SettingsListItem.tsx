@@ -39,7 +39,7 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
       {/* Right: Value + Chevron */}
       <div className="flex items-center gap-2 shrink-0 ml-4">
         <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300">
-          {value}
+          {value || "—"}
         </span>
         <svg
           className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300"

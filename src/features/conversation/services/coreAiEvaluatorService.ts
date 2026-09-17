@@ -372,11 +372,22 @@ Candidate Spoken Answer: "${cleanText}"`;
             },
             { timeoutMs: 25_000, headers: byokHeaders },
           );
-        } catch (backendErr) {
+        } catch (backendErr: any) {
           logger.warn(
             "[CoreAiEvaluator] Go Backend failed, trying direct Core AI Mesh fallback:",
             backendErr,
           );
+
+          // Identify if backend explicitly failed due to key exhaustion or rate limiting
+          const beMsg = String(backendErr?.message || "").toLowerCase();
+          const beDetails = String(backendErr?.details || backendErr?.rawErrorDetails || "").toLowerCase();
+          const beCode = String(backendErr?.code || "").toLowerCase();
+          const isBackendKeyExhaustion =
+            beCode === "ai_keys_exhausted" ||
+            beMsg.includes("exhausted") ||
+            beMsg.includes("cooldown") ||
+            beDetails.includes("exhausted") ||
+            beDetails.includes("cooldown");
 
           // 2. Tier 2: Direct Core AI fallback — respect BYOK provider if set
           const controller = new AbortController();
@@ -397,20 +408,102 @@ Candidate Spoken Answer: "${cleanText}"`;
             max_tokens: 4096,
           };
 
-          const response = await fetch(CORE_AI_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(bodyPayload),
-            signal: controller.signal,
-          });
+          try {
+            const response = await fetch(CORE_AI_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(bodyPayload),
+              signal: controller.signal,
+            });
 
-          clearTimeout(timeoutId);
+            clearTimeout(timeoutId);
 
-          if (response.ok) {
-            const data = (await response.json()) as { response?: string; content?: string };
-            parsed = repairAndParseJson(data.response || data.content || "");
+            if (response.ok) {
+              const data = (await response.json()) as { response?: string; content?: string };
+              parsed = repairAndParseJson(data.response || data.content || "");
+            } else {
+              const errBodyText = await response.text().catch(() => "");
+              let errJson: any = null;
+              try {
+                errJson = JSON.parse(errBodyText);
+              } catch {
+                // ignore
+              }
+              const errDetails =
+                errJson?.details || errJson?.error || errJson?.message || errBodyText;
+              const errCode = String(errJson?.code || "");
+              const fullErr = `${response.status} ${errCode} ${errDetails}`.toLowerCase();
+
+              if (
+                response.status === 429 ||
+                errCode === "AI_KEYS_EXHAUSTED" ||
+                fullErr.includes("exhausted") ||
+                fullErr.includes("cooldown") ||
+                fullErr.includes("quota") ||
+                fullErr.includes("saldo") ||
+                fullErr.includes("all keys")
+              ) {
+                throw new AiInfrastructureError(
+                  "AI_KEYS_EXHAUSTED",
+                  typeof errDetails === "string" && errDetails.length > 0
+                    ? errDetails
+                    : "All AI keys in the pool are exhausted or in cooldown",
+                  response.status || 429,
+                  fallbackProvider as any,
+                  errBodyText,
+                );
+              }
+
+              if (
+                response.status === 401 ||
+                response.status === 403 ||
+                fullErr.includes("unauthorized") ||
+                fullErr.includes("api key")
+              ) {
+                throw new AiInfrastructureError(
+                  "AUTH_DECLINED_KEY",
+                  `Clave de ${fallbackProvider.toUpperCase()} no válida o revocada.`,
+                  response.status,
+                  fallbackProvider as any,
+                  errBodyText,
+                );
+              }
+
+              if (response.status === 504 || fullErr.includes("timeout")) {
+                throw new AiInfrastructureError(
+                  "GATEWAY_TIMEOUT",
+                  `Tiempo de espera agotado al conectar con el motor de IA.`,
+                  response.status,
+                  fallbackProvider as any,
+                  errBodyText,
+                );
+              }
+
+              throw new AiInfrastructureError(
+                "CLUSTER_OUTAGE",
+                `Error en el servicio de IA (${response.status}): ${errDetails}`,
+                response.status,
+                fallbackProvider as any,
+                errBodyText,
+              );
+            }
+          } catch (fetchErr: any) {
+            clearTimeout(timeoutId);
+            if (fetchErr instanceof AiInfrastructureError) {
+              throw fetchErr;
+            }
+            if (isBackendKeyExhaustion) {
+              throw new AiInfrastructureError(
+                "AI_KEYS_EXHAUSTED",
+                backendErr?.message || "All AI keys in the pool are exhausted or in cooldown",
+                429,
+                fallbackProvider as any,
+                JSON.stringify(backendErr?.details || {}),
+              );
+            }
+            throw fetchErr;
           }
         }
       }
@@ -638,13 +731,61 @@ Candidate Spoken Answer: "${cleanText}"`;
 
           return finalResult;
         }
-    } catch (err) {
+    } catch (err: any) {
       logger.warn(`[CoreAiEvaluator] Error in evaluation pipeline:`, err);
       const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => true);
-      // When Central Core is deactivated, NEVER simulate or fall back to MasterAiFeedbackEngine!
-      // Strict rule: only real BYOK execution; re-throw so recovery modal opens cleanly.
-      if (!isCore || err instanceof AiInfrastructureError) {
-        throw err;
+
+      // Re-throw any AiInfrastructureError or infrastructure failure so the UI modal can display!
+      const errMsg = String(err?.message || err || "").toLowerCase();
+      const errDetails = String(err?.rawErrorDetails || err?.details || "").toLowerCase();
+      const fullErrStr = `${errMsg} ${errDetails} ${String(err?.code || "")}`.toLowerCase();
+
+      const isInfraError =
+        err instanceof AiInfrastructureError ||
+        fullErrStr.includes("exhausted") ||
+        fullErrStr.includes("cooldown") ||
+        fullErrStr.includes("rate_limit") ||
+        fullErrStr.includes("rate limit") ||
+        fullErrStr.includes("ai_error") ||
+        fullErrStr.includes("ai_keys_exhausted") ||
+        fullErrStr.includes("insufficient_quota") ||
+        fullErrStr.includes("quota") ||
+        fullErrStr.includes("saldo") ||
+        fullErrStr.includes("auth_declined") ||
+        fullErrStr.includes("all keys") ||
+        err?.status === 429 ||
+        err?.status === 401 ||
+        err?.status === 504 ||
+        err?.code === "AI_KEYS_EXHAUSTED" ||
+        err?.code === "RATE_LIMIT_COOLDOWN" ||
+        err?.code === "AUTH_DECLINED_KEY";
+
+      if (!isCore || isInfraError) {
+        if (err instanceof AiInfrastructureError) {
+          throw err;
+        }
+        const infraCode =
+          fullErrStr.includes("exhausted") ||
+          fullErrStr.includes("cooldown") ||
+          fullErrStr.includes("quota") ||
+          fullErrStr.includes("saldo") ||
+          fullErrStr.includes("all keys")
+            ? "AI_KEYS_EXHAUSTED"
+            : fullErrStr.includes("rate") || err?.status === 429
+              ? "RATE_LIMIT_COOLDOWN"
+              : fullErrStr.includes("auth") || fullErrStr.includes("unauthorized") || err?.status === 401
+                ? "AUTH_DECLINED_KEY"
+                : fullErrStr.includes("timeout") || err?.status === 504
+                  ? "GATEWAY_TIMEOUT"
+                  : "CLUSTER_OUTAGE";
+
+        throw new AiInfrastructureError(
+          infraCode,
+          err?.message || "AI request failed: all keys exhausted or in cooldown",
+          err?.status || 500,
+          undefined,
+          errDetails || errMsg,
+        );
       }
     }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Volume2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { AudioCaptureService } from "../services/audioCaptureService";
+import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 export interface MicHardwareRecoveryModalProps {
   isOpen: boolean;
@@ -202,6 +203,11 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
     onResume();
   };
 
+  const trapRef = useFocusTrap<HTMLDivElement>({
+    isActive: isOpen,
+    onClose: handleClose,
+  });
+
   if (!isOpen) return null;
 
   return (
@@ -212,6 +218,10 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mic-modal-title"
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-xl rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-8 sm:p-9 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
       >
@@ -224,7 +234,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
             <span className="text-[10px] font-mono tracking-[0.2em] text-[#C4B5FD] uppercase block">
               CALIBRACIÓN DE HARDWARE · ACCESO DE AUDIO REAL
             </span>
-            <h3 className="text-xl sm:text-2xl font-light text-white tracking-tight leading-snug">
+            <h3 id="mic-modal-title" className="text-xl sm:text-2xl font-light text-white tracking-tight leading-snug">
               {permissionState === "granted"
                 ? "Micrófono sincronizado en alta fidelidad"
                 : "El acceso al micrófono está bloqueado"}

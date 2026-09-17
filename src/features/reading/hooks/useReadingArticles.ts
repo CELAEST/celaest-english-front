@@ -4,7 +4,10 @@ import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { WordLookup, GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
 import { readingAudioPrefetcher } from "../services/readingAudioPrefetcher";
+import { AiReadingArticleGenerator } from "../services/aiReadingArticleGenerator";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
+import { directClientAiService } from "../../settings/services/directClientAiService";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 
 const READING_CACHE_KEY = "lingua_reading_articles_v2";
@@ -203,7 +206,8 @@ export const useReadingArticles = (level?: string, profession?: string) => {
     if (articles.length === 0) return;
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(READING_CACHE_KEY, JSON.stringify(articles));
+        const cappedArticles = articles.slice(0, 8);
+        localStorage.setItem(READING_CACHE_KEY, JSON.stringify(cappedArticles));
         localStorage.setItem(ACTIVE_ARTICLE_ID_KEY, activeArticleId ?? "");
       } catch (e) {
         logger.warn("Failed to persist reading cache to localStorage", e);
@@ -317,14 +321,18 @@ export const useReadingArticles = (level?: string, profession?: string) => {
     async (category: string = "BUSINESS") => {
       setIsGenerating(true);
       try {
-        const newArticle = await apiReadingRepository.generateArticle(category, level, undefined, profession);
+        const newArticle = await AiReadingArticleGenerator.generateArticle({
+          category,
+          level,
+          profession,
+        });
 
         setLocalArticles((prev) => [newArticle, ...prev.filter((a) => a.id !== newArticle.id)]);
         setActiveArticleId(newArticle.id);
         setCurrentPageIndex(0);
         return newArticle;
       } catch (err) {
-        logger.warn("Failed to generate AI article", err);
+        logger.warn("[useReadingArticles] Failed to generate AI article:", err);
         throw err;
       } finally {
         setIsGenerating(false);
@@ -333,25 +341,72 @@ export const useReadingArticles = (level?: string, profession?: string) => {
     [level, profession],
   );
 
-  const lastProfessionRef = useRef<string | undefined>(profession);
-  useEffect(() => {
-    if (profession && lastProfessionRef.current && profession !== lastProfessionRef.current) {
-      // Profession changed: invalidate reading cache and generate tailored article
-      try {
-        localStorage.removeItem(READING_CACHE_KEY);
-        localStorage.removeItem(ACTIVE_ARTICLE_ID_KEY);
-      } catch {
-        // ignore
+  const translateWordDirect = useCallback(
+    async (word: string, context?: string): Promise<string> => {
+      const cleanWord = word.trim();
+      if (!cleanWord) return "";
+
+      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+      const hasKey = await providerKeyVault.hasKey(activeProvider);
+
+      if (!hasKey) {
+        throw new Error("NO_KEY");
       }
-      setLocalArticles([]);
-      setActiveArticleId(null);
-      setCurrentPageIndex(0);
-      generateNextArticle("BUSINESS").catch((e) =>
-        logger.warn("[useReadingArticles] auto-generate on profession change error", e),
-      );
-    }
-    lastProfessionRef.current = profession;
-  }, [profession, generateNextArticle]);
+
+      const systemPrompt =
+        "You are an expert bilingual English-Spanish lexicographer and translator. Translate the English word or idiom into natural Spanish. Return ONLY 1 to 3 lowercase Spanish words, no punctuation, no notes, no quotes.";
+      const userPrompt = context
+        ? `Translate "${cleanWord}" to Spanish in the context of this sentence: "${context}". Return ONLY the Spanish translation.`
+        : `Translate "${cleanWord}" to natural Spanish. Return ONLY the Spanish translation.`;
+
+      const translationRaw = await directClientAiService.chatCompletion({
+        systemPrompt,
+        userPrompt,
+        providerId: activeProvider,
+        maxTokens: 60,
+      });
+
+      const cleanTranslation = translationRaw
+        .replace(/^["'`]|["'`]$/g, "")
+        .replace(/[.,!?;:]/g, "")
+        .trim()
+        .toLowerCase();
+
+      if (cleanTranslation && currentArticleRef.current) {
+        const currentArt = currentArticleRef.current;
+        const lowerKey = cleanWord.toLowerCase();
+        const existingEntry = currentArt.vocabularyMap?.[lowerKey];
+        const updatedEntry: WordLookup = {
+          word: cleanWord,
+          phonetic: existingEntry?.phonetic || `/${cleanWord}/`,
+          partOfSpeech:
+            existingEntry?.partOfSpeech || (cleanWord.includes(" ") ? "phrasal verb" : "vocabulary"),
+          spanishTranslation: cleanTranslation,
+          definition: existingEntry?.definition || `Meaning of '${cleanWord}' in context.`,
+          exampleSentence: context || existingEntry?.exampleSentence || `"${cleanWord}"`,
+          cefrLevel: existingEntry?.cefrLevel || level || "B1",
+          audioUrl: existingEntry?.audioUrl,
+          metadata: {
+            lexicalSource: existingEntry?.metadata?.lexicalSource || "client_byok",
+            translationSource: `client_${activeProvider}`,
+            cacheHit: false,
+            resolutionTimeMs: existingEntry?.metadata?.resolutionTimeMs || 120,
+          },
+        };
+
+        upsertLocalArticle({
+          ...currentArt,
+          vocabularyMap: {
+            ...(currentArt.vocabularyMap ?? {}),
+            [lowerKey]: updatedEntry,
+          },
+        });
+      }
+
+      return cleanTranslation;
+    },
+    [level, upsertLocalArticle],
+  );
 
   const instantWordLookup = useCallback(
     async (word: string, context?: string): Promise<WordLookup> => {
@@ -365,7 +420,7 @@ export const useReadingArticles = (level?: string, profession?: string) => {
           word: word,
           phonetic: `/${word}/`,
           partOfSpeech: "vocabulary",
-          spanishTranslation: word,
+          spanishTranslation: "",
           definition: `Vocabulary word: ${word}.`,
           exampleSentence: context || `"${word} is an essential term."`,
           cefrLevel: level || "B1",
@@ -375,7 +430,12 @@ export const useReadingArticles = (level?: string, profession?: string) => {
       const isValidCache = (entry?: WordLookup) => {
         if (!entry) return false;
         const tr = entry.spanishTranslation?.trim();
-        if (!tr || tr === "." || tr === cleanWord) return false;
+        if (!tr || tr === ".") return false;
+        if (tr.toLowerCase() === cleanWord.toLowerCase()) {
+          const isProper = entry.partOfSpeech?.toLowerCase().includes("proper");
+          const hasValidDef = entry.definition && !entry.definition.startsWith("Vocabulary") && !entry.definition.startsWith("Key vocabulary") && !entry.definition.startsWith("Essential professional");
+          if (!isProper && !hasValidDef) return false;
+        }
         if (entry.phonetic?.startsWith("/'") || entry.phonetic === `/${cleanWord}/`) return false;
         if (entry.definition?.startsWith("Key vocabulary term:") && !entry.audioUrl) return false;
         if (entry.definition?.startsWith("Essential professional vocabulary term:")) return false;
@@ -415,6 +475,25 @@ export const useReadingArticles = (level?: string, profession?: string) => {
         try {
           const lookupResult = await apiReadingRepository.lookupWord(cleanWord, context);
 
+          // If backend returned untranslated or empty translation (e.g. CELAEST-CORE down), attempt client BYOK
+          if (!lookupResult.spanishTranslation || lookupResult.metadata?.translationSource === "untranslated") {
+            try {
+              const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+              const hasKey = await providerKeyVault.hasKey(activeProvider);
+              if (hasKey) {
+                const directTr = await translateWordDirect(cleanWord, context);
+                if (directTr) {
+                  lookupResult.spanishTranslation = directTr;
+                  if (lookupResult.metadata) {
+                    lookupResult.metadata.translationSource = `client_${activeProvider}`;
+                  }
+                }
+              }
+            } catch {
+              // Direct BYOK translation error ignored; fallback modal will be presented to user
+            }
+          }
+
           // Persist the enriched version so future sessions reuse it
           if (currentArticle) {
             upsertLocalArticle({
@@ -432,7 +511,7 @@ export const useReadingArticles = (level?: string, profession?: string) => {
             word: cleanWord,
             phonetic: `/${cleanWord}/`,
             partOfSpeech: "vocabulary",
-            spanishTranslation: cleanWord,
+            spanishTranslation: "",
             definition: `Vocabulary term: ${cleanWord}.`,
             exampleSentence: context || `"${cleanWord} is an important term in professional communication."`,
             cefrLevel: level || "B1",
@@ -538,6 +617,7 @@ export const useReadingArticles = (level?: string, profession?: string) => {
     prevPage,
     generateNextArticle,
     instantWordLookup,
+    translateWordDirect,
     getOrFetchQuiz,
   };
 };

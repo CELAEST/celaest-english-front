@@ -69,8 +69,8 @@ export const OnboardingReadyStep: React.FC<OnboardingReadyStepProps> = ({
         {/* Top Spacer matching persistent LINGUA Header height */}
         <div className="shrink-0 h-5 sm:h-7" />
 
-        {/* Middle Content Section */}
-        <div className="flex-1 flex flex-col justify-center max-w-lg min-h-0 my-auto py-1 overflow-y-auto custom-scrollbar">
+        {/* Middle Content Section — Strict Zero Global Scroll */}
+        <div className="flex-1 flex flex-col justify-center max-w-md lg:max-w-lg xl:max-w-[490px] min-h-0 my-auto py-1">
           {/* Progress Indicator: 04 / 04 (100%) */}
           <OnboardingStepProgress
             currentStep={4}
@@ -80,34 +80,27 @@ export const OnboardingReadyStep: React.FC<OnboardingReadyStepProps> = ({
           />
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl md:text-[34px] font-light tracking-tight text-white leading-[1.12] mb-1 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.12s_both]">
-            Your AI Mentor
-            <br />
-            <span className="text-[#A27FF3] font-light">is ready.</span>
+          <h1 className="text-2xl sm:text-3xl md:text-[34px] font-light tracking-tight text-white leading-tight mb-1.5 shrink-0 animate-[fadeSlideUp_0.4s_ease-out_both]">
+            Your AI Mentor <span className="text-[#A27FF3] font-light">is ready.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-[#999a9b] font-light leading-relaxed mb-3.5 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.18s_both]">
-            I&apos;ve calibrated your baseline from our conversation and generated your personalized roadmap.
+          <p className="text-xs sm:text-sm text-[#999a9b] font-light leading-relaxed mb-3 sm:mb-4 shrink-0 animate-[fadeSlideUp_0.4s_ease-out_0.08s_both]">
+            Baseline calibrated from our conversation. Your personalized learning roadmap is prepared.
           </p>
 
           {/* Dynamic Profile Summary Card */}
-          <div className="mb-4 shrink-0 animate-[fadeSlideUp_0.5s_ease-out_0.24s_both]">
+          <div className="mb-3 sm:mb-4 shrink-0 animate-[fadeSlideUp_0.4s_ease-out_0.16s_both]">
             <OnboardingProfileCard metrics={dynamicMetrics} />
           </div>
 
-          {/* Motivational Closing Lines */}
-          <div className="mb-3 shrink-0 animate-[fadeSlideUp_0.45s_ease-out_0.3s_both]">
-            <p className="text-xs text-[#C8C8E0] font-light leading-relaxed">
-              I won&apos;t teach you like everyone else.
-            </p>
-            <p className="text-xs text-[#B996FF] font-light leading-relaxed mt-0.5">
-              I&apos;ll adapt every exercise and conversation based on your real responses.
-            </p>
-          </div>
+          {/* Single Focused Tagline */}
+          <p className="text-xs sm:text-[12.5px] text-white/50 font-light leading-snug mb-3 sm:mb-4 shrink-0 max-w-sm animate-[fadeSlideUp_0.4s_ease-out_0.24s_both]">
+            I&apos;ll adapt every exercise and conversation based on your real responses.
+          </p>
 
           {/* Navigation Buttons */}
-          <div className="shrink-0 flex items-center gap-3.5 pt-1 max-w-lg animate-[fadeSlideUp_0.45s_ease-out_0.36s_both]">
+          <div className="shrink-0 flex items-center gap-3 pt-1 max-w-md animate-[fadeSlideUp_0.4s_ease-out_0.32s_both]">
             <button
               onClick={onPrev}
               className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#13102B] border border-[#2A244D] text-[#A699CD] hover:text-white hover:border-[#4B3B82] hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer shadow-[0_0_15px_rgba(0,0,0,0.4)]"
@@ -120,7 +113,7 @@ export const OnboardingReadyStep: React.FC<OnboardingReadyStepProps> = ({
 
             <button
               onClick={onStartLearning}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] text-white text-xs sm:text-sm font-medium rounded-full shadow-[0_0_25px_rgba(99,102,241,0.5)] hover:shadow-[0_0_35px_rgba(99,102,241,0.7)] hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
+              className="group inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-2.5 sm:py-3 bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] text-white text-xs sm:text-sm font-medium rounded-full shadow-[0_0_25px_rgba(99,102,241,0.5)] hover:shadow-[0_0_35px_rgba(99,102,241,0.7)] hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
               aria-label="Start Learning"
             >
               <span>Start Learning</span>

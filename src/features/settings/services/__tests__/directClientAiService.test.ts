@@ -24,7 +24,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(429, openAiQuotaError, "openai");
       expect(err.code).toBe("AI_KEYS_EXHAUSTED");
-      expect(err.message).toContain("Cuota o saldo agotado en OPENAI");
+      expect(err.message).toContain("Tu cuenta de OpenAI no tiene saldo disponible");
       expect(err.status).toBe(429);
       expect(err.providerId).toBe("openai");
     });
@@ -40,7 +40,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(401, openAiAuthError, "openai");
       expect(err.code).toBe("AUTH_DECLINED_KEY");
-      expect(err.message).toContain("Clave de OPENAI no válida");
+      expect(err.message).toContain("La clave de OpenAI no fue reconocida");
       expect(err.status).toBe(401);
     });
 
@@ -55,7 +55,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(400, anthropicBillingError, "anthropic");
       expect(err.code).toBe("AI_KEYS_EXHAUSTED");
-      expect(err.message).toContain("Cuota o saldo agotado en ANTHROPIC");
+      expect(err.message).toContain("Tu cuenta de Claude no tiene saldo disponible");
     });
 
     it("classifies Anthropic 401 invalid x-api-key as AUTH_DECLINED_KEY", () => {
@@ -69,7 +69,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(401, anthropicAuthError, "anthropic");
       expect(err.code).toBe("AUTH_DECLINED_KEY");
-      expect(err.message).toContain("Clave de ANTHROPIC no válida");
+      expect(err.message).toContain("La clave de Claude no fue reconocida");
     });
 
     it("classifies Groq 429 TPM limit as RATE_LIMIT_COOLDOWN", () => {
@@ -83,7 +83,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(429, groqRateLimit, "groq");
       expect(err.code).toBe("RATE_LIMIT_COOLDOWN");
-      expect(err.message).toContain("Límite de peticiones por minuto en GROQ");
+      expect(err.message).toContain("La Inteligencia Artificial está procesando muchas respuestas");
     });
 
     it("classifies DeepSeek 402 Insufficient Balance as AI_KEYS_EXHAUSTED", () => {
@@ -97,7 +97,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       const err = parseProviderError(402, deepSeekError, "deepseek");
       expect(err.code).toBe("AI_KEYS_EXHAUSTED");
-      expect(err.message).toContain("Cuota o saldo agotado en DEEPSEEK");
+      expect(err.message).toContain("Tu cuenta de DeepSeek no tiene saldo disponible");
     });
 
     it("classifies 504 status as GATEWAY_TIMEOUT", () => {
@@ -193,7 +193,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       expect(result).toBe('{"scoreClarity": 88}');
     });
 
-    it("proactively migrates deprecated models (allam-2-7b, llama-3.1) to openai/gpt-oss-20b", async () => {
+    it("proactively migrates deprecated models (allam-2-7b, llama-3.1) to qwen/qwen3.8-27b", async () => {
       await providerKeyVault.saveKey("groq", "gsk_test_groq_key");
       await providerKeyVault.saveConfig("groq", {
         endpoint: "https://api.groq.com/openai/v1",
@@ -220,11 +220,11 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       });
 
       expect(result).toBe('{"status": "ok"}');
-      expect(sentModel).toBe("openai/gpt-oss-20b");
+      expect(sentModel).toBe("qwen/qwen3.8-27b");
 
       // Verify that the vault was updated with the migrated model
       const updatedConfig = await providerKeyVault.getConfig("groq");
-      expect(updatedConfig?.defaultModel).toBe("openai/gpt-oss-20b");
+      expect(updatedConfig?.defaultModel).toBe("qwen/qwen3.8-27b");
     });
 
     it("salvages valid JSON from json_validate_failed failed_generation payload", async () => {
@@ -298,6 +298,50 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       expect(result).toBe('{"recovered": true}');
       expect(modelsRequested).toContain("custom-deprecated-model");
       expect(modelsRequested).toContain("openai/gpt-oss-20b");
+    });
+
+    it("auto-cascades to next key in provider pool when first key hits rate limit (429)", async () => {
+      await providerKeyVault.saveKeys("groq", ["gsk_key_exhausted", "gsk_key_backup"]);
+      const keysUsed: string[] = [];
+
+      global.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+        const authHeader = opts?.headers?.Authorization || opts?.headers?.authorization || "";
+        const token = authHeader.replace("Bearer ", "");
+        keysUsed.push(token);
+
+        if (token === "gsk_key_exhausted") {
+          return {
+            ok: false,
+            status: 429,
+            text: async () =>
+              JSON.stringify({
+                error: {
+                  message: "Rate limit reached on OTPM. Reduce max_tokens or wait.",
+                  type: "tokens",
+                  code: "rate_limit_exceeded",
+                },
+              }),
+          } as any;
+        }
+
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            choices: [{ message: { content: '{"poolSuccess": true}' } }],
+          }),
+        } as any;
+      });
+
+      const result = await directClientAiService.chatCompletion({
+        systemPrompt: "System",
+        userPrompt: "User",
+        providerId: "groq",
+      });
+
+      expect(result).toBe('{"poolSuccess": true}');
+      expect(keysUsed).toContain("gsk_key_exhausted");
+      expect(keysUsed).toContain("gsk_key_backup");
     });
   });
 });

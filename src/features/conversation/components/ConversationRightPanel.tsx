@@ -37,6 +37,8 @@ export interface ConversationRightPanelProps {
   onOpenAnalysisModal?: () => void;
 }
 
+const DEFAULT_SAVED_ERROR_IDS = new Set<string>();
+
 const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   currentRound = 1,
   currentQuestion = 1,
@@ -48,7 +50,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   isListening = false,
   isPaused = false,
   turnFeedback,
-  savedErrorIds = new Set(),
+  savedErrorIds = DEFAULT_SAVED_ERROR_IDS,
   onClose,
   onSetSpeechRate,
   onSetLevel,
@@ -93,7 +95,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
     <div className="w-full flex flex-col space-y-3 select-none z-20 transition-all duration-300 py-1">
       {/* CARD 1: Interview Progress & Role Info */}
       <div
-        className="relative bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 rounded-3xl p-4 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col space-y-2.5 shrink-0 overflow-hidden animate-[fadeSlideUp_0.4s_ease-out_both]"
+        className="relative z-30 bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 rounded-3xl p-4 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] flex flex-col space-y-2.5 shrink-0 overflow-visible animate-[fadeSlideUp_0.4s_ease-out_both]"
         style={{ animationDelay: "100ms" }}
       >
         {/* Top Specular Hairline */}

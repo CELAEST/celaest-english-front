@@ -85,7 +85,7 @@ export const LevelSelectorPill: React.FC<LevelSelectorPillProps> = React.memo(
           <div
             role="menu"
             aria-label="Selección de nivel adaptativo CEFR"
-            className={`absolute top-full mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#09090E]/98 backdrop-blur-3xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-1.5 z-50 flex flex-col gap-0.5 overflow-hidden transition-all duration-200 ${
+            className={`absolute top-full mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#09090E] border border-white/10 backdrop-blur-3xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-1.5 z-50 flex flex-col gap-0.5 overflow-hidden animate-[fadeSlideDown_0.15s_ease-out] transition-all duration-200 ${
               align === "right" ? "right-0" : "left-0"
             }`}
           >

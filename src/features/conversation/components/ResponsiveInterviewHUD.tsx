@@ -26,7 +26,7 @@ export interface ResponsiveInterviewHUDProps {
   hasFeedback?: boolean;
 }
 
-export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
+const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
   currentRound = 1,
   currentQuestion = 1,
   totalQuestions = 5,
@@ -287,3 +287,6 @@ export const ResponsiveInterviewHUD: React.FC<ResponsiveInterviewHUDProps> = ({
     </nav>
   );
 };
+
+export const ResponsiveInterviewHUD = React.memo(ResponsiveInterviewHUDInner);
+

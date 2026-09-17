@@ -1,237 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Sparkles,
-  X,
-  Check,
-  CircleCheck,
-  ChevronLeft,
-  ChevronRight,
-  ArrowRight,
-  Bookmark,
-  Volume2,
-  Mic,
-  Play,
-  Pause,
-  Copy,
-  BookOpen,
-  Trophy,
-  BookOpenCheck,
-  Languages,
-  AudioLines,
-  Lightbulb,
-  Target,
-} from "lucide-react";
 import { SpecificErrorItem } from "../services/interviewEngineService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { sanitizeFeedbackTone } from "../services/coreAiEvaluatorService";
 import { AppModal } from "../../../design-system/components/Modal/AppModal";
 import { logger } from "../../../shared/utils/logger";
-
-const WAVEFORM_BARS = [
-  3, 4, 6, 14, 20, 12, 6, 4, 4, 8, 18, 24, 22, 16, 10, 6, 4, 6, 12, 20, 24, 22, 14, 8, 6, 4, 10, 18,
-  22, 16, 8, 4, 6, 12, 20, 22, 14, 6, 4, 4, 8, 16, 20, 14, 8, 4, 6, 12, 18, 14, 8, 4, 6, 14, 22, 18,
-  10, 6, 4, 6, 10, 16, 12, 8, 4, 4, 6, 12, 18, 14, 8, 4, 4, 6, 12, 16, 10, 6, 4, 4, 6, 12, 18, 22,
-  16, 8, 4, 4, 6, 10, 6, 4, 3,
-];
-
-const formatPlaybackTime = (sec: number): string => {
-  if (!Number.isFinite(sec) || isNaN(sec) || sec <= 0) return "00:00";
-  const safeSec = Math.floor(sec);
-  const m = Math.floor(safeSec / 60);
-  const s = Math.floor(safeSec % 60);
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-};
-
-interface ParsedRecommendation {
-  intro: string;
-  steps: { num: number; text: string }[];
-  spokenExample: string;
-  practiceTip: string;
-}
-
-function parseRecommendation(raw: string): ParsedRecommendation {
-  if (!raw || typeof raw !== "string") {
-    return { intro: "", steps: [], spokenExample: "", practiceTip: "" };
-  }
-
-  let cleaned = raw.trim();
-  if (
-    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
-    (cleaned.startsWith("'") && cleaned.endsWith("'"))
-  ) {
-    cleaned = cleaned.slice(1, -1).trim();
-  }
-
-  // 1. Extract practice tip (e.g. "Practica diciendo esta frase varias veces hasta que fluya.")
-  let practiceTip = "";
-  const tipMatch = cleaned.match(/(Practica(?:\s+diciendo)?\s+[^.]+\.?)$/i);
-  if (tipMatch && tipMatch.index !== undefined) {
-    practiceTip = tipMatch[1].trim();
-    cleaned = cleaned.slice(0, tipMatch.index).trim();
-  }
-
-  // 2. Extract spoken example (e.g. "Ejemplo en voz alta: ...", "Dilo en voz alta: ...", "Ejemplo: ...")
-  let spokenExample = "";
-  const exampleMatch = cleaned.match(
-    /(?:Ejemplo\s+en\s+voz\s+alta|Dilo\s+en\s+voz\s+alta|Ejemplo)\s*:\s*([\s\S]+)$/i,
-  );
-  if (exampleMatch && exampleMatch.index !== undefined) {
-    spokenExample = exampleMatch[1].trim().replace(/^["'\s]+|["'\s]+$/g, "");
-    cleaned = cleaned.slice(0, exampleMatch.index).trim();
-  }
-
-  // 3. Extract numbered steps (e.g. 1. "..." 2. "...")
-  const stepRegex = /(?:^|\s)(\d+)[\.\)]\s*(["']?[^0-9\n]+?["']?)(?=(?:\s+\d+[\.\)]|$))/g;
-  const steps: { num: number; text: string }[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = stepRegex.exec(cleaned)) !== null) {
-    const num = parseInt(match[1], 10);
-    const stepText = match[2].trim().replace(/^["']|["']$/g, "").trim();
-    if (stepText.length > 0) {
-      steps.push({ num, text: stepText });
-    }
-  }
-
-  // 4. Fallback if no numbered steps found but contains bracketed template
-  if (steps.length === 0) {
-    const templateMatch = cleaned.match(/['"]([^'"]*\[[^'"]+\][^'"]*)['"]/);
-    if (templateMatch) {
-      steps.push({ num: 1, text: templateMatch[1].trim() });
-    }
-  }
-
-  // 5. Extract intro text
-  let intro = cleaned;
-  if (steps.length > 0) {
-    const firstStepIndex = cleaned.search(/(?:^|\s)1[\.\)]/);
-    if (firstStepIndex !== -1) {
-      intro = cleaned.slice(0, firstStepIndex).trim();
-    } else if (steps[0]) {
-      const templateIndex = cleaned.indexOf(steps[0].text);
-      if (templateIndex > 0) {
-        intro = cleaned.slice(0, templateIndex).replace(/['"]\s*$/, "").trim();
-      }
-    }
-  }
-
-  intro = intro.replace(/^Paso\s+a\s+paso\s*:\s*/i, "").trim();
-
-  return { intro, steps, spokenExample, practiceTip };
-}
-
-function renderHighlightedTokens(text: string): React.ReactNode {
-  const parts = text.split(/(\[[^\]]+\])/g);
-  return parts.map((part, idx) => {
-    if (part.startsWith("[") && part.endsWith("]")) {
-      return (
-        <span
-          key={idx}
-          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md bg-white/[0.08] text-white font-mono text-[11px] border border-white/[0.1] font-medium tracking-tight"
-        >
-          {part}
-        </span>
-      );
-    }
-    return <span key={idx}>{part}</span>;
-  });
-};
-
-function TopHighlight() {
-  return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(180deg,rgba(255,255,255,0.025),transparent_18%)]"
-    />
-  );
-}
-
-function cleanRuleNote(explanation?: string, fallback?: string): string {
-  const target = explanation?.trim() || fallback?.trim() || "";
-  if (!target) return "";
-
-  let text = target;
-
-  // If text contains the bombillito emoji (U+1F4A1), extract only the focused rule/reminder after it
-  if (/[\u{1F4A1}]/u.test(text)) {
-    const parts = text
-      .split(/[\u{1F4A1}]/u)
-      .map((p) => p.trim())
-      .filter(Boolean);
-    if (parts.length > 1) {
-      text = parts[parts.length - 1];
-    } else if (parts.length === 1) {
-      text = parts[0];
-    }
-  }
-
-  // Remove leading prefixes like "Regla:", "Nota:", etc.
-  text = text.replace(/^(Regla|Nota|Tip|Consejo)\s*:\s*/i, "").trim();
-
-  // Capitalize first letter
-  const cleaned = text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
-  return sanitizeFeedbackTone(cleaned);
-}
-
-function getDynamicInsight(feedback: ComprehensiveTurnFeedback): string {
-  if (
-    feedback.strategicFeedback?.explanation &&
-    feedback.strategicFeedback.explanation.trim().length > 10
-  ) {
-    return sanitizeFeedbackTone(feedback.strategicFeedback.explanation.trim());
-  }
-
-  const strengths = feedback.keyStrengths?.filter(Boolean) || [];
-  const errors = feedback.unclearOrErrorWords || [];
-
-  if (strengths.length > 0) {
-    const citedStrengths = strengths
-      .slice(0, 2)
-      .map((s) => `'${s}'`)
-      .join(" y ");
-    if (errors.length === 0) {
-      return `Articulaste tus ideas con fluidez y destacaste al integrar ${citedStrengths}, proyectando un perfil seguro y estructurado.`;
-    }
-    return `Identificamos conceptos valiosos en tu respuesta como ${citedStrengths}. Se detectaron ${errors.length} oportunidades de estructura para conectar aún mejor tus oraciones.`;
-  }
-
-  if (errors.length === 0) {
-    return "Demostraste una respuesta concisa, natural y sin errores léxicos ni gramaticales para esta pregunta.";
-  }
-
-  return `Identificamos tu iniciativa comunicativa y ${errors.length} puntos clave de gramática y vocabulario para consolidar tu estructura en las siguientes tomas.`;
-}
-
-function getDynamicRecommendation(feedback: ComprehensiveTurnFeedback): string {
-  if (
-    feedback.strategicFeedback?.recommendation &&
-    feedback.strategicFeedback.recommendation.trim().length > 10
-  ) {
-    return sanitizeFeedbackTone(feedback.strategicFeedback.recommendation.trim());
-  }
-
-  if (feedback.tipsForNextTurn && feedback.tipsForNextTurn.trim().length > 10) {
-    return sanitizeFeedbackTone(feedback.tipsForNextTurn.trim());
-  }
-
-  const errors = feedback.unclearOrErrorWords || [];
-  const hasFalseCognates = errors.some(
-    (e) =>
-      e.errorType === "VOCABULARY" ||
-      e.explanation.toLowerCase().includes("falso amigo") ||
-      e.explanation.toLowerCase().includes("cognado"),
-  );
-
-  if (hasFalseCognates) {
-    return "Paso a paso: Presta atención a los falsos cognados señalados abajo (ej. attend vs assist, summarize vs resume) para garantizar máxima precisión y naturalidad.";
-  }
-
-  if (errors.length > 0) {
-    return "Paso a paso: Para tu próxima respuesta, concéntrate en conectar oraciones cortas con el modelo STAR y apóyate en los términos sugeridos en las tarjetas inferiores.";
-  }
-
-  return "Mantén esta cadencia ejecutiva. Para respuestas de liderazgo de mayor calibre, cuantifica el impacto en negocio (ROI, % de adopción o tiempos de entrega).";
-}
+import {
+  getDynamicInsight,
+  InterviewAnalysisScorecard,
+  InterviewAnalysisStrategyGrid,
+  InterviewAnalysisTranscriptCard,
+  InterviewAnalysisImprovedAnswerCard,
+  InterviewAnalysisErrorCarousel,
+} from "./analysis";
 
 export interface InterviewAnalysisModalProps {
   feedback: ComprehensiveTurnFeedback;
@@ -242,86 +22,6 @@ export interface InterviewAnalysisModalProps {
   onNavigateToMemory?: (() => void) | undefined;
 }
 
-interface ScoreGaugeProps {
-  value: number;
-  from: string;
-  to: string;
-  id: string;
-  glowColor?: string;
-  size?: number;
-  stroke?: number;
-}
-
-function ScoreGauge({
-  value,
-  from,
-  to,
-  id,
-  glowColor = "rgba(162, 127, 243, 0.40)",
-  size = 80,
-  stroke = 5.5,
-}: ScoreGaugeProps) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const safeValue = Math.min(100, Math.max(0, value));
-  const offset = circumference - (safeValue / 100) * circumference;
-
-  return (
-    <div
-      className="relative shrink-0 flex items-center justify-center"
-      style={{ width: size, height: size }}
-    >
-      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <defs>
-          <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={from} />
-            <stop offset="100%" stopColor={to} />
-          </linearGradient>
-        </defs>
-        {/* Track */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#141528"
-          strokeWidth={stroke}
-        />
-        {/* Animated Metric Arc */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={`url(#${id})`}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{
-            transition: "stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-            filter: glowColor ? `drop-shadow(0 0 6px ${glowColor})` : undefined,
-          }}
-        />
-      </svg>
-      {/* Centered Value */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[20px] font-bold tracking-tight text-white font-mono leading-none">
-          {safeValue}
-        </span>
-        <span className="text-[9px] font-medium text-white/40 leading-none mt-0.5">%</span>
-      </div>
-    </div>
-  );
-}
-
-const getTierLabel = (score: number): string => {
-  if (score >= 90) return "Nivel Ejecutivo";
-  if (score >= 80) return "Nivel Avanzado";
-  if (score >= 70) return "Nivel Competente";
-  return "En Desarrollo";
-};
-
 export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
   feedback,
   savedErrorIds,
@@ -330,8 +30,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
   onSaveAllErrors,
   onNavigateToMemory,
 }) => {
-  const [index, setIndex] = useState<number>(0);
-  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
   const [isPlayingModelAudio, setIsPlayingModelAudio] = useState<boolean>(false);
   const [isPlayingRecommendationAudio, setIsPlayingRecommendationAudio] = useState<boolean>(false);
 
@@ -376,14 +74,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-
-  const errors = feedback.unclearOrErrorWords || [];
-  const currentError = errors[index] || errors[0];
-
-  const goNav = (dir: number) => {
-    if (errors.length === 0) return;
-    setIndex((prev) => (prev + dir + errors.length) % errors.length);
-  };
 
   const handleToggleUserAudio = () => {
     if (!userAudioRef.current) return;
@@ -469,11 +159,7 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
     });
   };
 
-  const handleSaveAll = async () => {
-    setIsSavingAll(true);
-    await onSaveAllErrors();
-    setIsSavingAll(false);
-  };
+  const errors = feedback.unclearOrErrorWords || [];
 
   return (
     <AppModal
@@ -499,25 +185,11 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
             strokeLinecap="round"
           />
           <defs>
-            <linearGradient
-              id="hdr_grad"
-              x1="3.34"
-              y1="2"
-              x2="20.66"
-              y2="22"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="hdr_grad" x1="3.34" y1="2" x2="20.66" y2="22" gradientUnits="userSpaceOnUse">
               <stop stopColor="#A27FF3" />
               <stop offset="1" stopColor="#674ee6" />
             </linearGradient>
-            <linearGradient
-              id="hdr_fill"
-              x1="12"
-              y1="2"
-              x2="12"
-              y2="22"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="hdr_fill" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
               <stop stopColor="#A27FF3" />
               <stop offset="1" stopColor="#3b1d7d" />
             </linearGradient>
@@ -526,9 +198,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
       }
       bodyClassName="p-5 lg:p-7"
     >
-      {/* Screen-reader live region: announces the evaluation result when it
-          appears, so blind/low-vision learners get the score and insight
-          without hunting through the visual cards. */}
       <div aria-live="polite" role="status" className="sr-only">
         {`Evaluación completada. Puntaje global ${feedback.overallScore} de 100. ` +
           `Gramática ${Math.round(feedback.grammarScore)}, vocabulario ${Math.round(
@@ -538,732 +207,67 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
       </div>
 
       <div className="mx-auto max-w-4xl space-y-5">
-        {/* Master Executive Scorecard & Competencies Hub */}
-        <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-            {/* Left Column: Overall Score Hero (lg:col-span-5) */}
-            <div className="lg:col-span-5 flex items-center gap-5 lg:pr-7 lg:border-r lg:border-white/[0.06]">
-              <ScoreGauge
-                value={feedback.overallScore}
-                id="gauge_overall_hero"
-                from="#7048E8"
-                to="#A27FF3"
-                glowColor="rgba(162, 127, 243, 0.45)"
-                size={84}
-                stroke={6}
-              />
-              <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4.5 w-4.5 text-[#A27FF3] shrink-0" />
-                  <h3 className="text-[16.5px] font-semibold text-white tracking-tight leading-none">
-                    Puntaje Global
-                  </h3>
-                </div>
-                <p className="text-[12px] font-medium text-[#c4b5fd] leading-none">
-                  {getTierLabel(feedback.overallScore)}
-                </p>
-                <p className="text-[12px] text-[#8a8a9e] leading-relaxed">
-                  Rendimiento general de fluidez, vocabulario y gramática.
-                </p>
-              </div>
-            </div>
+        <InterviewAnalysisScorecard feedback={feedback} />
 
-            {/* Right Column: 3 Detailed Competency Progress Bars (lg:col-span-7) */}
-            <div className="lg:col-span-7 space-y-4">
-              {/* Grammar */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <BookOpenCheck className="h-4 w-4 text-[#9d7cf0] shrink-0" />
-                    <span className="font-medium text-white">Gramática</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[11px] text-[#8a8a9e]">
-                      {getTierLabel(feedback.grammarScore)}
-                    </span>
-                    <span className="font-semibold text-white tabular-nums">
-                      {Math.round(feedback.grammarScore)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(157,124,240,0.4)]"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, feedback.grammarScore))}%`,
-                      background: "linear-gradient(90deg, #674ee6, #9d7cf0)",
-                    }}
-                  />
-                </div>
-              </div>
+        <InterviewAnalysisStrategyGrid
+          feedback={feedback}
+          isPlayingRecommendationAudio={isPlayingRecommendationAudio}
+          onPlayRecommendationExample={handlePlayRecommendationExample}
+        />
 
-              {/* Vocabulary */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <Languages className="h-4 w-4 text-[#c084fc] shrink-0" />
-                    <span className="font-medium text-white">Vocabulario</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[11px] text-[#8a8a9e]">
-                      {getTierLabel(feedback.vocabularyScore)}
-                    </span>
-                    <span className="font-semibold text-white tabular-nums">
-                      {Math.round(feedback.vocabularyScore)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(192,132,252,0.4)]"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, feedback.vocabularyScore))}%`,
-                      background: "linear-gradient(90deg, #8f71ee, #c084fc)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Clarity and Voice */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[13px]">
-                  <div className="flex items-center gap-2">
-                    <AudioLines className="h-4 w-4 text-[#A27FF3] shrink-0" />
-                    <span className="font-medium text-white">Claridad y Voz</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[11px] text-[#8a8a9e]">
-                      {getTierLabel(feedback.clarityScore)}
-                    </span>
-                    <span className="font-semibold text-white tabular-nums">
-                      {Math.round(feedback.clarityScore)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(162,127,243,0.4)]"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, feedback.clarityScore))}%`,
-                      background: "linear-gradient(90deg, #7048E8, #A27FF3)",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Strategic Insights & Recommendation Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Key Insights */}
-          <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between gap-3 mb-3.5">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-[#A27FF3] shrink-0" />
-                  <h3 className="text-[15px] font-semibold text-white tracking-tight">
-                    Key Insights
-                  </h3>
-                </div>
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
-                  ANÁLISIS
-                </span>
-              </div>
-
-              <div className="flex items-start gap-3.5 pl-1 pr-2">
-                <svg
-                  className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]"
-                  viewBox="0 0 28 22"
-                  fill="currentColor"
-                >
-                  <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
-                </svg>
-                <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
-                  "{getDynamicInsight(feedback)}"
-                </p>
-              </div>
-            </div>
-          </article>
-
-          {/* Card 2: Strategy Recommendation */}
-          <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
-            <div>
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-[#A27FF3] shrink-0" />
-                  <h3 className="text-[15px] font-semibold text-white tracking-tight">
-                    Strategy Recommendation
-                  </h3>
-                </div>
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
-                  RECOMENDACIÓN
-                </span>
-              </div>
-
-              {(() => {
-                const recText = getDynamicRecommendation(feedback);
-                const parsed = parseRecommendation(recText);
-                const hasStructuredContent = parsed.steps.length > 0 || Boolean(parsed.spokenExample);
-
-                if (!hasStructuredContent) {
-                  return (
-                    <div className="flex items-start gap-3.5 pl-1 pr-2">
-                      <svg
-                        className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]"
-                        viewBox="0 0 28 22"
-                        fill="currentColor"
-                      >
-                        <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
-                      </svg>
-                      <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
-                        "{recText}"
-                      </p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="flex flex-col gap-3">
-                    {/* Intro text */}
-                    {parsed.intro && (
-                      <p className="text-[13px] sm:text-[13.5px] text-white/70 leading-relaxed font-normal">
-                        {parsed.intro}
-                      </p>
-                    )}
-
-                    {/* Step Cards with 01, 02 and highlighted placeholder tokens */}
-                    {parsed.steps.length > 0 && (
-                      <div className="flex flex-col gap-2">
-                        {parsed.steps.map((step) => (
-                          <div
-                            key={step.num}
-                            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
-                          >
-                            <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] font-mono font-medium text-white/80">
-                              {String(step.num).padStart(2, "0")}
-                            </span>
-                            <div className="flex-1 text-[13px] sm:text-[13.5px] text-white/90 leading-relaxed font-normal pt-0.5">
-                              {renderHighlightedTokens(step.text)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Spoken Example Box with Audio Preview */}
-                    {parsed.spokenExample && (
-                      <div className="rounded-xl bg-white/[0.025] border border-white/[0.08] p-3">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[11px] font-mono uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                            <Volume2 className="w-3.5 h-3.5 text-white/40" />
-                            Ejemplo en voz alta
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handlePlayRecommendationExample(parsed.spokenExample)}
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-white/80 hover:text-white px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] transition-all cursor-pointer"
-                          >
-                            {isPlayingRecommendationAudio ? (
-                              <>
-                                <Pause className="w-2.5 h-2.5 fill-current" />
-                                <span>Detener</span>
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
-                                <span>Escuchar</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-[13px] sm:text-[13.5px] italic text-white/85 leading-relaxed">
-                          "{parsed.spokenExample}"
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Practice Tip / Footer CTA */}
-                    {parsed.practiceTip && (
-                      <div className="flex items-center gap-2 pt-0.5 text-xs text-white/45 font-normal">
-                        <Lightbulb className="w-3.5 h-3.5 text-white/40 shrink-0" />
-                        <span>{parsed.practiceTip}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </article>
-        </div>
-
-        {/* Transcript & Improved Answer Stack */}
         <div className="flex flex-col gap-4">
-          {/* 1. Lo que dijiste (User Transcript) */}
-          <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl transition-all">
-            {/* Real User Audio Element */}
-            {feedback.userAudioUrl && (
-              <audio
-                ref={userAudioRef}
-                src={feedback.userAudioUrl}
-                preload="metadata"
-                onTimeUpdate={() => {
-                  if (userAudioRef.current) {
-                    setUserAudioCurrentTime(userAudioRef.current.currentTime);
-                  }
-                }}
-                onLoadedMetadata={() => {
-                  const audio = userAudioRef.current;
-                  if (!audio) return;
+          <InterviewAnalysisTranscriptCard
+            feedback={feedback}
+            isPlayingUserAudio={isPlayingUserAudio}
+            userAudioCurrentTime={userAudioCurrentTime}
+            effectiveDuration={effectiveDuration}
+            userAudioRef={userAudioRef}
+            onToggleUserAudio={handleToggleUserAudio}
+            onSeekUserAudio={handleSeekUserAudio}
+            onSkipUserAudio={handleSkipUserAudio}
+            onAudioTimeUpdate={() => {
+              if (userAudioRef.current) {
+                setUserAudioCurrentTime(userAudioRef.current.currentTime);
+              }
+            }}
+            onAudioLoadedMetadata={() => {
+              const audio = userAudioRef.current;
+              if (!audio) return;
+              if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                setUserAudioDuration(audio.duration);
+              } else if (audio.duration === Infinity) {
+                const onSeeked = () => {
+                  audio.removeEventListener("seeked", onSeeked);
                   if (Number.isFinite(audio.duration) && audio.duration > 0) {
                     setUserAudioDuration(audio.duration);
-                  } else if (audio.duration === Infinity) {
-                    const onSeeked = () => {
-                      audio.removeEventListener("seeked", onSeeked);
-                      if (Number.isFinite(audio.duration) && audio.duration > 0) {
-                        setUserAudioDuration(audio.duration);
-                      }
-                      audio.currentTime = 0;
-                    };
-                    audio.addEventListener("seeked", onSeeked, { once: true });
-                    audio.currentTime = 1e101;
                   }
-                }}
-                onEnded={() => {
-                  setIsPlayingUserAudio(false);
-                  setUserAudioCurrentTime(0);
-                }}
-              />
-            )}
+                  audio.currentTime = 0;
+                };
+                audio.addEventListener("seeked", onSeeked, { once: true });
+                audio.currentTime = 1e101;
+              }
+            }}
+            onAudioEnded={() => {
+              setIsPlayingUserAudio(false);
+              setUserAudioCurrentTime(0);
+            }}
+          />
 
-            {/* Header Row */}
-            <div className="flex items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
-                <Mic className="h-5 w-5 text-[#A27FF3] shrink-0" />
-                <div className="flex items-center gap-2.5">
-                  <h3 className="text-[16px] font-semibold text-white tracking-tight">
-                    Lo que dijiste
-                  </h3>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a8a9e]">
-                    Transcripción
-                  </span>
-                </div>
-              </div>
-
-              {feedback.userAudioUrl && (
-                <button
-                  onClick={handleToggleUserAudio}
-                  className="flex items-center gap-1.5 text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
-                >
-                  <Volume2
-                    className={`h-4 w-4 ${isPlayingUserAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`}
-                  />
-                  <span>{isPlayingUserAudio ? "Pausar audio" : "Escuchar audio"}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Body: Bespoke Purple SVG Quote Icon + Quoted Text */}
-            <div className="flex items-start gap-4 pl-2 sm:pl-5 pr-6 sm:pr-28 mb-6">
-              <svg
-                className="w-[25px] h-[20px] shrink-0 mt-0.5 text-[#674ee6]"
-                viewBox="0 0 25 20"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M7.5 0C3.36 0 0 3.36 0 7.5C0 11.64 3.36 15 7.5 15C8.16 15 8.8 14.91 9.4 14.75C8.44 17.72 5.56 19.86 2.14 20H4.29C8.95 20 12.86 16.09 12.86 11.43V7.5C12.86 3.36 9.5 0 7.5 0ZM19.64 0C15.5 0 12.14 3.36 12.14 7.5C12.14 11.64 15.5 15 19.64 15C20.3 15 20.94 14.91 21.54 14.75C20.58 17.72 17.7 19.86 14.28 20H16.43C21.09 20 25 16.09 25 11.43V7.5C25 3.36 21.64 0 19.64 0Z" />
-              </svg>
-              <p className="text-[14.5px] leading-[1.75] text-[#d4d4e0] font-normal">
-                "{feedback.reconciledTranscript || feedback.userSpokenText}"
-              </p>
-            </div>
-
-            {/* Audio Player Bar (Only if user recorded with mic) */}
-            {feedback.userAudioUrl ? (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pl-2 sm:pl-5 pr-4 sm:pr-8 max-w-[760px] pt-1">
-                {/* Audio Controls: -5s, Play/Pause, +5s */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Skip backward 5s */}
-                  <button
-                    type="button"
-                    onClick={() => handleSkipUserAudio(-5)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
-                    title="Retroceder 5 segundos"
-                    aria-label="Retroceder 5 segundos"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                    </svg>
-                  </button>
-
-                  {/* Play / Pause Primary Button */}
-                  <button
-                    type="button"
-                    onClick={handleToggleUserAudio}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.15)]"
-                    aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
-                  >
-                    {isPlayingUserAudio ? (
-                      <Pause className="h-4 w-4 fill-black text-black" />
-                    ) : (
-                      <Play className="h-4 w-4 ml-0.5 fill-black text-black" />
-                    )}
-                  </button>
-
-                  {/* Skip forward 5s */}
-                  <button
-                    type="button"
-                    onClick={() => handleSkipUserAudio(5)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
-                    title="Adelantar 5 segundos"
-                    aria-label="Adelantar 5 segundos"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Dynamic interactive waveform with seek/scrub support */}
-                <div
-                  className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-7 px-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.1] overflow-hidden cursor-pointer group transition-colors"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const fraction = Math.max(0, Math.min(1, clickX / rect.width));
-                    handleSeekUserAudio(fraction);
-                  }}
-                  title="Haz clic en cualquier punto para adelantar o atrasar"
-                >
-                  {WAVEFORM_BARS.map((h, i) => {
-                    const dur = effectiveDuration > 0 ? effectiveDuration : 1;
-                    const progress = userAudioCurrentTime / dur;
-                    const barProgress = i / WAVEFORM_BARS.length;
-                    const isPassed = barProgress <= progress;
-
-                    return (
-                      <div
-                        key={i}
-                        className={`w-[1.5px] rounded-full shrink-0 transition-colors ${
-                          isPassed
-                            ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
-                            : "bg-white/20 group-hover:bg-white/35"
-                        }`}
-                        style={{ height: `${h}px` }}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* High-Contrast Clear Time Display (Current / Total) */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] font-mono text-xs text-white/90 shrink-0 self-end sm:self-auto">
-                  <span className="text-white font-medium">
-                    {formatPlaybackTime(userAudioCurrentTime)}
-                  </span>
-                  <span className="text-white/30">/</span>
-                  <span className="text-white/60">
-                    {formatPlaybackTime(effectiveDuration)}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 pl-2 sm:pl-5 pt-1 text-xs text-white/40 font-mono">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span>Respuesta ingresada por texto</span>
-              </div>
-            )}
-          </article>
-
-          {/* 2. Respuesta mejorada (Native Model Answer) */}
-          <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl transition-all">
-            {/* Header Row */}
-            <div className="flex items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-[#A27FF3] shrink-0" />
-                <div className="flex items-center gap-2.5">
-                  <h3 className="text-[16px] font-semibold text-white tracking-tight">
-                    Respuesta mejorada
-                  </h3>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a8a9e]">
-                    Modelo nativo
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={handlePlayModelAnswer}
-                className="flex items-center gap-1.5 text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
-              >
-                <Volume2
-                  className={`h-4 w-4 ${isPlayingModelAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`}
-                />
-                <span>{isPlayingModelAudio ? "Detener" : "Escuchar respuesta"}</span>
-              </button>
-            </div>
-
-            {/* Body: Bespoke Purple SVG Quote Icon + Quoted Native Text */}
-            <div className="flex items-start gap-4 pl-2 sm:pl-5 pr-6 sm:pr-28 mb-4">
-              <svg
-                className="w-[25px] h-[20px] shrink-0 mt-0.5 text-[#674ee6]"
-                viewBox="0 0 28 22"
-                fill="currentColor"
-              >
-                <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
-              </svg>
-              <p className="text-[14.5px] leading-[1.75] text-[#d4d4e0] font-normal">
-                "{feedback.improvedFullAnswer}"
-              </p>
-            </div>
-
-            {/* Bottom Row: Copy Button right aligned */}
-            <div className="flex justify-end pt-1">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(feedback.improvedFullAnswer);
-                }}
-                title="Copiar respuesta"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-[#8a8a9e] hover:text-white hover:bg-white/[0.08] hover:border-white/[0.15] transition-all cursor-pointer shadow-sm"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            </div>
-          </article>
+          <InterviewAnalysisImprovedAnswerCard
+            improvedFullAnswer={feedback.improvedFullAnswer}
+            isPlayingModelAudio={isPlayingModelAudio}
+            onPlayModelAnswer={handlePlayModelAnswer}
+          />
         </div>
 
-        {/* Errors & Improvement Analysis Single-Row Flashcard Carousel */}
-        {errors.length > 0 ? (
-          <div className="mt-8">
-            {/* Header */}
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-[17px] font-semibold text-white tracking-tight">
-                  Análisis de mejora
-                </h3>
-                <span className="text-[12.5px] font-medium text-[#8a8a9e]">
-                  • {errors.length} {errors.length === 1 ? "corrección" : "correcciones"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {onNavigateToMemory && (
-                  <button
-                    onClick={onNavigateToMemory}
-                    className="text-xs text-[#8a8a9e] hover:text-white underline transition-colors cursor-pointer hidden sm:inline-block mr-2"
-                  >
-                    Ver en Memory Bank →
-                  </button>
-                )}
-                {savedErrorIds.has(currentError.id) && (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-[#6ce2a3]">
-                    <CircleCheck className="h-4 w-4" strokeWidth={2.5} />
-                    Guardado
-                  </span>
-                )}
-                <button
-                  onClick={handleSaveAll}
-                  disabled={isSavingAll}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-[#a7a8b5] hover:text-white transition-colors cursor-pointer"
-                >
-                  <Bookmark className="h-4 w-4" fill={isSavingAll ? "currentColor" : "none"} />
-                  {isSavingAll ? "Guardando..." : "Guardar todo"}
-                </button>
-              </div>
-            </div>
-
-            {/* 3-Piece Layout from improvement-analysis.tsx */}
-            <div
-              className="
-                    relative grid items-start gap-x-4 gap-y-3
-                    [grid-template-columns:1fr]
-                    md:[grid-template-columns:minmax(0,1fr)_minmax(0,1.05fr)]
-                    md:[grid-template-rows:auto_auto_4.5rem]
-                  "
-            >
-              {/* Error card — intentionally the tallest element; spans all rows on desktop */}
-              <article
-                className="edge relative overflow-hidden rounded-2xl p-6 sm:p-7 md:self-stretch md:[grid-area:1/1/4/2] flex flex-col justify-between"
-                style={{
-                  background:
-                    "radial-gradient(110% 90% at 0% 0%, rgba(216,102,122,0.06), transparent 60%), radial-gradient(120% 80% at 30% 100%, rgba(216,102,122,0.03), transparent 65%), #090A14",
-                  ["--edge" as string]:
-                    "linear-gradient(160deg, rgba(216,102,122,0.55), rgba(216,102,122,0.14) 35%, rgba(216,102,122,0.05) 70%, rgba(255,255,255,0.04))",
-                }}
-              >
-                <TopHighlight />
-                <div>
-                  <div className="relative flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <X
-                        className="h-4 w-4 shrink-0 text-[#d8667a]"
-                        aria-hidden="true"
-                        strokeWidth={2.5}
-                      />
-                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d8667a]">
-                        INCORRECTO / POCO CLARO
-                      </span>
-                    </div>
-                    {currentError.errorType && (
-                      <span className="text-[11px] font-semibold tracking-wider text-[#8a8a9e] uppercase">
-                        {currentError.errorType}
-                      </span>
-                    )}
-                  </div>
-                  <p className="relative mt-4 text-xl font-medium text-[#b0b1c0] line-through decoration-[#d8667a]/60 decoration-1 leading-snug">
-                    {currentError.errorWord}
-                  </p>
-                </div>
-
-                {/* Bottom area of Card 1: CEFR level on left, Guardar en Memory on right (NO divider line) */}
-                <div className="relative mt-6 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-[#6f7180]">
-                    <span className="font-medium">Nivel CEFR:</span>
-                    <span className="font-semibold text-[#f4f4f7]">
-                      {currentError.cefrLevel || "B2"}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => onSaveSpecificError(currentError)}
-                    disabled={savedErrorIds.has(currentError.id)}
-                    className={`transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-medium ${
-                      savedErrorIds.has(currentError.id)
-                        ? "text-[#55c9a4] cursor-default"
-                        : "text-[#8a8a9e] hover:text-white"
-                    }`}
-                  >
-                    <Bookmark
-                      className="h-3.5 w-3.5"
-                      fill={savedErrorIds.has(currentError.id) ? "currentColor" : "none"}
-                    />
-                    <span>
-                      {savedErrorIds.has(currentError.id) ? "Guardado" : "Guardar en Memory"}
-                    </span>
-                  </button>
-                </div>
-              </article>
-
-              {/* Decorative arrow: aligned to the sentence transformation row, not card centers */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-[4.75rem] z-20 hidden -translate-x-1/2 -translate-y-1/2 text-[#a27ff3]/55 md:block"
-              >
-                <ArrowRight className="h-5 w-5" strokeWidth={2.25} />
-              </span>
-
-              {/* Success card — ends earlier; sits in the top row only */}
-              <article
-                className="edge relative z-10 overflow-hidden self-start rounded-2xl p-6 sm:p-7 md:[grid-area:1/2/2/3]"
-                style={{
-                  background:
-                    "radial-gradient(110% 90% at 100% 0%, rgba(85,201,164,0.06), transparent 60%), #090A14",
-                  ["--edge" as string]:
-                    "linear-gradient(160deg, rgba(85,201,164,0.55), rgba(85,201,164,0.14) 35%, rgba(85,201,164,0.05) 70%, rgba(255,255,255,0.04))",
-                }}
-              >
-                <TopHighlight />
-                <div className="relative flex items-center gap-2">
-                  <Check
-                    className="h-4 w-4 shrink-0 text-[#55c9a4]"
-                    aria-hidden="true"
-                    strokeWidth={2.5}
-                  />
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#55c9a4]">
-                    MEJOR OPCIÓN
-                  </span>
-                </div>
-                <p className="relative mt-4 text-xl font-medium text-[#55c9a4] sm:text-[1.4rem] sm:leading-snug">
-                  {currentError.correctWord}
-                </p>
-                {currentError.translationSpanish && (
-                  <div className="relative mt-3.5">
-                    <p className="text-[11px] font-semibold text-[#8a8a9e] uppercase tracking-wider">
-                      Traducción al español:
-                    </p>
-                    <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-[#d4d4e0]">
-                      {cleanRuleNote(currentError.translationSpanish)}
-                    </p>
-                  </div>
-                )}
-              </article>
-
-              {/* Grammar rule / Note — occupies the lower area, layered above the red card's
-                      lower extension. Inset from the left so the red card grows wider and
-                      wraps around it. */}
-              <div
-                className="edge relative z-10 self-start rounded-xl px-4 py-3.5 md:ml-8 md:[grid-area:2/1/3/3] lg:ml-10"
-                style={{
-                  background: "#0B0C16",
-                  ["--edge" as string]:
-                    "linear-gradient(160deg, rgba(162,127,243,0.40), rgba(162,127,243,0.10) 45%, rgba(255,255,255,0.03))",
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#a27ff3]" aria-hidden="true" />
-                  <span className="text-xs font-semibold text-[#f4f4f7]">Regla gramatical:</span>
-                </div>
-                <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#d4d4e0]">
-                  {cleanRuleNote(currentError.explanation, currentError.translationSpanish)}
-                </p>
-              </div>
-            </div>
-
-            {/* Footer Navigation: Anterior on Left, Dots/Counter in Center, Siguiente on Right */}
-            <div className="mt-6 flex items-center justify-between">
-              <button
-                onClick={() => goNav(-1)}
-                disabled={errors.length <= 1}
-                className="group inline-flex items-center gap-1.5 text-xs font-medium text-[#8a8a9e] transition-colors hover:text-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                aria-label="Ir a la corrección anterior"
-              >
-                <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-                <span>Anterior</span>
-              </button>
-
-              {errors.length > 1 && (
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs font-medium text-[#6f7180]">
-                    {index + 1} de {errors.length}
-                  </span>
-                  <nav aria-label="Progreso de correcciones" className="flex items-center gap-1.5">
-                    {errors.map((_, i) => (
-                      <button
-                        key={i}
-                        aria-label={`Ir a corrección ${i + 1}`}
-                        onClick={() => setIndex(i)}
-                        className={`transition-all cursor-pointer ${
-                          i === index
-                            ? "h-1.5 w-6 rounded-full bg-[#9d7cf0]"
-                            : "h-1.5 w-1.5 rounded-full bg-white/[0.12] hover:bg-[#8a8a9e]"
-                        }`}
-                      />
-                    ))}
-                  </nav>
-                </div>
-              )}
-
-              <button
-                onClick={() => goNav(1)}
-                disabled={errors.length <= 1}
-                className="group inline-flex items-center gap-1.5 text-xs font-medium text-[#8a8a9e] transition-colors hover:text-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                aria-label="Ir a la siguiente corrección"
-              >
-                <span>Siguiente</span>
-                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-6 lg:p-8 rounded-2xl border border-[#18152e] bg-[#070611] shadow-2xl flex items-center justify-center gap-4 mt-8">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
-              <CircleCheck className="h-6 w-6 text-[#6ce2a3]" strokeWidth={2.5} />
-            </span>
-            <p className="text-[15px] font-normal text-white/90 tracking-wide text-center leading-relaxed">
-              {(feedback.userSpokenText || "").split(/\s+/).filter(Boolean).length < 20
-                ? "Respuesta breve sin errores gramaticales directos. Te sugerimos ampliar tu argumento con ejemplos de tu experiencia técnica."
-                : "Excelente precisión gramatical en tu respuesta. No se detectaron errores sintácticos."}
-            </p>
-          </div>
-        )}
+        <InterviewAnalysisErrorCarousel
+          errors={errors}
+          userSpokenText={feedback.userSpokenText}
+          savedErrorIds={savedErrorIds}
+          onSaveSpecificError={onSaveSpecificError}
+          onSaveAllErrors={onSaveAllErrors}
+          onNavigateToMemory={onNavigateToMemory}
+        />
       </div>
     </AppModal>
   );

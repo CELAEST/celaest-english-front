@@ -134,4 +134,35 @@ describe("CoreAiEvaluatorService enrichment", () => {
 
     await providerKeyVault.setCentralCoreEnabled(true);
   });
+
+  it("throws AiInfrastructureError when all keys are exhausted or in cooldown", async () => {
+    vi.mocked(HttpClient.post).mockRejectedValue(
+      new Error("AI_KEYS_EXHAUSTED: all keys exhausted or in cooldown"),
+    );
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 500,
+          text: () =>
+            Promise.resolve(
+              JSON.stringify({
+                error: "AI request failed",
+                code: "AI_ERROR",
+                details: "all keys exhausted or in cooldown",
+              }),
+            ),
+        }),
+      ),
+    );
+
+    await expect(
+      CoreAiEvaluatorService.evaluate("I led a squad of engineers", baseQuestion),
+    ).rejects.toMatchObject({
+      name: "AiInfrastructureError",
+      code: "AI_KEYS_EXHAUSTED",
+    });
+  });
 });

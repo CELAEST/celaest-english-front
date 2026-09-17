@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import { OnboardingStepProgress } from "./OnboardingStepProgress";
 import { LearnerProfileData } from "../types";
 import { ProfessionNormalizerService } from "../services/professionNormalizerService";
+import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
+import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
+import { ErrorScenarioData, ERROR_DATA } from "../../../shared/constants/errorScenarios";
+import { Loader2 } from "lucide-react";
+import { logger } from "../../../shared/utils/logger";
 
 export interface OnboardingQuestionsStepProps {
   profile: LearnerProfileData;
@@ -38,14 +43,44 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
 }) => {
   const [subStep, setSubStep] = useState<0 | 1 | 2 | 3>(0);
   const [professionInput, setProfessionInput] = useState(profile.profession || "");
+  const [isNormalizing, setIsNormalizing] = useState(false);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(ERROR_DATA["keys-exhausted-pool"]);
+  const [recoveryCooldown, setRecoveryCooldown] = useState(0);
+  const [engineErrorMessage, setEngineErrorMessage] = useState<string | null>(null);
+
+  const canAdvance =
+    subStep === 0
+      ? Boolean(profile.learningGoal)
+      : subStep === 1
+        ? Boolean(profile.preferenceStyle)
+        : subStep === 2
+          ? Boolean(profile.dailyFocus)
+          : Boolean(professionInput.trim());
 
   const handleNextSubStep = async () => {
+    if (!canAdvance || isNormalizing) return;
     if (subStep < 3) {
       setSubStep((prev) => (prev + 1) as 0 | 1 | 2 | 3);
     } else {
-      const cleanProfession = await ProfessionNormalizerService.normalizeAsync(professionInput);
-      onUpdateProfile({ profession: cleanProfession });
-      onNext();
+      setIsNormalizing(true);
+      setEngineErrorMessage(null);
+      try {
+        const cleanProfession = await ProfessionNormalizerService.normalizeAsync(professionInput);
+        onUpdateProfile({ profession: cleanProfession });
+        onNext();
+      } catch (err: any) {
+        logger.warn("[OnboardingQuestionsStep] AI Provider failure during profession normalization:", err);
+        const { scenario, cooldownSeconds } = classifyAiError(err);
+        setRecoveryScenario(scenario);
+        setRecoveryCooldown(cooldownSeconds);
+        setEngineErrorMessage(
+          err?.message || "Tu proveedor de IA no tiene saldo disponible (Insufficient Balance).",
+        );
+        setIsRecoveryModalOpen(true);
+      } finally {
+        setIsNormalizing(false);
+      }
     }
   };
 
@@ -102,8 +137,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
                       onClick={() => onUpdateProfile({ learningGoal: g.value })}
                       className={`w-full text-left px-4 py-2.5 rounded-full text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
                         selected
-                          ? "bg-white/[0.08] text-white border border-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-                          : "bg-white/[0.02] hover:bg-white/[0.05] text-[#A1A1C2] border border-white/10 hover:text-white"
+                          ? "bg-white/[0.12] text-white font-medium shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                          : "bg-white/[0.02] hover:bg-white/[0.06] text-white/60 hover:text-white"
                       }`}
                     >
                       {g.label}
@@ -130,8 +165,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
                       onClick={() => onUpdateProfile({ preferenceStyle: s.value })}
                       className={`w-full text-left px-4 py-2.5 rounded-full text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
                         selected
-                          ? "bg-white/[0.08] text-white border border-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-                          : "bg-white/[0.02] hover:bg-white/[0.05] text-[#A1A1C2] border border-white/10 hover:text-white"
+                          ? "bg-white/[0.12] text-white font-medium shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                          : "bg-white/[0.02] hover:bg-white/[0.06] text-white/60 hover:text-white"
                       }`}
                     >
                       {s.label}
@@ -158,8 +193,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
                       onClick={() => onUpdateProfile({ dailyFocus: c.value })}
                       className={`w-full text-left px-4 py-2.5 rounded-full text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
                         selected
-                          ? "bg-white/[0.08] text-white border border-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-                          : "bg-white/[0.02] hover:bg-white/[0.05] text-[#A1A1C2] border border-white/10 hover:text-white"
+                          ? "bg-white/[0.12] text-white font-medium shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                          : "bg-white/[0.02] hover:bg-white/[0.06] text-white/60 hover:text-white"
                       }`}
                     >
                       {c.label}
@@ -186,12 +221,39 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
                   onChange={(e) => {
                     setProfessionInput(e.target.value);
                     onUpdateProfile({ profession: e.target.value });
+                    if (engineErrorMessage) setEngineErrorMessage(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && canAdvance && !isNormalizing) {
+                      e.preventDefault();
+                      void handleNextSubStep();
+                    }
                   }}
                   placeholder="e.g. Software Engineer, Doctor, Designer, Student..."
                   className="w-full bg-transparent text-sm text-white placeholder-[#555570] outline-none"
                   autoFocus
                 />
               </div>
+
+              {engineErrorMessage && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-[fadeIn_0.2s_ease-out]">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                    <span className="font-light leading-relaxed">
+                      {engineErrorMessage.includes("saldo") || engineErrorMessage.includes("Balance")
+                        ? "Tu cuenta de IA no tiene saldo disponible ($0.00). Cambia a Groq gratis para continuar de una vez."
+                        : engineErrorMessage}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecoveryModalOpen(true)}
+                    className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-white text-black font-medium text-[11px] hover:bg-white/90 transition-all shrink-0 cursor-pointer shadow-sm"
+                  >
+                    Cambiar a Groq Gratis
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -199,7 +261,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={handlePrevSubStep}
-              className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
+              disabled={isNormalizing}
+              className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer disabled:opacity-40"
             >
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -208,13 +271,29 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
             </button>
 
             <button
+              type="button"
+              disabled={!canAdvance || isNormalizing}
               onClick={handleNextSubStep}
-              className="group inline-flex items-center justify-center px-8 sm:px-12 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-all duration-300 rounded-full bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.7)] hover:scale-105 active:scale-95 cursor-pointer"
+              aria-disabled={!canAdvance || isNormalizing}
+              className={`group inline-flex items-center justify-center px-8 sm:px-12 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-300 rounded-full ${
+                canAdvance && !isNormalizing
+                  ? "text-white bg-gradient-to-r from-[#6366F1] to-[#7C3AED] hover:from-[#4F46E5] hover:to-[#6D28D9] shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(124,58,237,0.7)] hover:scale-105 active:scale-95 cursor-pointer"
+                  : "text-white/30 bg-white/[0.05] border border-white/[0.05] cursor-not-allowed"
+              }`}
             >
-              <span>{subStep === 3 ? "Continue" : "Next"}</span>
-              <svg className="w-3.5 h-3.5 ml-2 transition-transform duration-300 transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              {isNormalizing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  <span>Verificando IA...</span>
+                </span>
+              ) : (
+                <>
+                  <span>{subStep === 3 ? "Continue" : "Next"}</span>
+                  <svg className="w-3.5 h-3.5 ml-2 transition-transform duration-300 transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -222,6 +301,22 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
         {/* Bottom Spacer */}
         <div className="shrink-0 h-1 sm:h-2" />
       </div>
+
+      {/* Luxury AI Infrastructure Recovery Modal */}
+      <AiInfrastructureRecoveryModal
+        isOpen={isRecoveryModalOpen}
+        scenario={recoveryScenario}
+        cooldown={recoveryCooldown}
+        contextType="writing"
+        onClose={() => setIsRecoveryModalOpen(false)}
+        onImmediateResume={() => {
+          setIsRecoveryModalOpen(false);
+          setEngineErrorMessage(null);
+          setTimeout(() => {
+            void handleNextSubStep();
+          }, 350);
+        }}
+      />
     </div>
   );
 };

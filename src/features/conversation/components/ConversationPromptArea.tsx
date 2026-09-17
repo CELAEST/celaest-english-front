@@ -11,7 +11,7 @@ export interface ConversationPromptAreaProps {
   onSubmitAnswer?: (text: string) => void;
 }
 
-export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
+const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
   currentQuestionText = "",
   userTranscript = "",
   selectedVoice = "en-US-AriaNeural",
@@ -115,8 +115,9 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
             )}
           </div>
           <h2
+            key={currentQuestionText}
             aria-live="polite"
-            className="text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.6] select-text"
+            className="text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.6] select-text animate-[fadeSlideUp_0.3s_ease-out_both]"
           >
             {currentQuestionText}
           </h2>
@@ -180,3 +181,6 @@ export const ConversationPromptArea: React.FC<ConversationPromptAreaProps> = ({
     </div>
   );
 };
+
+export const ConversationPromptArea = React.memo(ConversationPromptAreaInner);
+

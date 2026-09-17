@@ -5,3 +5,4 @@ export * from "./MemoryWritingFront";
 export * from "./MemoryWritingBack";
 export * from "./MemoryReadingFront";
 export * from "./MemoryReadingBack";
+export * from "./typographyHelpers";

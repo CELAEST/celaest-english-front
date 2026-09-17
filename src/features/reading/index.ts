@@ -14,3 +14,4 @@ export * from "./components/ReadingBespokeIcons";
 export * from "./components/ReadingAudioNarratorButton";
 export * from "./hooks/useReadingArticles";
 export * from "./hooks/useReadingAudioNarrator";
+export * from "./services/aiReadingArticleGenerator";

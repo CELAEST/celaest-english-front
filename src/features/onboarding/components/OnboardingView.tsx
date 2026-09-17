@@ -2,12 +2,16 @@ import React from "react";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { OnboardingWelcomeStep } from "./OnboardingWelcomeStep";
 import { OnboardingAuthStep } from "./OnboardingAuthStep";
+import { OnboardingApiKeyStep } from "./OnboardingApiKeyStep";
+import { OnboardingBeginnerCheckStep } from "./OnboardingBeginnerCheckStep";
 import { OnboardingQuestionsStep } from "./OnboardingQuestionsStep";
 import { OnboardingDnaAnalysisStep } from "./OnboardingDnaAnalysisStep";
+import { OnboardingPlacementQuizStep } from "./OnboardingPlacementQuizStep";
 import { OnboardingFirstConversationStep } from "./OnboardingFirstConversationStep";
 import { OnboardingReadyStep } from "./OnboardingReadyStep";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 
 export interface OnboardingViewProps {
@@ -19,9 +23,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
     step,
     nextStep,
     prevStep,
+    goToStep,
     openAuth,
     learnerProfile,
     updateLearnerProfile,
+    selectBeginnerTrack,
+    selectExperiencedTrack,
+    answers,
   } = useOnboardingFlow();
 
   const { updateProfileSettings } = useCurrentUser();
@@ -49,15 +57,41 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#03030E] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
-      {/* 🌟 Persistent Right-Side Background Orb — Only for question/assessment steps */}
+      {/* 🌟 Right-Side Video — ask — super fluido, sin salto, mix-blend para negro */}
       {!isCenteredHeroLayout && (
-        <div
-          className="absolute top-0 right-0 w-[88%] h-full bg-cover bg-no-repeat pointer-events-none z-0 opacity-90 blend-graphic-edges-right"
-          style={{
-            backgroundImage: "url('/assets/orb_questions_bg.png')",
-            backgroundPosition: "calc(50% + 130px) center",
-          }}
-        />
+        <>
+          <video
+            src="/assets/ask.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute top-1/2 right-0 sm:right-[1%] lg:right-[2%] xl:right-[3%] w-[96%] sm:w-[85%] lg:w-[58%] xl:w-[54%] 2xl:w-[50%] h-[75vh] sm:h-[85vh] lg:h-[94vh] max-w-[1100px] object-contain pointer-events-none z-0 opacity-90 hidden sm:block mix-blend-screen"
+            style={{
+              transform: "translateY(-50%) scale(1.4) translateZ(0)",
+              willChange: "transform",
+              backfaceVisibility: "hidden",
+            }}
+          />
+          {/* Mobile: video proporcional arriba — fluido */}
+          <video
+            src="/assets/ask.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute top-[4%] left-1/2 w-[94%] h-[32vh] object-contain pointer-events-none z-0 opacity-30 sm:hidden rounded-2xl overflow-hidden mix-blend-screen"
+            style={{
+              transform: "translateX(-50%) translateZ(0)",
+              willChange: "transform",
+              backfaceVisibility: "hidden",
+            }}
+          />
+          {/* Gradiente protector legibilidad */}
+          <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#03030E] via-[#03030E]/95 to-transparent" style={{ width: "54%" }} />
+        </>
       )}
 
       {/* 🌟 Persistent L I N G U A Header */}
@@ -77,23 +111,32 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
         >
           {step === "auth" && (
             <OnboardingAuthStep
-              onSuccess={async (authUser) => {
+              onSuccess={async (authUser, mode) => {
+                if (authUser?.id) {
+                  // 1. Instantly migrate all session-stored keys and configs to user vault
+                  try {
+                    await providerKeyVault.migrateSessionToUser(authUser.id);
+                  } catch (e) {
+                    logger.warn("[OnboardingView] Key migration error", e);
+                  }
+                }
+
                 if (authUser?.name) {
                   updateLearnerProfile({ name: authUser.name, email: authUser.email || "" });
                 }
 
-                // Check if user has genuinely completed the onboarding placement diagnostic:
+                // 2. Returning User Login or Profile already completed
                 try {
                   const profile = await apiSettingsRepository.getProfile();
-                  if (profile && profile.onboardingCompleted) {
+                  if (profile && (profile.onboardingCompleted || mode === "login")) {
                     updateLearnerProfile({
-                      name: (profile.name || authUser?.name || "Learner") as string,
-                      email: (profile.email || authUser?.email || "") as string,
-                      cefrLevel: profile.cefrLevel,
-                      dailyFocus: profile.dailyFocus,
-                      learningGoal: profile.learningGoal || "Professional Fluency & Career Growth",
-                      preferenceStyle: profile.preferenceStyle || "Conversation First",
-                      profession: profile.profession || "Professional",
+                      name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
+                      email: (profile.email || authUser?.email || learnerProfile.email || "") as string,
+                      cefrLevel: profile.cefrLevel || learnerProfile.cefrLevel,
+                      dailyFocus: profile.dailyFocus || learnerProfile.dailyFocus,
+                      learningGoal: profile.learningGoal || learnerProfile.learningGoal,
+                      preferenceStyle: profile.preferenceStyle || learnerProfile.preferenceStyle,
+                      profession: profile.profession || learnerProfile.profession,
                     });
                     localStorage.setItem("lingua_onboarding_completed", "true");
                     if (onFinish) {
@@ -103,17 +146,72 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   }
                 } catch (err) {
                   logger.warn("[OnboardingView] Could not fetch remote profile on login", err);
+                  // If login succeeded and backend is temporarily unreachable, let returning users in
+                  if (mode === "login") {
+                    localStorage.setItem("lingua_onboarding_completed", "true");
+                    if (onFinish) {
+                      onFinish();
+                      return;
+                    }
+                  }
                 }
 
-                // If user has not completed the placement diagnostic interview, proceed through calibration
+                // 3. User already took test / diagnostic in this session before registering
+                const hasCompletedTestLocally =
+                  Boolean(learnerProfile.placementQuiz) ||
+                  answers.length > 0 ||
+                  learnerProfile.cefrLevel !== "B1 — Intermediate";
+
+                if (hasCompletedTestLocally) {
+                  try {
+                    await updateProfileSettings({
+                      name: authUser?.name || learnerProfile.name || "Learner",
+                      cefrLevel: learnerProfile.cefrLevel,
+                      dailyFocus: learnerProfile.dailyFocus,
+                      learningGoal: learnerProfile.learningGoal,
+                      preferenceStyle: learnerProfile.preferenceStyle,
+                      profession: learnerProfile.profession,
+                      onboardingCompleted: true,
+                    });
+                  } catch (e) {
+                    logger.warn("[OnboardingView] Error saving pre-calibrated test data on register", e);
+                  }
+                  localStorage.setItem("lingua_onboarding_completed", "true");
+                  if (onFinish) {
+                    onFinish();
+                    return;
+                  }
+                }
+
+                // 4. Fresh registration: Proceed straight into configuration, never bounce to "Begin"
                 localStorage.removeItem("lingua_onboarding_completed");
-                nextStep();
+                const hasExistingKey =
+                  (await providerKeyVault.hasKey("groq")) ||
+                  (await providerKeyVault.hasKey("gemini")) ||
+                  (await providerKeyVault.hasKey("openai"));
+
+                if (hasExistingKey) {
+                  goToStep("beginner-check");
+                } else {
+                  goToStep("api-key");
+                }
               }}
               onBackToWelcome={openAuth}
             />
           )}
           {step === "welcome" && (
             <OnboardingWelcomeStep onBegin={nextStep} onOpenLogin={openAuth} />
+          )}
+          {step === "api-key" && (
+            <OnboardingApiKeyStep onNext={nextStep} onPrev={prevStep} />
+          )}
+          {step === "beginner-check" && (
+            <OnboardingBeginnerCheckStep
+              profile={learnerProfile}
+              onSelectBeginner={(prof) => selectBeginnerTrack(prof)}
+              onSelectExperienced={() => selectExperiencedTrack()}
+              onPrev={prevStep}
+            />
           )}
           {step === "questions" && (
             <OnboardingQuestionsStep
@@ -127,6 +225,16 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
             <OnboardingDnaAnalysisStep
               profile={learnerProfile}
               onNext={nextStep}
+              onPrev={prevStep}
+            />
+          )}
+          {step === "placement-quiz" && (
+            <OnboardingPlacementQuizStep
+              onComplete={(result) => {
+                updateLearnerProfile({ placementQuiz: result });
+                nextStep();
+              }}
+              onSkipAsBeginner={() => selectBeginnerTrack(learnerProfile.profession)}
               onPrev={prevStep}
             />
           )}

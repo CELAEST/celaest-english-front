@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ReadingHeader } from "./ReadingHeader";
 import { ReadingArticleHeader } from "./ReadingArticleHeader";
 import { ReadingArticleReader } from "./ReadingArticleReader";
@@ -15,6 +15,10 @@ import { useReadingAudioNarrator } from "../hooks/useReadingAudioNarrator";
 import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
+import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
+import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 
 export interface ReadingPracticeViewProps {
@@ -26,6 +30,17 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   onBackToWorkspace,
   roleName,
 }) => {
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
+  const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
+    ERROR_DATA["keys-exhausted-pool"],
+  );
+  const [recoveryCooldown, setRecoveryCooldown] = useState<number>(0);
+  const [recoveryAction, setRecoveryAction] = useState<
+    | { type: "generate_article" }
+    | { type: "word_lookup"; word: string; context?: string | undefined }
+    | null
+  >(null);
+
   const { profile, isLoading: isProfileLoading } = useSettingsProfile();
   const effectiveProfession = roleName || profile?.profession;
   const userLevel = React.useMemo(() => {
@@ -53,6 +68,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     generateNextArticle,
     getOrFetchQuiz,
     instantWordLookup,
+    translateWordDirect,
   } = useReadingArticles(userLevel, effectiveProfession);
 
   const {
@@ -103,9 +119,54 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nextPage, prevPage, isCompleted, isGenerating, isLoading]);
 
-  const handleNextReading = useCallback(() => {
-    generateNextArticle(articleCategory);
+  const handleNextReading = useCallback(async () => {
+    try {
+      const isCore = await providerKeyVault.isCentralCoreEnabled();
+      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+      const hasKey = await providerKeyVault.hasKey(activeProvider);
+
+      if (!isCore && !hasKey) {
+        setRecoveryAction({ type: "generate_article" });
+        setRecoveryScenario(ERROR_DATA["keys-exhausted-pool"]);
+        setRecoveryCooldown(0);
+        setIsRecoveryModalOpen(true);
+        return;
+      }
+
+      await generateNextArticle(articleCategory);
+    } catch (err: any) {
+      setRecoveryAction({ type: "generate_article" });
+      const { scenario, cooldownSeconds } = classifyAiError(err);
+      setRecoveryScenario(scenario);
+      setRecoveryCooldown(cooldownSeconds);
+      setIsRecoveryModalOpen(true);
+    }
   }, [generateNextArticle, articleCategory]);
+
+  const handleOpenWordRecoveryModal = useCallback((word: string, context?: string) => {
+    setRecoveryAction({ type: "word_lookup", word, context });
+    const baseScenario = ERROR_DATA["keys-exhausted-pool"];
+    setRecoveryScenario({
+      ...baseScenario,
+      humanHeadline: "Clúster Central Inactivo",
+      humanSubtext: `El clúster central de IA no está disponible para traducir "${word}". Agrega tu clave gratuita de Groq, Gemini u OpenRouter para traducir este vocablo y continuar con tu lectura normalmente.`,
+    });
+    setRecoveryCooldown(0);
+    setIsRecoveryModalOpen(true);
+  }, []);
+
+  const handleResumeFromRecovery = useCallback(async () => {
+    setIsRecoveryModalOpen(false);
+    if (recoveryAction?.type === "word_lookup") {
+      try {
+        await translateWordDirect(recoveryAction.word, recoveryAction.context);
+      } catch (err) {
+        logger.warn("Failed direct translation after recovery resume:", err);
+      }
+      return;
+    }
+    void handleNextReading();
+  }, [recoveryAction, translateWordDirect, handleNextReading]);
 
   const handleAddToMemory = useCallback(
     async (wordData: WordLookup) => {
@@ -229,9 +290,12 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
               ) : (
                 <ReadingArticleReader
                   content={currentPageContent}
+                  fullContent={fullContent}
                   articlePhrasalVerbs={currentArticle?.phrasalVerbs}
                   onLookupWord={instantWordLookup}
                   onAddToMemory={handleAddToMemory}
+                  onOpenRecoveryModal={handleOpenWordRecoveryModal}
+                  onDirectTranslate={translateWordDirect}
                   activeKaraokeWordIndex={activeKaraokeWordIndex}
                 />
               )}
@@ -282,6 +346,16 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
           />
         </aside>
       </div>
+
+      {/* High-Luxury AI Infrastructure Recovery Modal */}
+      <AiInfrastructureRecoveryModal
+        isOpen={isRecoveryModalOpen}
+        scenario={recoveryScenario}
+        cooldown={recoveryCooldown}
+        contextType="reading"
+        onClose={() => setIsRecoveryModalOpen(false)}
+        onImmediateResume={handleResumeFromRecovery}
+      />
     </div>
   );
 };

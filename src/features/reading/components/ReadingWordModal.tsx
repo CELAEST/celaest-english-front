@@ -10,19 +10,31 @@ export interface ReadingWordModalProps {
   coords: { top: number; left: number };
   onClose: () => void;
   onAddToMemory?: ((wordData: WordLookup) => Promise<void>) | undefined;
+  onOpenRecoveryModal?: ((word: string, context?: string) => void) | undefined;
+  onDirectTranslate?: ((word: string, context?: string) => Promise<string | null>) | undefined;
 }
 
 export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
-  ({ wordData, isLoading, coords, onClose, onAddToMemory }) => {
+  ({
+    wordData,
+    isLoading,
+    coords,
+    onClose,
+    onAddToMemory,
+    onOpenRecoveryModal,
+    onDirectTranslate,
+  }) => {
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [addedSuccess, setAddedSuccess] = useState(false);
+    const [isTranslatingDirect, setIsTranslatingDirect] = useState(false);
     const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // 3D Spatial Tilt Physics & Dynamic Specular Sheen (matching card movement)
-    const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+    // 3D Spatial Tilt Physics & Dynamic Specular Sheen (Direct RAF DOM updates — Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
+    const glareRef = useRef<HTMLDivElement>(null);
+    const rafIdRef = useRef<number | null>(null);
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
       if (!cardRef.current) return;
@@ -31,17 +43,30 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      setTilt({
-        x: ((x - centerX) / centerX) * 5,
-        y: ((y - centerY) / centerY) * -5,
-        glareX: (x / rect.width) * 100,
-        glareY: (y / rect.height) * 100,
-        glareOpacity: 0.12,
+      const tiltX = ((x - centerX) / centerX) * 5;
+      const tiltY = ((y - centerY) / centerY) * -5;
+      const glareX = (x / rect.width) * 100;
+      const glareY = (y / rect.height) * 100;
+
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(() => {
+        if (cardRef.current) {
+          cardRef.current.style.transform = `perspective(1200px) rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
+        }
+        if (glareRef.current) {
+          glareRef.current.style.background = `radial-gradient(350px circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.12), transparent 70%)`;
+        }
       });
     }, []);
 
     const handleMouseLeave = useCallback(() => {
-      setTilt({ x: 0, y: 0, glareX: 50, glareY: 50, glareOpacity: 0 });
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (cardRef.current) {
+        cardRef.current.style.transform = "perspective(1200px) rotateX(0deg) rotateY(0deg)";
+      }
+      if (glareRef.current) {
+        glareRef.current.style.background = "radial-gradient(350px circle at 50% 50%, rgba(255, 255, 255, 0), transparent 70%)";
+      }
     }, []);
 
     // Keyboard accessibility: Dismiss on Escape
@@ -54,6 +79,10 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       window.addEventListener("keydown", handleKeyDown);
       return () => {
         window.removeEventListener("keydown", handleKeyDown);
+        if (rafIdRef.current) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
         if (audioRef.current) {
           audioRef.current.pause();
           audioRef.current = null;
@@ -144,6 +173,39 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       }
     };
 
+    const hasValidTranslation = Boolean(
+      wordData?.spanishTranslation &&
+        wordData.spanishTranslation.trim() !== "" &&
+        wordData.metadata?.translationSource !== "untranslated",
+    );
+
+    const handleTriggerDirectTranslate = useCallback(
+      async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!wordData) return;
+
+        if (onDirectTranslate) {
+          setIsTranslatingDirect(true);
+          try {
+            const tr = await onDirectTranslate(wordData.word, wordData.exampleSentence);
+            if (tr) {
+              setIsTranslatingDirect(false);
+              return;
+            }
+          } catch {
+            // Fall through to open recovery modal if direct translation fails or no key
+          } finally {
+            setIsTranslatingDirect(false);
+          }
+        }
+
+        if (onOpenRecoveryModal) {
+          onOpenRecoveryModal(wordData.word, wordData.exampleSentence);
+        }
+      },
+      [wordData, onDirectTranslate, onOpenRecoveryModal],
+    );
+
     return (
       <>
         {/* Backdrop click dismiss */}
@@ -164,7 +226,6 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           style={{
             top: `${coords.top}px`,
             left: `${coords.left}px`,
-            transform: `perspective(1200px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
           }}
           className="fixed z-[9999] w-[275px] sm:w-[295px] pl-6 pr-5 pt-5 pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group"
           onClick={(e) => e.stopPropagation()}
@@ -181,12 +242,13 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
             }}
           />
 
-          {/* Dynamic Specular Sheen */}
+          {/* Dynamic Specular Sheen (Direct RAF updated) */}
           <div
+            ref={glareRef}
             aria-hidden="true"
             className="absolute inset-0 rounded-3xl pointer-events-none z-30 transition-opacity duration-300"
             style={{
-              background: `radial-gradient(350px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255, 255, 255, ${tilt.glareOpacity}), transparent 70%)`,
+              background: "radial-gradient(350px circle at 50% 50%, rgba(255, 255, 255, 0), transparent 70%)",
             }}
           />
 
@@ -270,9 +332,36 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               {/* Vocablo Translation */}
               <div className="flex items-center space-x-1.5 mt-2 pl-2">
                 <VocabloTranslateIcon />
-                <span className="text-[12.5px] font-medium text-[#c4b5fd]">
-                  {wordData.spanishTranslation || wordData.word}
-                </span>
+                {hasValidTranslation ? (
+                  <span className="text-[12.5px] font-medium text-[#c4b5fd]">
+                    {wordData.spanishTranslation}
+                  </span>
+                ) : isTranslatingDirect ? (
+                  <span className="text-[11.5px] font-mono text-[#c4b5fd] animate-pulse flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A27FF3] animate-ping" />
+                    Traduciendo con IA...
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleTriggerDirectTranslate}
+                    className="group inline-flex items-center gap-1.5 py-0.5 px-2 rounded-lg bg-[#A27FF3]/15 hover:bg-[#A27FF3]/25 border border-[#A27FF3]/30 hover:border-[#A27FF3]/50 text-[#c4b5fd] hover:text-white text-[11px] font-medium transition-all cursor-pointer shadow-[0_0_12px_rgba(162,127,243,0.15)]"
+                    title="Clúster central inactivo. Haz clic para traducir con tu clave o conectar una API."
+                  >
+                    <svg
+                      className="w-3 h-3 text-[#A27FF3] group-hover:scale-110 transition-transform"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                    </svg>
+                    <span>Traducir con IA (Configurar API)</span>
+                  </button>
+                )}
               </div>
 
               {/* Definition / Explanation Note */}

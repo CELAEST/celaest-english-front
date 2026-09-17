@@ -13,12 +13,26 @@ import { logger } from "../../../shared/utils/logger";
 
 export interface MemoryViewProps {
   onBackToWorkspace?: (() => void) | undefined;
+  onNavigate?: ((route: string) => void) | undefined;
+  initialCategory?: string | undefined;
 }
 
 const CATEGORIES = ["SPEAKING", "READING", "WRITING"] as const;
 
-export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => {
-  const [activeTab, setActiveTab] = useState(0);
+export const MemoryView: React.FC<MemoryViewProps> = ({
+  onBackToWorkspace,
+  onNavigate,
+  initialCategory,
+}) => {
+  const getInitialTabIndex = (cat?: string): number => {
+    if (!cat) return 0;
+    const upper = cat.toUpperCase().trim();
+    if (upper === "READING") return 1;
+    if (upper === "WRITING") return 2;
+    return 0;
+  };
+
+  const [activeTab, setActiveTab] = useState(() => getInitialTabIndex(initialCategory));
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewedSessionCount, setReviewedSessionCount] = useState(0);
@@ -100,6 +114,39 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
     (cardId: string) => apiMemoryRepository.toggleBookmark(cardId),
     [],
   );
+  // Set initial category tab if passed via props
+  useEffect(() => {
+    if (!initialCategory) return;
+    const upper = initialCategory.toUpperCase().trim();
+    if (upper === "SPEAKING" || upper === "INTERVIEW" || upper === "CONVERSATION") {
+      setActiveTab(0);
+      hasAutoSelectedTabRef.current = true;
+    } else if (upper === "READING") {
+      setActiveTab(1);
+      hasAutoSelectedTabRef.current = true;
+    } else if (upper === "WRITING") {
+      setActiveTab(2);
+      hasAutoSelectedTabRef.current = true;
+    }
+  }, [initialCategory]);
+
+  // Contextual routing: Speaking -> interview, Reading -> reading, Writing -> writing
+  const handleStartPractice = useCallback(() => {
+    if (onNavigate) {
+      if (currentCategory === "SPEAKING") {
+        onNavigate("interview");
+      } else if (currentCategory === "READING") {
+        onNavigate("reading");
+      } else if (currentCategory === "WRITING") {
+        onNavigate("writing");
+      } else {
+        onNavigate("interview");
+      }
+      return;
+    }
+    onBackToWorkspace?.();
+  }, [currentCategory, onNavigate, onBackToWorkspace]);
+
   const handleTabSwitch = useCallback((idx: number) => {
     hasAutoSelectedTabRef.current = true;
     setActiveTab(idx);
@@ -329,7 +376,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
                   category={currentCategory}
                   hasOtherCards={hasAnyCardsInOtherTabs}
                   onSwitchCategory={handleSwitchToAvailableCategory}
-                  onStartPractice={onBackToWorkspace}
+                  onStartPractice={handleStartPractice}
                   hideHeader={true}
                 />
               </motion.div>

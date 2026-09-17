@@ -61,11 +61,16 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     profession: userProfession,
   } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string; profession?: string };
 
+  const [memoryInitialCategory, setMemoryInitialCategory] = useState<string | undefined>();
+
   const handleSelectNav = React.useCallback(
-    (route: string) => {
+    (route: string, categoryHint?: string) => {
       if (route === "lab" && !import.meta.env.DEV) {
         setActiveTab("workspace");
         return;
+      }
+      if (route === "memory" && categoryHint) {
+        setMemoryInitialCategory(categoryHint);
       }
       setActiveTab(route);
       if (onNavigate) onNavigate(route);
@@ -244,7 +249,11 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <MemoryView onBackToWorkspace={handleBackToWorkspace} />
+              <MemoryView
+                onBackToWorkspace={handleBackToWorkspace}
+                onNavigate={handleSelectNav}
+                initialCategory={memoryInitialCategory}
+              />
             </ErrorBoundary>
           </div>
         )}

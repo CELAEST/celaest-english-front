@@ -5,7 +5,7 @@ import { useReadingArticles } from "../../reading/hooks/useReadingArticles";
 export interface WorkspaceOrbCalloutsProps {
   learningGoal?: string | undefined;
   profession?: string | undefined;
-  onSelectNode?: ((nodeId: string) => void) | undefined;
+  onSelectNode?: ((nodeId: string, categoryHint?: string) => void) | undefined;
 }
 
 export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
@@ -62,7 +62,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
     <div className="flex flex-col space-y-3 sm:space-y-4 select-none pt-1 sm:pt-2 w-full max-w-[290px] sm:max-w-[315px] xl:max-w-[335px] shrink-0 font-['Plus_Jakarta_Sans',sans-serif] z-10">
       {/* 01 // ACTIVE MEMORY */}
       <div
-        onClick={() => onSelectNode?.("memory")}
+        onClick={() => onSelectNode?.("memory", topCard?.category ? topCard.category.toLowerCase() : undefined)}
         className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
       >
         <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">

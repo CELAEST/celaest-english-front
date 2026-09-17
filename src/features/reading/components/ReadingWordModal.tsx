@@ -390,12 +390,12 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                 </p>
               )}
 
-              {/* Bottom Action: + Add to Memory / ✓ In Memory */}
+              {/* Bottom Action: + Add to Memory / ✓ In Memory (Pure Floating Typography — Zero Pill, Zero Border) */}
               <div className="flex items-center justify-start pt-0.5 pl-2">
                 {addedSuccess || isAlreadyInMemory ? (
-                  <div
+                  <span
                     aria-label="Word already in Memory"
-                    className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#4ade80]/10 border border-[#4ade80]/20 text-[#4ade80] text-[11.5px] font-medium tracking-wide shadow-[0_0_12px_rgba(74,222,128,0.12)] select-none animate-[fadeSlideUp_0.3s_ease-out_both]"
+                    className="text-[12px] font-medium tracking-wide flex items-center space-x-1.5 text-[#4ade80] select-none"
                   >
                     <svg
                       className="w-3.5 h-3.5 text-[#4ade80]"
@@ -409,7 +409,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     <span>In Memory</span>
-                  </div>
+                  </span>
                 ) : (
                   <button
                     type="button"

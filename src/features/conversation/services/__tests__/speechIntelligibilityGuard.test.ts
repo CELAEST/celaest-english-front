@@ -24,6 +24,23 @@ describe("validateSpeechIntelligibility", () => {
     expect(validateSpeechIntelligibility("Subtitles by the Amara.org community").isValid).toBe(false);
     expect(validateSpeechIntelligibility("[silence]").isValid).toBe(false);
     expect(validateSpeechIntelligibility(".").isValid).toBe(false);
+    expect(validateSpeechIntelligibility("a lot of people.").isValid).toBe(false);
+    expect(validateSpeechIntelligibility("a lot of people").isValid).toBe(false);
+    expect(validateSpeechIntelligibility("lots of people.").isValid).toBe(false);
+    expect(validateSpeechIntelligibility("you know.").isValid).toBe(false);
+    expect(validateSpeechIntelligibility("so yeah.").isValid).toBe(false);
+  });
+
+  it("rejects low-confidence Whisper acoustic hallucinations and silence via options", () => {
+    // Whisper low logprob detection (e.g. -1.53 logprob on short audio)
+    const lowConf = validateSpeechIntelligibility("some small words", 2, "english", { avgLogprob: -1.53 });
+    expect(lowConf.isValid).toBe(false);
+    expect(lowConf.reason).toBe("WHISPER_HALLUCINATION");
+
+    // Whisper silence detection
+    const silence = validateSpeechIntelligibility("some small words", 2, "english", { noSpeechProb: 0.90 });
+    expect(silence.isValid).toBe(false);
+    expect(silence.reason).toBe("SILENCE_OR_EMPTY");
   });
 
   it("rejects non-interview filler patterns like 'if you could help me please'", () => {

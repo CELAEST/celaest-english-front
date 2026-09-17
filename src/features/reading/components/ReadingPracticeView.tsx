@@ -22,7 +22,6 @@ import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
-import { appToast } from "../../../design-system/components/Toast";
 
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
@@ -190,10 +189,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
           audioUrl: wordData.audioUrl,
         });
         await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
-        appToast.success(`"${wordData.word}" agregada a tu memoria`);
       } catch (err) {
         logger.warn("Failed to persist word to memory bank", err);
-        appToast.error(`No se pudo agregar "${wordData.word}" a la memoria`);
         throw err;
       }
     },

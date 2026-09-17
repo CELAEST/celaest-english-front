@@ -31,6 +31,10 @@ function createCyberKineticToast(
         {
           className:
             "relative w-full sm:w-[410px] max-w-[calc(100vw-40px)] px-[22px] py-[16px] bg-[#06040c]/95 backdrop-blur-2xl rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.95),0_0_25px_rgba(112,72,232,0.15)] border border-white/[0.08] select-none font-sans animate-[slideUp_0.3s_ease-out] pointer-events-auto",
+          style: {
+            padding: "16px 22px",
+            boxSizing: "border-box",
+          },
         },
         [
           // Top Header Bar

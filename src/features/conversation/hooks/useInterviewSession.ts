@@ -135,6 +135,8 @@ export const useInterviewSession = (
     audioUrl: string | null;
     durationSeconds: number;
     detectedLanguage?: string | undefined;
+    avgLogprob?: number | undefined;
+    noSpeechProb?: number | undefined;
   }>({ audioBlob: null, audioUrl: null, durationSeconds: 0 });
 
   // The prop `roleName` from WorkspaceDashboardView is the single source of truth.
@@ -411,19 +413,29 @@ export const useInterviewSession = (
 
         if (!isMountedRef.current) return;
         if (feedback) {
-          // If the AI evaluated it as 0 or flagged Spanish/invalid input, suppress modal and show alert
+          const rawSpokenWords = spokenText.trim().split(/\s+/).filter(Boolean);
+          const feedbackExplanationLower = (feedback.strategicFeedback?.explanation || "").toLowerCase();
+          const feedbackTitleLower = (feedback.strategicFeedback?.title || "").toLowerCase();
+
+          // If the AI evaluated it as 0, or flagged Spanish/incomplete/insufficient input, suppress modal and show alert
           const isSpanishOrZero =
             feedback.overallScore === 0 ||
-            feedback.strategicFeedback?.title?.toLowerCase().includes("español") ||
-            feedback.strategicFeedback?.title?.toLowerCase().includes("spanish") ||
-            feedback.strategicFeedback?.title?.toLowerCase().includes("sin contenido") ||
-            feedback.strategicFeedback?.title?.toLowerCase().includes("muy breve");
+            rawSpokenWords.length < 5 ||
+            feedbackTitleLower.includes("español") ||
+            feedbackTitleLower.includes("spanish") ||
+            feedbackTitleLower.includes("sin contenido") ||
+            feedbackTitleLower.includes("muy breve") ||
+            feedbackTitleLower.includes("incompleta") ||
+            feedbackTitleLower.includes("demasiado corta") ||
+            feedbackExplanationLower.includes("demasiado corta") ||
+            feedbackExplanationLower.includes("demasiado breve") ||
+            feedbackExplanationLower.includes("no aborda la pregunta");
 
           if (isSpanishOrZero) {
             const isSpanish =
-              feedback.overallScore === 0 ||
-              feedback.strategicFeedback?.title?.toLowerCase().includes("español") ||
-              feedback.strategicFeedback?.title?.toLowerCase().includes("spanish");
+              feedback.overallScore === 0 && feedbackTitleLower.includes("español") ||
+              feedbackTitleLower.includes("español") ||
+              feedbackTitleLower.includes("spanish");
 
             if (isSpanish) {
               setUserTranscript("");
@@ -436,9 +448,9 @@ export const useInterviewSession = (
               );
             } else {
               appToast.warning(
-                feedback.strategicFeedback?.title || "Atención",
+                feedback.strategicFeedback?.title || "Respuesta incompleta",
                 feedback.strategicFeedback?.explanation ||
-                  "Por favor formula una respuesta estructurada en inglés.",
+                  "Tu respuesta es demasiado corta o no responde a la pregunta técnica. Por favor formula una respuesta estructurada en inglés.",
               );
             }
             return;
@@ -573,13 +585,23 @@ export const useInterviewSession = (
           if (whisperResult && whisperResult.text.trim().length > 0) {
             const trimmed = whisperResult.text.trim();
             lastCapturedAudioRef.current.detectedLanguage = whisperResult.language;
+            lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
+            lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
             const validation = validateSpeechIntelligibility(
               trimmed,
               audioResult.durationSeconds,
               whisperResult.language,
+              {
+                avgLogprob: whisperResult.avgLogprob,
+                noSpeechProb: whisperResult.noSpeechProb,
+              },
             );
-            // If Whisper hallucinated silence noise (e.g. "okay, thank you"), do not pollute input
-            if (validation.reason === "WHISPER_HALLUCINATION" || validation.reason === "SILENCE_OR_EMPTY") {
+            // If Whisper hallucinated silence noise (e.g. "a lot of people", "okay, thank you"), do not pollute input
+            if (
+              validation.reason === "WHISPER_HALLUCINATION" ||
+              validation.reason === "SILENCE_OR_EMPTY" ||
+              validation.reason === "REPETITIVE_NOISE"
+            ) {
               setSpeechNotice(validation.message || null);
               appToast.ambientNoise(validation.message);
               return;
@@ -591,6 +613,11 @@ export const useInterviewSession = (
               setSpeakingSeconds(0);
               setSpeechNotice(validation.message || null);
               appToast.spanishDetected(validation.message);
+              return;
+            }
+            if (validation.reason === "INSUFFICIENT_WORDS" || validation.reason === "NONSENSE_OR_GIBBERISH") {
+              setSpeechNotice(validation.message || null);
+              appToast.warning("Respuesta incompleta", validation.message);
               return;
             }
 
@@ -667,6 +694,8 @@ export const useInterviewSession = (
               textToSubmit = whisperResult.text.trim();
               detectedLang = whisperResult.language;
               lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+              lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
+              lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
               setUserTranscript(textToSubmit);
               userTranscriptRef.current = textToSubmit;
             }
@@ -677,7 +706,15 @@ export const useInterviewSession = (
       }
 
       // Pre-Flight Intelligibility & Token Shield Guard (0 Token Protection)
-      const validation = validateSpeechIntelligibility(textToSubmit, durationSeconds, detectedLang);
+      const validation = validateSpeechIntelligibility(
+        textToSubmit,
+        durationSeconds,
+        detectedLang,
+        {
+          avgLogprob: lastCapturedAudioRef.current.avgLogprob,
+          noSpeechProb: lastCapturedAudioRef.current.noSpeechProb,
+        },
+      );
       if (!validation.isValid) {
         logger.info("[useInterviewSession] Suppressed turn submission:", validation.reason);
         if (isMountedRef.current) {

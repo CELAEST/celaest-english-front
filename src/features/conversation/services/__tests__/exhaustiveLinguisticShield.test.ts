@@ -94,6 +94,19 @@ describe("Exhaustive Linguistic & 0-Token Error Shield Test Suite", () => {
       expect(result.isValid).toBe(false);
       expect(result.reason).toBe("SILENCE_OR_EMPTY");
     });
+
+    it("rejects 'a lot of people.' ambient noise hallucination (0 tokens spent)", () => {
+      const result = validateSpeechIntelligibility("a lot of people.");
+      expect(result.isValid).toBe(false);
+    });
+
+    it("rejects acoustic low logprob Whisper uncertainty (< -0.95)", () => {
+      const result = validateSpeechIntelligibility("hello my friend", 2, "english", {
+        avgLogprob: -1.5359846,
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBe("WHISPER_HALLUCINATION");
+    });
   });
 
   describe("Category 4: Non-Interview Conversational Fillers & Help Requests", () => {

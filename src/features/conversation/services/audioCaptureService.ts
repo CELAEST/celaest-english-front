@@ -68,6 +68,8 @@ export interface AudioTranscriptionResult {
   text: string;
   language?: string | undefined;
   duration?: number | undefined;
+  avgLogprob?: number | undefined;
+  noSpeechProb?: number | undefined;
 }
 
 export class AudioCaptureService {
@@ -484,17 +486,23 @@ export class AudioCaptureService {
               text?: string;
               language?: string;
               duration?: number;
+              avg_logprob?: number;
+              no_speech_prob?: number;
             };
             const text = (data.text || "").trim();
             if (text) {
               logger.info("[AudioCaptureService] Edge Whisper transcription successful via Groq:", {
                 duration: data.duration,
                 length: text.length,
+                avgLogprob: data.avg_logprob,
+                noSpeechProb: data.no_speech_prob,
               });
               return {
                 text,
                 language: (data.language || "en").toLowerCase().trim(),
                 duration: data.duration,
+                avgLogprob: data.avg_logprob,
+                noSpeechProb: data.no_speech_prob,
               };
             }
           } else {
@@ -536,6 +544,8 @@ export class AudioCaptureService {
               text?: string;
               language?: string;
               duration?: number;
+              avg_logprob?: number;
+              no_speech_prob?: number;
             };
             const text = (data.text || "").trim();
             if (text) {
@@ -543,6 +553,8 @@ export class AudioCaptureService {
                 text,
                 language: (data.language || "en").toLowerCase().trim(),
                 duration: data.duration,
+                avgLogprob: data.avg_logprob,
+                noSpeechProb: data.no_speech_prob,
               };
             }
           }

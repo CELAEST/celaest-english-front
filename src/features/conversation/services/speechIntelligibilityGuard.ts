@@ -56,6 +56,31 @@ const WHISPER_SILENCE_HALLUCINATIONS = new Set([
   "hello.",
   "hi",
   "hi.",
+  "a lot of people",
+  "a lot of people.",
+  "lots of people",
+  "lots of people.",
+  "many people",
+  "many people.",
+  "some people",
+  "some people.",
+  "all people",
+  "all people.",
+  "you know",
+  "you know.",
+  "so yeah",
+  "so yeah.",
+  "like that",
+  "like that.",
+  "in this case",
+  "in this case.",
+  "i'm sorry",
+  "i'm sorry.",
+  "peace",
+  "the end",
+  "the end.",
+  "to be continued",
+  "to be continued.",
   ".",
   "...",
   "-",
@@ -160,6 +185,111 @@ export interface SpeechValidationResult {
   cleanTranscript: string;
 }
 
+export interface SpeechValidationOptions {
+  avgLogprob?: number | undefined;
+  noSpeechProb?: number | undefined;
+}
+
+// Core structural & high-frequency verbs required for complete English thoughts/sentences
+export const ENGLISH_VERB_MARKERS = new Set([
+  "am", "is", "are", "was", "were", "be", "been", "being",
+  "have", "has", "had", "having",
+  "do", "does", "did", "doing", "done",
+  "can", "could", "will", "would", "shall", "should", "may", "might", "must",
+  "work", "worked", "working", "works",
+  "use", "used", "using", "uses",
+  "make", "made", "making", "makes",
+  "take", "took", "taking", "takes",
+  "lead", "led", "leading", "leads",
+  "build", "built", "building", "builds",
+  "help", "helped", "helping", "helps",
+  "think", "thought", "thinking", "thinks",
+  "see", "saw", "seen", "seeing", "sees",
+  "know", "knew", "known", "knowing", "knows",
+  "want", "wanted", "wanting", "wants",
+  "need", "needed", "needing", "needs",
+  "like", "liked", "liking", "likes",
+  "evaluate", "evaluated", "evaluating", "evaluates",
+  "manage", "managed", "managing", "manages",
+  "create", "created", "creating", "creates",
+  "develop", "developed", "developing", "develops",
+  "test", "tested", "testing", "tests",
+  "say", "said", "saying", "says",
+  "tell", "told", "telling", "tells",
+  "give", "gave", "given", "giving", "gives",
+  "find", "found", "finding", "finds",
+  "come", "came", "coming", "comes",
+  "go", "went", "gone", "going", "goes",
+  "get", "got", "gotten", "getting", "gets",
+  "look", "looked", "looking", "looks",
+  "start", "started", "starting", "starts",
+  "try", "tried", "trying", "tries",
+  "call", "called", "calling", "calls",
+  "feel", "felt", "feeling", "feels",
+  "solve", "solved", "solving", "solves",
+  "design", "designed", "designing", "designs",
+  "run", "ran", "running", "runs",
+  "handle", "handled", "handling", "handles",
+  "ensure", "ensured", "ensuring", "ensures",
+  "write", "wrote", "written", "writing", "writes",
+  "read", "reading", "reads",
+  "speak", "spoke", "spoken", "speaking", "speaks",
+  "learn", "learned", "learning", "learns",
+  "listen", "listened", "listening", "listens",
+  "meet", "met", "meeting", "meets",
+  "show", "showed", "shown", "showing", "shows",
+  "allow", "allowed", "allowing", "allows",
+  "provide", "provided", "providing", "provides",
+  "include", "included", "including", "includes",
+  "set", "setting", "sets",
+  "put", "putting", "puts",
+  "apply", "applied", "applying", "applies",
+  "improve", "improved", "improving", "improves",
+  "track", "tracked", "tracking", "tracks",
+  "plan", "planned", "planning", "plans",
+  "deliver", "delivered", "delivering", "delivers",
+  "deploy", "deployed", "deploying", "deploys",
+  "collaborate", "collaborated", "collaborating", "collaborates",
+  "coordinate", "coordinated", "coordinating", "coordinates",
+  "optimize", "optimized", "optimizing", "optimizes",
+  "implement", "implemented", "implementing", "implements",
+  "analyze", "analyzed", "analyzing", "analyzes",
+  "monitor", "monitored", "monitoring", "monitors",
+  "review", "reviewed", "reviewing", "reviews",
+  "support", "supported", "supporting", "supports",
+  "focus", "focused", "focusing", "focuses",
+  "base", "based", "basing", "bases",
+  "agree", "agreed", "agreeing", "agrees",
+  "prefer", "preferred", "preferring", "prefers",
+  "explain", "explained", "explaining", "explains",
+  "understand", "understood", "understanding", "understands",
+  "believe", "believed", "believing", "believes",
+  "consider", "considered", "considering", "considers",
+  "hope", "hoped", "hoping", "hopes",
+  "grow", "grew", "grown", "growing", "grows",
+  "talk", "talked", "talking", "talks",
+  "answer", "answered", "answering", "answers",
+  "ask", "asked", "asking", "asks",
+  "decide", "decided", "deciding", "decides",
+  "choose", "chose", "chosen", "choosing", "chooses",
+  "change", "changed", "changing", "changes",
+  "follow", "followed", "following", "follows",
+  "stop", "stopped", "stopping", "stops",
+  "continue", "continued", "continuing", "continues",
+  "add", "added", "adding", "adds",
+  "check", "checked", "checking", "checks",
+  "pass", "passed", "passing", "passes",
+  "fail", "failed", "failing", "fails",
+  "finish", "finished", "finishing", "finishes",
+  "complete", "completed", "completing", "completes",
+  "produce", "produced", "producing", "produces",
+  "serve", "served", "serving", "serves",
+  "reach", "reached", "reaching", "reaches",
+  "raise", "raised", "raising", "raises",
+  "spend", "spent", "spending", "spends",
+  "save", "saved", "saving", "saves",
+]);
+
 /**
  * Checks if a single word looks like random gibberish or keyboard mashing
  */
@@ -206,6 +336,7 @@ export function validateSpeechIntelligibility(
   rawTranscript: string | null | undefined,
   durationSeconds: number = 0,
   detectedLanguage?: string,
+  options?: SpeechValidationOptions,
 ): SpeechValidationResult {
   if (!rawTranscript) {
     return {
@@ -226,6 +357,32 @@ export function validateSpeechIntelligibility(
     };
   }
 
+  // Count alphanumeric words
+  const rawWords = clean
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9áéíóúñ]/g, ""))
+    .filter((w) => w.length > 0);
+
+  // 0a. Whisper Acoustic Model Confidence & Silence Screening (0-Token Defense)
+  if (options?.avgLogprob !== undefined && options.avgLogprob < -0.95 && rawWords.length < 10) {
+    return {
+      isValid: false,
+      reason: "WHISPER_HALLUCINATION",
+      message: "Audio ambiental o silencio detectado. Por favor habla con claridad hacia el micrófono.",
+      cleanTranscript: clean,
+    };
+  }
+
+  if (options?.noSpeechProb !== undefined && options.noSpeechProb > 0.55) {
+    return {
+      isValid: false,
+      reason: "SILENCE_OR_EMPTY",
+      message: "Silencio detectado. Por favor habla hacia el micrófono para responder.",
+      cleanTranscript: clean,
+    };
+  }
+
   // 1a. Repetitive noise & extreme character spam (e.g. "aaaaaaaaaaaaa")
   if (/(.)\1{4,}/.test(clean.toLowerCase().replace(/\s+/g, ""))) {
     return {
@@ -235,13 +392,6 @@ export function validateSpeechIntelligibility(
       cleanTranscript: clean,
     };
   }
-
-  // Count alphanumeric words
-  const rawWords = clean
-    .toLowerCase()
-    .split(/\s+/)
-    .map((w) => w.replace(/[^a-z0-9áéíóúñ]/g, ""))
-    .filter((w) => w.length > 0);
 
   // 1b. Acoustic Model Language Detection (Groq Whisper verbose_json)
   // Protect against false positives when a Spanish accent is acoustically detected but text is in English!
@@ -334,16 +484,6 @@ export function validateSpeechIntelligibility(
     };
   }
 
-  // Require at least 3 words for an interview answer
-  if (rawWords.length < 3) {
-    return {
-      isValid: false,
-      reason: "INSUFFICIENT_WORDS",
-      message: "Tu respuesta es muy breve. Por favor elabora una respuesta completa en inglés (mínimo 3 palabras).",
-      cleanTranscript: clean,
-    };
-  }
-
   // 5. Universal Gibberish & Keyboard Mash Detection (e.g. "gergewg r we erg wer er we ewg wer weewr", "asdfghjkl")
   // 5a. Spatial keyboard clustering check (low letter entropy across multi-word input)
   const alphaCharsOnly = clean.toLowerCase().replace(/[^a-z]/g, "");
@@ -393,6 +533,33 @@ export function validateSpeechIntelligibility(
         isValid: false,
         reason: "NONSENSE_OR_GIBBERISH",
         message: "Texto no reconocible como inglés coherente. Por favor formula una respuesta estructurada en inglés.",
+        cleanTranscript: clean,
+      };
+    }
+  }
+
+  // 4b. Word Count & Predicate Completeness Check (0 Token Shield)
+  // Require at least 4 words for an interview answer
+  if (rawWords.length < 4) {
+    return {
+      isValid: false,
+      reason: "INSUFFICIENT_WORDS",
+      message: "Tu respuesta es muy breve. Por favor elabora una respuesta completa en inglés (mínimo una oración estructurada).",
+      cleanTranscript: clean,
+    };
+  }
+
+  // Under 6 words: must contain at least one verb marker or verbal inflection (-ed, -ing)
+  // Prevents dangling noun phrases & silence hallucinations like "a lot of people.", "in the office", "very good result"
+  if (rawWords.length < 6) {
+    const hasVerb = rawWords.some(
+      (w) => ENGLISH_VERB_MARKERS.has(w) || /(?:ed|ing)$/.test(w),
+    );
+    if (!hasVerb) {
+      return {
+        isValid: false,
+        reason: "INSUFFICIENT_WORDS",
+        message: "Respuesta incompleta detectada. Por favor formula una oración completa con sujeto y verbo en inglés.",
         cleanTranscript: clean,
       };
     }

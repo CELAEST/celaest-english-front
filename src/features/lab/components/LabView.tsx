@@ -12,6 +12,7 @@ import { AntiAiLuxuryAlertsShowcase } from "./AntiAiLuxuryAlertsShowcase";
 import { LuxurySegmentedControlsShowcase } from "./LuxurySegmentedControlsShowcase";
 import { LinguisticShieldSimulationShowcase } from "./LinguisticShieldSimulationShowcase";
 import { WorkspaceHeroEvolutionShowcase } from "./WorkspaceHeroEvolutionShowcase";
+import { SidenavEvolutionMatrixShowcase } from "./SidenavEvolutionMatrixShowcase";
 import { SidenavProfileVariantsShowcase } from "./SidenavProfileVariantsShowcase";
 import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
 import { QuantumProgressGauge } from "./QuantumProgressGauge";
@@ -39,7 +40,12 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
 
-        {/* SECTION 00.SIDENAV_STUDIO: Sidenav Hyper-Animated Luxury Studio (TOP PRIORITY) */}
+        {/* SECTION 00.SIDENAV_EVOLUTION: Master 6-Tier Progressive Sidenav Architecture Evolution (TOP PRIORITY) */}
+        <div className="flex flex-col space-y-4">
+          <SidenavEvolutionMatrixShowcase />
+        </div>
+
+        {/* SECTION 00.SIDENAV_STUDIO: Sidenav Hyper-Animated Luxury Profile Studio */}
         <div className="flex flex-col space-y-4">
           <SidenavProfileVariantsShowcase />
         </div>

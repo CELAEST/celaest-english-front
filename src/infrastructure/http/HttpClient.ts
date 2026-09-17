@@ -67,6 +67,13 @@ export class HttpClient {
     this.token = token;
   }
 
+  static getAuthToken(): string | null {
+    return (
+      this.token ||
+      (typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null)
+    );
+  }
+
   private static getHeaders(): HeadersInit {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",

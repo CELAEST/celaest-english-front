@@ -12,6 +12,7 @@ import { ReadingCompleteView } from "./ReadingCompleteView";
 import { ReturnArrowIcon } from "./ReadingBespokeIcons";
 import { useReadingArticles } from "../hooks/useReadingArticles";
 import { useReadingAudioNarrator } from "../hooks/useReadingAudioNarrator";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
@@ -20,6 +21,8 @@ import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorSc
 import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
+import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
+import { appToast } from "../../../design-system/components/Toast";
 
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
@@ -168,6 +171,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     void handleNextReading();
   }, [recoveryAction, translateWordDirect, handleNextReading]);
 
+  const queryClient = useQueryClient();
+
   const handleAddToMemory = useCallback(
     async (wordData: WordLookup) => {
       try {
@@ -184,11 +189,15 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
           cefrLevel: wordData.cefrLevel || currentArticle?.cefrLevel || "B1",
           audioUrl: wordData.audioUrl,
         });
+        await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+        appToast.success(`"${wordData.word}" agregada a tu memoria`);
       } catch (err) {
         logger.warn("Failed to persist word to memory bank", err);
+        appToast.error(`No se pudo agregar "${wordData.word}" a la memoria`);
+        throw err;
       }
     },
-    [currentArticle],
+    [currentArticle, queryClient],
   );
 
   return (

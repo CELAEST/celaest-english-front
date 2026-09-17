@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MemoryHeader } from "./MemoryHeader";
 import { MemoryFilterTabs } from "./MemoryFilterTabs";
@@ -71,6 +71,28 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
     [activeTab, speakingCount, readingCount, writingCount],
   );
 
+  const hasAutoSelectedTabRef = useRef(false);
+
+  // Intelligent auto-tab selection: If the current tab has 0 cards but another category has cards on initial load,
+  // automatically transition to the category where the user actually has curated cards.
+  useEffect(() => {
+    if (isLoading || cardList.length === 0 || hasAutoSelectedTabRef.current) return;
+
+    const currentCount =
+      activeTab === 0 ? speakingCount : activeTab === 1 ? readingCount : writingCount;
+
+    if (currentCount === 0) {
+      if (readingCount > 0) {
+        setActiveTab(1);
+      } else if (writingCount > 0) {
+        setActiveTab(2);
+      } else if (speakingCount > 0) {
+        setActiveTab(0);
+      }
+      hasAutoSelectedTabRef.current = true;
+    }
+  }, [isLoading, cardList.length, activeTab, speakingCount, readingCount, writingCount]);
+
   // Stable callbacks so memoized children (carousel, flashcard, filter tabs)
   // don't re-render on unrelated parent state changes (e.g. flip, hover).
   const onFlip = useCallback(() => setIsFlipped((prev) => !prev), []);
@@ -79,6 +101,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
     [],
   );
   const handleTabSwitch = useCallback((idx: number) => {
+    hasAutoSelectedTabRef.current = true;
     setActiveTab(idx);
     setSelectedIdx(0);
     setSlideDirection(1);
@@ -230,7 +253,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({ onBackToWorkspace }) => 
 
       {/* Root Background Glowing Memory Sphere — Visible alongside video backdrop */}
       {!isSessionCompleted && (
-        <div className="pointer-events-none absolute right-8 sm:right-28 lg:right-[260px] -top-1 sm:top-1 w-[140px] sm:w-[180px] lg:w-[220px] h-[140px] sm:h-[180px] lg:h-[220px] z-0 opacity-90 overflow-hidden hidden sm:block">
+        <div className="pointer-events-none absolute right-4 sm:right-6 md:right-8 lg:right-12 xl:right-16 top-1 sm:top-2 w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] h-[120px] sm:h-[140px] md:h-[160px] lg:h-[180px] z-0 opacity-90 overflow-hidden hidden sm:block">
           <VideoOrb className="h-full w-full object-contain scale-110 pointer-events-none mix-blend-screen" />
         </div>
       )}

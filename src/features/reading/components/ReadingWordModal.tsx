@@ -93,6 +93,13 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       };
     }, [onClose]);
 
+    // Reset addition and translation states whenever a different word is selected
+    useEffect(() => {
+      setAddedSuccess(false);
+      setIsAdding(false);
+      setIsTranslatingDirect(false);
+    }, [wordData?.word]);
+
     const speakFallback = (text: string) => {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();

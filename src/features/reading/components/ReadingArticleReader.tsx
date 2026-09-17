@@ -391,6 +391,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         {/* Extracted Bespoke Vocabulary Modal */}
         {showTooltip && (
           <ReadingWordModal
+            key={activeWordData?.word || "reading-modal"}
             wordData={activeWordData}
             isLoading={isLoadingLookup}
             coords={popoverCoords}

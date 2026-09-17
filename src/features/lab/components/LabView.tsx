@@ -39,14 +39,14 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
 
-        {/* SECTION 00.WORKSPACE_STUDIO: Enterprise Top Architecture Studio (VERY TOP PRIORITY) */}
-        <div className="flex flex-col space-y-4">
-          <WorkspaceHeroEvolutionShowcase />
-        </div>
-
-        {/* SECTION 00.SIDENAV_STUDIO: Sidenav Profile & Clean Footer Studio */}
+        {/* SECTION 00.SIDENAV_STUDIO: Sidenav Hyper-Animated Luxury Studio (TOP PRIORITY) */}
         <div className="flex flex-col space-y-4">
           <SidenavProfileVariantsShowcase />
+        </div>
+
+        {/* SECTION 01.WORKSPACE_STUDIO: Enterprise Top Architecture Studio */}
+        <div className="flex flex-col space-y-4">
+          <WorkspaceHeroEvolutionShowcase />
         </div>
 
         {/* SECTION 00.AUTH: Google OAuth Handshake & Spatial Clearance Studio */}

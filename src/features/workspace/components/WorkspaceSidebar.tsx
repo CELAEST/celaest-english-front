@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { KineticLuxuryText } from "./KineticLuxuryText";
 import {
   CognitiveMemoryBrainIcon,
   PrecisionOpenBookIcon,
@@ -26,6 +27,25 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   onSelectNav,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [activeVariant, setActiveVariant] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("celaest_sidenav_variant") || "quantum_island";
+    }
+    return "quantum_island";
+  });
+
+  useEffect(() => {
+    const handleVariantChange = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setActiveVariant(customEvent.detail);
+      }
+    };
+    window.addEventListener("celaest:sidenav_variant_changed", handleVariantChange);
+    return () => {
+      window.removeEventListener("celaest:sidenav_variant_changed", handleVariantChange);
+    };
+  }, []);
 
   const navItems = [
     { id: "workspace", icon: <DashboardGridIcon />, label: "Workspace" },
@@ -40,40 +60,41 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   ];
 
   return (
-    <div className="relative shrink-0 my-auto ml-12 sm:ml-16 lg:ml-20 z-50 w-16 h-[75vh] flex items-center">
+    <div className="relative shrink-0 my-auto ml-8 sm:ml-12 lg:ml-16 z-50 w-16 h-auto min-h-[520px] max-h-[calc(100vh-48px)] flex items-center">
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 flex flex-col justify-between bg-[#05060c]/95 border border-[#111220] rounded-[32px] py-4 px-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl shrink-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] select-none group max-h-[75vh] ${
-          isHovered ? "w-60 px-4" : "w-16"
+        className={`relative flex flex-col justify-between bg-[#06070d]/90 border border-white/[0.08] rounded-[28px] py-4 px-2 shadow-[0_24px_80px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-3xl shrink-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] select-none group ${
+          isHovered ? "w-60 px-3.5" : "w-16"
         }`}
       >
         {/* Top Brand / Active Pill Header */}
-        <div className="flex flex-col items-center w-full space-y-4">
+        <div className="flex flex-col items-center w-full space-y-3">
           {/* Top Active Dashboard Button with Official CELAEST Logo SVG */}
           <div className="w-full flex items-center justify-center">
-            <div className="w-11 h-11 rounded-2xl bg-[#080912] border border-[#231956] text-white shadow-[0_4px_15px_rgba(0,0,0,0.5)] flex items-center justify-center shrink-0 cursor-pointer hover:bg-[#111220] transition-all p-2.5">
+            <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.12] text-white shadow-[0_4px_20px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center shrink-0 cursor-pointer hover:border-white/25 transition-all p-2 group/logo">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#A27FF3]/20 via-transparent to-transparent opacity-0 group-hover/logo:opacity-100 transition-opacity pointer-events-none" />
               <svg
                 viewBox={`0 0 ${CELAEST_LOGO_VIEWBOX.width} ${CELAEST_LOGO_VIEWBOX.height}`}
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-full text-white"
+                className="w-full h-full text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
               >
                 <path d={CELAEST_LOGO_PATH_D} fill="currentColor" />
               </svg>
             </div>
             {isHovered && (
-              <span className="ml-3.5 text-base font-bold text-[#f8f8f8] tracking-[0.15em] whitespace-nowrap opacity-100 transition-opacity duration-300 delay-75 uppercase">
+              <span className="ml-3 text-[13px] font-semibold text-white tracking-[0.24em] whitespace-nowrap opacity-100 transition-opacity duration-300 delay-75 uppercase font-sans">
                 CELAEST
               </span>
             )}
           </div>
 
-          {/* Separator Line */}
-          <div className="w-8 h-[1px] bg-[#111220] my-0.5" />
+          {/* Precision Hairline Separator */}
+          <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-0.5" />
 
           {/* Navigation Item Stack */}
-          <nav className="flex flex-col w-full space-y-2">
+          <nav className="flex flex-col w-full space-y-1.5">
             {navItems.map((item) => {
               const isActive = activeItem === item.id;
               return (
@@ -81,34 +102,35 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   key={item.id}
                   aria-label={item.label}
                   onClick={() => onSelectNav && onSelectNav(item.id)}
-                  className={`relative flex items-center w-full py-2.5 rounded-2xl transition-all duration-200 group/btn cursor-pointer ${
-                    isHovered ? "px-3.5 justify-start" : "justify-center"
+                  className={`relative flex items-center w-full py-2 rounded-xl transition-all duration-200 group/btn cursor-pointer ${
+                    isHovered ? "px-3 justify-start" : "justify-center"
                   } ${
                     isActive
-                      ? "bg-[#111220] text-[#f8f8f8] border border-[#231956]"
-                      : "text-[#f8f8f8]/75 hover:bg-[#111220]/60 hover:text-[#f8f8f8]"
+                      ? "bg-gradient-to-r from-white/[0.12] via-white/[0.06] to-transparent text-white border border-white/[0.12] shadow-[0_2px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)]"
+                      : "text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
                   }`}
                 >
-                  {/* Active Indicator Glow Bar */}
+                  {/* Integrated Luminous Accent Bar on Active */}
                   {isActive && (
-                    <div className="absolute left-0 w-1 h-5 rounded-r-full bg-[#f8f8f8]" />
+                    <div className="absolute left-1.5 w-[2.5px] h-4 rounded-full bg-gradient-to-b from-[#C4B5FD] to-white shadow-[0_0_8px_#A27FF3]" />
                   )}
 
-                  {/* Icon (White) */}
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0 text-[#f8f8f8]">
+                  {/* Icon */}
+                  <div className={`flex items-center justify-center w-6 h-6 shrink-0 transition-transform group-hover/btn:scale-105 ${
+                    isActive ? "text-white filter drop-shadow-[0_0_6px_rgba(162,127,243,0.5)]" : "text-inherit"
+                  }`}>
                     {React.cloneElement(item.icon as React.ReactElement, {
-                      className:
-                        "w-5 h-5 text-[#f8f8f8] group-hover/btn:scale-110 transition-transform",
+                      className: "w-[19px] h-[19px]",
                     })}
                   </div>
 
                   {/* Label Revealed on Hover */}
                   {isHovered && (
                     <span
-                      className={`ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap transition-opacity duration-300 delay-75 ${
+                      className={`ml-3 text-[13px] tracking-wide whitespace-nowrap transition-colors ${
                         isActive
-                          ? "text-[#f8f8f8] font-medium"
-                          : "text-[#f8f8f8]/80 group-hover/btn:text-[#f8f8f8]"
+                          ? "text-white font-medium"
+                          : "text-zinc-400 group-hover/btn:text-white font-normal"
                       }`}
                     >
                       {item.label}
@@ -118,8 +140,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   {/* Notification Dot (Memory) */}
                   {"hasDot" in item && (item as { hasDot?: boolean }).hasDot && (
                     <div
-                      className={`w-2 h-2 rounded-full bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.6)] ${
-                        isHovered ? "ml-2" : "absolute top-1.5 right-1.5"
+                      className={`w-1.5 h-1.5 rounded-full bg-[#A27FF3] shadow-[0_0_8px_#A27FF3] ${
+                        isHovered ? "ml-auto mr-1" : "absolute top-2 right-2"
                       }`}
                     />
                   )}
@@ -129,12 +151,181 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Section: Clean Minimal Logout */}
-        <div className="flex flex-col items-center w-full space-y-2 mt-4">
-          {/* Separator Line */}
-          <div className="w-8 h-[1px] bg-[#111220] my-0.5" />
+        {/* Bottom Section: Dynamic Luxury Sidenav Architecture */}
+        <div className="flex flex-col items-center w-full space-y-2 mt-auto pt-2">
+          {/* Precision Hairline Separator */}
+          <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-0.5" />
 
-          {/* Logout Button */}
+          {/* ZERO-BOX 1: ATELIER MINIMALIST (Swiss Precision, Pure Floating Typography - Default) */}
+          {(activeVariant === "atelier_minimalist" || activeVariant === "quantum_island") && (
+            <div
+              onClick={() => onSelectNav && onSelectNav("settings")}
+              className={`relative w-full transition-all duration-300 cursor-pointer group/atelier bg-transparent border-0 select-none ${
+                isHovered ? "py-1.5 px-2 hover:bg-white/[0.04] rounded-2xl" : "flex justify-center py-1"
+              }`}
+            >
+              <div className="flex items-center w-full justify-between">
+                <div className="flex items-center overflow-hidden">
+                  {/* Luxury Portrait Avatar with 0.5px Specular Halo */}
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
+                    <img
+                      src="/assets/avatar_executive_luxury.jpg"
+                      alt={_userName}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#A27FF3]/25 to-transparent pointer-events-none mix-blend-overlay" />
+                  </div>
+                  {isHovered && (
+                    <div className="flex flex-col items-start ml-3 overflow-hidden text-left">
+                      <KineticLuxuryText
+                        text={_userName}
+                        trigger={isHovered}
+                        className="text-[13px] font-medium text-white tracking-tight truncate leading-tight group-hover/atelier:text-zinc-100"
+                      />
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
+                        <span className="text-[10.5px] text-zinc-400 font-sans tracking-wide truncate">
+                          {_userLevel}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ZERO-BOX 2: ACOUSTIC RESONANCE (Voice-AI Luxury Whisper Filaments) */}
+          {(activeVariant === "acoustic_resonance" || activeVariant === "harmonic_frequency") && (
+            <div
+              onClick={() => onSelectNav && onSelectNav("settings")}
+              className={`relative w-full transition-all duration-300 cursor-pointer group/acoustic bg-transparent border-0 select-none ${
+                isHovered ? "py-1.5 px-2 hover:bg-white/[0.04] rounded-2xl" : "flex justify-center py-1"
+              }`}
+            >
+              <div className="flex items-center w-full">
+                <div className="relative flex items-center justify-center shrink-0">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-[#A27FF3]/30 shadow-[0_0_12px_rgba(162,127,243,0.25)]">
+                    <img
+                      src="/assets/avatar_executive_luxury.jpg"
+                      alt={_userName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Acoustic Equalizer Micro-Filaments (Zero box, pure sound floating) */}
+                  <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
+                    <span className="w-[1.5px] h-2 bg-[#A27FF3] rounded-full animate-[pulse_0.8s_ease-in-out_infinite]" />
+                    <span className="w-[1.5px] h-3.5 bg-white rounded-full animate-[pulse_1.1s_ease-in-out_0.2s_infinite]" />
+                    <span className="w-[1.5px] h-1.5 bg-[#38BDF8] rounded-full animate-[pulse_0.9s_ease-in-out_0.4s_infinite]" />
+                  </div>
+                </div>
+                {isHovered && (
+                  <div className="flex flex-col items-start ml-4 overflow-hidden text-left">
+                    <KineticLuxuryText
+                      text={_userName}
+                      trigger={isHovered}
+                      className="text-[13px] font-medium text-white tracking-tight truncate leading-tight"
+                    />
+                    <span className="text-[10.5px] text-[#A27FF3] font-sans tracking-wide truncate mt-0.5">
+                      {_userLevel} · Voice Ready
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ZERO-BOX 3: SPECULAR GLASS RING (Apple Vision Pro Caustic Halo) */}
+          {activeVariant === "specular_glass" && (
+            <div
+              onClick={() => onSelectNav && onSelectNav("settings")}
+              className={`relative w-full transition-all duration-300 cursor-pointer group/specular bg-transparent border-0 select-none ${
+                isHovered ? "py-1.5 px-2 hover:bg-white/[0.04] rounded-2xl" : "flex justify-center py-1"
+              }`}
+            >
+              <div className="flex items-center w-full">
+                <div className="relative w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                  <div className="absolute -inset-1 rounded-full border border-white/25 shadow-[0_0_12px_rgba(255,255,255,0.2)] animate-[spin_10s_linear_infinite]" />
+                  <div className="w-8 h-8 rounded-full overflow-hidden relative z-10">
+                    <img
+                      src="/assets/avatar_executive_luxury.jpg"
+                      alt={_userName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                {isHovered && (
+                  <div className="flex flex-col items-start ml-3.5 overflow-hidden text-left">
+                    <KineticLuxuryText
+                      text={_userName}
+                      trigger={isHovered}
+                      className="text-[13px] font-medium text-white tracking-tight truncate leading-tight"
+                    />
+                    <span className="text-[10.5px] text-zinc-400 font-sans tracking-wide truncate mt-0.5">
+                      {_userLevel} · Spatial Sync
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ZERO-BOX 4: PRECISION CHRONO ORBIT (Linear / Haute Horlogerie Arc) */}
+          {(activeVariant === "precision_chrono" || activeVariant === "kinetic_decoder" || activeVariant === "kinetic_laser" || activeVariant === "velvet_aurora" || activeVariant === "laser_horizon" || activeVariant === "quantum_particles" || activeVariant === "mercury_fluid") && (
+            <div
+              onClick={() => onSelectNav && onSelectNav("settings")}
+              className={`relative w-full transition-all duration-300 cursor-pointer group/chrono bg-transparent border-0 select-none ${
+                isHovered ? "py-1.5 px-2 hover:bg-white/[0.04] rounded-2xl" : "flex justify-center py-1"
+              }`}
+            >
+              <div className="flex items-center w-full">
+                <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                  <svg className="w-9 h-9 -rotate-90 absolute pointer-events-none" viewBox="0 0 36 36">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      className="stroke-white/10"
+                      strokeWidth="1.5"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      className="stroke-[#A27FF3]"
+                      strokeWidth="1.5"
+                      strokeDasharray="100"
+                      strokeDashoffset="35"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="w-7 h-7 rounded-full overflow-hidden relative z-10 ring-1 ring-white/20">
+                    <img
+                      src="/assets/avatar_executive_luxury.jpg"
+                      alt={_userName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                {isHovered && (
+                  <div className="flex flex-col items-start ml-3.5 overflow-hidden text-left">
+                    <KineticLuxuryText
+                      text={_userName}
+                      trigger={isHovered}
+                      className="text-[13px] font-medium text-white tracking-tight truncate leading-tight"
+                    />
+                    <span className="text-[10.5px] text-[#A27FF3] font-sans tracking-wide truncate mt-0.5">
+                      {_userLevel} · 65% Momentum
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Logout Action Button (Present across all styles) */}
           <button
             onClick={async () => {
               try {
@@ -147,17 +338,17 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               }
               if (onSelectNav) onSelectNav("onboarding");
             }}
-            className={`flex items-center w-full py-2.5 rounded-2xl text-[#f8f8f8]/60 hover:text-rose-400 hover:bg-[#111220] transition-all cursor-pointer group/logout ${
-              isHovered ? "px-3.5 justify-start" : "justify-center"
+            className={`flex items-center w-full py-1.5 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer group/logout ${
+              isHovered ? "px-3 justify-start" : "justify-center"
             }`}
             aria-label="Log out"
           >
             <div className="flex items-center justify-center w-6 h-6 shrink-0 text-inherit">
-              <LogoutIcon className="w-5 h-5 group-hover/logout:scale-110 transition-all" />
+              <LogoutIcon className="w-4 h-4 group-hover/logout:scale-110 transition-all" />
             </div>
             {isHovered && (
-              <span className="ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap text-inherit transition-colors">
-                Logout
+              <span className="ml-3 text-xs font-normal tracking-wide whitespace-nowrap text-inherit transition-colors">
+                Cerrar Sesión
               </span>
             )}
           </button>

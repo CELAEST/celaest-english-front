@@ -16,6 +16,7 @@ export interface ReadingArticleReaderProps {
   onOpenRecoveryModal?: (word: string, context?: string) => void;
   onDirectTranslate?: (word: string, context?: string) => Promise<string | null>;
   activeKaraokeWordIndex?: number | null | undefined;
+  isWordSaved?: ((word: string) => boolean) | undefined;
 }
 
 interface WordRange {
@@ -33,6 +34,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     onOpenRecoveryModal,
     onDirectTranslate,
     activeKaraokeWordIndex,
+    isWordSaved,
   }) => {
     const [hoveredRange, setHoveredRange] = useState<WordRange | null>(null);
     const [activeRange, setActiveRange] = useState<WordRange | null>(null);
@@ -398,6 +400,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             onClose={handleCloseModal}
             onAddToMemory={onAddToMemory}
             onOpenRecoveryModal={onOpenRecoveryModal}
+            isAlreadyInMemory={Boolean(activeWordData?.word && isWordSaved?.(activeWordData.word))}
             onDirectTranslate={async (word: string, context?: string) => {
               if (!onDirectTranslate) return null;
               const tr = await onDirectTranslate(word, context);

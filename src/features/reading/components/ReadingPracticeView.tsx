@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { ReadingHeader } from "./ReadingHeader";
 import { ReadingArticleHeader } from "./ReadingArticleHeader";
 import { ReadingArticleReader } from "./ReadingArticleReader";
@@ -12,6 +12,7 @@ import { ReadingCompleteView } from "./ReadingCompleteView";
 import { ReturnArrowIcon } from "./ReadingBespokeIcons";
 import { useReadingArticles } from "../hooks/useReadingArticles";
 import { useReadingAudioNarrator } from "../hooks/useReadingAudioNarrator";
+import { useMemoryCards } from "../../memory/hooks/useMemoryCards";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
@@ -171,6 +172,23 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   }, [recoveryAction, translateWordDirect, handleNextReading]);
 
   const queryClient = useQueryClient();
+  const { cards: memoryCards = [] } = useMemoryCards();
+
+  // Fast set of all terms already persisted in the user's Memory Bank
+  const savedWordsSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const card of memoryCards) {
+      if (card.betterWay) set.add(card.betterWay.trim().toLowerCase());
+      if (card.correctWord) set.add(card.correctWord.trim().toLowerCase());
+      if (card.errorWord) set.add(card.errorWord.trim().toLowerCase());
+    }
+    return set;
+  }, [memoryCards]);
+
+  const isWordSaved = useCallback(
+    (word: string) => savedWordsSet.has(word.trim().toLowerCase()),
+    [savedWordsSet],
+  );
 
   const handleAddToMemory = useCallback(
     async (wordData: WordLookup) => {
@@ -303,6 +321,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                   onOpenRecoveryModal={handleOpenWordRecoveryModal}
                   onDirectTranslate={translateWordDirect}
                   activeKaraokeWordIndex={activeKaraokeWordIndex}
+                  isWordSaved={isWordSaved}
                 />
               )}
             </div>

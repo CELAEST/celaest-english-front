@@ -12,6 +12,7 @@ import { AntiAiLuxuryAlertsShowcase } from "./AntiAiLuxuryAlertsShowcase";
 import { LuxurySegmentedControlsShowcase } from "./LuxurySegmentedControlsShowcase";
 import { LinguisticShieldSimulationShowcase } from "./LinguisticShieldSimulationShowcase";
 import { WorkspaceHeroEvolutionShowcase } from "./WorkspaceHeroEvolutionShowcase";
+import { SidenavProfileVariantsShowcase } from "./SidenavProfileVariantsShowcase";
 import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
 import { QuantumProgressGauge } from "./QuantumProgressGauge";
 import { BespokeIconsShowcase } from "./BespokeIconsShowcase";
@@ -41,6 +42,11 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
         {/* SECTION 00.WORKSPACE_STUDIO: Enterprise Top Architecture Studio (VERY TOP PRIORITY) */}
         <div className="flex flex-col space-y-4">
           <WorkspaceHeroEvolutionShowcase />
+        </div>
+
+        {/* SECTION 00.SIDENAV_STUDIO: Sidenav Profile & Clean Footer Studio */}
+        <div className="flex flex-col space-y-4">
+          <SidenavProfileVariantsShowcase />
         </div>
 
         {/* SECTION 00.AUTH: Google OAuth Handshake & Spatial Clearance Studio */}

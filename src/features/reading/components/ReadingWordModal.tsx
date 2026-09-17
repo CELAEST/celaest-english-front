@@ -12,6 +12,7 @@ export interface ReadingWordModalProps {
   onAddToMemory?: ((wordData: WordLookup) => Promise<void>) | undefined;
   onOpenRecoveryModal?: ((word: string, context?: string) => void) | undefined;
   onDirectTranslate?: ((word: string, context?: string) => Promise<string | null>) | undefined;
+  isAlreadyInMemory?: boolean | undefined;
 }
 
 export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
@@ -23,6 +24,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     onAddToMemory,
     onOpenRecoveryModal,
     onDirectTranslate,
+    isAlreadyInMemory = false,
   }) => {
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -166,7 +168,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
     const handleSaveToMemory = async (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!wordData || addedSuccess) return;
+      if (!wordData || addedSuccess || isAlreadyInMemory) return;
       setIsAdding(true);
       try {
         if (onAddToMemory) {
@@ -388,26 +390,38 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                 </p>
               )}
 
-              {/* Bottom Action: + Add to Memory */}
+              {/* Bottom Action: + Add to Memory / ✓ In Memory */}
               <div className="flex items-center justify-start pt-0.5 pl-2">
-                <button
-                  type="button"
-                  onClick={handleSaveToMemory}
-                  disabled={isAdding || addedSuccess}
-                  aria-label={addedSuccess ? "Word saved to Memory" : "Add word to Memory"}
-                  className={`text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group ${
-                    addedSuccess
-                      ? "text-[#4ade80]"
-                      : "text-[#A27FF3] hover:text-white cursor-pointer"
-                  }`}
-                >
-                  {!addedSuccess && (
+                {addedSuccess || isAlreadyInMemory ? (
+                  <div
+                    aria-label="Word already in Memory"
+                    className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#4ade80]/10 border border-[#4ade80]/20 text-[#4ade80] text-[11.5px] font-medium tracking-wide shadow-[0_0_12px_rgba(74,222,128,0.12)] select-none animate-[fadeSlideUp_0.3s_ease-out_both]"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5 text-[#4ade80]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>In Memory</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSaveToMemory}
+                    disabled={isAdding}
+                    aria-label="Add word to Memory"
+                    className="text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group text-[#A27FF3] hover:text-white cursor-pointer"
+                  >
                     <MemoryBankSaveIcon className="w-3.5 h-3.5 text-[#A27FF3] group-hover:scale-110 transition-transform" />
-                  )}
-                  <span>
-                    {addedSuccess ? "✓ Saved to Memory" : isAdding ? "Saving..." : "Add to Memory"}
-                  </span>
-                </button>
+                    <span>{isAdding ? "Saving..." : "Add to Memory"}</span>
+                  </button>
+                )}
               </div>
             </div>
           ) : null}

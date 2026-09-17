@@ -20,8 +20,8 @@ const CELAEST_LOGO_PATH_D =
   "M374.479 1.73333C374.479 4.53333 362.346 27.7333 355.813 37.3333C340.079 60.8 316.213 85.6 292.746 103.067C272.879 117.867 264.879 122.8 227.413 142.933C209.813 152.4 192.746 161.867 189.413 164.267C170.213 177.2 157.279 190.533 149.813 205.333L146.079 212.667L144.479 201.867C142.079 185.333 135.946 168.4 129.013 158.4C125.813 154 125.813 153.333 128.879 153.333C133.679 153.333 145.279 146.267 151.013 139.867C156.746 133.6 162.479 121.467 162.479 116C162.479 113.867 161.679 114 155.813 118C146.079 124.533 136.879 127.333 125.146 127.2C116.879 127.2 113.013 126.267 102.479 122.133C73.4127 110.533 61.0127 110.533 44.346 122C37.946 126.4 36.6127 126.8 26.346 127.067C17.4127 127.333 13.546 128.133 7.54603 130.933C-0.853972 134.8 -2.32064 137.333 3.54603 137.333C14.8794 137.333 37.4127 150.133 46.746 161.867C53.8127 170.667 59.4127 182.533 61.8127 194.133C64.346 206.267 64.346 229.867 61.6794 251.333C58.746 274 58.746 305.067 61.6794 320.667C66.0794 344.533 75.146 366.667 88.746 386.933C95.546 396.933 111.013 414.267 117.146 418.667L120.879 421.333L117.413 411.6C114.479 403.467 113.946 399.333 113.546 384L113.146 366L117.013 380.667C126.746 418.133 140.213 440.4 163.279 456.8C171.013 462.4 184.346 469.067 191.813 471.333C194.746 472.133 194.479 471.6 189.679 466.533C179.413 455.733 168.879 436.667 162.613 417.6C156.213 398.267 156.613 397.333 165.146 412.667C176.879 433.6 186.613 446.8 201.146 461.333C228.479 488.8 255.546 500.8 293.146 502.133L311.146 502.8L300.346 496.933C271.813 481.333 243.946 457.867 223.946 432.667C211.279 416.8 211.679 415.6 225.279 428.8C243.946 446.8 255.946 454 272.746 457.067L279.813 458.267L271.679 449.733C267.279 444.933 262.479 438.533 260.879 435.467C258.613 430.667 257.146 429.467 251.279 427.467C235.146 421.867 216.479 407.6 204.346 391.6C193.546 377.333 182.479 351.2 182.479 340C182.479 336.8 183.279 336.267 195.413 332.933C225.146 324.533 252.746 308.533 274.879 286.667C281.946 279.6 287.813 273.2 287.813 272.4C287.813 271.467 284.879 271.867 279.946 273.333C270.213 276.4 254.213 278.667 243.413 278.533L235.146 278.4L245.813 274.8C262.213 269.067 284.746 258.533 295.146 251.867C312.879 240.4 327.679 224.267 336.346 207.067C341.546 196.533 341.013 195.2 333.279 200.667C319.413 210.667 292.746 220.533 273.279 223.067C268.213 223.733 269.546 222.667 284.613 215.333C337.679 189.333 366.213 156.933 371.146 116.933L372.079 109.2L357.679 123.733C341.146 140.267 323.946 152.267 302.479 162.533C282.346 172 280.213 172 293.813 162.667C335.679 133.867 364.746 98.4 375.279 63.3333C378.346 52.8 378.879 48.9333 379.013 32C379.146 12 377.946 -7.91252e-06 375.679 -7.91252e-06C375.013 -7.91252e-06 374.479 0.799992 374.479 1.73333Z";
 
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
-  userName = "Learner",
-  userLevel = "B1 Level",
+  userName: _userName = "Learner",
+  userLevel: _userLevel = "B1 Level",
   activeItem = "workspace",
   onSelectNav,
 }) => {
@@ -129,33 +129,10 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Section: Profile & Logout */}
+        {/* Bottom Section: Clean Minimal Logout */}
         <div className="flex flex-col items-center w-full space-y-2 mt-4">
           {/* Separator Line */}
           <div className="w-8 h-[1px] bg-[#111220] my-0.5" />
-
-          {/* User Profile Capsule Item — Navigates to Settings */}
-          <button
-            onClick={() => onSelectNav && onSelectNav("settings")}
-            className={`flex items-center w-full py-2 rounded-2xl hover:bg-[#111220] transition-all cursor-pointer group/user ${
-              activeItem === "settings" ? "bg-[#111220] border border-[#7048E8]/30 shadow-[0_0_12px_rgba(112,72,232,0.15)]" : ""
-            } ${
-              isHovered ? "px-2 justify-start" : "justify-center"
-            }`}
-            aria-label="User profile and settings"
-          >
-            <div className="w-9 h-9 rounded-full bg-[#111220] border border-[#231956] group-hover/user:border-[#7048E8] flex items-center justify-center text-[#f8f8f8] font-medium text-sm shadow-[0_2px_10px_rgba(0,0,0,0.4)] shrink-0 transition-colors">
-              {userName.charAt(0)}
-            </div>
-            {isHovered && (
-              <div className="flex flex-col items-start ml-3 overflow-hidden text-left">
-                <span className="text-sm font-medium text-[#f8f8f8] truncate group-hover/user:text-[#DDD6FE] transition-colors">{userName}</span>
-                <span className="text-[10px] text-[#f8f8f8]/60 font-light tracking-wider uppercase truncate">
-                  {userLevel}
-                </span>
-              </div>
-            )}
-          </button>
 
           {/* Logout Button */}
           <button
@@ -170,16 +147,16 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               }
               if (onSelectNav) onSelectNav("onboarding");
             }}
-            className={`flex items-center w-full py-2.5 rounded-2xl text-[#f8f8f8] hover:bg-[#111220] transition-all cursor-pointer group/logout ${
+            className={`flex items-center w-full py-2.5 rounded-2xl text-[#f8f8f8]/60 hover:text-rose-400 hover:bg-[#111220] transition-all cursor-pointer group/logout ${
               isHovered ? "px-3.5 justify-start" : "justify-center"
             }`}
             aria-label="Log out"
           >
-            <div className="flex items-center justify-center w-6 h-6 shrink-0 text-[#f8f8f8]">
-              <LogoutIcon className="w-5 h-5 text-[#f8f8f8] group-hover/logout:scale-110 group-hover/logout:text-rose-400 transition-all" />
+            <div className="flex items-center justify-center w-6 h-6 shrink-0 text-inherit">
+              <LogoutIcon className="w-5 h-5 group-hover/logout:scale-110 transition-all" />
             </div>
             {isHovered && (
-              <span className="ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap text-[#f8f8f8] group-hover/logout:text-rose-400 transition-colors">
+              <span className="ml-3.5 text-sm font-normal tracking-wide whitespace-nowrap text-inherit transition-colors">
                 Logout
               </span>
             )}

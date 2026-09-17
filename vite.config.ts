@@ -28,13 +28,24 @@ function originOf(url: string | undefined, fallback: string): string {
 function createSecurityPolicy(mode: string, command: string): string {
   const env = loadEnv(mode, process.cwd(), "");
   const apiOrigin = originOf(env.VITE_API_URL, "http://localhost:8080");
+  const celaestBackOrigin = originOf(env.VITE_CELAEST_BACK_URL, "http://localhost:3101");
   const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "http://127.0.0.1:8085");
   const isDev = command === "serve";
 
   const connectSrc = [
     "'self'",
     apiOrigin,
+    celaestBackOrigin,
     coreAiOrigin,
+    "https://*.supabase.co",
+    "https://api.groq.com",
+    "https://generativelanguage.googleapis.com",
+    "https://api.openai.com",
+    "https://api.anthropic.com",
+    "https://api.deepseek.com",
+    "https://api.x.ai",
+    "https://openrouter.ai",
+    "https://api.perplexity.ai",
     "https://huggingface.co",
     "https://*.huggingface.co",
     "https://cdn-lfs.huggingface.co",

@@ -33,9 +33,41 @@ export type SidenavArchetypeId =
   | "dieter_rams_ten"
   | "leica_rangefinder"
   | "japanese_sensu"
-  | "teenage_engineering_tp7";
+  | "teenage_engineering_tp7"
+  | "bauhaus_geometry"
+  | "apple_park_glass"
+  | "braille_tactile_ridge"
+  | "monocle_travel_column"
+  | "polaroid_film_strip"
+  | "astronomical_caliper"
+  | "vacheron_guilloche"
+  | "hasselblad_medium_format"
+  | "kyoto_kintsugi"
+  | "braun_et66_ledger"
+  | "titanium_potentiometer"
+  | "alvar_aalto_bentwood"
+  | "helvetica_1957"
+  | "zumthor_therme_slate"
+  | "wim_crouwel_1968"
+  | "vignelli_unigrid_1972"
+  | "paul_rand_modernism"
+  | "jil_sander_minimal"
+  | "mies_nationalgalerie"
+  | "braun_sk4_snow_white"
+  | "otl_aicher_1972"
+  | "gropius_fagus_werk"
+  | "enzo_mari_autoprogettazione"
+  | "sanaa_translucent_membrane";
 
-export type SidenavCategory = "all" | "floating" | "editorial" | "hardware" | "structural";
+export type SidenavCategory =
+  | "all"
+  | "pure_minimalism"
+  | "floating"
+  | "editorial"
+  | "hardware"
+  | "structural"
+  | "pure_geometry"
+  | "atelier_luxury";
 
 interface ArchetypeMeta {
   id: SidenavArchetypeId;
@@ -46,8 +78,12 @@ interface ArchetypeMeta {
   inspiration: string;
   description: string;
   accent: string;
-  category: "floating" | "editorial" | "hardware" | "structural";
+  category: "pure_minimalism" | "floating" | "editorial" | "hardware" | "structural" | "pure_geometry" | "atelier_luxury";
   highlights: string[];
+  material?: string;
+  hairline?: string;
+  opticalRatio?: string;
+  physics?: string;
 }
 
 const ARCHETYPES: ArchetypeMeta[] = [
@@ -483,6 +519,514 @@ const ARCHETYPES: ArchetypeMeta[] = [
       "Chasis de aluminio cepillado con tornillos Torx visibles en las esquinas",
     ],
   },
+  {
+    id: "bauhaus_geometry",
+    index: "25",
+    name: "The CELAEST Constructivist Geometry",
+    subtitle: "Geometría Pura · Acento Violeta Eléctrico CELAEST",
+    silhouette: "Columna de Formas Puras en Equilibrio Asimétrico",
+    inspiration: "CELAEST Design System + Geometría Constructivista",
+    category: "pure_geometry",
+    description:
+      "Geometría constructivista rigurosa adaptada al ecosistema CELAEST: cada herramienta está asociada a una primitiva geométrica pura dibujada con línea de 1.5px. El bloque activo utiliza el gradiente violeta eléctrico característico del software (#7048e8), con alineación óptica fija y tipografía corporativa.",
+    accent: "#7048e8",
+    material: "Deep Space Glass & Violeta Eléctrico CELAEST",
+    hairline: "1px Línea Arquitectónica Translúcida",
+    opticalRatio: "Eje Óptico Fijo Centrado (72px a 248px)",
+    physics: "Resorte Fluido Framer Motion (Stiffness 300, Damping 28)",
+    highlights: [
+      "Emblema oficial CELAEST vectorizado en badge violeta de 44px",
+      "Primitivas geométricas matemáticas (○ □ △ ◇ ⬡ + ⊞) en trazo de 1.5px",
+      "Eje óptico fijo: cero movimiento en X al abrir o cerrar el panel",
+      "Gradiente violeta eléctrico característico de la plataforma",
+    ],
+  },
+  {
+    id: "apple_park_glass",
+    index: "26",
+    name: "The Cupertino Curved Glass Pavilion",
+    subtitle: "Vidrio Curvo Arquitectónico · Refracción Óptica de 4K",
+    silhouette: "Hoja de Vidrio Translúcido con Radio Continuo de 32px",
+    inspiration: "Foster + Partners Apple Park Steve Jobs Theater + Vitsoe Cases",
+    category: "pure_geometry",
+    description:
+      "Una lámina de vidrio ahumado monolítica ultra-delgada inspirada en los paneles de cristal curvo de 12 metros de Apple Park. Utiliza difuminado háptico multicapa (backdrop-blur-3xl), un bisel de refracción de 0.5px que refleja la luz ambiental y tipografía Apple SF Pro ultra-light.",
+    accent: "#F8FAFC",
+    highlights: [
+      "Borde con biselado de lente cóncava que refracta sutilmente el fondo",
+      "Tipografía font-extralight con máxima legibilidad a escala reducida",
+      "Efecto de halo de luz líquida que viaja por el perímetro al interactuar",
+      "Indicador de racha integrado como un anillo de cristal flotante",
+    ],
+  },
+  {
+    id: "braille_tactile_ridge",
+    index: "27",
+    name: "The Braille Tactile Micro-Ridge",
+    subtitle: "Bajo Relieve Táctil · Micropuntos de Relieve Háptico",
+    silhouette: "Columna de Cuero Negro Mate con Puntos Táctiles en Relieve",
+    inspiration: "Bang & Olufsen Beosound Touch + High-End Embossed Editorial",
+    category: "pure_geometry",
+    description:
+      "Diseñado para la sensación del tacto físico: una columna de textura mate con una cuadrícula de micropuntos en bajorrelieve. Al posar el cursor sobre una herramienta, los puntos correspondientes se 'levantan' ópticamente con una sombra hiper-realista como si fuera papel prensado a mano.",
+    accent: "#D4D4D8",
+    highlights: [
+      "Matriz de micropuntos en relieve táctil (3x2 puntos por módulo)",
+      "Efecto de prensado tipográfico ('letterpress deboss') que da profundidad física sin bordes",
+      "Cero gradientes de color: todo el contraste se logra con sombras de bajo relieve",
+      "Sensación táctil sorda de papel hecho a mano y cuero mineral",
+    ],
+  },
+  {
+    id: "monocle_travel_column",
+    index: "28",
+    name: "The Monocle Travel Journal",
+    subtitle: "Editorial de Viajes Ejecutivo · Notas Marginales & Sello de Cera",
+    silhouette: "Columna Editorial Estrecha con Glifos de Cuaderno de Campo",
+    inspiration: "Monocle Magazine + Midori Traveler's Notebook + Rimowa Titanium",
+    category: "pure_geometry",
+    description:
+      "La estética de un cuaderno de notas de un corresponsal internacional: una columna esbelta con glifos mínimos grabados, anotaciones en margen izquierdo ('LAT: 40.71° // NYC'), y un sello de certificación de horas de práctica en la base que parece estampado con tinta seca.",
+    accent: "#FBBF24",
+    highlights: [
+      "Anotaciones marginales en tipografía monospace 8px alineadas al milímetro",
+      "Sello de certificación de fluidez con fecha UTC y zona horaria ejecutiva",
+      "Separadores de línea punteada estilo 'perforated notebook sheet'",
+      "Micro-etiquetas de objetivo internacional: 'EN-US // C1 TARGET'",
+    ],
+  },
+  {
+    id: "polaroid_film_strip",
+    index: "29",
+    name: "The Analog Film Strip Reel",
+    subtitle: "Tira de Película de 35mm · Fotogramas de Aprendizaje",
+    silhouette: "Tira Vertical con Perforaciones de Arrastre de Película de 35mm",
+    inspiration: "Hasselblad 500C Film Back + Kodak Tri-X 400 + Leica Negatives",
+    category: "pure_geometry",
+    description:
+      "Inspirado en una tira de negativos de película de 35mm blanco y negro: el borde izquierdo cuenta con perforaciones cuadradas de arrastre de celuloide. Cada herramienta de CELAEST es un fotograma enmarcado con su número de cuadro ('EXP 01', 'EXP 02'). Al hacer click, el fotograma se ilumina como sobre una mesa de luz de fotógrafo.",
+    accent: "#E2E8F0",
+    highlights: [
+      "Perforaciones de arrastre de celuloide de 35mm talladas a lo largo de la arista",
+      "Números de fotograma grabados ('EXP 01/06', 'KODAK TRI-X')",
+      "Efecto de mesa de luz: la herramienta activa pasa de negativo translúcido a blanco puro",
+      "Tinta de emulsión fotográfica mate sobre fondo negro de haluro de plata",
+    ],
+  },
+  {
+    id: "astronomical_caliper",
+    index: "30",
+    name: "The Celestial Caliper Instrument",
+    subtitle: "Instrumento Astronómico de Precisión · Nonio Milimétrico",
+    silhouette: "Regla Graduada con Escala de Nonio de Doble Precisión",
+    inspiration: "Nautical Sextant + Star Chart Cartography + Vernier Caliper Scale",
+    category: "pure_geometry",
+    description:
+      "Un instrumento de navegación celeste: una regla de titanio con divisiones de escala vernier de 0.1mm. Al seleccionar un módulo, un cursor micrométrico con tornillo de ajuste fino se desliza por la escala marcando la coordenada exacta de la sesión.",
+    accent: "#67E8F9",
+    highlights: [
+      "Escala graduada de nonio con marcas cada 1mm grabadas con láser",
+      "Marcador deslizante micrométrico con retícula de ajuste fino",
+      "Coordenadas estelares de sesión de práctica (RA 14h 29m // DEC +62°)",
+      "Tacto de instrumento náutico de latón negro y titanio aeroespacial",
+    ],
+  },
+  {
+    id: "vacheron_guilloche",
+    index: "31",
+    name: "The Geneva Guilloché Atelier",
+    subtitle: "Alta Relojería Suiza · Guilloché Clous de Paris en Oro Blanco",
+    silhouette: "Bisel Octogonal Biselado con Esfera de Guilloché Torneada a Mano",
+    inspiration: "Vacheron Constantin Overseas + Patek Philippe Calatrava + Audemars Piguet",
+    category: "atelier_luxury",
+    description:
+      "La cúspide de la relojería artesanal ginebrina: un panel acabado con patrón Clous de Paris en guilloché torneado a mano con trazos de 0.25px. Marcadores de horas tipo Breguet tallados en metal blanco, manecilla azulada al fuego térmico y el Punzón de Ginebra grabado como sello de maestría.",
+    accent: "#D4AF37",
+    material: "Titanio Anthracite & Oro 24K",
+    hairline: "0.25px Guilloché Clous de Paris",
+    opticalRatio: "Octogonal 1:1.414 Proporción Áurea",
+    physics: "Calibre 4100 Automático (28,800 vph)",
+    highlights: [
+      "Patrón Clous de Paris guilloché con relieve micrométrico de 0.25px",
+      "Marcador de sesión como aguja azulada al fuego estilo Breguet",
+      "Punzón de Ginebra (Geneva Seal) grabado con láser en la arista inferior",
+      "Bisel exterior octogonal con pulido espejo y aristas satinadas a mano",
+    ],
+  },
+  {
+    id: "hasselblad_medium_format",
+    index: "32",
+    name: "The Gothenburg 6x6 Medium Format",
+    subtitle: "Cámara de Medio Formato · Visor de Cristal Esmerilado de Cintura",
+    silhouette: "Cuerpo Cúbico de Aleación de Magnesio con Retícula de Enfoque",
+    inspiration: "Hasselblad 500C/M + Rolleiflex 2.8F + Zeiss Planar 80mm",
+    category: "atelier_luxury",
+    description:
+      "Inspirado en el mítico visor de cintura de las cámaras Hasselblad: una pantalla cuadrada de cristal esmerilado con retícula milimétrica grabada al ácido. Cada herramienta se alinea con una cruz de enfoque óptico. Los diales laterales ajustan la apertura de sesión con clicks de diafragma metálico.",
+    accent: "#A1A1AA",
+    material: "Aleación de Magnesio & Cristal Esmerilado",
+    hairline: "0.5px Retícula Grabada al Ácido",
+    opticalRatio: "Formato Cuadrado Puro 6x6",
+    physics: "Obturador Central de Láminas Compur (1/500s)",
+    highlights: [
+      "Visor superior de cintura con retícula de cristal esmerilado grabada al ácido",
+      "Selector de herramientas con sensación de click de diafragma f/2.8 a f/22",
+      "Chasis de aleación de magnesio satinado con escudo escandinavo",
+      "Cruz central de enfoque telemétrico que alinea las coordenadas ópticas",
+    ],
+  },
+  {
+    id: "kyoto_kintsugi",
+    index: "33",
+    name: "The Kintsugi Gold Seam Monolith",
+    subtitle: "Filosofía Wabi-Sabi · Fisura de Oro Líquido & Pizarra Volcánica",
+    silhouette: "Monolito de Pizarra Mate Unida por una Vena de Oro Puro",
+    inspiration: "Kintsugi Ceramic Repair + Tadao Ando Raw Concrete + Ryoan-ji Rock Garden",
+    category: "atelier_luxury",
+    description:
+      "Enraizado en el arte japonés del Kintsugi: la belleza de lo imperfecto y lo reparado. Una columna monolítica de piedra basáltica negra mate atravesada verticalmente por una fina grieta de pan de oro líquido de 24 quilates. Los módulos habitan en los puntos de contacto de la veta dorada, creando un equilibrio asimétrico y silencioso.",
+    accent: "#EAB308",
+    material: "Basalto Volcánico & Pan de Oro 24K",
+    hairline: "0.75px Fisura Orgánica Kintsugi",
+    opticalRatio: "Asimetría Zen & Concepto Ma (間)",
+    physics: "Gravedad Silenciosa / Cero Ruido Digital",
+    highlights: [
+      "Veta de oro líquido Kintsugi que conecta todas las herramientas en una línea orgánica",
+      "Fondo de basalto volcánico oscuro mate con textura de piedra porosa natural",
+      "Cero bordes sintéticos: el vacío espacial (Ma) guía la navegación",
+      "Sello de laca urushi bermellón en la base con la insignia de maestría",
+    ],
+  },
+  {
+    id: "braun_et66_ledger",
+    index: "34",
+    name: "The Kronberg ET66 Calculator Ledger",
+    subtitle: "Funcionalismo Industrial Braun · Dieter Rams & Dietrich Lubs",
+    silhouette: "Consola de Botones Circulares Convexos con Código Cromático 1977",
+    inspiration: "Braun ET66 Calculator (1977) + Apple iOS Calculator Origin + Vitsoe 606",
+    category: "atelier_luxury",
+    description:
+      "El diseño icónico de Dietrich Lubs y Dieter Rams de 1977: botones circulares convexos de tacto esférico en tres tonos icónicos (gris basalto para módulos neutros, verde bosque para Workspace, y botón de acción en amarillo tráfico puro). Pantalla superior LCD de cristal líquido verde oliva con números de segmentos.",
+    accent: "#F59E0B",
+    material: "Plástico Termoformado Basalto & Vidrio TN LCD",
+    hairline: "Tolerancia de Molde de Inyección 0.3mm",
+    opticalRatio: "Retícula Circular Ortogonal 1977",
+    physics: "Domo de Membrana Táctil con Clic Sordo",
+    highlights: [
+      "Teclas circulares convexas con concavidad física para la yema del dedo",
+      "Paleta cromática histórica Braun: Gris Basalto, Oliva Drab y Amarillo Tráfico",
+      "Pantalla superior estilo LCD TN vintage de 8 dígitos para telemetría diaria",
+      "Estructura sin tornillos con carcasa deslizable de protección integral",
+    ],
+  },
+  {
+    id: "titanium_potentiometer",
+    index: "35",
+    name: "The Aerospace Titanium Potentiometer",
+    subtitle: "Consola Lineal de Precisión · Fader Mecánico Deslizante de Titanio",
+    silhouette: "Riel Lineal Vertical con Deslizador de Fader Físico PVD",
+    inspiration: "Solid State Logic Master Fader + Rupert Neve 5088 + NASA Mission Control Console",
+    category: "atelier_luxury",
+    description:
+      "La sensación física de un fader de mezcla analógico de estudio de masterización: un riel fresado en titanio aeroespacial con un deslizador anodizado negro mate. Al seleccionar una sección, el fader físico se mueve con gravedad magnética y encaja con un chasquido sordo en la muesca de decibelios grabada con láser.",
+    accent: "#38BDF8",
+    material: "Titanio Grado 5 PVD & Fibra Conductora",
+    hairline: "Ranura de Tolerancia 50 Micras",
+    opticalRatio: "Escala Logarítmica de Atenuación dB",
+    physics: "Resistencia Viscosa de 100mm de Recorrido",
+    highlights: [
+      "Fader físico deslizante con cabezal de titanio PVD que se desplaza suavemente",
+      "Escala lineal con marcas en decibelios (+10dB, 0dB, -5dB, -∞) grabadas con láser",
+      "Micro-ranura de guía fresada con tolerancia de 50 micras",
+      "Medidor VU lineal de 12 segmentos LED bicolores de respuesta ultrarrápida",
+    ],
+  },
+  {
+    id: "alvar_aalto_bentwood",
+    index: "36",
+    name: "The Scandinavian Bentwood Curve",
+    subtitle: "Arquitectura Orgánica Finlandesa · Madera Curvada al Vapor & Lino",
+    silhouette: "Cinta Curva Continua de Madera de Abedul con Perfil de Resonancia",
+    inspiration: "Alvar Aalto Paimio Sanatorium + Artek Furniture + Marimekko Minimalism",
+    category: "atelier_luxury",
+    description:
+      "Inspirado en la calidez táctil de la madera laminada curvada al vapor de Alvar Aalto: una silueta de líneas sinuosas y orgánicas con tonos cálidos de madera clara y texturas de lino natural. La iluminación ambiental es una temperatura cálida de 3000K, eliminando toda frialdad digital para crear una atmósfera de aprendizaje serena y humana.",
+    accent: "#FDE68A",
+    material: "Laminado de Abedul Finlandés & Hilado de Lino",
+    hairline: "Arista Biselada Orgánica de 1.2mm",
+    opticalRatio: "Curvatura Catagórica de Sanatorio Paimio",
+    physics: "Flexión Elástica de Madera Viva / Calor 3000K",
+    highlights: [
+      "Curva sinuosa continua inspirada en el respaldo de la butaca Paimio de 1932",
+      "Acabado de abedul natural con textura de veta de madera visible y lino",
+      "Iluminación indirecta cálida de 3000K con sombra suave difusa",
+      "Tipografía escandinava humanista con proporciones clásicas y amplio respiro",
+    ],
+  },
+  {
+    id: "helvetica_1957",
+    index: "37",
+    name: "The Zurich Helvetica 1957 Specimen",
+    subtitle: "Tipografía Suiza Pura · Max Miedinger & Neue Haas Grotesk",
+    silhouette: "Columna Asimétrica Tipográfica Sin Cajas Ni Bordes",
+    inspiration: "Max Miedinger + Eduard Hoffmann + Josef Müller-Brockmann",
+    category: "pure_minimalism",
+    description:
+      "La máxima pureza del diseño suizo: cero contenedores, cero bordes, cero sombras y cero degradados. La jerarquía se construye exclusivamente mediante espaciado, pesos tipográficos y una retícula matemática invisible. Un ejercicio radical de serenidad y legibilidad absoluta.",
+    accent: "#FFFFFF",
+    material: "Fondo Negro Carbón Mate & Tinta Blanca Pura",
+    hairline: "0.5px Regla Horizontal Continua",
+    opticalRatio: "Retícula Asimétrica de 8 Columnas",
+    physics: "Cero Latencia / Transición Tipográfica Pura",
+    highlights: [
+      "Cero contenedores: los textos flotan en espacio negativo puro",
+      "Transición activa exclusivamente por peso tipográfico y tick blanco",
+      "Identificador superior con código de espécimen tipográfico 'HAAS 1957'",
+      "Contraste óptico extremo con legibilidad clínica sin fatiga visual",
+    ],
+  },
+  {
+    id: "zumthor_therme_slate",
+    index: "38",
+    name: "The Peter Zumthor Therme Slate",
+    subtitle: "Monolito Arquitectónico · Cuarcita de Vals & Luz Dorada",
+    silhouette: "Monolito de Piedra Oscura con Hendidura Horizontal de Luz",
+    inspiration: "Peter Zumthor Therme Vals + Swiss Alpine Architecture",
+    category: "pure_minimalism",
+    description:
+      "Inspirado en los baños termales de Vals de Peter Zumthor: una columna de cuarcita oscura monolítica donde las herramientas se inscriben como nombres de estancias arquitectónicas. La herramienta activa se distingue por una sutil hendidura horizontal de luz dorada tenue (—), creando una atmósfera de concentración monástica.",
+    accent: "#EAB308",
+    material: "Cuarcita Gris Basalto & Hendidura Dorada Moteada",
+    hairline: "0.5px Hendidura de Luz Horizontal",
+    opticalRatio: "Estructura Monolítica de Bloque 1:3",
+    physics: "Silencio Arquitectónico de Masa Pura",
+    highlights: [
+      "Cero cajas: las secciones se nombran como estancias (BRIEF, VAULT, VOICE, PAGES)",
+      "Marcador de posición como línea horizontal de luz dorada tenue (—)",
+      "Tipografía grabada a bajo relieve sin artefactos digitales",
+      "Pie de página con etiqueta de habitante: 'OCCUPANT // A1 ELEMENTARY'",
+    ],
+  },
+  {
+    id: "wim_crouwel_1968",
+    index: "39",
+    name: "The Amsterdam Crouwel 1968 Grid",
+    subtitle: "Modernismo Holandés Radical · Matriz Geométrica Total Design",
+    silhouette: "Retícula Matemática Ortogonal con Glifos Angulares a 45°",
+    inspiration: "Wim Crouwel + Stedelijk Museum Amsterdam + Total Design 1968",
+    category: "pure_minimalism",
+    description:
+      "La estética de los carteles del Museo Stedelijk de Ámsterdam: una matriz matemática estricta donde cada glifo y número se construye sobre ángulos ortogonales y diagonales a 45°. El estado activo es un sólido bloque de pizarra fría con coordenadas milimétricas grabadas.",
+    accent: "#94A3B8",
+    material: "Esmalte Gris Pizarra Fría & Tinta de Serigrafía",
+    hairline: "1px Retícula Matemática 45°",
+    opticalRatio: "Matriz Cuadrada Ortogonal 24x24",
+    physics: "Alineación Matemática Invariable",
+    highlights: [
+      "Glifos tipográficos generados bajo la retícula New Alphabet de 1967",
+      "Indicadores de posición entre corchetes angulares: [ 01 ], [ 02 ]",
+      "Coordenadas de cuadrícula cartográfica en el encabezado (GRID X:04 Y:12)",
+      "Paleta monocromática de pizarra, carbón y tiza blanca mate",
+    ],
+  },
+  {
+    id: "vignelli_unigrid_1972",
+    index: "40",
+    name: "The Massimo Vignelli Unigrid",
+    subtitle: "Diseño Racionalista · Metro de Nueva York & Sistema Unigrid",
+    silhouette: "Estructura Modular Racionalista con Cinta de Acento Carmesí",
+    inspiration: "Massimo Vignelli + 1972 New York Subway Graphic Standards Manual",
+    category: "pure_minimalism",
+    description:
+      "La cúspide del diseño racionalista de Massimo Vignelli: estructura de información basada en su legendario Unigrid de 1972. Sin ornamentos, sin cajas superfluas; solo franjas horizontales de ritmo perfecto, numeración tipográfica clásica y una sobria barra bermellón mate para el estado activo.",
+    accent: "#B91C1C",
+    material: "Aluminio Negro Mate & Franja Carmesí Subcutánea",
+    hairline: "1.5px Cinta Racionalista Unigrid",
+    opticalRatio: "Módulo Modular Racionalista Vignelli 4:3",
+    physics: "Geometría Funcional Rápida",
+    highlights: [
+      "Numeración encerrada en círculos minimalistas: (1), (2), (3)",
+      "Franja de acento en carmesí mate sobrio sin gradientes ni resplandor",
+      "Tipografía estándar Akzidenz con pesos rigurosamente contrastados",
+      "Organización modular que guía la mirada con velocidad instantánea",
+    ],
+  },
+  {
+    id: "paul_rand_modernism",
+    index: "41",
+    name: "The Paul Rand Modernist Harmony",
+    subtitle: "Modernismo Estadounidense · Proporción, Asimetría & Tono Tierra",
+    silhouette: "Composición Geométrica Asimétrica en Tonalidades Neutras",
+    inspiration: "Paul Rand Corporate Identities (IBM, Westinghouse, NeXT) + Bauhaus US",
+    category: "pure_minimalism",
+    description:
+      "Inspirado en la filosofía de Paul Rand sobre la síntesis de forma y contenido: formas geométricas elementales combinadas con una paleta cálida de tonos tierra (crema cálido, siena tostado mate y negro basalto). Cero artificios tecnológicos: puro equilibrio de tensiones visuales.",
+    accent: "#C2410C",
+    material: "Papel Hecho a Mano & Pigmento de Siena Tostada",
+    hairline: "1px Línea de Tensión Asimétrica",
+    opticalRatio: "Equilibrio Dinámico Asimétrico",
+    physics: "Gravedad Visual Proporcional",
+    highlights: [
+      "Paleta sofisticada de siena tostada mate, crema y grafito",
+      "Iconografía primaria de recorte abstracto con balance visual",
+      "Separadores de línea con muesca de equilibrio asimétrico",
+      "Tipografía clásica americana con calidez humanista y gran respiro",
+    ],
+  },
+  {
+    id: "jil_sander_minimal",
+    index: "42",
+    name: "The Jil Sander Pure Cashmere",
+    subtitle: "Minimalismo Textil de Lujo · Vacío Espacial & Aristas Vivas",
+    silhouette: "Columna Ultra-Esbelta de Obsidiana con Tipografía en Susurro",
+    inspiration: "Jil Sander Milan Flagship + Fabien Baron Editorial + Loro Piana Textures",
+    category: "pure_minimalism",
+    description:
+      "El epítome del lujo silencioso de la moda de alta costura: una columna esbelta con proporciones hiper-alargadas, espaciado generoso entre palabras y tipografía ultra-fina que casi parece un susurro. Cero distracciones: el producto (el aprendizaje del estudiante) es lo único que importa.",
+    accent: "#E2E8F0",
+    material: "Seda Negra Mate & Fibra de Cachemira Oscura",
+    hairline: "0.25px Línea Selvedge Japonesa",
+    opticalRatio: "Proporción 1:4 Esbeltez Máxima",
+    physics: "Susurro Silencioso / Caída de Tela Pesada",
+    highlights: [
+      "Espaciado vertical amplio con máximo respiro entre herramientas",
+      "Tipografía ultra-light con tracking suavemente extendido",
+      "Indicador activo como micro-punto de seda en blanco marfil",
+      "Atmósfera de sastrería arquitectónica de alta gama",
+    ],
+  },
+  {
+    id: "mies_nationalgalerie",
+    index: "43",
+    name: "The Mies van der Rohe Steel Column",
+    subtitle: "Modernismo Arquitectónico Radical · Viga I de Acero & Luz Estructural",
+    silhouette: "Columna de Acero Pavonado Negro con Aristas Vivas y Regla Láser",
+    inspiration: "Mies van der Rohe Neue Nationalgalerie Berlin (1968) + Seagram Building",
+    category: "pure_minimalism",
+    description:
+      "La pureza constructiva del 'Menos es más': una columna estructural de acero pavonado negro mate con aristas vivas de 90°. Sin carcasas, sin adornos plásticos; únicamente la verdad del material, tipografía DIN de ingeniería alemana y una sutil línea blanca de 1px como indicador activo.",
+    accent: "#FFFFFF",
+    material: "Acero Laminado Pavonado & Pintura Mate Carbón",
+    hairline: "0.5px Regla Láser Continua de Precisión",
+    opticalRatio: "Retícula Universal Miesiana 1:2.4",
+    physics: "Gravedad Monumental / Estabilidad Absoluta",
+    highlights: [
+      "Perfil de viga estructural de acero con aristas ortogonales vivas a 90°",
+      "Tipografía DIN alemana de alta ingeniería con contraste nítido y cero fatiga",
+      "Indicador activo mediante un fino trazo láser blanco de 0.5px que conecta el eje",
+      "Pie con marca de forja berlinesa: 'MIES // NEUE NATIONALGALERIE 1968'",
+    ],
+  },
+  {
+    id: "braun_sk4_snow_white",
+    index: "44",
+    name: "The Braun SK4 Phonosuper 'Snow White'",
+    subtitle: "Funcionalismo Alemán Puro · Acrílico Cristalino & Madera de Olmo",
+    silhouette: "Monolito de Chapa Metálica Gris Claro con Tapa de Acrílico Óptico",
+    inspiration: "Dieter Rams & Hans Gugelot (1956) + Vitsoe Industrial Archives",
+    category: "pure_minimalism",
+    description:
+      "El legendario 'Ataúd de Blancanieves' de 1956: la primera vez que el acrílico transparente se usó como cubierta estructural. Una columna de chapa metálica blanca tiza con ranurado lineal vertical. El indicador activo es una aguja micrométrica en tono amarillo tráfico suave sobre una escala grabada.",
+    accent: "#FBBF24",
+    material: "Chapa de Acero Blanco Tiza & Acrílico Cristalino",
+    hairline: "Ranurado Acústico de 1.2mm de Separación",
+    opticalRatio: "Equilibrio Racional Rams-Gugelot 1956",
+    physics: "Amortiguación Viscosa de Brazo Fonocaptor",
+    highlights: [
+      "Fondo blanco tiza mate con ranuras acústicas lineales de ventilación",
+      "Aguja indicadora mecánica en amarillo tráfico mate sin sombras digitales",
+      "Tipografía Akzidenz-Grotesk grabada directamente en la superficie metálica",
+      "Pie de página con inscripción histórica: 'BRAUN AG // FRANKFURT 1956'",
+    ],
+  },
+  {
+    id: "otl_aicher_1972",
+    index: "45",
+    name: "The Otl Aicher Munich Olympic Grid",
+    subtitle: "Sistema Pictográfico Universal · Geometría Estricta & Ángulos de 45°/90°",
+    silhouette: "Cuadrícula Ortogonal Racionalista con Pictogramas Elementales",
+    inspiration: "Otl Aicher München 1972 Corporate Identity + Hochschule für Gestaltung Ulm",
+    category: "pure_minimalism",
+    description:
+      "El sistema de comunicación visual más influyente del siglo XX: creado por Otl Aicher para los Juegos de Múnich 1972. Cada herramienta está desprovista de adornos y definida por su función esencial en una cuadrícula modular rigurosa. El estado activo es un cuadrado negro sólido con contraste invertido.",
+    accent: "#38BDF8",
+    material: "Esmalte Mate Blanco Nieve & Pigmento Negro Humo",
+    hairline: "1.5px Cuadrícula Geométrica Ortogonal",
+    opticalRatio: "Matriz Matemática Cuadrada 16x16",
+    physics: "Respuesta Instantánea de Sistema de Señalización",
+    highlights: [
+      "Pictogramas construidos bajo la retícula estricta de 45° y 90° de Ulm",
+      "Bloque activo con inversión cromática neta sin desenfoques ni halos",
+      "Tipografía Univers en pesos 55 y 65 con espaciado óptico milimétrico",
+      "Encabezado con código de señalética internacional: 'MÜNCHEN 1972 // SYSTEM'",
+    ],
+  },
+  {
+    id: "gropius_fagus_werk",
+    index: "46",
+    name: "The Walter Gropius Fagus-Werk Curtain Wall",
+    subtitle: "Arquitectura Pionera de Cristal · Esquinas Transparentes Sin Apoyos",
+    silhouette: "Muro Cortina de Vidrio Estructural con Impostas Negras de Acero",
+    inspiration: "Walter Gropius & Adolf Meyer Fagus-Werk (1911) + Patrimonio Mundial UNESCO",
+    category: "pure_minimalism",
+    description:
+      "Inspirado en el primer edificio del Movimiento Moderno con esquinas de cristal flotantes: el Fagus-Werk de 1911. Una columna donde los soportes de carga se retiran hacia el interior, permitiendo que la navegación flote en una membrana transparente con delgadas impostas de hierro negro.",
+    accent: "#94A3B8",
+    material: "Hierro Forjado Negro & Vidrio Float Cristalino",
+    hairline: "0.75px Impostas Horizontales de Vidrio",
+    opticalRatio: "Volumetría Suspendida Sin Columnas Esquineras",
+    physics: "Ligereza Estructural de Suspensión Aérea",
+    highlights: [
+      "Esquinas ópticamente desprovistas de marco: el texto flota libre en el espacio",
+      "Delgadas impostas horizontales que marcan el ritmo arquitectónico del piso",
+      "Estado activo marcado por una doble línea transversal de acero negro",
+      "Pie con coordenadas de patrimonio arquitectónico: 'ALFELD // 1911 UNESCO'",
+    ],
+  },
+  {
+    id: "enzo_mari_autoprogettazione",
+    index: "47",
+    name: "The Enzo Mari Autoprogettazione 1974",
+    subtitle: "Diseño Democrático Radical · Honestidad de Materiales & Trazos Crudos",
+    silhouette: "Columna de Madera Negra Mate con Puntos de Anclaje Visibles",
+    inspiration: "Enzo Mari Proposta per Autoprogettazione (Milano 1974) + Arte Programmata",
+    category: "pure_minimalism",
+    description:
+      "La filosofía radical de Enzo Mari sobre el diseño no consumista: belleza pura nacida de la honestidad de la construcción. Tablones de corte recto negro mate con marcas de clavos de registro artesanal. El elemento activo se destaca con un sello tipográfico en bajo relieve.",
+    accent: "#E2E8F0",
+    material: "Madera de Pino Carbonizada & Clavos de Acero Crudo",
+    hairline: "1.0px Trazo de Sierra de Carpintería",
+    opticalRatio: "Sección Modular Estándar 1x4 Pulgadas",
+    physics: "Materialidad Cruda / Cero Artificio Digital",
+    highlights: [
+      "Marcas circulares de clavos de registro estructural en los extremos",
+      "Tipografía Helvetica cruda estampada como sello de taller artesanal",
+      "Cero bordes pulidos artificiales: ritmo honesto de ensamblaje modular",
+      "Pie de página con manifiesto de diseño: 'MARI // AUTOPROGETTAZIONE 1974'",
+    ],
+  },
+  {
+    id: "sanaa_translucent_membrane",
+    index: "48",
+    name: "The SANAA Translucent Membrane",
+    subtitle: "Arquitectura Inmaterial Japonesa · Kazuyo Sejima & Ryue Nishizawa",
+    silhouette: "Velo Ultra-Delgado Casi Imperceptible con Tipografía Suspendida",
+    inspiration: "SANAA 21st Century Museum of Contemporary Art Kanazawa + Rolex Learning Center",
+    category: "pure_minimalism",
+    description:
+      "El concepto de arquitectura efímera y desmaterializada de Kazuyo Sejima: una columna que se disuelve en el fondo oscuro mediante una membrana translúcida al 3% de opacidad. El texto flota sin peso en el espacio, y la herramienta activa se revela por un sutil cambio de luminosidad ambiental.",
+    accent: "#F8FAFC",
+    material: "Acrílico Esmerilado Satinado & Niebla Blanca",
+    hairline: "0.2px Borde de Refracción Óptica",
+    opticalRatio: "Disolución Perimétrica Infinita",
+    physics: "Gravedad Cero / Desmaterialización Óptica",
+    highlights: [
+      "Membrana translúcida ultra-fina que elimina toda sensación de 'caja' o 'botón'",
+      "Tipografía blanca etérea con contraste calibrado para lectura descansada",
+      "Transición activa basada en pura radiación de luz blanca difusa (sin fondo duro)",
+      "Pie de página zen con inscripción de arquitectura: 'SEJIMA // KANAZAWA'",
+    ],
+  },
 ];
 
 const CELAEST_LOGO_VIEWBOX = { width: 380, height: 503 };
@@ -511,7 +1055,7 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
       if (archetype.id === "dual_rail") mappedVariant = "precision_chrono";
       if (archetype.id === "orbit_pebbles") mappedVariant = "specular_glass";
       if (archetype.id === "studio_cockpit") mappedVariant = "acoustic_resonance";
-      if (archetype.id === "swiss_editorial") mappedVariant = "atelier_minimalist";
+      if (archetype.id === "swiss_editorial") mappedVariant = "swiss_editorial";
       if (archetype.id === "bento_modular") mappedVariant = "precision_chrono";
       if (archetype.id === "cyber_acoustic") mappedVariant = "acoustic_resonance";
       if (archetype.id === "horizon_cockpit") mappedVariant = "atelier_minimalist";
@@ -528,11 +1072,39 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
       if (archetype.id === "stealth_blade_zero") mappedVariant = "atelier_minimalist";
 
       if (archetype.id === "horology_bezel") mappedVariant = "precision_chrono";
-      if (archetype.id === "architectural_monolith") mappedVariant = "atelier_minimalist";
+      if (archetype.id === "architectural_monolith") mappedVariant = "architectural_monolith";
       if (archetype.id === "dieter_rams_ten") mappedVariant = "atelier_minimalist";
       if (archetype.id === "leica_rangefinder") mappedVariant = "precision_chrono";
       if (archetype.id === "japanese_sensu") mappedVariant = "atelier_minimalist";
       if (archetype.id === "teenage_engineering_tp7") mappedVariant = "acoustic_resonance";
+
+      if (archetype.id === "bauhaus_geometry") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "apple_park_glass") mappedVariant = "specular_glass";
+      if (archetype.id === "braille_tactile_ridge") mappedVariant = "precision_chrono";
+      if (archetype.id === "monocle_travel_column") mappedVariant = "atelier_minimalist";
+      if (archetype.id === "polaroid_film_strip") mappedVariant = "precision_chrono";
+      if (archetype.id === "astronomical_caliper") mappedVariant = "precision_chrono";
+
+      if (archetype.id === "vacheron_guilloche") mappedVariant = "precision_chrono";
+      if (archetype.id === "hasselblad_medium_format") mappedVariant = "precision_chrono";
+      if (archetype.id === "kyoto_kintsugi") mappedVariant = "atelier_minimalist";
+      if (archetype.id === "braun_et66_ledger") mappedVariant = "atelier_minimalist";
+      if (archetype.id === "titanium_potentiometer") mappedVariant = "acoustic_resonance";
+      if (archetype.id === "alvar_aalto_bentwood") mappedVariant = "atelier_minimalist";
+
+      // Archetypes 37-48: Pure Minimalism & Architectural Monoliths
+      if (archetype.id === "helvetica_1957") mappedVariant = "swiss_editorial";
+      if (archetype.id === "zumthor_therme_slate") mappedVariant = "architectural_monolith";
+      if (archetype.id === "wim_crouwel_1968") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "vignelli_unigrid_1972") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "paul_rand_modernism") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "jil_sander_minimal") mappedVariant = "swiss_editorial";
+      if (archetype.id === "mies_nationalgalerie") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "braun_sk4_snow_white") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "otl_aicher_1972") mappedVariant = "bauhaus_geometry";
+      if (archetype.id === "gropius_fagus_werk") mappedVariant = "swiss_editorial";
+      if (archetype.id === "enzo_mari_autoprogettazione") mappedVariant = "architectural_monolith";
+      if (archetype.id === "sanaa_translucent_membrane") mappedVariant = "swiss_editorial";
 
       localStorage.setItem("celaest_sidenav_variant", mappedVariant);
       window.dispatchEvent(new CustomEvent("celaest:sidenav_variant_changed", { detail: mappedVariant }));
@@ -542,6 +1114,8 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
   };
 
   const [selectedCategory, setSelectedCategory] = useState<SidenavCategory>("all");
+  const [showGridOverlay, setShowGridOverlay] = useState(false);
+  const [showSpecsOverlay, setShowSpecsOverlay] = useState(false);
 
   const filteredArchetypes = useMemo(() => {
     if (selectedCategory === "all") return ARCHETYPES;
@@ -587,20 +1161,19 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
         <div className="flex flex-col space-y-1.5">
           <div className="flex items-center gap-2.5">
             <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-              Innovation Matrix · 24 Archetypes
+              Innovation Matrix · 36 Archetypes
             </span>
             <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/[0.04] text-white/60 border border-white/[0.08]">
-              Pure Craft & Precision
+              Obsessive Craft & Zero AI Clichés
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-light text-white tracking-tight">
             Sidenav Architectural Paradigms & Creative Explorations
           </h2>
           <p className="text-xs sm:text-sm font-light text-white/40 max-w-3xl leading-relaxed">
-            Una colección de <strong>24 conceptos estructuralmente únicos</strong> centrados en detalles de alta gama y cero clichés de IA:
-            alta relojería ginebrina, monolitos de basalto de Peter Zumthor, el sistema Vitsoe 606 de Dieter Rams,
-            telémetros ópticos Leica M, cintas de seda Kyoto, grabadores analógicos TP-7, columnas suizas puras,
-            docks magnéticos y rieles modulares divididos.
+            Una colección de <strong>36 conceptos estructuralmente únicos</strong> centrados en detalles de alta gama y cero clichés de IA:
+            geometría constructivista Bauhaus, pabellón de cristal curvo Apple Park, relieve háptico braille, cuaderno de viajes Monocle,
+            tira de negativos analógicos 35mm, nonio astronómico, alta relojería ginebrina, monolitos de basalto Zumthor y columnas suizas puras.
           </p>
         </div>
 
@@ -624,7 +1197,7 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-xl text-xs font-mono tracking-wider uppercase border transition-all cursor-pointer ${
               isExpanded
                 ? "bg-white/[0.08] border-white/20 text-white"
-                : "bg-white/[0.02] border-white/[0.06] text-white/40 hover:text-white"
+                : "bg-white/[0.02] border border-white/[0.06] text-white/40 hover:text-white"
             }`}
           >
             {isExpanded ? "Vista: Expandida" : "Vista: Compacta"}
@@ -632,14 +1205,17 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Filter Tabs (Balanced: 6 in each of the 4 disciplines) */}
+      {/* Category Filter Tabs (Balanced: 6 in each of the 6 disciplines) */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 z-10">
         {[
-          { id: "all", label: "Todos (24)" },
+          { id: "all", label: `Todos (${ARCHETYPES.length})` },
+          { id: "pure_minimalism", label: "Minimalismo & Monolitos Puros (12)" },
           { id: "editorial", label: "Editorial & Suizo (6)" },
           { id: "hardware", label: "Hardware & Mecánica (6)" },
           { id: "floating", label: "Flotantes & Docks (6)" },
           { id: "structural", label: "Estructuras & Bloques (6)" },
+          { id: "pure_geometry", label: "Geometría & Craft (6)" },
+          { id: "atelier_luxury", label: "Alta Relojería & Atelier (6)" },
         ].map((cat) => {
           const isActive = selectedCategory === cat.id;
           return (
@@ -659,7 +1235,7 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
         })}
       </div>
 
-      {/* 24 Radical Paradigms Selector Grid */}
+      {/* 30 Radical Paradigms Selector Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 z-10">
         {filteredArchetypes.map((archetype) => {
           const isSelected = selectedId === archetype.id;
@@ -707,16 +1283,87 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
       {/* Main Interactive Stage: Render the Selected Radical Archetype at 1:1 Scale */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch z-10">
         {/* Left: Rendered Sidenav Canvas (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col p-6 sm:p-8 bg-[#020205] border border-white/[0.06] rounded-3xl relative overflow-hidden min-h-[580px] justify-center items-center">
-          {/* Top Label */}
-          <div className="absolute top-4 left-6 right-6 flex items-center justify-between pb-3 border-b border-white/[0.05] z-10">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-              Archetype {activeArchetype.index}: {activeArchetype.name}
-            </span>
-            <span className="text-[10px] font-mono text-white/30">
-              {activeArchetype.silhouette}
-            </span>
+        <div className="lg:col-span-7 flex flex-col p-6 sm:p-8 bg-[#020205] border border-white/[0.06] rounded-3xl relative overflow-hidden min-h-[620px] justify-center items-center">
+          {/* Top Label & Precision Inspection Controls */}
+          <div className="absolute top-4 left-6 right-6 flex items-center justify-between pb-3 border-b border-white/[0.05] z-20">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-white/50">
+                Archetype {activeArchetype.index}: {activeArchetype.name}
+              </span>
+              <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                1:1 Scale
+              </span>
+            </div>
+
+            {/* Precision Toggles: Grid, Specs */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowGridOverlay(!showGridOverlay)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono tracking-wider transition-all cursor-pointer flex items-center gap-1.5 border ${
+                  showGridOverlay
+                    ? "bg-white/15 text-white border-white/30 shadow-sm"
+                    : "bg-white/[0.02] text-white/40 border-white/[0.06] hover:text-white"
+                }`}
+                title="Mostrar retícula suiza de precisión de 0.5px"
+              >
+                <span>+ Retícula 0.5px</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSpecsOverlay(!showSpecsOverlay)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono tracking-wider transition-all cursor-pointer flex items-center gap-1.5 border ${
+                  showSpecsOverlay
+                    ? "bg-white/15 text-white border-white/30 shadow-sm"
+                    : "bg-white/[0.02] text-white/40 border-white/[0.06] hover:text-white"
+                }`}
+                title="Mostrar especificaciones tipográficas y de material óptico"
+              >
+                <span>⌖ Specs Tipográficas</span>
+              </button>
+            </div>
           </div>
+
+          {/* Swiss Architectural Grid Overlay */}
+          {showGridOverlay && (
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <div
+                className="w-full h-full opacity-35"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                    linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "16px 16px, 16px 16px, 64px 64px, 64px 64px",
+                }}
+              />
+              <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-red-500/25 pointer-events-none" />
+              <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-red-500/25 pointer-events-none" />
+            </div>
+          )}
+
+          {/* Floating Typographic & Material Specs Status Pill */}
+          {showSpecsOverlay && (
+            <div className="absolute bottom-4 left-6 right-6 p-2.5 rounded-2xl bg-black/90 border border-white/10 backdrop-blur-xl flex items-center justify-between z-20 text-[9.5px] font-mono text-white/70 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <span className="text-white/40 uppercase">Hairline:</span>
+                <span className="text-emerald-400 font-medium">{activeArchetype.hairline || "0.5px Sub-pixel Solid"}</span>
+                <span className="text-white/20">|</span>
+                <span className="text-white/40 uppercase">Material:</span>
+                <span className="text-white">{activeArchetype.material || "Obsidian #030306 PVD"}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-white/40 uppercase">Geometría:</span>
+                <span className="text-white">{activeArchetype.opticalRatio || "4px Rhythm · Golden Ratio"}</span>
+                <span className="text-white/20">|</span>
+                <span className="text-white/40 uppercase">Física:</span>
+                <span className="text-amber-400">{activeArchetype.physics || "320 Stiff / 28 Damp"}</span>
+              </div>
+            </div>
+          )}
 
           {/* ========================================================================= */}
           {/* ARCHETYPE 1: THE MACOS KINETIC DOCK */}
@@ -2191,6 +2838,1447 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
               </aside>
             </div>
           )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 25: THE CELAEST CONSTRUCTIVIST GEOMETRY */}
+          {/* ========================================================================= */}
+          {selectedId === "bauhaus_geometry" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#06060e] border border-white/[0.08] rounded-xl p-4 flex flex-col justify-between h-[490px] shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_35px_rgba(112,72,232,0.08)] relative text-left select-none">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7850e8] to-[#6038e0] flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(112,72,232,0.4)]">
+                        <svg viewBox={`0 0 ${CELAEST_LOGO_VIEWBOX.width} ${CELAEST_LOGO_VIEWBOX.height}`} fill="none" className="w-full h-full text-white">
+                          <path d={CELAEST_LOGO_PATH_D} fill="currentColor" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col justify-center">
+                        <span className="text-[8px] font-mono tracking-[0.28em] text-violet-300/70 uppercase leading-none">ENGLISH ENGINE</span>
+                        <span className="text-xs font-bold tracking-[0.22em] text-white uppercase mt-1.5 leading-tight">CELAEST</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1 pt-1">
+                    {[
+                      { id: "workspace", shape: "circle", label: "Workspace" },
+                      { id: "memory", shape: "square", label: "Memory Vault" },
+                      { id: "interview", shape: "triangle", label: "Interview" },
+                      { id: "reading", shape: "diamond", label: "Reading" },
+                      { id: "writing", shape: "hexagon", label: "Writing Studio" },
+                      { id: "lab", shape: "cross", label: "Design Lab" },
+                      { id: "settings", shape: "octagon", label: "Settings" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-3 rounded-lg transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-gradient-to-r from-[#7048e8] to-[#6038e0] text-white font-medium shadow-[0_0_20px_rgba(112,72,232,0.35)]"
+                              : "bg-transparent text-white/50 hover:text-white hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="w-4 h-4 flex items-center justify-center">
+                              {item.shape === "circle" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
+                                  <circle cx="8" cy="8" r="6" />
+                                </svg>
+                              )}
+                              {item.shape === "square" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
+                                  <rect x="2" y="2" width="12" height="12" />
+                                </svg>
+                              )}
+                              {item.shape === "triangle" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
+                                  <polygon points="8,2 14,14 2,14" />
+                                </svg>
+                              )}
+                              {item.shape === "diamond" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
+                                  <polygon points="8,1 15,8 8,15 1,8" />
+                                </svg>
+                              )}
+                              {item.shape === "hexagon" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
+                                  <polygon points="8,1 14,4.5 14,11.5 8,15 2,11.5 2,4.5" />
+                                </svg>
+                              )}
+                              {item.shape === "cross" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" stroke="currentColor" strokeWidth={isActive ? "2.5" : "1.75"}>
+                                  <path d="M8 2v12M2 8h12" />
+                                </svg>
+                              )}
+                              {item.shape === "octagon" && (
+                                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+                                  <polygon points="5.5,2 10.5,2 14,5.5 14,10.5 10.5,14 5.5,14 2,10.5 2,5.5" />
+                                </svg>
+                              )}
+                            </span>
+                            <span className="text-xs uppercase tracking-[0.14em] font-light">{item.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs px-1.5 py-1">
+                  <div className="flex flex-col text-left overflow-hidden pr-2">
+                    <span className="font-semibold text-white uppercase tracking-wider text-xs truncate">{userName}</span>
+                    <span className="text-[10px] font-mono text-zinc-400 mt-1.5 truncate">{userLevel}</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+                    [SALIR]
+                  </span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 26: THE CUPERTINO CURVED GLASS PAVILION */}
+          {/* ========================================================================= */}
+          {selectedId === "apple_park_glass" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-white/[0.03] border border-white/15 rounded-[32px] p-5 flex flex-col justify-between h-[490px] shadow-[0_25px_70px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] relative text-left backdrop-blur-2xl">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-2xl bg-white/[0.06] border border-white/20 flex items-center justify-center p-1.5 shadow-inner">
+                        <svg viewBox={`0 0 ${CELAEST_LOGO_VIEWBOX.width} ${CELAEST_LOGO_VIEWBOX.height}`} fill="none" className="w-full h-full text-white">
+                          <path d={CELAEST_LOGO_PATH_D} fill="currentColor" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Steve Jobs Theater</span>
+                        <span className="text-xs font-light text-white tracking-widest uppercase">CELAEST GLASS</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-3 rounded-2xl transition-all duration-200 cursor-pointer ${
+                            isActive
+                              ? "bg-white/15 border border-white/25 text-white font-normal shadow-[0_4px_20px_rgba(255,255,255,0.08),inset_0_1px_0_rgba(255,255,255,0.3)]"
+                              : "bg-transparent border border-transparent text-white/45 hover:text-white hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-white/60">{item.icon}</span>
+                            <span className="text-xs font-light tracking-wide">{item.label}</span>
+                          </div>
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_#ffffff]" />}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+                      <span className="text-[10px] text-white font-light">EP</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-light text-white">{userName}</span>
+                      <span className="text-[9px] font-mono text-white/40">{userLevel}</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-mono text-white/30">4K LENS</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 27: THE BRAILLE TACTILE MICRO-RIDGE */}
+          {/* ========================================================================= */}
+          {selectedId === "braille_tactile_ridge" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#0B0C10] border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-zinc-400" />
+                      <span className="text-xs font-mono font-medium text-zinc-300 uppercase tracking-widest">TACTILE DEBOSS</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-zinc-600">3×2 MATRIX</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-3 rounded-xl transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-zinc-900/90 border border-zinc-700 text-white shadow-inner"
+                              : "bg-transparent border border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* 3x2 Tactile Braille Dot Grid */}
+                            <div className="grid grid-cols-2 gap-1 p-1 rounded bg-black/40 border border-zinc-800">
+                              {[0, 1, 2, 3, 4, 5].map((dotIndex) => (
+                                <div
+                                  key={dotIndex}
+                                  className={`w-1 h-1 rounded-full transition-all ${
+                                    isActive
+                                      ? "bg-zinc-200 shadow-[0_1px_3px_rgba(255,255,255,0.8)] scale-110"
+                                      : "bg-zinc-800 shadow-[inset_0_1px_1px_rgba(0,0,0,0.8)]"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs font-sans tracking-wide">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[8.5px] font-mono text-zinc-400 uppercase">EMBOSS</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-zinc-800 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-zinc-300 font-light">{userName}</span>
+                    <span className="text-[9px] font-mono text-zinc-500">{userLevel}</span>
+                  </div>
+                  <div className="px-2 py-0.5 rounded border border-zinc-700/60 text-[9px] font-mono text-zinc-400 shadow-inner">
+                    BLIND SEAL
+                  </div>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 28: THE MONOCLE TRAVEL JOURNAL */}
+          {/* ========================================================================= */}
+          {selectedId === "monocle_travel_column" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#0A0C11] border-r border-y border-white/[0.08] border-l-2 border-l-amber-500/60 rounded-r-2xl p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1 border-b border-dashed border-white/10 pb-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest">DISPATCH // VOL. 28</span>
+                      <span className="text-[9px] font-mono text-white/30">UTC 16:24</span>
+                    </div>
+                    <span className="text-xs font-serif italic text-white/90">CELAEST Field Correspondent</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2 transition-all cursor-pointer ${
+                            isActive
+                              ? "text-amber-300 font-medium bg-amber-500/10 rounded-lg"
+                              : "text-white/45 hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] font-mono text-white/30">{`0${idx + 1}`}</span>
+                            <span className="text-xs font-serif tracking-wide">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[9px] font-mono text-amber-400">§ ACT</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-serif text-white">{userName}</span>
+                    <span className="text-[9px] font-mono text-white/40">{userLevel} // NYC-TYO</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full border border-amber-500/40 flex items-center justify-center text-[7px] font-mono text-amber-400 uppercase text-center leading-none">
+                    DIPL
+                  </div>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 29: THE ANALOG FILM STRIP REEL */}
+          {/* ========================================================================= */}
+          {selectedId === "polaroid_film_strip" && (
+            <div className="my-auto py-8 flex items-stretch">
+              {/* 35mm Sprocket Holes */}
+              <div className="w-5 bg-[#030305] border-y border-l border-zinc-800 rounded-l-xl flex flex-col justify-around items-center py-2">
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <div key={i} className="w-2.5 h-3.5 rounded-[2px] bg-black border border-zinc-700/60 shadow-inner" />
+                ))}
+              </div>
+
+              <aside className="w-60 bg-[#06070A] border border-zinc-800 rounded-r-xl p-4 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span className="text-[9px] font-mono uppercase text-zinc-400 tracking-widest">KODAK 400TX // 35MM</span>
+                    <span className="text-[9px] font-mono text-zinc-600">SAFETY FILM</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full p-2 rounded border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-zinc-100 border-white text-black shadow-[0_0_20px_rgba(255,255,255,0.25)] font-medium"
+                              : "bg-black/50 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`text-[8.5px] font-mono ${isActive ? "text-zinc-600" : "text-zinc-600"}`}>
+                              EXP {`0${idx + 1}`}
+                            </span>
+                            <span className="text-xs font-mono">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[8px] font-mono font-bold tracking-widest text-black">FRAME</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between text-[9px] font-mono">
+                  <span className="text-zinc-400">{userName}</span>
+                  <span className="text-zinc-600">1/500s · f/5.6</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 30: THE CELESTIAL CALIPER INSTRUMENT */}
+          {/* ========================================================================= */}
+          {selectedId === "astronomical_caliper" && (
+            <div className="my-auto py-8 flex items-stretch">
+              {/* Vernier Millimeter Rule Track */}
+              <div className="w-6 bg-[#06080E] border-y border-l border-cyan-500/30 rounded-l-xl flex flex-col justify-between items-end py-4 pr-1 text-[7px] font-mono text-cyan-400/50">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-1">
+                    {i % 4 === 0 && <span>{i * 5}</span>}
+                    <div className={`h-[1px] bg-cyan-400/40 ${i % 4 === 0 ? "w-2.5 bg-cyan-400" : "w-1.5"}`} />
+                  </div>
+                ))}
+              </div>
+
+              <aside className="w-60 bg-[#080B12] border border-cyan-500/30 rounded-r-xl p-4 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+                    <span className="text-[9px] font-mono text-cyan-400 tracking-widest uppercase">CALIPER 0.1MM</span>
+                    <span className="text-[8.5px] font-mono text-cyan-400/60">RA 14h 29m</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-cyan-950/60 border-cyan-400/70 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.15)] font-medium"
+                              : "bg-transparent border-transparent text-cyan-400/40 hover:text-cyan-200 hover:bg-cyan-950/20"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-cyan-400/60 text-xs">⌖</span>
+                            <span className="text-xs font-mono">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[8.5px] font-mono text-cyan-400">LOCK</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-2 border-t border-cyan-500/20 flex items-center justify-between text-xs font-mono">
+                  <span className="text-cyan-300 text-[11px]">{userName}</span>
+                  <span className="text-[9px] text-cyan-400/70">DEC +62°</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 31: THE GENEVA GUILLOCHÉ ATELIER */}
+          {/* ========================================================================= */}
+          {selectedId === "vacheron_guilloche" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#08090E] border border-amber-500/30 rounded-[28px] p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left select-none overflow-hidden">
+                {/* Guilloché micro barleycorn pattern background */}
+                <div
+                  className="absolute inset-0 opacity-15 pointer-events-none"
+                  style={{
+                    backgroundImage: `
+                      radial-gradient(circle, rgba(212,175,55,0.4) 1px, transparent 1px)
+                    `,
+                    backgroundSize: "8px 8px",
+                  }}
+                />
+
+                <div className="flex flex-col space-y-4 relative z-10">
+                  <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 rounded-full border border-amber-400/60 flex items-center justify-center text-[7px] text-amber-400 font-serif">
+                        ⚓
+                      </div>
+                      <span className="text-xs font-serif tracking-[0.2em] text-amber-200 uppercase">GENÈVE ATELIER</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-amber-400/60">CAL. 4100</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {[
+                      { id: "workspace", roman: "I", label: "Workspace" },
+                      { id: "memory", roman: "II", label: "Memory Vault" },
+                      { id: "interview", roman: "III", label: "Interview" },
+                      { id: "reading", roman: "IV", label: "Reading" },
+                      { id: "writing", roman: "V", label: "Writing Studio" },
+                      { id: "lab", roman: "VI", label: "Design Lab" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-3 rounded-xl border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-gradient-to-r from-amber-500/15 to-transparent border-amber-500/40 text-amber-100 shadow-sm"
+                              : "bg-transparent border-transparent text-white/40 hover:text-white/80 hover:bg-white/[0.02]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[10px] font-serif ${isActive ? "text-amber-400 font-bold" : "text-amber-400/40"}`}>
+                              {item.roman}
+                            </span>
+                            <span className="text-xs font-serif tracking-wide">{item.label}</span>
+                          </div>
+                          {isActive && <div className="w-2 h-0.5 bg-blue-500 shadow-[0_0_6px_#3b82f6]" title="Aguja Azulada" />}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-amber-500/20 flex items-center justify-between relative z-10">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-serif text-amber-100">{userName}</span>
+                    <span className="text-[9px] font-mono text-amber-400/50">{userLevel}</span>
+                  </div>
+                  <span className="text-[8.5px] font-serif text-amber-400 uppercase tracking-widest border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    POINÇON DE GENÈVE
+                  </span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 32: THE GOTHENBURG 6X6 MEDIUM FORMAT */}
+          {/* ========================================================================= */}
+          {selectedId === "hasselblad_medium_format" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#0E1015] border-2 border-zinc-700 rounded-3xl p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                {/* 6x6 Ground Glass Viewfinder simulation */}
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-white tracking-widest">HASSELBLAD</span>
+                      <span className="text-[8.5px] font-mono text-zinc-500">500C/M</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-white/50">SWEDEN</span>
+                  </div>
+
+                  {/* Ground Glass Screen with Acid-Etched Crosshairs */}
+                  <div className="w-full h-24 rounded-2xl bg-zinc-950/80 border border-zinc-800 relative flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-full h-[1px] bg-zinc-700/40" />
+                      <div className="h-full w-[1px] bg-zinc-700/40 absolute" />
+                      <div className="w-10 h-10 rounded-full border border-zinc-600/50 absolute" />
+                    </div>
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider relative z-10">
+                      ZEISS PLANAR 80MM · F/2.8
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1 pt-1">
+                    {[
+                      { id: "workspace", aperture: "f/2.8", label: "Workspace" },
+                      { id: "memory", aperture: "f/4.0", label: "Memory Vault" },
+                      { id: "interview", aperture: "f/5.6", label: "Interview" },
+                      { id: "reading", aperture: "f/8.0", label: "Reading" },
+                      { id: "writing", aperture: "f/11", label: "Writing Studio" },
+                      { id: "lab", aperture: "f/16", label: "Design Lab" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-zinc-800 border-zinc-500 text-white shadow-sm font-medium"
+                              : "bg-transparent border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`text-[9px] font-mono ${isActive ? "text-white font-bold" : "text-zinc-600"}`}>
+                              {item.aperture}
+                            </span>
+                            <span className="text-xs font-mono">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[8.5px] font-mono text-zinc-400">CLICK</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
+                  <span className="text-white">{userName}</span>
+                  <span className="text-zinc-500">6×6 MAGNESIUM</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 33: THE KINTSUGI GOLD SEAM MONOLITH */}
+          {/* ========================================================================= */}
+          {selectedId === "kyoto_kintsugi" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#07080A] border border-stone-800/80 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left select-none">
+                {/* Organic Gold Vein Line */}
+                <div className="absolute top-12 bottom-12 left-7 w-[1.5px] bg-gradient-to-b from-amber-400 via-amber-300 to-amber-500 opacity-60 pointer-events-none" />
+
+                <div className="flex flex-col space-y-4 relative z-10">
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+                    <span className="text-[9px] font-mono text-amber-400 uppercase tracking-widest">KINTSUGI // 金継ぎ</span>
+                    <span className="text-[9px] font-serif text-stone-500">WABI-SABI</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-3 pt-2">
+                    {[
+                      { id: "workspace", label: "Workspace" },
+                      { id: "memory", label: "Memory Vault" },
+                      { id: "interview", label: "Interview" },
+                      { id: "reading", label: "Reading" },
+                      { id: "writing", label: "Writing Studio" },
+                      { id: "lab", label: "Design Lab" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center gap-4 w-full py-1 text-left transition-all cursor-pointer ${
+                            isActive ? "text-white" : "text-stone-500 hover:text-stone-300"
+                          }`}
+                        >
+                          <div
+                            className={`w-2.5 h-2.5 rounded-full border transition-all ${
+                              isActive
+                                ? "bg-amber-400 border-amber-300 shadow-[0_0_8px_#f59e0b] scale-125"
+                                : "bg-stone-900 border-amber-500/40"
+                            }`}
+                          />
+                          <span className={`text-xs font-light tracking-widest uppercase ${isActive ? "font-normal text-amber-100" : ""}`}>
+                            {item.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-stone-800 flex items-center justify-between relative z-10">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-light text-stone-300">{userName}</span>
+                    <span className="text-[9px] font-mono text-stone-500">{userLevel}</span>
+                  </div>
+                  <div className="w-6 h-6 rounded-sm bg-red-800/80 border border-red-500/40 flex items-center justify-center text-[10px] text-white font-serif">
+                    金
+                  </div>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 34: THE KRONBERG ET66 CALCULATOR LEDGER */}
+          {/* ========================================================================= */}
+          {selectedId === "braun_et66_ledger" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#141518] border border-zinc-700/60 rounded-[28px] p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left">
+                <div className="flex flex-col space-y-3.5">
+                  {/* Vintage Olive TN LCD Screen */}
+                  <div className="w-full p-2.5 rounded-xl bg-[#2D3328] border border-zinc-700 flex items-center justify-between shadow-inner">
+                    <span className="text-[9px] font-mono text-lime-400/70 uppercase">CELAEST // BRAUN</span>
+                    <span className="text-sm font-mono font-bold text-lime-400 tracking-wider">1977.06</span>
+                  </div>
+
+                  {/* Circular Convex Buttons */}
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      const isFirst = idx === 0;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-3 rounded-2xl border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-zinc-800 border-amber-500 text-white shadow-md"
+                              : isFirst
+                              ? "bg-[#232F24] border-zinc-700 text-zinc-300 hover:text-white"
+                              : "bg-[#1E1F24] border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                isActive
+                                  ? "bg-amber-400 border-amber-300 shadow-[0_0_6px_#f59e0b]"
+                                  : isFirst
+                                  ? "bg-emerald-600 border-emerald-500"
+                                  : "bg-zinc-700 border-zinc-600"
+                              }`}
+                            />
+                            <span className="text-xs font-mono">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[8.5px] font-mono text-amber-400 font-bold">ON</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
+                  <span className="text-white text-[11px]">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-500">TYPE ET66</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 35: THE AEROSPACE TITANIUM POTENTIOMETER */}
+          {/* ========================================================================= */}
+          {selectedId === "titanium_potentiometer" && (
+            <div className="my-auto py-8 flex items-stretch">
+              {/* Dual LED VU Meter */}
+              <div className="w-5 bg-[#08090C] border-y border-l border-zinc-700/60 rounded-l-xl flex flex-col justify-around items-center py-4">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-1 rounded-[0.5px] ${
+                      i < 2 ? "bg-red-500/70" : i < 5 ? "bg-amber-400/70" : "bg-emerald-400/70"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <aside className="w-60 bg-[#0B0C10] border border-zinc-700/60 rounded-r-xl p-4 flex flex-col justify-between h-[490px] shadow-2xl relative text-left font-mono">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                    <span className="text-[9px] font-bold text-white tracking-widest uppercase">SSL MASTER FADER</span>
+                    <span className="text-[9px] text-cyan-400">0dB UNITY</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {[
+                      { id: "workspace", db: "+10dB", label: "Workspace" },
+                      { id: "memory", db: "+6dB", label: "Memory Vault" },
+                      { id: "interview", db: "0dB", label: "Interview" },
+                      { id: "reading", db: "-5dB", label: "Reading" },
+                      { id: "writing", db: "-10dB", label: "Writing Studio" },
+                      { id: "lab", db: "-∞", label: "Design Lab" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-zinc-800 border-cyan-400/70 text-white shadow-sm font-medium"
+                              : "bg-transparent border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className={`text-[8.5px] ${isActive ? "text-cyan-400 font-bold" : "text-zinc-600"}`}>
+                              {item.db}
+                            </span>
+                            <span className="text-xs">{item.label}</span>
+                          </div>
+                          {isActive && (
+                            <div className="w-4 h-2 bg-zinc-200 border border-black rounded-[1px] shadow-sm flex items-center justify-center">
+                              <div className="w-full h-[1px] bg-red-600" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[9px]">
+                  <span className="text-white">{userName}</span>
+                  <span className="text-zinc-500">SN: TT-9042</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 36: THE SCANDINAVIAN BENTWOOD CURVE */}
+          {/* ========================================================================= */}
+          {selectedId === "alvar_aalto_bentwood" && (
+            <div className="my-auto py-8">
+              <aside className="w-64 bg-[#0D0B09] border border-amber-900/30 rounded-r-[36px] rounded-l-lg p-5 flex flex-col justify-between h-[490px] shadow-2xl relative text-left select-none">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-amber-900/30 pb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-mono text-amber-300/60 uppercase tracking-widest">ARTEK 1932</span>
+                      <span className="text-xs font-serif text-amber-100 tracking-wider">PAIMIO BENTWOOD</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-amber-200/50">3000K</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-3 rounded-full transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-amber-200/15 border border-amber-300/30 text-amber-100 font-normal shadow-sm"
+                              : "bg-transparent border border-transparent text-amber-200/40 hover:text-amber-100 hover:bg-amber-900/20"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-amber-200/60">{item.icon}</span>
+                            <span className="text-xs font-serif tracking-wide">{item.label}</span>
+                          </div>
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-amber-300 shadow-[0_0_6px_#fde68a]" />}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-amber-900/30 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-serif text-amber-100">{userName}</span>
+                    <span className="text-[9px] font-mono text-amber-300/50">{userLevel}</span>
+                  </div>
+                  <span className="text-[8.5px] font-serif text-amber-300/70 tracking-wider">HELSINKI</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 37: THE ZURICH HELVETICA 1957 SPECIMEN */}
+          {/* ========================================================================= */}
+          {selectedId === "helvetica_1957" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#030305] border border-white/[0.06] rounded-none p-5 flex flex-col justify-between h-[490px] text-left relative font-sans select-none">
+                <div className="flex flex-col space-y-5">
+                  <div className="flex flex-col space-y-1.5 border-b border-white/[0.1] pb-3">
+                    <span className="text-[8.5px] font-mono tracking-[0.3em] text-white/30 uppercase">
+                      ZÜRICH // SPECIMEN 1957
+                    </span>
+                    <h1 className="text-sm font-normal tracking-[0.18em] text-white uppercase">
+                      CELAEST
+                    </h1>
+                  </div>
+
+                  <nav className="flex flex-col space-y-3 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1 text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-semibold"
+                              : "text-white/35 hover:text-white/75 font-normal"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9.5px] font-mono text-white/30 tracking-tight">
+                              {item.num}
+                            </span>
+                            <span className="text-xs uppercase tracking-[0.14em]">
+                              {item.label}
+                            </span>
+                          </div>
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 bg-white shrink-0 shadow-sm" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.1] flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-white/30 uppercase">
+                    NEUE HAAS GROTESK
+                  </span>
+                  <span className="text-xs font-light text-white tracking-wide">{userName}</span>
+                  <span className="text-[9.5px] font-mono text-white/40">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 38: THE PETER ZUMTHOR THERME SLATE */}
+          {/* ========================================================================= */}
+          {selectedId === "zumthor_therme_slate" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#050608] border border-stone-800/80 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1 border-b border-stone-800 pb-3">
+                    <span className="text-[9px] font-mono text-amber-500/70 uppercase tracking-[0.25em]">
+                      MONOLITH // THERME
+                    </span>
+                    <span className="text-xs font-light text-white tracking-[0.2em] uppercase">
+                      CELAEST
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2.5 pt-2">
+                    {[
+                      { id: "workspace", num: "01", label: "BRIEF" },
+                      { id: "memory", num: "02", label: "VAULT" },
+                      { id: "interview", num: "03", label: "VOICE" },
+                      { id: "reading", num: "04", label: "PAGES" },
+                      { id: "writing", num: "05", label: "QUILL" },
+                      { id: "lab", num: "06", label: "FORGE" },
+                    ].map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1 text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "text-amber-300 font-medium"
+                              : "text-stone-500 hover:text-stone-300 font-light"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9.5px] font-mono opacity-40">{item.num}</span>
+                            <span className="text-xs tracking-[0.18em] uppercase">
+                              {item.label}
+                            </span>
+                          </div>
+                          {isActive && (
+                            <span className="text-amber-400 text-sm font-light leading-none">—</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-stone-800 flex flex-col space-y-1 text-left">
+                  <span className="text-[8.5px] font-mono text-stone-600 uppercase tracking-widest">
+                    OCCUPANT
+                  </span>
+                  <span className="text-xs font-light text-white truncate">{userName}</span>
+                  <span className="text-[9px] font-mono text-amber-400/70">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 39: THE AMSTERDAM CROUWEL 1968 GRID */}
+          {/* ========================================================================= */}
+          {selectedId === "wim_crouwel_1968" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#080A0F] border border-slate-700/50 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-mono">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1 border-b border-slate-700/60 pb-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-400">
+                        TOTAL DESIGN
+                      </span>
+                      <span className="text-[8.5px] text-slate-500">1968</span>
+                    </div>
+                    <span className="text-xs font-bold tracking-[0.2em] text-white uppercase">
+                      GRID X:04 Y:12
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2.5 transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-slate-800 text-white font-medium border-l-2 border-slate-400"
+                              : "bg-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] opacity-50">{`[ 0${idx + 1} ]`}</span>
+                            <span className="text-xs uppercase tracking-wider">{item.label}</span>
+                          </div>
+                          {isActive && (
+                            <span className="text-[8px] tracking-widest text-slate-400">COORD</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-slate-700/60 flex flex-col space-y-1">
+                  <span className="text-[8.5px] uppercase tracking-widest text-slate-500">
+                    STEDELIJK MUSEUM // AMS
+                  </span>
+                  <span className="text-xs text-white truncate">{userName}</span>
+                  <span className="text-[9px] text-slate-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 40: THE MASSIMO VIGNELLI UNIGRID */}
+          {/* ========================================================================= */}
+          {selectedId === "vignelli_unigrid_1972" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#09090C] border-y-2 border-white/20 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b-2 border-white pb-3">
+                    <span className="text-xs font-bold tracking-[0.16em] text-white uppercase">
+                      UNIGRID // 1972
+                    </span>
+                    <span className="w-4 h-4 rounded-full bg-[#991B1B] text-[9px] font-bold text-white flex items-center justify-center">
+                      M
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-2.5 transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-[#991B1B] text-white font-medium shadow-sm"
+                              : "bg-transparent text-white/45 hover:text-white hover:bg-white/[0.03]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[9px] font-mono shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs uppercase tracking-[0.12em] font-normal">
+                              {item.label}
+                            </span>
+                          </div>
+                          {isActive && (
+                            <span className="text-[9px] font-mono tracking-widest text-white/80">LINE</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t-2 border-white flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-white/40 uppercase">
+                    NYC STANDARDS MANUAL
+                  </span>
+                  <span className="text-xs font-bold text-white uppercase">{userName}</span>
+                  <span className="text-[9px] font-mono text-white/50">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 41: THE PAUL RAND MODERNIST HARMONY */}
+          {/* ========================================================================= */}
+          {selectedId === "paul_rand_modernism" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#0B0B0E] border-l-2 border-[#9A3412] rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 rounded-full bg-[#9A3412]" />
+                      <span className="text-xs font-bold tracking-[0.15em] text-white uppercase">
+                        RAND // 1960
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-mono text-stone-500">CORP</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2 transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-medium border-l-2 border-[#9A3412] pl-3 -ml-[2px]"
+                              : "text-stone-500 hover:text-stone-300 font-light"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-stone-600 font-mono">{item.num}</span>
+                            <span className="text-xs uppercase tracking-[0.14em]">{item.label}</span>
+                          </div>
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 bg-[#9A3412]" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-stone-800 flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-stone-500 uppercase">
+                    FORM + CONTENT
+                  </span>
+                  <span className="text-xs font-medium text-stone-200">{userName}</span>
+                  <span className="text-[9px] font-mono text-stone-500">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 42: THE JIL SANDER PURE CASHMERE */}
+          {/* ========================================================================= */}
+          {selectedId === "jil_sander_minimal" && (
+            <div className="my-auto py-8">
+              <aside className="w-56 bg-[#020204] border-r border-white/[0.04] rounded-none p-5 flex flex-col justify-between h-[490px] text-left select-none font-sans">
+                <div className="flex flex-col space-y-6">
+                  <div className="flex flex-col space-y-1 border-b border-white/[0.04] pb-3">
+                    <span className="text-[8px] font-light tracking-[0.35em] text-white/30 uppercase">
+                      MILANO // AUTUMN
+                    </span>
+                    <span className="text-[11px] font-light tracking-[0.25em] text-white uppercase">
+                      JIL SANDER
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-4 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-0.5 text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-normal"
+                              : "text-white/30 hover:text-white/60 font-light"
+                          }`}
+                        >
+                          <span className="text-[11px] uppercase tracking-[0.22em]">
+                            {item.label}
+                          </span>
+                          {isActive && (
+                            <span className="w-1 h-1 rounded-full bg-stone-200" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-4 border-t border-white/[0.04] flex flex-col space-y-1">
+                  <span className="text-[8px] font-light tracking-[0.3em] text-white/20 uppercase">
+                    OCCUPANT
+                  </span>
+                  <span className="text-xs font-light text-white/80 tracking-wide">{userName}</span>
+                  <span className="text-[9px] font-mono text-white/30">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 43: THE MIES VAN DER ROHE STEEL COLUMN */}
+          {/* ========================================================================= */}
+          {selectedId === "mies_nationalgalerie" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#070709] border-x border-white/20 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1 border-b-2 border-white pb-3">
+                    <span className="text-[8.5px] font-mono tracking-[0.3em] text-zinc-400 uppercase">
+                      MIES // 1968
+                    </span>
+                    <span className="text-xs font-bold tracking-[0.2em] text-white uppercase">
+                      NEUE NATIONALGALERIE
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2 transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-medium border-l-2 border-white pl-3 -ml-[2px]"
+                              : "text-zinc-400 hover:text-white font-normal"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9.5px] font-mono opacity-50">{item.num}</span>
+                            <span className="text-xs uppercase tracking-[0.15em]">{item.label}</span>
+                          </div>
+                          {isActive && <span className="w-1.5 h-1.5 bg-white shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t-2 border-white flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-zinc-400 uppercase">
+                    BERLIN // STAHL
+                  </span>
+                  <span className="text-xs font-bold text-white uppercase">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 44: THE BRAUN SK4 PHONOSUPER "SNOW WHITE" */}
+          {/* ========================================================================= */}
+          {selectedId === "braun_sk4_snow_white" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#0B0D11] border border-zinc-700/70 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-700/60 pb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-mono tracking-[0.25em] text-zinc-400 uppercase">
+                        RAMS & GUGELOT
+                      </span>
+                      <span className="text-xs font-bold tracking-[0.18em] text-white uppercase">
+                        BRAUN SK4
+                      </span>
+                    </div>
+                    {/* Acrylic needle tone indicator */}
+                    <div className="w-3 h-0.5 bg-amber-400 shadow-sm" />
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2.5 transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-medium border-l-2 border-amber-400 pl-3 -ml-[2px]"
+                              : "text-zinc-400 hover:text-white font-light"
+                          }`}
+                        >
+                          <span className="text-xs uppercase tracking-[0.16em]">{item.label}</span>
+                          {isActive && (
+                            <span className="text-[9px] font-mono text-amber-400 font-bold">33 RPM</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-zinc-700/60 flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-zinc-500 uppercase">
+                    FRANKFURT // 1956
+                  </span>
+                  <span className="text-xs font-medium text-zinc-200">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 45: THE OTL AICHER MUNICH OLYMPIC GRID */}
+          {/* ========================================================================= */}
+          {selectedId === "otl_aicher_1972" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#04060A] border-2 border-white rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b-2 border-white pb-3">
+                    <span className="text-xs font-bold tracking-[0.2em] text-white uppercase">
+                      MÜNCHEN 1972
+                    </span>
+                    <span className="w-4 h-4 bg-white text-black font-bold text-[9px] flex items-center justify-center font-mono">
+                      72
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1.5 pt-1">
+                    {navItems.map((item, idx) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-2 px-2.5 transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-white text-black font-bold shadow-sm"
+                              : "bg-transparent text-zinc-300 hover:text-white hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-[9.5px] font-mono font-bold opacity-70">
+                              {`0${idx + 1}`}
+                            </span>
+                            <span className="text-xs uppercase tracking-[0.14em]">{item.label}</span>
+                          </div>
+                          {isActive && (
+                            <span className="text-[8.5px] font-mono tracking-widest uppercase font-bold">
+                              SYS
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t-2 border-white flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-zinc-400 uppercase">
+                    SYSTEM SIGNALETIK // ULM
+                  </span>
+                  <span className="text-xs font-bold text-white uppercase">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-300">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 46: THE WALTER GROPIUS FAGUS-WERK CURTAIN WALL */}
+          {/* ========================================================================= */}
+          {selectedId === "gropius_fagus_werk" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#030406] border border-white/[0.1] rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1 border-b border-white/[0.1] pb-3">
+                    <span className="text-[8.5px] font-mono tracking-[0.3em] text-zinc-400 uppercase">
+                      GROPIUS & MEYER
+                    </span>
+                    <span className="text-xs font-normal tracking-[0.22em] text-white uppercase">
+                      FAGUS-WERK 1911
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2.5 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1 text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-medium"
+                              : "text-zinc-400 hover:text-white font-light"
+                          }`}
+                        >
+                          <span className="text-xs uppercase tracking-[0.16em]">{item.label}</span>
+                          {isActive && <span className="text-xs font-mono text-white/80">=</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.1] flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-zinc-500 uppercase">
+                    ALFELD // UNESCO
+                  </span>
+                  <span className="text-xs font-light text-white tracking-wide">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 47: THE ENZO MARI AUTOPROGETTAZIONE 1974 */}
+          {/* ========================================================================= */}
+          {selectedId === "enzo_mari_autoprogettazione" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#090807] border-l-2 border-stone-600 rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between border-b border-stone-700 pb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-mono tracking-[0.2em] text-stone-400 uppercase">
+                        ENZO MARI // MILANO
+                      </span>
+                      <span className="text-xs font-bold tracking-[0.15em] text-stone-100 uppercase">
+                        AUTOPROGETTAZIONE
+                      </span>
+                    </div>
+                    {/* Nailhead registration mark */}
+                    <span className="text-stone-500 text-xs font-mono">+</span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-2 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1.5 px-2 transition-all cursor-pointer ${
+                            isActive
+                              ? "text-stone-100 font-medium border border-stone-500 bg-stone-900/60"
+                              : "text-stone-400 hover:text-stone-100 font-normal"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] font-mono opacity-50">{item.num}</span>
+                            <span className="text-xs uppercase tracking-[0.14em]">{item.label}</span>
+                          </div>
+                          {isActive && <span className="text-[9px] font-mono text-stone-300">TAG</span>}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-stone-700 flex flex-col space-y-1">
+                  <span className="text-[8.5px] font-mono tracking-widest text-stone-500 uppercase">
+                    PROPOSTA // 1974
+                  </span>
+                  <span className="text-xs font-medium text-stone-200">{userName}</span>
+                  <span className="text-[9px] font-mono text-stone-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* ARCHETYPE 48: THE SANAA TRANSLUCENT MEMBRANE */}
+          {/* ========================================================================= */}
+          {selectedId === "sanaa_translucent_membrane" && (
+            <div className="my-auto py-8">
+              <aside className="w-60 bg-[#020305] border border-white/[0.08] rounded-none p-5 flex flex-col justify-between h-[490px] shadow-2xl text-left select-none font-sans">
+                <div className="flex flex-col space-y-5">
+                  <div className="flex flex-col space-y-1 border-b border-white/[0.06] pb-3">
+                    <span className="text-[8px] font-light tracking-[0.35em] text-zinc-400 uppercase">
+                      SEJIMA & NISHIZAWA
+                    </span>
+                    <span className="text-[11px] font-light tracking-[0.24em] text-white uppercase">
+                      SANAA // KANAZAWA
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col space-y-3 pt-1">
+                    {navItems.map((item) => {
+                      const isActive = activeNav === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setActiveNav(item.id)}
+                          className={`flex items-center justify-between w-full py-1 text-left transition-all cursor-pointer ${
+                            isActive
+                              ? "text-white font-normal bg-white/[0.06] px-2.5 rounded-none"
+                              : "text-zinc-400 hover:text-white font-light px-2.5"
+                          }`}
+                        >
+                          <span className="text-[11px] uppercase tracking-[0.2em]">{item.label}</span>
+                          {isActive && <span className="w-1 h-1 rounded-full bg-white shadow-sm" />}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+
+                <div className="pt-3 border-t border-white/[0.06] flex flex-col space-y-1">
+                  <span className="text-[8px] font-light tracking-[0.3em] text-zinc-500 uppercase">
+                    INMATERIAL MEMBRANE
+                  </span>
+                  <span className="text-xs font-light text-white/90">{userName}</span>
+                  <span className="text-[9px] font-mono text-zinc-400">{userLevel}</span>
+                </div>
+              </aside>
+            </div>
+          )}
         </div>
 
         {/* Right: Architecture & Craft Breakdown (5 cols) */}
@@ -2198,7 +4286,7 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
           <div className="flex flex-col space-y-5">
             <div className="flex flex-col space-y-1.5">
               <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                Paradigma {activeArchetype.index} de 24
+                Paradigma {activeArchetype.index} de {ARCHETYPES.length}
               </span>
               <h3 className="text-xl font-light text-white tracking-tight">
                 {activeArchetype.name}
@@ -2208,15 +4296,33 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col space-y-1.5">
+            <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col space-y-2">
               <div className="flex items-center justify-between text-[10px] font-mono">
                 <span className="text-white/40 uppercase">Silueta:</span>
-                <span className="text-white/70">{activeArchetype.silhouette}</span>
+                <span className="text-white/70 truncate max-w-[210px] text-right">{activeArchetype.silhouette}</span>
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono">
                 <span className="text-white/40 uppercase">Referentes:</span>
-                <span className="text-white/70">{activeArchetype.inspiration}</span>
+                <span className="text-white/70 truncate max-w-[210px] text-right">{activeArchetype.inspiration}</span>
               </div>
+              {activeArchetype.material && (
+                <div className="flex items-center justify-between text-[10px] font-mono pt-1.5 border-t border-white/[0.04]">
+                  <span className="text-white/40 uppercase">Material / PVD:</span>
+                  <span className="text-emerald-400 truncate max-w-[210px] text-right">{activeArchetype.material}</span>
+                </div>
+              )}
+              {activeArchetype.hairline && (
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-white/40 uppercase">Tolerancia Hairline:</span>
+                  <span className="text-white/70">{activeArchetype.hairline}</span>
+                </div>
+              )}
+              {activeArchetype.opticalRatio && (
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-white/40 uppercase">Relación Óptica:</span>
+                  <span className="text-white/70">{activeArchetype.opticalRatio}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col space-y-2 text-xs">
@@ -2270,13 +4376,13 @@ export const SidenavEvolutionMatrixShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* Side-by-Side Architectural Gallery (All 24 Paradigms Together) */}
+      {/* Side-by-Side Architectural Gallery (All Paradigms Together) */}
       <div className="flex flex-col space-y-3 pt-4 border-t border-white/[0.06] z-10">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-            Galería Comparativa de los 24 Paradigmas
+            Galería Comparativa de los {ARCHETYPES.length} Paradigmas de Alta Precisión
           </span>
-          <span className="text-[10px] font-mono text-white/30">Clic para cambiar de concepto</span>
+          <span className="text-[10px] font-mono text-white/30">Clic para previsualizar o activar</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">

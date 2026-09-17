@@ -79,8 +79,44 @@ export function isJwtExpired(token: string | null): boolean {
   }
 }
 
+export function getJwtExpiresInMs(token: string | null): number | null {
+  if (!token || typeof token !== "string") return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+
+    let jsonStr: string;
+    if (typeof atob === "function") {
+      jsonStr = decodeURIComponent(
+        Array.prototype.map
+          .call(atob(padded), (c: string) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+    } else if (typeof Buffer !== "undefined") {
+      jsonStr = Buffer.from(padded, "base64").toString("utf-8");
+    } else {
+      return null;
+    }
+
+    const payload = JSON.parse(jsonStr);
+    if (!payload.exp || typeof payload.exp !== "number") {
+      return null;
+    }
+
+    const remainingMs = payload.exp * 1000 - Date.now();
+    return remainingMs > 0 ? remainingMs : 0;
+  } catch {
+    return null;
+  }
+}
+
 export class SupabaseAuthAdapter implements IAuthService {
   private static instance: SupabaseAuthAdapter | null = null;
+  private refreshTimerId: ReturnType<typeof setTimeout> | null = null;
 
   public static getInstance(): SupabaseAuthAdapter {
     if (!SupabaseAuthAdapter.instance) {
@@ -93,7 +129,37 @@ export class SupabaseAuthAdapter implements IAuthService {
     const existingToken = this.getStoredToken();
     if (existingToken) {
       HttpClient.setAuthToken(existingToken);
+      this.scheduleSilentRefresh(existingToken);
     }
+  }
+
+  public scheduleSilentRefresh(token: string): void {
+    if (this.refreshTimerId) {
+      clearTimeout(this.refreshTimerId);
+      this.refreshTimerId = null;
+    }
+    if (typeof window === "undefined") return;
+
+    const remainingMs = getJwtExpiresInMs(token);
+    // Refresh 5 minutes before expiration; if less than 5m left, wait 10s. Default to 45m if no exp field.
+    let delayMs = 45 * 60 * 1000;
+    if (remainingMs !== null) {
+      delayMs = Math.max(10 * 1000, remainingMs - 5 * 60 * 1000);
+    }
+
+    this.refreshTimerId = setTimeout(async () => {
+      try {
+        const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+        if (!storedRefresh) return;
+        logger.info("[AuthAdapter] Proactively refreshing JWT session...");
+        const result = await this.refresh();
+        if (!result.success) {
+          logger.warn("[AuthAdapter] Silent JWT refresh failed:", result.error);
+        }
+      } catch (err) {
+        logger.warn("[AuthAdapter] Silent refresh encountered error:", err);
+      }
+    }, delayMs);
   }
 
   public getStoredToken(): string | null {
@@ -112,6 +178,10 @@ export class SupabaseAuthAdapter implements IAuthService {
   }
 
   public clearDeadToken(): void {
+    if (this.refreshTimerId) {
+      clearTimeout(this.refreshTimerId);
+      this.refreshTimerId = null;
+    }
     try {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -279,6 +349,10 @@ export class SupabaseAuthAdapter implements IAuthService {
     } catch (e) {
       logger.warn("[AuthAdapter] Logout request error", e);
     } finally {
+      if (this.refreshTimerId) {
+        clearTimeout(this.refreshTimerId);
+        this.refreshTimerId = null;
+      }
       StorageLifecycleService.purgeOnLogout();
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -294,6 +368,7 @@ export class SupabaseAuthAdapter implements IAuthService {
     if (accessToken) {
       localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       HttpClient.setAuthToken(accessToken);
+      this.scheduleSilentRefresh(accessToken);
     }
     if (refreshToken) {
       localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);

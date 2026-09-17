@@ -154,29 +154,55 @@ export class DynamicWritingTaskService {
   }
 
   /**
-   * Saves a draft for a specific task
+   * Helper to resolve user-scoped draft storage key
    */
-  public static saveDraft(taskId: string, content: string): void {
+  private static getDraftStorageKey(taskId: string, userId?: string): string {
+    const cleanTask = (taskId || "default").trim();
+    if (userId) {
+      return `celaest:user:${userId}:writing:draft:${cleanTask}`;
+    }
+    return `celaest:writing:draft:${cleanTask}`;
+  }
+
+  /**
+   * Saves a draft for a specific task without overwriting drafts of other tasks
+   */
+  public static saveDraft(taskId: string, content: string, userId?: string): void {
     try {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined" || !taskId) return;
+      const key = this.getDraftStorageKey(taskId, userId);
+      if (!content || !content.trim()) {
+        window.localStorage.removeItem(key);
+        return;
+      }
       const draft: StoredDraft = { taskId, content };
-      window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      window.localStorage.setItem(key, JSON.stringify(draft));
     } catch {
       // Storage unavailable
     }
   }
 
   /**
-   * Loads the draft for a specific task
+   * Loads the saved draft for a specific task
    */
-  public static loadDraft(taskId: string): string {
+  public static loadDraft(taskId: string, userId?: string): string {
     try {
-      if (typeof window === "undefined") return "";
-      const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (!raw) return "";
-      const draft = JSON.parse(raw) as StoredDraft;
-      if (draft?.taskId === taskId && typeof draft.content === "string") {
-        return draft.content;
+      if (typeof window === "undefined" || !taskId) return "";
+      const key = this.getDraftStorageKey(taskId, userId);
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const draft = JSON.parse(raw) as StoredDraft;
+        if (draft && typeof draft.content === "string") {
+          return draft.content;
+        }
+      }
+      // Backward compatibility with legacy single draft key
+      const legacyRaw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (legacyRaw) {
+        const legacyDraft = JSON.parse(legacyRaw) as StoredDraft;
+        if (legacyDraft?.taskId === taskId && typeof legacyDraft.content === "string") {
+          return legacyDraft.content;
+        }
       }
       return "";
     } catch {
@@ -185,11 +211,23 @@ export class DynamicWritingTaskService {
   }
 
   /**
-   * Clears any saved draft
+   * Clears any saved draft for a specific task upon successful submission
    */
-  public static clearDraft(): void {
+  public static clearDraft(taskId?: string, userId?: string): void {
     try {
       if (typeof window === "undefined") return;
+      if (taskId) {
+        window.localStorage.removeItem(this.getDraftStorageKey(taskId, userId));
+      } else {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && (k === DRAFT_STORAGE_KEY || k.includes(":writing:draft:"))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      }
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch {
       // noop

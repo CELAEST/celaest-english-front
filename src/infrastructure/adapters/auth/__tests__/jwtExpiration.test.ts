@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { isJwtExpired, SupabaseAuthAdapter } from "../SupabaseAuthAdapter";
+import { isJwtExpired, getJwtExpiresInMs, SupabaseAuthAdapter } from "../SupabaseAuthAdapter";
 import { renderHook, act } from "@testing-library/react";
 import { useOnboardingFlow } from "../../../../features/onboarding/hooks/useOnboardingFlow";
 
@@ -112,6 +112,27 @@ describe("JWT Expiration & Auto-Redirect to Login Guard", () => {
 
       // Must immediately transition to auth/login
       expect(result.current.step).toBe("auth");
+    });
+  });
+
+  describe("getJwtExpiresInMs", () => {
+    it("returns null for non-JWT or empty tokens", () => {
+      expect(getJwtExpiresInMs(null)).toBeNull();
+      expect(getJwtExpiresInMs("")).toBeNull();
+      expect(getJwtExpiresInMs("dummy-mock-token")).toBeNull();
+    });
+
+    it("returns positive milliseconds for tokens expiring in the future", () => {
+      const token = createTestJwt(300); // 300 seconds = 300,000 ms
+      const remaining = getJwtExpiresInMs(token);
+      expect(remaining).not.toBeNull();
+      expect(remaining!).toBeGreaterThan(290 * 1000);
+      expect(remaining!).toBeLessThanOrEqual(300 * 1000);
+    });
+
+    it("returns 0 for already expired tokens", () => {
+      const token = createTestJwt(-100);
+      expect(getJwtExpiresInMs(token)).toBe(0);
     });
   });
 });

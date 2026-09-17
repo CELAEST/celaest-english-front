@@ -40,12 +40,19 @@ function getBestAudioMimeType(): string {
   const types = [
     "audio/webm;codecs=opus",
     "audio/webm",
-    "audio/ogg;codecs=opus",
     "audio/mp4",
+    "audio/aac",
+    "audio/ogg;codecs=opus",
     "audio/wav",
   ];
   for (const t of types) {
-    if (MediaRecorder.isTypeSupported(t)) return t;
+    try {
+      if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(t)) {
+        return t;
+      }
+    } catch {
+      // ignore
+    }
   }
   return "";
 }
@@ -216,9 +223,14 @@ export class AudioCaptureService {
     if (this.micStream) {
       try {
         const mimeType = getBestAudioMimeType();
-        const recorder = mimeType
-          ? new MediaRecorder(this.micStream, { mimeType })
-          : new MediaRecorder(this.micStream);
+        let recorder: MediaRecorder;
+        try {
+          recorder = mimeType
+            ? new MediaRecorder(this.micStream, { mimeType })
+            : new MediaRecorder(this.micStream);
+        } catch {
+          recorder = new MediaRecorder(this.micStream);
+        }
         this.mediaRecorder = recorder;
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {

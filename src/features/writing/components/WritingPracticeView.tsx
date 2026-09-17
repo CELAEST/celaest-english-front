@@ -299,11 +299,13 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     setShowResultModal(false);
     setPersistedSubmission(null);
     DynamicWritingTaskService.clearActiveSubmission();
-    DynamicWritingTaskService.clearDraft();
-    setEditorText("");
+    DynamicWritingTaskService.clearDraft(currentTask.id);
     setSavedErrorIds(new Set());
 
-    if (!taskBatch || taskBatch.length === 0) return;
+    if (!taskBatch || taskBatch.length === 0) {
+      setEditorText("");
+      return;
+    }
 
     const nextIndex = (taskIndex + 1) % taskBatch.length;
     setTaskIndex(nextIndex);
@@ -312,9 +314,12 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     if (nextTask) {
       setCurrentTask(nextTask);
       DynamicWritingTaskService.persistActiveTask(nextTask);
+      setEditorText(DynamicWritingTaskService.loadDraft(nextTask.id));
       if (toastTitle) {
         appToast.success(toastTitle, nextTask.title);
       }
+    } else {
+      setEditorText("");
     }
 
     // Trigger silent background replenishment ONLY after cycling through the entire batch (at the last task)
@@ -374,8 +379,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         setCurrentTask(freshBatch[0]);
         DynamicWritingTaskService.persistActiveTask(freshBatch[0]);
         DynamicWritingTaskService.clearActiveSubmission();
-        DynamicWritingTaskService.clearDraft();
-        setEditorText("");
+        DynamicWritingTaskService.clearDraft(currentTask.id);
+        setEditorText(DynamicWritingTaskService.loadDraft(freshBatch[0].id));
         setPersistedSubmission(null);
         setSavedErrorIds(new Set());
         appToast.success("Nueva tarea lista", freshBatch[0].title);

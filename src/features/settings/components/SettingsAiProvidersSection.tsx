@@ -307,32 +307,38 @@ export const SettingsAiProvidersSection: React.FC = () => {
                 className="w-full flex items-center justify-between py-3.5 sm:py-4 hover:bg-white/[0.02] transition-colors duration-300 cursor-pointer group text-left"
               >
                 {/* Left: Icon + Text */}
-                <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-2">
                   <span className="text-[#8a8a9e] group-hover:text-zinc-200 transition-colors duration-300 shrink-0">
                     <ProviderMark providerId={provider.id} isActive={isActive} size="md" />
                   </span>
-                  <div className="flex flex-col items-start min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <span className="text-[13px] sm:text-sm font-medium text-zinc-100 leading-tight tracking-wide">
                         {provider.name.replace(" (Recomendado)", "")}
                       </span>
-                      {isGroq && (
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-[#FFB020] font-semibold">
-                          Recomendado · Gratis
-                        </span>
-                      )}
                       {isActive && (
-                        <span className="text-[10px] font-mono tracking-wider uppercase text-emerald-400">
+                        <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-wider uppercase text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                           Activo
                         </span>
                       )}
+                      {isGroq && (
+                        <span className="text-[9px] sm:text-[10px] font-mono tracking-wider uppercase text-[#FFB020] bg-[#FFB020]/10 border border-[#FFB020]/20 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="hidden sm:inline">Recomendado · </span>Gratis
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[11px] sm:text-xs text-zinc-500 font-light leading-tight mt-0.5">
-                      {isGroq
-                        ? "Ultra-rápido (~85 ms) · Sin límites de costo ni tarjeta"
-                        : provider.type === "local"
-                          ? "Ejecución local en tu equipo"
-                          : `${provider.models.length} modelos de inferencia`}
+                    <span className="text-[11px] sm:text-xs text-zinc-500 font-light leading-tight mt-0.5 truncate max-w-full">
+                      {isGroq ? (
+                        <>
+                          <span className="sm:hidden">Ultra-rápido (~85 ms) · Gratuito</span>
+                          <span className="hidden sm:inline">Ultra-rápido (~85 ms) · Sin límites de costo ni tarjeta</span>
+                        </>
+                      ) : provider.type === "local" ? (
+                        "Ejecución local en tu equipo"
+                      ) : (
+                        `${provider.models.length} modelos de inferencia`
+                      )}
                     </span>
                   </div>
                 </div>

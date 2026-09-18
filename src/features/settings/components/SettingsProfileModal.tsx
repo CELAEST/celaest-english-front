@@ -28,8 +28,8 @@ export const SettingsProfileModal: React.FC<SettingsProfileModalProps> = ({ isOp
   const canSave = name.trim().length >= 2;
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-6 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-2xl flex flex-col animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]" onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-5 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-2xl flex flex-col max-h-[90dvh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col">
             <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-zinc-500">Profile</span>
@@ -39,7 +39,7 @@ export const SettingsProfileModal: React.FC<SettingsProfileModalProps> = ({ isOp
           <button type="button" onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition"><X className="h-4 w-4" /></button>
         </div>
         <div className="mt-5 h-px bg-white/5" />
-        <div className="flex flex-col gap-4 pt-5">
+        <div className="flex flex-col gap-3.5 sm:gap-4 pt-4 sm:pt-5">
           <label className="flex flex-col gap-2">
             <span className="text-[11px] font-medium tracking-[0.14em] uppercase text-zinc-400">Display name</span>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" className="h-11 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white placeholder:text-zinc-600 focus:border-white/20 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10 transition" />

@@ -37,9 +37,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
   const isOffline = !isLoading && profile === null;
 
   return (
-    <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-20 lg:pb-4">
+    <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-3.5 sm:p-6 lg:px-10 pt-3 sm:pt-6 pb-0 lg:pb-4">
       {/*  Header: Title + Orb + Back Button (Fixed Top Section)  */}
-      <div className="relative flex items-center justify-between mb-4 sm:mb-6 pt-2 sm:pt-4 shrink-0 z-20">
+      <div className="relative flex items-center justify-between mb-3 sm:mb-6 pt-1 sm:pt-4 shrink-0 z-20">
         <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">
           {/* Category Tag */}
           <span className="text-[10.5px] sm:text-[11px] font-sans font-bold tracking-[0.22em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both]">
@@ -57,8 +57,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
           </p>
         </div>
 
-        {/* 3D Orb Hero — orve video — fluido */}
-        <div className="absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none flex items-center justify-center z-0 overflow-hidden">
+        {/* 3D Orb Hero — orve video — fluido (visible on sm+ screens) */}
+        <div className="hidden sm:flex absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none items-center justify-center z-0 overflow-hidden">
           <video
             src="/assets/orve.mp4"
             autoPlay
@@ -74,8 +74,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
 
       {/*  Two-Column Content Canvas: Page NEVER scrolls, columns scroll independently  */}
       <div className="flex-1 min-h-0 w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8 xl:gap-10 overflow-hidden">
-        {/* LEFT COLUMN: Settings Lists (Scrolls internally if height constrained, no scrollbar) */}
-        <div className="flex-1 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-6 sm:gap-8 pr-1 py-1">
+        {/* LEFT COLUMN: Settings Lists (Scrolls internally if height constrained, no scrollbar, pb-28 for mobile floating dock) */}
+        <div className="flex-1 h-full max-h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-6 sm:gap-8 pr-1 py-1 pb-28 lg:pb-8">
           {isOffline ? (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-xs leading-relaxed text-amber-200/90">
               Offline — showing local settings. Your changes will be saved on this device and synced when the service is back.

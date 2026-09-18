@@ -22,7 +22,7 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
       className="w-full flex items-center justify-between py-3.5 sm:py-4 hover:bg-white/[0.02] transition-colors duration-300 cursor-pointer group text-left"
     >
       {/* Left: Icon + Text */}
-      <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+      <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 flex-1 pr-2">
         <span className="text-[#8a8a9e] group-hover:text-zinc-200 transition-colors duration-300 shrink-0">
           {icon}
         </span>
@@ -37,12 +37,12 @@ export const SettingsListItem: React.FC<SettingsListItemProps> = ({
       </div>
 
       {/* Right: Value + Chevron */}
-      <div className="flex items-center gap-2 shrink-0 ml-4">
-        <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300">
+      <div className="flex items-center gap-2 shrink-0 ml-2 sm:ml-4">
+        <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300 max-w-[130px] sm:max-w-none truncate text-right">
           {value || "—"}
         </span>
         <svg
-          className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300"
+          className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

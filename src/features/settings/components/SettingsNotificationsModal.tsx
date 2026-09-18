@@ -21,8 +21,8 @@ export const SettingsNotificationsModal: React.FC<SettingsNotificationsModalProp
   useEffect(() => { if (isOpen) setSelected((currentPref as NotificationPref) ?? "Smart"); }, [isOpen, currentPref]);
   if (!isOpen) return null;
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-6 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-2xl flex flex-col animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]" onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-5 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-2xl flex flex-col max-h-[88dvh] sm:max-h-[80vh] animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col">
             <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-zinc-500">Notifications</span>
@@ -32,11 +32,11 @@ export const SettingsNotificationsModal: React.FC<SettingsNotificationsModalProp
           <button type="button" onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition"><X className="h-4 w-4" /></button>
         </div>
         <div className="mt-5 h-px bg-white/5" />
-        <div className="flex flex-col gap-2 pt-5">
+        <div className="flex flex-col gap-2 pt-4 sm:pt-5 max-h-[70dvh] sm:max-h-[60vh] overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pr-1 -mr-1">
           {OPTIONS.map((o) => {
             const isSelected = selected === o.id;
             return (
-              <button key={o.id} type="button" aria-pressed={isSelected} onClick={() => setSelected(o.id)} className={`flex items-center justify-between rounded-2xl border p-4 text-left transition ${isSelected ? "border-white/15 bg-white text-zinc-900" : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/10 text-white"}`}>
+              <button key={o.id} type="button" aria-pressed={isSelected} onClick={() => setSelected(o.id)} className={`flex items-center justify-between rounded-xl sm:rounded-2xl border p-3.5 sm:p-4 text-left transition ${isSelected ? "border-white/15 bg-white text-zinc-900" : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/10 text-white"}`}>
                 <span className="flex flex-col">
                   <span className={`text-sm font-medium ${isSelected ? "text-zinc-900" : "text-white"}`}>{o.title}</span>
                   <span className={`text-xs ${isSelected ? "text-zinc-600" : "text-zinc-400"}`}>{o.desc}</span>

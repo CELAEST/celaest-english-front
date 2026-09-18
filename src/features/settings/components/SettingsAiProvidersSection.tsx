@@ -338,12 +338,12 @@ export const SettingsAiProvidersSection: React.FC = () => {
                 </div>
 
                 {/* Right: Value + Chevron */}
-                <div className="flex items-center gap-2 shrink-0 ml-4">
-                  <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300">
+                <div className="flex items-center gap-2 shrink-0 ml-2 sm:ml-4">
+                  <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300 whitespace-nowrap">
                     {hasKeys ? (keys.length === 1 ? "1 Clave" : `${keys.length} Claves`) : "Sin configurar"}
                   </span>
                   <svg
-                    className={`w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-transform duration-300 ${
+                    className={`w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-transform duration-300 shrink-0 ${
                       isExpanded ? "rotate-90 text-zinc-200" : ""
                     }`}
                     fill="none"
@@ -520,7 +520,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                               placeholder={
                                 keys.length === 0
                                   ? `Pega tu clave (${PROVIDER_HINTS[provider.id]})`
-                                  : `Agregar clave de respaldo (${PROVIDER_HINTS[provider.id]})`
+                                  : `Agregar clave (${PROVIDER_HINTS[provider.id]})`
                               }
                               autoComplete="off"
                               spellCheck={false}
@@ -534,7 +534,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                               !(newKeyDrafts[provider.id] ?? "").trim() ||
                               isValidatingKey[provider.id]
                             }
-                            className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium cursor-pointer transition-all shrink-0 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            className="px-3 sm:px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium cursor-pointer transition-all shrink-0 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                           >
                             {isValidatingKey[provider.id] ? (
                               <>
@@ -636,7 +636,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                   </fieldset>
 
                   {/* Actions Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-3.5 mt-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-t border-white/[0.06] pt-3.5 mt-1">
                     <SettingsProviderTestButton
                       onClick={() => testProvider(provider.id)}
                       isTesting={isTesting}

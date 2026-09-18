@@ -139,28 +139,28 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
 
   return (
     <div
-      className="relative w-full flex-1 flex flex-col bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] transition-all duration-300 rounded-3xl p-5 sm:p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden animate-[fadeSlideUp_0.5s_ease-out_0.15s_both]"
+      className="relative w-full flex-1 flex flex-col bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] transition-all duration-300 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden animate-[fadeSlideUp_0.5s_ease-out_0.15s_both]"
       onKeyDown={handleKeyDown}
     >
       {/* Top Specular Hairline */}
       <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
 
       {/* Toolbar with crisp, well-defined separator line */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/[0.12] pb-4 mb-4 select-none shrink-0 z-10">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 border-b border-white/[0.12] pb-2.5 sm:pb-4 mb-2 sm:mb-4 select-none shrink-0 z-10">
         {/* Left: New task · Text size · Word goal */}
-        <div className="flex items-center gap-3 sm:gap-4 text-white/50 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-4 text-white/50 min-w-0">
           {onNewTask && (
             <button
               type="button"
               onClick={onNewTask}
               disabled={isGeneratingTask}
               aria-label="Show a different writing task"
-              className={`flex items-center gap-2 text-xs font-mono transition-all duration-300 cursor-pointer group active:scale-95 ${
+              className={`flex items-center gap-1.5 sm:gap-2 text-xs font-mono transition-all duration-300 cursor-pointer group active:scale-95 ${
                 isGeneratingTask ? "opacity-60 cursor-not-allowed pointer-events-none" : ""
               } ${FOCUS_RING}`}
             >
               <svg
-                className={`w-4 h-4 text-[#A27FF3] group-hover:text-[#38BDF8] transition-all duration-500 shrink-0 drop-shadow-[0_0_8px_rgba(162,127,243,0.7)] ${
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#A27FF3] group-hover:text-[#38BDF8] transition-all duration-500 shrink-0 drop-shadow-[0_0_8px_rgba(162,127,243,0.7)] ${
                   isGeneratingTask ? "animate-spin" : "group-hover:rotate-180"
                 }`}
                 viewBox="0 0 24 24"
@@ -175,12 +175,19 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
                 <polyline points="21 3 21 9 15 9" />
               </svg>
               <span className="font-medium tracking-wider bg-gradient-to-r from-[#A27FF3] via-[#c084fc] to-[#38BDF8] bg-clip-text text-transparent group-hover:brightness-125 transition-all duration-300 drop-shadow-[0_0_12px_rgba(162,127,243,0.3)]">
-                {isGeneratingTask ? "Generating..." : "New task"}
+                {isGeneratingTask ? (
+                  "Generating..."
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">New task</span>
+                    <span className="sm:hidden">New</span>
+                  </>
+                )}
               </span>
             </button>
           )}
 
-          {onNewTask && <span className="h-4 w-px bg-white/[0.12]" aria-hidden="true" />}
+          {onNewTask && <span className="h-3 sm:h-4 w-px bg-white/[0.12]" aria-hidden="true" />}
 
           <button
             type="button"
@@ -191,25 +198,28 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             Aa
           </button>
 
-          <span className="h-4 w-px bg-white/[0.12]" aria-hidden="true" />
+          <span className="h-3 sm:h-4 w-px bg-white/[0.12]" aria-hidden="true" />
 
           <div
             id="writing-word-goal"
             role="status"
             aria-live="polite"
-            className={`flex items-center gap-1.5 text-xs font-mono tabular-nums transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 text-xs font-mono tabular-nums transition-colors ${
               overRange ? "text-rose-400" : inRange ? "text-emerald-400" : "text-white/40"
             }`}
           >
             <span className="font-light">{wordCount}</span>
-            <span className="text-white/25">
+            <span className="text-white/25 hidden sm:inline">
               / {minWords}–{maxWords} words
+            </span>
+            <span className="text-white/25 sm:hidden">
+              /{minWords}w
             </span>
           </div>
         </div>
 
         {/* Right: Clear · Undo · Redo */}
-        <div className="flex items-center gap-2 sm:gap-3 text-white/40 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 text-white/40 shrink-0">
           <button
             type="button"
             onClick={handleClear}
@@ -227,7 +237,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             disabled={!canUndo}
             aria-label="Undo"
             aria-keyshortcuts="Control+Z"
-            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
+            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1 sm:p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
           >
             <svg
               className="w-3.5 h-3.5"
@@ -250,7 +260,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             disabled={!canRedo}
             aria-label="Redo"
             aria-keyshortcuts="Control+Shift+Z"
-            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
+            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1 sm:p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
           >
             <svg
               className="w-3.5 h-3.5"
@@ -279,7 +289,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
           aria-describedby="writing-word-goal"
           lang="en"
           spellCheck={false}
-          className={`w-full h-full min-h-[280px] sm:min-h-[340px] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 ${FONT_SIZES[fontSizeIndex].className}`}
+          className={`w-full h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[340px] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 ${FONT_SIZES[fontSizeIndex].className}`}
           placeholder="Start writing here..."
         />
       </div>

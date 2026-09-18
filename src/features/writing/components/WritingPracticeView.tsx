@@ -466,9 +466,9 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   };
 
   return (
-    <div className="relative w-full h-full min-h-screen bg-[#000001] text-white flex flex-col justify-between select-none z-10 overflow-hidden animate-[fadeIn_0.5s_ease-out_both]">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none z-10 overflow-hidden animate-[fadeIn_0.5s_ease-out_both]">
       {/* Main Workspace Content Canvas */}
-      <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-4 sm:px-6 lg:px-8 py-2 sm:py-3 gap-5 lg:gap-6 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3 gap-2 sm:gap-5 lg:gap-6 z-10 overflow-hidden">
         {/* Left Column: Task Header, Editor & Submit Bar */}
         <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full overflow-hidden">
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -489,20 +489,20 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                 onNewTask={handleNewTask}
                 isGeneratingTask={isGeneratingTask}
               />
-              {/* Level-based Scaffolding & Starter Recommendations (Naked Typography) */}
+              {/* Level-based Scaffolding & Starter Recommendations (Ergonomic Touch Chips) */}
               {currentTask.starterPhrases && currentTask.starterPhrases.length > 0 && (
-                <div className="flex items-center gap-2 sm:gap-3 py-1.5 px-1 text-xs overflow-x-auto no-scrollbar shrink-0 w-full min-w-0 max-w-full">
-                  <span className="text-[10.5px] font-mono uppercase tracking-wider text-white/40 shrink-0 flex items-center gap-1.5">
+                <div className="flex items-center gap-2 sm:gap-3 py-1 sm:py-1.5 px-0.5 sm:px-1 text-xs overflow-x-auto no-scrollbar shrink-0 w-full min-w-0 max-w-full">
+                  <span className="text-[10px] sm:text-[10.5px] font-mono uppercase tracking-wider text-white/40 shrink-0 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
                     Pistas ({activeCefrLevel}):
                   </span>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     {currentTask.starterPhrases.map((phrase, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => handleInsertPhrase(phrase)}
-                        className="group inline-flex items-center gap-1 text-xs text-white/60 hover:text-white transition-colors whitespace-nowrap cursor-pointer hover:underline decoration-white/30 underline-offset-4"
+                        className="group inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap cursor-pointer px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.12] shrink-0 active:scale-95"
                         title="Haz clic para insertar esta frase"
                       >
                         <span className="font-sans">"{phrase}"</span>

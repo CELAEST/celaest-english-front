@@ -13,42 +13,40 @@ export interface WritingTaskHeaderProps {
 
 export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(
   function WritingTaskHeader({
-    category = "WRITING TASK",
     title = "Write an email to a client",
     description = "Use a professional tone and explain a project update.",
     currentLevel,
     onSelectLevel,
   }) {
     return (
-      <div className="relative w-full flex items-start justify-between gap-4 select-none mb-3 sm:mb-4 pt-1 shrink-0 overflow-hidden min-h-[80px] sm:min-h-[96px]">
-        {/* Left: Task Meta & Typography */}
-        <div className="flex flex-col space-y-1 relative z-10 min-w-0 flex-1">
-          {/* Top Row: Category Label & Level Selector Pill */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-[11px] sm:text-xs font-semibold tracking-[0.25em] text-[#7750a7] uppercase animate-[fadeSlideUp_0.45s_ease-out_both] shrink-0">
-              {category}
-            </span>
+      <div className="relative w-full flex items-start justify-between gap-4 select-none pt-1 sm:pt-2 pb-3 sm:pb-4.5 shrink-0">
+        {/* Typography & Level Selector */}
+        <div className="flex flex-col min-w-0 flex-1">
+          {/* Main Task Title — Distinct, crisp & balanced */}
+          <div className="w-full flex items-start justify-between gap-3">
+            <h1 className="text-[17px] sm:text-2xl lg:text-[28px] font-sans text-white font-medium sm:font-light tracking-tight leading-snug break-words [text-wrap:balance] flex-1">
+              {title}
+            </h1>
+
             {currentLevel && onSelectLevel && (
-              <LevelSelectorPill
-                currentLevel={currentLevel}
-                onSelectLevel={onSelectLevel}
-              />
+              <div className="shrink-0 pt-0.5 hidden sm:block">
+                <LevelSelectorPill
+                  currentLevel={currentLevel}
+                  onSelectLevel={onSelectLevel}
+                  align="right"
+                />
+              </div>
             )}
           </div>
 
-          {/* Main Task Title — clamped to 2 lines, clean responsive sizing */}
-          <h1 className="text-xl sm:text-2xl lg:text-[28px] font-sans text-[#f8f8f8] font-light tracking-wide leading-snug animate-[fadeSlideUp_0.5s_ease-out_0.08s_both] break-words line-clamp-2 max-w-2xl">
-            {title}
-          </h1>
-
-          {/* Task Description — Concise, crisp & responsive */}
-          <p className="text-xs sm:text-[13px] text-[#9595a8] font-light tracking-wide max-w-xl leading-relaxed animate-[fadeSlideUp_0.5s_ease-out_0.16s_both] break-words line-clamp-2">
+          {/* Task Description — Clearly separated, readable & elegant */}
+          <p className="mt-2 sm:mt-2.5 text-[12px] sm:text-[13px] text-white/55 font-light tracking-wide leading-relaxed line-clamp-2 [text-wrap:pretty] max-w-2xl">
             {description}
           </p>
         </div>
 
-        {/* Video Orb — neatly sized and positioned, zero layout blowout */}
-        <div className="pointer-events-none w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center shrink-0 z-10 opacity-90 animate-[fadeIn_0.7s_ease-out_both] overflow-hidden">
+        {/* Video Orb — hidden on mobile for clean editorial breathing room, visible on desktop */}
+        <div className="pointer-events-none hidden sm:flex sm:w-20 sm:h-20 md:w-28 md:h-28 items-center justify-center shrink-0 z-10 opacity-95 animate-[fadeIn_0.7s_ease-out_both] overflow-hidden self-center">
           <VideoOrb className="w-full h-full object-contain pointer-events-none" />
         </div>
       </div>

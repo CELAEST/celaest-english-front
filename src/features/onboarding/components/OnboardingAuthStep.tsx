@@ -37,7 +37,7 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
       : "top-[46%] sm:top-[45%] lg:top-[44%]";
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto select-none overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto select-none overflow-hidden bg-[#000003]">
       {/* High-Definition Hero Video Background — begin1 — fluido */}
       <video
         src="/assets/begin1.mp4"
@@ -46,10 +46,10 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
         loop
         playsInline
         preload="auto"
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 opacity-95 mix-blend-screen"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
         style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
       />
-      <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#03030E] to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
 
       {/* 100% Centered Floating Content Overlay with Dynamic Top Offset */}
       <div

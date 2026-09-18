@@ -19,13 +19,12 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
         loop
         playsInline
         preload="auto"
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 opacity-95 mix-blend-screen"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
         style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
       />
 
-      {/* Micro End-Edge Softener */}
-      <div className="absolute bottom-[5%] sm:bottom-[6%] left-1/2 -translate-x-1/2 w-full max-w-md h-4 sm:h-5 bg-[#080816]/90 blur-md pointer-events-none z-10" />
-      <div className="absolute bottom-0 inset-x-0 h-6 sm:h-8 bg-gradient-to-t from-[#03030E] to-transparent pointer-events-none z-10" />
+      {/* Bottom Vignette Softener */}
+      <div className="absolute bottom-0 inset-x-0 h-6 sm:h-8 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
 
       {/* Locked Foreground UI Elements Overlay */}
       <div className="absolute top-[48%] sm:top-[47%] lg:top-[46%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center text-center w-full max-w-xl mx-auto px-4">

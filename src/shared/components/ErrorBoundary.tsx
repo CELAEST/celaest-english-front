@@ -41,7 +41,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <div
           role="alert"
-          className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#000006] px-6 text-center text-white"
+          className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#000003] px-6 text-center text-white"
         >
           <h1 className="font-display text-2xl font-semibold tracking-tight">
             Something went wrong

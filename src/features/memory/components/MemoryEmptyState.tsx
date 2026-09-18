@@ -19,24 +19,46 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
   const showHeader = !hideHeader;
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Hover triggers loop, unhover pauses to static image
+  // Desktop hover triggers loop, unhover pauses to static image
   const handleMouseEnter = useCallback(() => {
-    if (videoRef.current) {
+    if (videoRef.current && typeof videoRef.current.play === "function") {
       videoRef.current.play().catch(() => {});
     }
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    if (videoRef.current) {
+    // Only pause on desktop unhover, never stop on mobile
+    if (
+      typeof window !== "undefined" &&
+      window.innerWidth >= 768 &&
+      videoRef.current &&
+      typeof videoRef.current.pause === "function"
+    ) {
       videoRef.current.pause();
     }
   }, []);
 
-  // Ensure video stays paused initially until hovered
+  // Automatic playback on mobile; interactive hover on desktop
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncPlayback = () => {
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (isMobile) {
+        if (typeof video.play === "function") {
+          video.play().catch(() => {});
+        }
+      } else {
+        if (typeof video.pause === "function") {
+          video.pause();
+        }
+      }
+    };
+
+    syncPlayback();
+    window.addEventListener("resize", syncPlayback);
+    return () => window.removeEventListener("resize", syncPlayback);
   }, []);
 
   return (
@@ -47,11 +69,9 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
       >
         <div
-          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-8 sm:-translate-y-12 lg:-translate-y-12 xl:-translate-y-14 transition-all duration-500 ease-out hover:scale-[1.02]"
+          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-10 xs:-translate-y-12 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.46] xs:scale-[1.52] sm:scale-100 origin-center"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          onTouchStart={handleMouseEnter}
-          onTouchEnd={handleMouseLeave}
         >
           <video
             ref={videoRef}

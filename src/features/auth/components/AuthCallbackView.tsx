@@ -65,20 +65,17 @@ export const AuthCallbackView: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState("Connecting your AI Mentor...");
   const [isRetryingGoogle, setIsRetryingGoogle] = useState(false);
   const isHandledRef = useRef(false);
-  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const completeAuth = async (
       accessToken: string,
       refreshToken: string,
       userPayload?: Partial<AuthUser> | null,
     ) => {
-      if (isHandledRef.current) return;
+      if (isHandledRef.current || !isMounted) return;
       isHandledRef.current = true;
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = null;
-      }
 
       setStage(3);
       setStatusMessage("Calibrating your learning profile...");
@@ -115,12 +112,12 @@ export const AuthCallbackView: React.FC = () => {
       try {
         const profile = await Promise.race([
           apiSettingsRepository.getProfile(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
         ]);
 
         if (profile && profile.onboardingCompleted) {
           localStorage.setItem("lingua_onboarding_completed", "true");
-          navigate(ROUTES.HOME, { replace: true });
+          if (isMounted) navigate(ROUTES.HOME, { replace: true });
           return;
         }
       } catch (err) {
@@ -128,10 +125,12 @@ export const AuthCallbackView: React.FC = () => {
       }
 
       localStorage.removeItem("lingua_onboarding_completed");
-      navigate(ROUTES.ONBOARDING, { replace: true });
+      if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
     };
 
+    // 1. Listen for Supabase auto-auth events (fired by detectSessionInUrl)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
         logger.info("[AuthCallback] onAuthStateChange event detected:", event);
         completeAuth(
@@ -152,37 +151,13 @@ export const AuthCallbackView: React.FC = () => {
       }
     });
 
-    const processTokens = async () => {
-      const hashParams = parseHashParams(window.location.hash);
-      const hashAccessToken = hashParams["access_token"];
-      const hashRefreshToken = hashParams["refresh_token"] || hashAccessToken;
-
-      if (hashAccessToken) {
-        setStage(2);
-        setStatusMessage("Securing cryptographic token handshake...");
-        await completeAuth(hashAccessToken, hashRefreshToken);
-        return;
-      }
-
-      const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get("code");
-      const errorParam = searchParams.get("error_description") || searchParams.get("error");
-
-      if (errorParam) {
-        setErrorDetails(formatOAuthErrorMessage(decodeURIComponent(errorParam)));
-        return;
-      }
-
-      if (code) {
-        setStage(2);
-        setStatusMessage("Exchanging security tokens with Google...");
+    // 2. Global Safety Watchdog (5 seconds maximum) — Prevents infinite hangs in any environment
+    const watchdogTimer = setTimeout(async () => {
+      if (!isHandledRef.current && isMounted) {
+        logger.warn("[AuthCallback] Watchdog checking existing session before timeout");
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            setErrorDetails(formatOAuthErrorMessage(error.message));
-            return;
-          }
-          if (data.session) {
+          const { data } = await supabase.auth.getSession();
+          if (data?.session) {
             await completeAuth(
               data.session.access_token,
               data.session.refresh_token,
@@ -200,27 +175,36 @@ export const AuthCallbackView: React.FC = () => {
             );
             return;
           }
-        } catch (err: any) {
-          logger.error("[AuthCallback] Code exchange exception", err);
-          setErrorDetails(formatOAuthErrorMessage(err?.message || "Failed to exchange authorization code."));
-          return;
+        } catch {}
+
+        if (isMounted && !isHandledRef.current) {
+          logger.warn("[AuthCallback] Timeout reached without valid session, displaying action card");
+          setErrorDetails({
+            title: "Authentication Timeout",
+            description: "Google took too long to respond. Please try signing in again or continue with your email.",
+          });
         }
       }
+    }, 5000);
 
+    // 3. Process URL tokens, code exchange, and existing session
+    const processTokens = async () => {
+      // Priority A: Existing active session (e.g. from detectSessionInUrl)
       try {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
+        const { data: existingData } = await supabase.auth.getSession();
+        if (existingData?.session && isMounted) {
+          logger.info("[AuthCallback] Immediate existing session resolved");
           await completeAuth(
-            data.session.access_token,
-            data.session.refresh_token,
-            data.session.user
+            existingData.session.access_token,
+            existingData.session.refresh_token,
+            existingData.session.user
               ? {
-                  id: data.session.user.id,
-                  email: data.session.user.email || "",
+                  id: existingData.session.user.id,
+                  email: existingData.session.user.email || "",
                   name:
-                    data.session.user.user_metadata?.full_name ||
-                    data.session.user.user_metadata?.display_name ||
-                    data.session.user.email?.split("@")[0] ||
+                    existingData.session.user.user_metadata?.full_name ||
+                    existingData.session.user.user_metadata?.display_name ||
+                    existingData.session.user.email?.split("@")[0] ||
                     "Learner",
                 }
               : null,
@@ -228,25 +212,103 @@ export const AuthCallbackView: React.FC = () => {
           return;
         }
       } catch (err) {
-        logger.warn("[AuthCallback] Session lookup fallback", err);
+        logger.warn("[AuthCallback] Initial getSession lookup notice", err);
       }
 
-      timeoutIdRef.current = setTimeout(() => {
-        if (!isHandledRef.current) {
-          logger.warn("[AuthCallback] Timeout reached without tokens, redirecting to onboarding");
-          navigate(ROUTES.ONBOARDING, { replace: true });
+      // Priority B: Hash Fragment Tokens (#access_token=...)
+      const hashParams = parseHashParams(window.location.hash);
+      const hashAccessToken = hashParams["access_token"];
+      const hashRefreshToken = hashParams["refresh_token"] || hashAccessToken;
+
+      if (hashAccessToken && isMounted) {
+        setStage(2);
+        setStatusMessage("Securing cryptographic token handshake...");
+        await completeAuth(hashAccessToken, hashRefreshToken);
+        return;
+      }
+
+      // Priority C: URL Search Params (OAuth PKCE code or error)
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+      const errorParam = searchParams.get("error_description") || searchParams.get("error");
+
+      if (errorParam && isMounted) {
+        setErrorDetails(formatOAuthErrorMessage(decodeURIComponent(errorParam)));
+        return;
+      }
+
+      if (code && isMounted) {
+        setStage(2);
+        setStatusMessage("Exchanging security tokens with Google...");
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (data?.session && isMounted) {
+            await completeAuth(
+              data.session.access_token,
+              data.session.refresh_token,
+              data.session.user
+                ? {
+                    id: data.session.user.id,
+                    email: data.session.user.email || "",
+                    name:
+                      data.session.user.user_metadata?.full_name ||
+                      data.session.user.user_metadata?.display_name ||
+                      data.session.user.email?.split("@")[0] ||
+                      "Learner",
+                  }
+                : null,
+            );
+            return;
+          }
+
+          if (error) {
+            logger.warn("[AuthCallback] Code exchange reported error, checking session fallback:", error.message);
+            // Fallback: If code was already redeemed by Supabase detectSessionInUrl, check getSession
+            const { data: fallbackData } = await supabase.auth.getSession();
+            if (fallbackData?.session && isMounted) {
+              await completeAuth(
+                fallbackData.session.access_token,
+                fallbackData.session.refresh_token,
+                fallbackData.session.user
+                  ? {
+                      id: fallbackData.session.user.id,
+                      email: fallbackData.session.user.email || "",
+                      name:
+                        fallbackData.session.user.user_metadata?.full_name ||
+                        fallbackData.session.user.user_metadata?.display_name ||
+                        fallbackData.session.user.email?.split("@")[0] ||
+                        "Learner",
+                    }
+                  : null,
+              );
+              return;
+            }
+
+            if (isMounted) {
+              setErrorDetails(formatOAuthErrorMessage(error.message));
+            }
+            return;
+          }
+        } catch (err: any) {
+          logger.error("[AuthCallback] Code exchange exception", err);
+          const { data: fallbackData } = await supabase.auth.getSession().catch(() => ({ data: null }));
+          if (fallbackData?.session && isMounted) {
+            await completeAuth(fallbackData.session.access_token, fallbackData.session.refresh_token);
+            return;
+          }
+          if (isMounted) {
+            setErrorDetails(formatOAuthErrorMessage(err?.message || "Failed to exchange authorization code."));
+          }
+          return;
         }
-      }, 3500);
+      }
     };
 
     processTokens();
 
     return () => {
-      isHandledRef.current = true;
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = null;
-      }
+      isMounted = false;
+      clearTimeout(watchdogTimer);
       authListener?.subscription?.unsubscribe();
     };
   }, [navigate]);
@@ -267,7 +329,7 @@ export const AuthCallbackView: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-[#03030E] text-slate-100 flex flex-col items-center justify-center select-none overflow-hidden font-sans">
+    <div className="relative min-h-[100dvh] w-full bg-[#000003] text-slate-100 flex flex-col items-center justify-center select-none overflow-hidden font-sans">
       {/* Ambient Cosmic Hero Video Background — begin1 — fluido sin salto */}
       <video
         src="/assets/begin1.mp4"
@@ -276,12 +338,12 @@ export const AuthCallbackView: React.FC = () => {
         loop
         playsInline
         preload="auto"
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 opacity-95 mix-blend-screen"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
         style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
       />
 
       {/* Atmospheric Vignette & Micro Bottom Edge Softener */}
-      <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#03030E] to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
 
       {/* 100% Calibrated Floating Content Overlay positioned directly below the sphere */}
       <div className="absolute top-[51%] sm:top-[50%] lg:top-[49%] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center text-center w-full max-w-md px-4">

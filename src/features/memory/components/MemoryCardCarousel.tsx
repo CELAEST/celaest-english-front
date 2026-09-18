@@ -3,6 +3,7 @@ import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import { MemoryFlashcard } from "./MemoryFlashcard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MemoryMobileSwipeHint } from "./subcomponents";
 
 export interface MemoryCardCarouselProps {
   cards: MemoryCard[];
@@ -11,27 +12,31 @@ export interface MemoryCardCarouselProps {
   onFlip: () => void;
   onPrev: () => void;
   onNext: () => void;
-  onBookmark?: (cardId: string) => void;
-  onDelete?: (cardId: string) => void;
-  onReviewScore?: (score: number) => void;
-  direction?: number;
+  onBookmark?: ((cardId: string) => void) | undefined;
+  onDelete?: ((cardId: string) => void) | undefined;
+  onReviewScore?: ((score: number) => void) | undefined;
+  direction?: number | undefined;
+  onSelectIndex?: ((index: number) => void) | undefined;
 }
 
 const slideVariants = {
   enter: (dir: number) => ({
-    x: dir > 0 ? 60 : dir < 0 ? -60 : 0,
+    x: dir > 0 ? 100 : dir < 0 ? -100 : 0,
     opacity: 0,
     scale: 0.95,
+    rotateY: dir > 0 ? 8 : dir < 0 ? -8 : 0,
   }),
   center: {
     x: 0,
     opacity: 1,
     scale: 1,
+    rotateY: 0,
   },
   exit: (dir: number) => ({
-    x: dir > 0 ? -60 : dir < 0 ? 60 : 0,
+    x: dir > 0 ? -100 : dir < 0 ? 100 : 0,
     opacity: 0,
     scale: 0.95,
+    rotateY: dir > 0 ? -8 : dir < 0 ? 8 : 0,
   }),
 };
 
@@ -47,6 +52,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     onDelete,
     onReviewScore,
     direction = 1,
+    onSelectIndex,
   }) => {
     const total = cards.length;
     if (total === 0) return null;
@@ -119,8 +125,47 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     const prevData = getPeekData(prevCard);
     const nextData = getPeekData(nextCard);
 
+    const isDraggingRef = React.useRef(false);
+
+    const handleDragStart = React.useCallback(() => {
+      isDraggingRef.current = true;
+    }, []);
+
+    const handleDragEnd = React.useCallback(
+      (
+        _e: MouseEvent | TouchEvent | PointerEvent,
+        info: { offset: { x: number; y: number }; velocity: { x: number; y: number } },
+      ) => {
+        const swipeThreshold = 45;
+        const velocityThreshold = 240;
+
+        const isSwipeLeft =
+          info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold;
+        const isSwipeRight =
+          info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold;
+
+        if (isSwipeLeft && total > 1) {
+          onNext();
+        } else if (isSwipeRight && total > 1) {
+          onPrev();
+        }
+
+        setTimeout(() => {
+          isDraggingRef.current = false;
+        }, 120);
+      },
+      [onNext, onPrev, total],
+    );
+
+    const handleClickCapture = React.useCallback((e: React.MouseEvent) => {
+      if (isDraggingRef.current) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, []);
+
     return (
-      <div className="relative w-full select-none flex flex-col items-center justify-center my-auto px-2">
+      <div className="relative w-full select-none flex flex-col items-center justify-center my-auto px-2 sm:px-4">
         {/* ── Main Deck Carousel Row ── */}
         <div className="relative w-full flex items-center justify-center gap-3 sm:gap-5 lg:gap-7 2xl:gap-8">
           {/* Left Navigation Arrow */}
@@ -129,7 +174,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
               type="button"
               aria-label="Previous card"
               onClick={onPrev}
-              className="z-30 flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] hover:border-white/[0.25] bg-white/[0.03] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/50 hover:text-white backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+              className="z-30 hidden sm:flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] hover:border-white/[0.25] bg-white/[0.03] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/50 hover:text-white backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -191,8 +236,11 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
             </div>
           )}
 
-          {/* ── Active Center Master Flashcard (Slides smoothly on next/prev) ── */}
-          <div className="flex-1 max-w-[640px] lg:max-w-[690px] z-10 w-full overflow-visible">
+          {/* ── Active Center Master Flashcard (Kinetic Real-Time Drag & Spring Physics) ── */}
+          <div
+            onClickCapture={handleClickCapture}
+            className="flex-1 max-w-[640px] lg:max-w-[690px] z-10 w-full overflow-visible touch-pan-y"
+          >
             <AnimatePresence mode="popLayout" custom={direction} initial={false}>
               <motion.div
                 key={current.id}
@@ -201,12 +249,20 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
                 initial="enter"
                 animate="center"
                 exit="exit"
+                drag={total > 1 ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.65}
+                dragDirectionLock
+                dragSnapToOrigin
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
                 transition={{
                   x: { type: "spring", stiffness: 320, damping: 30 },
+                  rotateY: { type: "spring", stiffness: 320, damping: 30 },
                   opacity: { duration: 0.22, ease: "easeOut" },
                   scale: { duration: 0.22, ease: "easeOut" },
                 }}
-                className="w-full"
+                className="w-full cursor-grab active:cursor-grabbing touch-pan-y"
               >
                 <MemoryFlashcard
                   card={current}
@@ -284,12 +340,21 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
               type="button"
               aria-label="Next card"
               onClick={onNext}
-              className="z-30 flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] hover:border-white/[0.25] bg-white/[0.03] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/50 hover:text-white backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+              className="z-30 hidden sm:flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] hover:border-white/[0.25] bg-white/[0.03] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/50 hover:text-white backdrop-blur-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
         </div>
+
+        {/* ── Mobile Animated Gesture Indicator & Progress (sm:hidden) ── */}
+        <MemoryMobileSwipeHint
+          activeIndex={activeIndex}
+          totalCards={total}
+          onPrev={onPrev}
+          onNext={onNext}
+          onSelectIndex={onSelectIndex}
+        />
       </div>
     );
   },

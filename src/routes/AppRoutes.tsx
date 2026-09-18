@@ -29,7 +29,7 @@ const AuthCallbackView = lazy(() =>
 function RouteFallback() {
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-[#000006]"
+      className="flex min-h-screen items-center justify-center bg-[#000003]"
       role="status"
       aria-live="polite"
       aria-label="Loading"

@@ -17,6 +17,7 @@ import { SidenavProfileVariantsShowcase } from "./SidenavProfileVariantsShowcase
 import { ReadingGenerationStatesShowcase } from "./ReadingGenerationStatesShowcase";
 import { QuantumProgressGauge } from "./QuantumProgressGauge";
 import { BespokeIconsShowcase } from "./BespokeIconsShowcase";
+import { FeatureReferentSidenavIconsShowcase } from "./FeatureReferentSidenavIconsShowcase";
 import { ReadingNavigationVariants } from "./ReadingNavigationVariants";
 import { CardShowcase } from "./CardShowcase";
 import { ProductFeatureCardsShowcase } from "./ProductFeatureCardsShowcase";
@@ -39,6 +40,11 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
       <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
+
+        {/* SECTION 00.FEATURE_ICONS: Feature-Referent Sidenav Icon Suite (PROPOSAL FOR APPROVAL) */}
+        <div className="flex flex-col space-y-4">
+          <FeatureReferentSidenavIconsShowcase />
+        </div>
 
         {/* SECTION 00.SIDENAV_EVOLUTION: Master 6-Tier Progressive Sidenav Architecture Evolution (TOP PRIORITY) */}
         <div className="flex flex-col space-y-4">

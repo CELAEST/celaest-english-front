@@ -8,54 +8,297 @@ export interface WorkspaceSidebarProps {
   onSelectNav?: (route: string) => void;
 }
 
-// Pure Geometric SVG Primitives with Active Solid White Fill
-const BauhausCircleIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-    <circle cx="8" cy="8" r="6" />
-  </svg>
-);
+// ============================================================================
+// CYBER MINIMALIST SUITE (Bespoke Feature-Referent Vector Primitives)
+// Pure Vector Architecture, 1.5px Balanced Stroke, Uncrowded Negative Space
+// ============================================================================
 
-const BauhausSquareIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-    <rect x="2" y="2" width="12" height="12" />
-  </svg>
-);
-
-const BauhausTriangleIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-    <polygon points="8,2 14,14 2,14" />
-  </svg>
-);
-
-const BauhausDiamondIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-    <polygon points="8,1 15,8 8,15 1,8" />
-  </svg>
-);
-
-const BauhausHexagonIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill={isActive ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-    <polygon points="8,1 14,4.5 14,11.5 8,15 2,11.5 2,4.5" />
-  </svg>
-);
-
-const BauhausCrossIcon = ({ isActive }: { isActive?: boolean }) => (
-  <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" stroke="currentColor" strokeWidth={isActive ? "2.5" : "1.75"}>
-    <path d="M8 2v12M2 8h12" />
-  </svg>
-);
-
-// Pure Geometric Primitive for SETTINGS: Regular Octagon (Clean Euclidean Geometry)
-const BauhausSettingsIcon = ({ isActive }: { isActive?: boolean }) => (
+export const CyberWorkspaceIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
   <svg
     viewBox="0 0 16 16"
-    className="w-4 h-4 shrink-0"
-    fill={isActive ? "currentColor" : "none"}
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
     stroke="currentColor"
-    strokeWidth="1.5"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <polygon points="5.5,2 10.5,2 14,5.5 14,10.5 10.5,14 5.5,14 2,10.5 2,5.5" />
+    <rect
+      x="2.5"
+      y="2.5"
+      width="4.8"
+      height="11"
+      rx="1.5"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.35 : 0}
+    />
+    <rect
+      x="8.7"
+      y="2.5"
+      width="4.8"
+      height="4.8"
+      rx="1.5"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+      opacity={isActive ? 1 : 0.75}
+    />
+    <rect
+      x="8.7"
+      y="8.7"
+      width="4.8"
+      height="4.8"
+      rx="1.5"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+  </svg>
+);
+
+export const CyberMemoryIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M5.5 2.5h6a1.5 1.5 0 0 1 1.5 1.5v6"
+      opacity={isActive ? 0.7 : 0.45}
+    />
+    <rect
+      x="3"
+      y="5.5"
+      width="8"
+      height="8"
+      rx="1.5"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+  </svg>
+);
+
+export const CyberInterviewIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+  >
+    <line x1="2.8" y1="7" x2="2.8" y2="9" opacity={isActive ? 1 : 0.6} />
+    <line x1="5.4" y1="4.5" x2="5.4" y2="11.5" strokeWidth={strokeWidth + 0.15} />
+    <line x1="8" y1="2" x2="8" y2="14" strokeWidth={strokeWidth + 0.35} />
+    <line x1="10.6" y1="4.5" x2="10.6" y2="11.5" strokeWidth={strokeWidth + 0.15} />
+    <line x1="13.2" y1="7" x2="13.2" y2="9" opacity={isActive ? 1 : 0.6} />
+  </svg>
+);
+
+export const CyberReadingIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M6.8 2.2v4l1.2-.9 1.2.9v-4"
+      fill={isActive ? "currentColor" : "none"}
+      opacity={isActive ? 1 : 0.8}
+    />
+    <path
+      d="M2.5 4.8A2 2 0 0 1 8 5.4v7.1A2 2 0 0 0 2.5 11.5V4.8z"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+    <path
+      d="M13.5 4.8A2 2 0 0 0 8 5.4v7.1a2 2 0 0 1 5.5-1V4.8z"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+  </svg>
+);
+
+export const CyberWritingIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M11.8 2.5l1.7 1.7-7.2 7.2L3 13l1.6-3.3 7.2-7.2z"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+    <line x1="9.8" y1="4.5" x2="11.5" y2="6.2" opacity={0.7} />
+  </svg>
+);
+
+export const CyberLabIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M6.5 2.5h3 M7.5 2.5v3L3.5 12a1.2 1.2 0 0 0 1 1.8h7a1.2 1.2 0 0 0 1-1.8L8.5 5.5v-3"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+    <line x1="5.2" y1="9.8" x2="10.8" y2="9.8" opacity={0.8} />
+    <circle cx="12.5" cy="3.5" r="0.8" fill="currentColor" />
+  </svg>
+);
+
+export const CyberSettingsIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="2.5" y1="5.5" x2="13.5" y2="5.5" opacity={0.5} />
+    <rect
+      x="4.5"
+      y="3.8"
+      width="3.2"
+      height="3.4"
+      rx="1.2"
+      fill={isActive ? "currentColor" : "#06060e"}
+    />
+    <line
+      x1="6.1"
+      y1="4.5"
+      x2="6.1"
+      y2="6.5"
+      stroke={isActive ? "#06060e" : "currentColor"}
+      opacity={0.8}
+    />
+    <line x1="2.5" y1="10.5" x2="13.5" y2="10.5" opacity={0.5} />
+    <rect
+      x="8.3"
+      y="8.8"
+      width="3.2"
+      height="3.4"
+      rx="1.2"
+      fill={isActive ? "currentColor" : "#06060e"}
+    />
+    <line
+      x1="9.9"
+      y1="9.5"
+      x2="9.9"
+      y2="11.5"
+      stroke={isActive ? "#06060e" : "currentColor"}
+      opacity={0.8}
+    />
   </svg>
 );
 
@@ -68,6 +311,54 @@ const CelaestLogoMark: React.FC<{ className?: string }> = ({ className = "w-5 h-
     />
   </svg>
 );
+
+// Mobile Floating Glass Bottom Dock (Visible only on viewports < lg)
+const MobileBottomDock: React.FC<{
+  navItems: Array<{ id: string; label: string; renderIcon: (active: boolean) => React.ReactNode }>;
+  activeItem: string;
+  onSelectNav?: ((route: string) => void) | undefined;
+  accentVariant?: string | undefined;
+}> = ({ navItems, activeItem, onSelectNav, accentVariant = "bauhaus_geometry" }) => {
+  return (
+    <nav
+      aria-label="Mobile Navigation"
+      className="lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none"
+      style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+    >
+      {navItems.map((item) => {
+        const isActive = activeItem === item.id;
+        const activeBgClass =
+          accentVariant === "architectural_monolith"
+            ? "bg-gradient-to-r from-amber-600 to-amber-700 shadow-[0_0_16px_rgba(217,119,6,0.4)]"
+            : accentVariant === "swiss_editorial"
+              ? "bg-white/20 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.25)]"
+              : "bg-gradient-to-r from-[#7048e8] to-[#6038e0] shadow-[0_0_16px_rgba(112,72,232,0.4)]";
+
+        return (
+          <button
+            key={item.id}
+            aria-label={item.label}
+            onClick={() => onSelectNav && onSelectNav(item.id)}
+            className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
+              isActive ? "text-white" : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="activeMobileNavBlock"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                className={`absolute inset-0 rounded-xl z-0 ${activeBgClass}`}
+              />
+            )}
+            <div className="relative z-10 flex items-center justify-center">
+              {item.renderIcon(isActive)}
+            </div>
+          </button>
+        );
+      })}
+    </nav>
+  );
+};
 
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   userName: _userName = "Esteban Perez",
@@ -111,41 +402,41 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     {
       id: "workspace",
       label: "WORKSPACE",
-      renderIcon: (active: boolean) => <BauhausCircleIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberWorkspaceIcon isActive={active} />,
     },
     {
       id: "memory",
       label: "MEMORY VAULT",
-      renderIcon: (active: boolean) => <BauhausSquareIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberMemoryIcon isActive={active} />,
     },
     {
       id: "interview",
       label: "INTERVIEW",
-      renderIcon: (active: boolean) => <BauhausTriangleIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberInterviewIcon isActive={active} />,
     },
     {
       id: "reading",
       label: "READING",
-      renderIcon: (active: boolean) => <BauhausDiamondIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberReadingIcon isActive={active} />,
     },
     {
       id: "writing",
       label: "WRITING STUDIO",
-      renderIcon: (active: boolean) => <BauhausHexagonIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberWritingIcon isActive={active} />,
     },
     ...(import.meta.env.DEV
       ? [
           {
             id: "lab",
             label: "DESIGN LAB",
-            renderIcon: (active: boolean) => <BauhausCrossIcon isActive={active} />,
+            renderIcon: (active: boolean) => <CyberLabIcon isActive={active} />,
           },
         ]
       : []),
     {
       id: "settings",
       label: "SETTINGS",
-      renderIcon: (active: boolean) => <BauhausSettingsIcon isActive={active} />,
+      renderIcon: (active: boolean) => <CyberSettingsIcon isActive={active} />,
     },
   ];
 
@@ -166,7 +457,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   // =========================================================================
   if (activeVariant === "architectural_monolith") {
     return (
-      <div className="relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] flex items-center">
+      <>
+        <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
         <motion.aside
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -274,6 +566,13 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           </div>
         </motion.aside>
       </div>
+      <MobileBottomDock
+        navItems={navItems}
+        activeItem={activeItem}
+        onSelectNav={onSelectNav}
+        accentVariant="architectural_monolith"
+      />
+    </>
     );
   }
 
@@ -282,7 +581,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   // =========================================================================
   if (activeVariant === "swiss_editorial") {
     return (
-      <div className="relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] flex items-center">
+      <>
+        <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
         <motion.aside
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -393,6 +693,13 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           </div>
         </motion.aside>
       </div>
+      <MobileBottomDock
+        navItems={navItems}
+        activeItem={activeItem}
+        onSelectNav={onSelectNav}
+        accentVariant="swiss_editorial"
+      />
+    </>
     );
   }
 
@@ -408,7 +715,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   // Editorial Minimalist Footer: Uncrowded, noble proportions, solid design.
   // =========================================================================
   return (
-    <div className="relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] flex items-center">
+    <>
+      <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
       <motion.aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -472,7 +780,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
                   {/* Clean Label: No tags, pure typographic clarity */}
                   <div
-                    className={`flex items-center justify-between flex-1 ml-3 relative z-10 transition-all duration-200 overflow-hidden ${
+                    className={`flex items-center justify-between flex-1 -ml-0.5 relative z-10 transition-all duration-200 overflow-hidden ${
                       isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
                     }`}
                   >
@@ -529,5 +837,12 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         </div>
       </motion.aside>
     </div>
+    <MobileBottomDock
+      navItems={navItems}
+      activeItem={activeItem}
+      onSelectNav={onSelectNav}
+      accentVariant="bauhaus_geometry"
+    />
+  </>
   );
 };

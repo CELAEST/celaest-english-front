@@ -193,7 +193,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       expect(result).toBe('{"scoreClarity": 88}');
     });
 
-    it("proactively migrates deprecated models (allam-2-7b, llama-3.1) to qwen/qwen3.8-27b", async () => {
+    it("proactively migrates deprecated models (allam-2-7b, llama-3.1) to openai/gpt-oss-120b", async () => {
       await providerKeyVault.saveKey("groq", "gsk_test_groq_key");
       await providerKeyVault.saveConfig("groq", {
         endpoint: "https://api.groq.com/openai/v1",
@@ -220,11 +220,11 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       });
 
       expect(result).toBe('{"status": "ok"}');
-      expect(sentModel).toBe("qwen/qwen3.8-27b");
+      expect(sentModel).toBe("openai/gpt-oss-120b");
 
       // Verify that the vault was updated with the migrated model
       const updatedConfig = await providerKeyVault.getConfig("groq");
-      expect(updatedConfig?.defaultModel).toBe("qwen/qwen3.8-27b");
+      expect(updatedConfig?.defaultModel).toBe("openai/gpt-oss-120b");
     });
 
     it("salvages valid JSON from json_validate_failed failed_generation payload", async () => {

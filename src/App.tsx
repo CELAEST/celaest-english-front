@@ -13,7 +13,7 @@ export function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <div className="w-full min-h-screen bg-[#000006] text-white">
+        <div className="w-full min-h-screen bg-[#000003] text-white">
           <AppRoutes />
           <ToastProvider position="bottom-right" />
         </div>

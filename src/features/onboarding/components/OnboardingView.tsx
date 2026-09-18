@@ -56,7 +56,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
   const isCenteredHeroLayout = step === "welcome" || step === "auth";
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-screen bg-[#03030E] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
+    <div className="relative w-full h-[100dvh] max-h-screen bg-[#000003] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
       {/* 🌟 Right-Side Video — ask — super fluido, sin salto, mix-blend para negro */}
       {!isCenteredHeroLayout && (
         <>
@@ -90,7 +90,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
             }}
           />
           {/* Gradiente protector legibilidad */}
-          <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#03030E] via-[#03030E]/95 to-transparent" style={{ width: "54%" }} />
+          <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#000003] via-[#000003]/95 to-transparent" style={{ width: "54%" }} />
         </>
       )}
 

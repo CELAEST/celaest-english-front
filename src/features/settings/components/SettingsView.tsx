@@ -37,7 +37,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
   const isOffline = !isLoading && profile === null;
 
   return (
-    <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-4">
+    <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-4 sm:p-6 lg:px-10 pt-4 sm:pt-6 pb-20 lg:pb-4">
       {/*  Header: Title + Orb + Back Button (Fixed Top Section)  */}
       <div className="relative flex items-center justify-between mb-4 sm:mb-6 pt-2 sm:pt-4 shrink-0 z-20">
         <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">

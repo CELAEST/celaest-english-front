@@ -15,13 +15,13 @@ export const MemoryWritingFront: React.FC<MemoryWritingFrontProps> = ({
   onPlayVoice,
 }) => {
   return (
-    <div className="flex flex-col justify-center space-y-6 my-auto py-2 z-10 select-none">
+    <div className="flex flex-col justify-center space-y-3 sm:space-y-6 my-auto py-1 sm:py-2 z-10 select-none">
       {/* 1. YOU WROTE Section */}
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         <span className="block text-[10px] font-mono uppercase tracking-widest text-[#F59E0B]/80">
           ORIGINAL DRAFT
         </span>
-        <p className="text-lg sm:text-xl lg:text-2xl font-normal text-white/90 leading-relaxed pl-3 border-l border-[#F59E0B]/40">
+        <p className="text-sm sm:text-xl lg:text-2xl font-normal text-white/90 leading-relaxed pl-2.5 sm:pl-3 border-l border-[#F59E0B]/40">
           "
           <HighlightWord
             sentence={card.userSaid}
@@ -36,7 +36,7 @@ export const MemoryWritingFront: React.FC<MemoryWritingFrontProps> = ({
       <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
       {/* 2. EXECUTIVE POLISH Section */}
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         <div className="flex items-center justify-between">
           <span className="block text-[10px] font-mono uppercase tracking-widest text-[#34D399]/80">
             EXECUTIVE POLISH (C2 BREVITY)
@@ -57,7 +57,7 @@ export const MemoryWritingFront: React.FC<MemoryWritingFrontProps> = ({
           </button>
         </div>
 
-        <p className="text-lg sm:text-xl lg:text-2xl font-normal text-white leading-relaxed pl-3 border-l border-[#34D399]/60">
+        <p className="text-sm sm:text-xl lg:text-2xl font-normal text-white leading-relaxed pl-2.5 sm:pl-3 border-l border-[#34D399]/60">
           "
           <HighlightWord
             sentence={card.betterWay}

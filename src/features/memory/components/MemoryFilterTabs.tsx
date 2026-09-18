@@ -77,7 +77,7 @@ export const MemoryFilterTabs: React.FC<MemoryFilterTabsProps> = React.memo(
       <div
         role="tablist"
         aria-label="Memory category filters"
-        className="relative z-20 flex items-center gap-6 sm:gap-8 overflow-x-auto pb-1 no-scrollbar select-none shrink-0 py-1"
+        className="relative z-20 flex items-center justify-between sm:justify-start gap-1.5 sm:gap-8 overflow-x-auto pb-1 no-scrollbar select-none shrink-0 py-1 w-full max-w-lg mx-auto sm:mx-0"
       >
         {tabs.map((tab, i) => {
           const active = i === activeTab;
@@ -88,25 +88,25 @@ export const MemoryFilterTabs: React.FC<MemoryFilterTabsProps> = React.memo(
               role="tab"
               aria-selected={active}
               onClick={() => onTabChange?.(i)}
-              className="group relative flex flex-col items-center py-2 px-1 cursor-pointer transition-all duration-300 whitespace-nowrap active:scale-95"
+              className="group relative flex-1 sm:flex-initial flex flex-col items-center justify-center py-2 px-1 sm:px-2 cursor-pointer transition-all duration-300 whitespace-nowrap active:scale-95 min-h-[44px]"
             >
-              <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
                 <tab.Icon
-                  className={`w-4 h-4 transition-all duration-300 ${
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-300 ${
                     active
                       ? "text-white scale-110 drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]"
                       : "text-white/40 group-hover:text-white/80"
                   }`}
                 />
                 <span
-                  className={`text-[13px] sm:text-[14px] font-medium tracking-wide transition-colors ${
+                  className={`text-xs sm:text-[14px] font-medium tracking-wide transition-colors ${
                     active ? "text-white font-semibold" : "text-white/50 group-hover:text-white/90"
                   }`}
                 >
                   {tab.label}
                 </span>
                 <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full transition-all ${
+                  className={`text-[9px] sm:text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded-full transition-all ${
                     active
                       ? "bg-white/[0.12] text-white font-bold border border-white/[0.15]"
                       : "bg-white/[0.04] text-white/40 group-hover:text-white/70"

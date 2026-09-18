@@ -231,7 +231,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
       )}
 
       {/* Main Workspace Layout Canvas (Aligned with Writing standard 1:1) */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-6 sm:px-10 lg:px-14 py-3 sm:py-5 pt-3 sm:pt-4 gap-6 sm:gap-8 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-10 lg:px-14 py-2 sm:py-5 pt-2 sm:pt-4 gap-4 sm:gap-8 z-10 overflow-hidden">
         {/* Left / Central Column: Strictly aligned to the left */}
         <main
           role="main"

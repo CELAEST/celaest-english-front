@@ -21,7 +21,7 @@ export const ReadingBottomBar: React.FC<ReadingBottomBarProps> = React.memo(
     return (
       <nav
         aria-label="Reading navigation"
-        className="w-full flex flex-col space-y-2 select-none shrink-0 mt-auto mb-3 sm:mb-4.5 pb-1 relative bg-transparent z-20 animate-[slideUp_0.45s_ease-out_0.2s_both]"
+        className="w-full flex flex-col space-y-2 select-none shrink-0 mt-auto mb-20 sm:mb-4.5 pb-1 relative bg-transparent z-20 animate-[slideUp_0.45s_ease-out_0.2s_both]"
       >
         {/* Main Progress Section (Labels + Progress Line) */}
         <div className="w-full flex flex-col space-y-1.5 px-0">

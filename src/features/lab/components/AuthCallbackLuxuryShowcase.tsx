@@ -307,7 +307,7 @@ export const AuthCallbackLuxuryShowcase: React.FC = () => {
       </div>
 
       {/* Live Stage Viewport Simulator */}
-      <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-[#03030E] shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
+      <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-[#000003] shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
         {/* Frame Topbar */}
         <div className="h-9 px-4 bg-[#0a0a18] border-b border-white/10 flex items-center justify-between text-xs text-[#70708b]">
           <div className="flex items-center gap-2">
@@ -331,7 +331,7 @@ export const AuthCallbackLuxuryShowcase: React.FC = () => {
         <div
           className={`relative w-full transition-all duration-300 mx-auto ${
             viewportMode === "mobile" ? "max-w-sm my-4 rounded-2xl border border-white/15" : ""
-          } h-[580px] sm:h-[660px] overflow-hidden flex flex-col items-center justify-start bg-[#03030E]`}
+          } h-[580px] sm:h-[660px] overflow-hidden flex flex-col items-center justify-start bg-[#000003]`}
         >
           {/* Ambient Cosmic Hero Orb Background Asset */}
           <div
@@ -340,7 +340,7 @@ export const AuthCallbackLuxuryShowcase: React.FC = () => {
           />
 
           {/* Micro Bottom Softener */}
-          <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-[#03030E] to-transparent pointer-events-none z-10" />
+          <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
 
           {/* Dynamic Calibrated Position Container */}
           <div

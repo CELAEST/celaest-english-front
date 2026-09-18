@@ -59,14 +59,14 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col space-y-3 sm:space-y-4 select-none pt-1 sm:pt-2 w-full max-w-[290px] sm:max-w-[315px] xl:max-w-[335px] shrink-0 font-['Plus_Jakarta_Sans',sans-serif] z-10">
+    <div className="hidden lg:flex flex-col space-y-4 select-none pt-2 w-full max-w-[315px] xl:max-w-[335px] shrink-0 font-['Plus_Jakarta_Sans',sans-serif] z-10">
       {/* 01 // ACTIVE MEMORY */}
       <div
         onClick={() => onSelectNode?.("memory", topCard?.category ? topCard.category.toLowerCase() : undefined)}
-        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+        className="group py-2 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl bg-white/[0.04] lg:bg-transparent border border-white/[0.07] lg:border-none backdrop-blur-md lg:backdrop-blur-none hover:bg-white/[0.07] active:bg-white/[0.09] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 shrink-0 snap-center w-[80vw] max-w-[270px] lg:w-full lg:max-w-full min-h-[64px] sm:min-h-[88px]"
       >
-        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
-          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[48px] h-[48px] sm:w-[70px] sm:h-[70px] rounded-xl sm:rounded-2xl overflow-hidden shrink-0">
             <img
               src={memoryImg}
               alt="Vocabulary Recall"
@@ -75,7 +75,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
           </div>
 
           <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
-            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+            <span className="text-[8.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
               VOCABULARY DECK // {activeMemoryStat}
             </span>
             <span
@@ -84,7 +84,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
             >
               {activeMemoryTitle}
             </span>
-            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+            <span className="text-[10px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
               Spaced repetition recall deck
             </span>
           </div>
@@ -98,10 +98,10 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
       {/* 02 // EXECUTIVE READING */}
       <div
         onClick={() => onSelectNode?.("reading")}
-        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+        className="group py-2 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl bg-white/[0.04] lg:bg-transparent border border-white/[0.07] lg:border-none backdrop-blur-md lg:backdrop-blur-none hover:bg-white/[0.07] active:bg-white/[0.09] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 shrink-0 snap-center w-[80vw] max-w-[270px] lg:w-full lg:max-w-full min-h-[64px] sm:min-h-[88px]"
       >
-        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
-          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[48px] h-[48px] sm:w-[70px] sm:h-[70px] rounded-xl sm:rounded-2xl overflow-hidden shrink-0">
             <img
               src={readingImg}
               alt="Executive Reading"
@@ -110,7 +110,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
           </div>
 
           <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
-            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+            <span className="text-[8.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
               EXECUTIVE ARTICLE // {activeReadingStat}
             </span>
             <span
@@ -119,7 +119,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
             >
               {activeReadingTitle}
             </span>
-            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+            <span className="text-[10px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
               {activeReadingSub}
             </span>
           </div>
@@ -133,10 +133,10 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
       {/* 03 // ORAL SIMULATION */}
       <div
         onClick={() => onSelectNode?.("interview")}
-        className="group py-2.5 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl hover:bg-white/[0.05] active:bg-white/[0.08] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 min-w-0 max-w-full min-h-[82px] sm:min-h-[88px]"
+        className="group py-2 px-3 sm:py-3.5 sm:px-3.5 rounded-2xl bg-white/[0.04] lg:bg-transparent border border-white/[0.07] lg:border-none backdrop-blur-md lg:backdrop-blur-none hover:bg-white/[0.07] active:bg-white/[0.09] transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 shrink-0 snap-center w-[80vw] max-w-[270px] lg:w-full lg:max-w-full min-h-[64px] sm:min-h-[88px]"
       >
-        <div className="flex items-center gap-3.5 min-w-0 flex-1 overflow-hidden">
-          <div className="w-[64px] h-[64px] sm:w-[70px] sm:h-[70px] rounded-2xl overflow-hidden shrink-0">
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1 overflow-hidden">
+          <div className="w-[48px] h-[48px] sm:w-[70px] sm:h-[70px] rounded-xl sm:rounded-2xl overflow-hidden shrink-0">
             <img
               src={speakingImg}
               alt="Oral Simulation"
@@ -145,7 +145,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
           </div>
 
           <div className="flex flex-col text-left min-w-0 flex-1 overflow-hidden space-y-0.5 sm:space-y-1">
-            <span className="text-[9.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
+            <span className="text-[8.5px] sm:text-[10px] font-mono tracking-wider text-[#94A3B8] uppercase truncate block">
               ORAL SIMULATION // LIVE AUDIO
             </span>
             <span
@@ -154,7 +154,7 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
             >
               {activeInterviewTitle}
             </span>
-            <span className="text-[11px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
+            <span className="text-[10px] sm:text-[11.5px] text-[#64748B] font-light truncate block">
               Round 01 · Duplex conversation
             </span>
           </div>

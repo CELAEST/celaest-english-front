@@ -144,17 +144,17 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
         onClick={onFlip}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[390px] sm:h-[430px] lg:h-[460px] max-h-[calc(100dvh-220px)] cursor-pointer select-none [perspective:1400px] group mx-auto"
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[385px] xs:h-[405px] sm:h-[440px] lg:h-[470px] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
-        {/* ── Subtle Atmospheric Backlight Aura (Layer 1 - Background Contrast) ── */}
+        {/* ── Subtle Atmospheric Backlight Aura (Soft Whisper Shading) ── */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-6 sm:-inset-8 rounded-[40px] transition-all duration-500 opacity-60 group-hover:opacity-90 z-0"
+          className="pointer-events-none absolute -inset-4 sm:-inset-6 rounded-[40px] transition-all duration-500 opacity-35 group-hover:opacity-50 z-0"
           style={{
             background: isFlipped
-              ? "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(162, 127, 243, 0.22), rgba(52, 211, 153, 0.08) 45%, transparent 75%)"
-              : "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(112, 72, 232, 0.22), rgba(162, 127, 243, 0.12) 45%, transparent 75%)",
-            filter: "blur(40px)",
+              ? "radial-gradient(ellipse 75% 65% at 50% 50%, rgba(162, 127, 243, 0.16), rgba(52, 211, 153, 0.08) 50%, transparent 75%)"
+              : "radial-gradient(ellipse 75% 65% at 50% 50%, rgba(124, 58, 237, 0.18), rgba(162, 127, 243, 0.1) 50%, transparent 75%)",
+            filter: "blur(50px)",
             transform: "translate3d(calc(var(--tilt-x, 0) * 2px), calc(var(--tilt-y, 0) * -2px), -10px)",
           }}
         />
@@ -179,9 +179,9 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
           {/* ═══════════════════════════════════════════════════════════════════
               FRONT FACE: Minimalist Luxury Glass
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#0e0c1b]/95 via-[#06050e]/98 to-[#020206] border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(162,127,243,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
             {/* Top Bar: Category + Syntax Tag + Counter + Bookmark */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
@@ -195,7 +195,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               </span>
 
               <div className="flex items-center gap-3">
-                <span className="tracking-widest">
+                <span className="tracking-widest shrink-0">
                   Card {formattedIndex}/{formattedTotal}
                 </span>
 
@@ -203,7 +203,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   type="button"
                   onClick={handleBookmarkToggle}
                   aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                  className={`p-1 rounded transition-colors cursor-pointer ${
+                  className={`p-1.5 sm:p-1 rounded transition-colors cursor-pointer ${
                     isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
                   }`}
                 >
@@ -216,7 +216,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                     onClick={handleDeleteClick}
                     aria-label="Delete card"
                     title="Eliminar tarjeta"
-                    className="p-1 rounded text-white/40 hover:text-[#F87171] transition-colors cursor-pointer"
+                    className="p-1.5 sm:p-1 rounded text-white/40 hover:text-[#F87171] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -248,25 +248,27 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             )}
 
             {/* Bottom Footer: Click to inspect + SM-2 Interval */}
-            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
-              <span className="flex items-center gap-1.5 hover:text-white transition-colors">
-                <RotateCw className="w-3 h-3 text-[#A27FF3]" />
-                {normalizedCategory === "READING"
-                  ? "Click to flip for definition & meaning"
-                  : normalizedCategory === "WRITING"
-                  ? "Click to inspect structural rules"
-                  : "Click to inspect grammar rule"}
+            <div className="pt-2 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/40 z-10 shrink-0 gap-2 overflow-hidden">
+              <span className="flex items-center gap-1.5 hover:text-white transition-colors min-w-0 truncate">
+                <RotateCw className="w-3 h-3 text-[#A27FF3] shrink-0" />
+                <span className="truncate">
+                  {normalizedCategory === "READING"
+                    ? "Click to flip for definition & meaning"
+                    : normalizedCategory === "WRITING"
+                    ? "Click to inspect structural rules"
+                    : "Click to inspect grammar rule"}
+                </span>
               </span>
-              <span>SM-2 Interval</span>
+              <span className="shrink-0 whitespace-nowrap">SM-2 Interval</span>
             </div>
           </article>
 
           {/* ═══════════════════════════════════════════════════════════════════
               BACK FACE: Minimalist Luxury Glass ($180^\circ$ Flip)
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#0e0c1b]/95 via-[#06050e]/98 to-[#020206] border border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(162,127,243,0.18),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
             {/* Top Bar: Details + Audio + Actions */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
@@ -279,7 +281,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   type="button"
                   onClick={handlePlayVoice}
                   aria-label="Listen to pronunciation"
-                  className="p-1 rounded text-white/40 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-1 rounded text-white/40 hover:text-white transition-colors cursor-pointer"
                 >
                   <Volume2 className={`w-3.5 h-3.5 ${isPlayingAudio ? "animate-pulse text-[#34D399]" : ""}`} />
                 </button>
@@ -288,7 +290,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   type="button"
                   onClick={handleBookmarkToggle}
                   aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                  className={`p-1 rounded transition-colors cursor-pointer ${
+                  className={`p-1.5 sm:p-1 rounded transition-colors cursor-pointer ${
                     isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
                   }`}
                 >
@@ -303,7 +305,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}
 
             {/* 4 Integrated SM-2 Rating Chips */}
-            <div className="pt-3 border-t border-white/[0.04] flex flex-col space-y-2 z-10 shrink-0">
+            <div className="pt-2 sm:pt-3 border-t border-white/[0.04] flex flex-col space-y-1.5 sm:space-y-2 z-10 shrink-0">
               <div className="grid grid-cols-4 gap-1.5">
                 {ratingChips.map((chip) => {
                   const isSelected = selectedScore === chip.score;
@@ -312,7 +314,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                       key={chip.label}
                       type="button"
                       onClick={(e) => handleScoreClick(e, chip.score)}
-                      className={`py-1.5 px-2 rounded-xl text-center transition-all cursor-pointer ${
+                      className={`py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer min-h-[36px] sm:min-h-0 flex flex-col justify-center ${
                         isSelected
                           ? "bg-white text-black font-semibold shadow-[0_0_12px_rgba(255,255,255,0.3)]"
                           : "bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:text-white"
@@ -325,9 +327,9 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                 })}
               </div>
 
-              <div className="flex items-center justify-between text-[10px] font-mono text-white/30 pt-1">
-                <span>Click rating chip or press 1, 2, 3</span>
-                <span>Space to return</span>
+              <div className="flex items-center justify-between text-[9.5px] sm:text-[10px] font-mono text-white/30 pt-0.5 sm:pt-1 gap-2 overflow-hidden">
+                <span className="min-w-0 truncate">Click rating chip or press 1, 2, 3</span>
+                <span className="shrink-0 whitespace-nowrap">Space to return</span>
               </div>
             </div>
           </article>

@@ -273,7 +273,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
           </div>
 
           {/* Bottom Section: Mic / Send Action Controls */}
-          <div className="w-full flex flex-col items-center justify-center shrink-0 pb-1">
+          <div className="w-full flex flex-col items-center justify-center shrink-0 pb-20 lg:pb-1">
             <ConversationMicControl
               isListening={isListening}
               isAiSpeaking={isAiSpeaking}

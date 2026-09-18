@@ -36,16 +36,16 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto space-y-5 sm:space-y-6 select-none pt-2 pb-1 z-20">
+    <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto space-y-2 sm:space-y-5 lg:space-y-6 select-none pt-0 sm:pt-2 pb-0 sm:pb-1 z-20">
       {/* Question Header */}
       <div
-        className="flex flex-col items-center text-center space-y-1.5 animate-[fadeSlideUp_0.5s_ease-out_both]"
+        className="flex flex-col items-center text-center space-y-0.5 sm:space-y-1.5 animate-[fadeSlideUp_0.5s_ease-out_both]"
         style={{ animationDelay: "300ms" }}
       >
-        <span className="text-[10px] font-semibold tracking-[0.25em] text-[#A78BFA] uppercase">
+        <span className="text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] sm:tracking-[0.25em] text-[#A78BFA] uppercase">
           I’M LISTENING.
         </span>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-white font-normal tracking-tight">
+        <h2 className="text-base sm:text-3xl lg:text-4xl font-serif text-white font-normal tracking-tight px-2 leading-tight">
           What happened at work today?
         </h2>
       </div>
@@ -53,7 +53,7 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
       {/* Clean Glassmorphic Pill Prompt Bar */}
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-xl flex items-center gap-3 pl-2 pr-2.5 py-1.5 rounded-full bg-[#090714]/80 backdrop-blur-xl border border-[#2A1D4E]/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] shadow-[0_0_20px_rgba(112,72,232,0.12)] focus-within:border-[#8B5CF6]/80 focus-within:shadow-[0_0_25px_rgba(139,92,246,0.3)] transition-all duration-300 relative group animate-[fadeSlideUp_0.5s_ease-out_both]"
+        className="w-full max-w-xl flex items-center gap-2 sm:gap-3 pl-1.5 sm:pl-2 pr-1.5 sm:pr-2.5 py-1 sm:py-1.5 rounded-full bg-[#090714]/80 backdrop-blur-xl border border-[#2A1D4E]/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] shadow-[0_0_20px_rgba(112,72,232,0.12)] focus-within:border-[#8B5CF6]/80 focus-within:shadow-[0_0_25px_rgba(139,92,246,0.3)] transition-all duration-300 relative group animate-[fadeSlideUp_0.5s_ease-out_both]"
         style={{ animationDelay: "420ms" }}
       >
         {/* Left Voice Capsule Wrapper */}
@@ -62,11 +62,11 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
             type="button"
             onClick={() => setIsListening(!isListening)}
             aria-label="Voice input"
-            className="relative w-10 h-10 rounded-full bg-[#0E0A22] flex items-center justify-center cursor-pointer shrink-0 hover:scale-105 active:scale-95 transition-all duration-300"
+            className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#0E0A22] flex items-center justify-center cursor-pointer shrink-0 hover:scale-105 active:scale-95 transition-all duration-300"
           >
             {/* Slender Glowing Ring SVG */}
             <svg
-              className={`w-10 h-10 transition-transform duration-700 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 transition-transform duration-700 ${
                 isListening ? "animate-[spin_4s_linear_infinite]" : ""
               }`}
               viewBox="0 0 40 40"
@@ -100,22 +100,22 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
                   isListening ? "h-2 animate-wave-1" : "h-1"
                 }`}
               />
-              {/* Bar 2: Left Medium */}
+              {/* Bar 2 */}
               <span
                 className={`w-0.5 rounded-full bg-[#A78BFA] transition-all ${
-                  isListening ? "h-3 animate-wave-2" : "h-2.5"
+                  isListening ? "h-3.5 animate-wave-2" : "h-1.5"
                 }`}
               />
-              {/* Bar 3: Prominent Tall Center Bar */}
+              {/* Bar 3: Center Peak */}
               <span
-                className={`w-0.5 rounded-full bg-gradient-to-b from-[#DDD6FE] to-[#7048E8] transition-all ${
-                  isListening ? "h-5 animate-wave-3" : "h-5"
+                className={`w-0.5 rounded-full bg-[#DDD6FE] transition-all ${
+                  isListening ? "h-5 animate-wave-3" : "h-2"
                 }`}
               />
-              {/* Bar 4: Right Medium */}
+              {/* Bar 4 */}
               <span
                 className={`w-0.5 rounded-full bg-[#A78BFA] transition-all ${
-                  isListening ? "h-3 animate-wave-4" : "h-2.5"
+                  isListening ? "h-3.5 animate-wave-4" : "h-1.5"
                 }`}
               />
               {/* Bar 5: Right Dot */}
@@ -134,17 +134,17 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Speak or type your answer..."
-          className="flex-1 bg-transparent text-sm text-white placeholder-[#7B7C98] outline-none font-light tracking-wide pl-0.5"
+          className="flex-1 bg-transparent text-xs sm:text-sm text-white placeholder-[#7B7C98] outline-none font-light tracking-wide pl-0.5"
         />
 
         {/* Right Submit Button Circle */}
         <button
           type="submit"
           aria-label="Send prompt"
-          className="w-9 h-9 rounded-full bg-[#120D2B] border border-[#7048E8]/60 text-white flex items-center justify-center hover:bg-[#7048E8]/30 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer shrink-0 shadow-[0_0_12px_rgba(112,72,232,0.35)]"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#120D2B] border border-[#7048E8]/60 text-white flex items-center justify-center hover:bg-[#7048E8]/30 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer shrink-0 shadow-[0_0_12px_rgba(112,72,232,0.35)]"
         >
           <svg
-            className="w-4 h-4 text-white transition-transform duration-300 group-hover:translate-x-0.5"
+            className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white transition-transform duration-300 group-hover:translate-x-0.5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -161,19 +161,19 @@ export const WorkspacePromptBar: React.FC<WorkspacePromptBarProps> = ({ onSubmit
 
       {/* Quick Topic Chips */}
       <div
-        className="flex flex-col items-center space-y-2.5 pt-0.5 w-full animate-[fadeSlideUp_0.5s_ease-out_both]"
+        className="flex flex-col items-center space-y-1.5 sm:space-y-2.5 pt-0 sm:pt-0.5 w-full animate-[fadeSlideUp_0.5s_ease-out_both]"
         style={{ animationDelay: "520ms" }}
       >
-        <span className="text-[9.5px] font-semibold tracking-[0.22em] text-[#8E90A6] uppercase">
+        <span className="text-[8.5px] sm:text-[9.5px] font-semibold tracking-[0.2em] sm:tracking-[0.22em] text-[#8E90A6] uppercase">
           YOU CAN ALSO TALK ABOUT
         </span>
 
-        <div className="flex flex-nowrap items-center justify-center gap-2.5 sm:gap-3.5 lg:gap-4 w-full px-2">
+        <div className="flex flex-nowrap overflow-x-auto no-scrollbar items-center justify-start sm:justify-center gap-1.5 sm:gap-3.5 lg:gap-4 w-full px-1.5 sm:px-2 py-0.5">
           {topicSuggestions.map((topic, i) => (
             <button
               key={topic.id}
               onClick={() => onSubmitPrompt && onSubmitPrompt(topic.label)}
-              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#080811] border border-[#141622] text-[11.5px] sm:text-xs text-[#8E90A6] hover:text-white hover:border-[#7048E8]/50 hover:bg-[#0D0E1A] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer font-light shrink-0 whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+              className="px-3 sm:px-4 py-1 sm:py-2 rounded-full bg-[#080811] border border-[#141622] text-[11px] sm:text-xs text-[#8E90A6] hover:text-white hover:border-[#7048E8]/50 hover:bg-[#0D0E1A] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer font-light shrink-0 whitespace-nowrap shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
               style={{ animationDelay: `${550 + i * 60}ms` }}
             >
               <span>{topic.label}</span>

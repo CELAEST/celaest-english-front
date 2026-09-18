@@ -285,12 +285,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("workspace") && (
           <div
             key="workspace"
-            className={`flex-col justify-between h-full p-4 sm:p-6 lg:p-8 pt-2 sm:pt-4 ${
+            className={`flex-col justify-between h-full px-2.5 sm:px-6 lg:px-8 pt-1.5 sm:pt-4 overflow-hidden pb-20 sm:pb-24 lg:pb-2 ${
               activeTab === "workspace" ? "flex animate-[fadeIn_0.4s_ease-out_both]" : "hidden"
             }`}
             aria-hidden={activeTab !== "workspace"}
           >
-            <div className="flex flex-col lg:flex-row items-start justify-between w-full max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-10 pt-1 sm:pt-3 gap-6 relative z-10">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between w-full max-w-[1520px] mx-auto px-1 sm:px-6 lg:px-10 pt-1 sm:pt-3 gap-3.5 sm:gap-6 relative z-10 shrink-0">
               <WorkspaceHeroSection
                 userName={activeUserName}
                 learningGoal={profile?.learningGoal}
@@ -312,7 +312,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
               />
             </div>
 
-            <div className="w-full pb-1 sm:pb-2 relative z-10">
+            <div className="w-full pb-1 sm:pb-2 relative z-10 mt-auto lg:mt-0 shrink-0">
               <WorkspacePromptBar onSubmitPrompt={() => handleSelectNav("interview")} />
             </div>
           </div>

@@ -176,6 +176,16 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     setSelectedIdx((prev) => (prev - 1 + totalCards) % totalCards);
   }, [totalCards]);
 
+  const handleSelectCard = useCallback(
+    (idx: number) => {
+      if (idx === selectedIdx || idx < 0 || idx >= totalCards) return;
+      setSlideDirection(idx > selectedIdx ? 1 : -1);
+      setIsFlipped(false);
+      setSelectedIdx(idx);
+    },
+    [selectedIdx, totalCards],
+  );
+
   const handleReviewScore = useCallback(
     async (score: number) => {
       if (!activeCard) return;
@@ -259,7 +269,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   );
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-3 sm:p-5 lg:px-8 pt-3 sm:pt-4 pb-3 sm:pb-5">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-3 sm:p-5 lg:px-8 pt-2 sm:pt-4 pb-20 sm:pb-24 lg:pb-5">
       {/* ── Subtle Permanent Ambient Background Illuminations ── */}
       {/* Violet core glow — center-left, anchors the card area */}
       <div
@@ -323,7 +333,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
         )}
 
         {/* Category Filter Tabs — Persistent in DOM, never unmounts, kinetic laser line glides seamlessly */}
-        <div className="relative z-20 shrink-0 pt-1">
+        <div className="relative z-20 shrink-0 pt-1 pb-2.5 sm:pb-4">
           <MemoryFilterTabs
             activeTab={activeTab}
             speakingCount={speakingCount}
@@ -334,7 +344,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
         </div>
 
         {/* Content Deck Area with AnimatePresence & luxury entrance animation */}
-        <div className="relative flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+        <div className="relative flex-1 min-h-0 flex flex-col w-full overflow-visible">
           <AnimatePresence mode="wait">
             {isSessionCompleted ? (
               <motion.div
@@ -400,6 +410,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
                   onDelete={handleDeleteCard}
                   onReviewScore={handleReviewScore}
                   direction={slideDirection}
+                  onSelectIndex={handleSelectCard}
                 />
               </motion.div>
             )}

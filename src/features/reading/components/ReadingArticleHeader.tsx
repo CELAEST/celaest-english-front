@@ -36,10 +36,10 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     onCycleAudioRate,
   }) => {
     return (
-      <div className="w-full flex flex-col items-start text-left space-y-1.5 select-none pt-1 sm:pt-2 mb-1.5 sm:mb-2 shrink-0 transition-all">
+      <div className="w-full flex flex-col items-start text-left space-y-1 sm:space-y-1.5 select-none pt-0.5 sm:pt-2 mb-1 sm:mb-2 shrink-0 transition-all">
         {/* Category, Level & Read Time + Audio Streaming Action */}
         <div className="w-full flex items-center justify-between min-h-[20px]">
-          <span className="text-[10px] sm:text-[10.5px] font-semibold tracking-[0.2em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both] block text-left leading-none">
+          <span className="text-[9.5px] sm:text-[10.5px] font-semibold tracking-[0.18em] sm:tracking-[0.2em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both] block text-left leading-none truncate pr-2">
             {category} {cefrLevel ? `· ${cefrLevel}` : ""} · {readTime}
           </span>
 
@@ -59,13 +59,13 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
         </div>
 
         {/* Article Main Title */}
-        <h1 className="text-xl sm:text-2xl md:text-[26px] font-sans text-[#f8f8f8] font-light tracking-tight leading-snug animate-[fadeSlideUp_0.5s_ease-out_0.08s_both] text-left">
+        <h1 className="text-lg sm:text-2xl md:text-[26px] font-sans text-[#f8f8f8] font-normal sm:font-light tracking-tight leading-tight sm:leading-snug animate-[fadeSlideUp_0.5s_ease-out_0.08s_both] text-left">
           {title}
         </h1>
 
         {/* Subtitle */}
         {subtitle && (
-          <p className="text-xs sm:text-[13px] text-[#888999] font-light tracking-wide pt-0 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both] text-left leading-relaxed max-w-xl line-clamp-2">
+          <p className="text-xs sm:text-[13px] text-[#888999] font-light tracking-normal sm:tracking-wide pt-0 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both] text-left leading-snug sm:leading-relaxed max-w-xl line-clamp-2">
             {subtitle}
           </p>
         )}

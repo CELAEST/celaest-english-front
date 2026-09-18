@@ -236,7 +236,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
             top: `${coords.top}px`,
             left: `${coords.left}px`,
           }}
-          className="fixed z-[9999] w-[275px] sm:w-[295px] pl-6 pr-5 pt-5 pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group"
+          className="fixed z-[9999] w-[275px] sm:w-[295px] pl-5 pr-4 pt-4 pb-4 sm:pl-6 sm:pr-5 sm:pt-5 sm:pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group max-h-[calc(100dvh-95px)] sm:max-h-[calc(100dvh-40px)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Ultra-Subtle Monochromatic White Backlight Glow */}
@@ -308,7 +308,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               <div className="h-3.5 w-24 rounded bg-white/[0.05] mt-1 pl-1" />
             </div>
           ) : wordData ? (
-            <div className="relative z-10 flex flex-col">
+            <div className="relative z-10 flex flex-col overflow-y-auto no-scrollbar max-h-[calc(100dvh-125px)] sm:max-h-[calc(100dvh-60px)] pr-0.5">
               {/* Word Title & Phonetic */}
               <div className="flex flex-col pl-2">
                 <h3
@@ -375,17 +375,17 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
               {/* Definition / Explanation Note */}
               {wordData.definition && (
-                <p className="text-[11.5px] text-[#8e90a5] font-light leading-[1.5] mt-2 pl-2">
+                <p className="text-[11.5px] text-[#8e90a5] font-light leading-[1.5] mt-2 pl-2 line-clamp-3 sm:line-clamp-none">
                   {wordData.definition}
                 </p>
               )}
 
               {/* Divider Line */}
-              <div className="w-full h-px bg-white/[0.05] my-3" />
+              <div className="w-full h-px bg-white/[0.05] my-2 sm:my-3" />
 
               {/* Example Sentence */}
               {wordData.exampleSentence && (
-                <p className="text-[11.5px] italic text-[#8e90a5] font-light leading-[1.5] mb-3 pl-2">
+                <p className="text-[11.5px] italic text-[#8e90a5] font-light leading-[1.5] mb-2.5 pl-2 line-clamp-3 sm:line-clamp-none">
                   "{wordData.exampleSentence.replace(/^["']+|["']+$/g, "").trim()}"
                 </p>
               )}

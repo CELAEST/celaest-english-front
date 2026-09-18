@@ -76,28 +76,28 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
     }
 
     return (
-      <div className="w-full max-w-lg lg:max-w-xl mx-auto my-auto flex flex-col items-center justify-between space-y-6 sm:space-y-8 select-none animate-[fadeSlideUp_0.45s_ease-out_both] overflow-visible py-3 sm:py-6">
+      <div className="w-full max-w-lg lg:max-w-xl mx-auto my-auto flex flex-col items-center justify-between space-y-4 sm:space-y-8 select-none animate-[fadeSlideUp_0.45s_ease-out_both] overflow-y-auto no-scrollbar py-2 sm:py-6 pb-20 sm:pb-6">
         {/* 1. Header Section */}
-        <div className="flex flex-col items-center text-center space-y-2.5 pt-1 shrink-0">
-          <div className="flex items-center justify-center mb-1">
-            <ReadingSuccessIcon />
+        <div className="flex flex-col items-center text-center space-y-2 sm:space-y-2.5 pt-1 shrink-0">
+          <div className="flex items-center justify-center mb-0.5 sm:mb-1">
+            <ReadingSuccessIcon className="w-11 h-11 sm:w-14 sm:h-14" />
           </div>
 
-          <h2 className="text-2xl sm:text-3xl md:text-[32px] font-sans font-light text-white tracking-tight leading-tight">
+          <h2 className="text-xl sm:text-3xl md:text-[32px] font-sans font-light text-white tracking-tight leading-tight">
             Reading Complete
           </h2>
 
-          <p className="text-xs sm:text-sm text-[#9b9cb4] font-light max-w-sm sm:max-w-md leading-relaxed px-2">
+          <p className="text-xs sm:text-sm text-[#9b9cb4] font-light max-w-sm sm:max-w-md leading-relaxed px-2 line-clamp-2 sm:line-clamp-none">
             You have completed this chapter. Test your comprehension with a quick assessment or
             continue to the next reading.
           </p>
 
           {/* Assessment Action Trigger */}
-          <div className="pt-2">
+          <div className="pt-1.5 sm:pt-2">
             {quizScore !== null ? (
-              <div className="inline-flex items-center space-x-2.5 text-xs sm:text-sm font-medium text-white/90 animate-[fadeIn_0.3s_ease-out_both] select-none py-2 px-5 rounded-full bg-emerald-500/10 border border-emerald-500/25 shadow-[0_0_16px_rgba(10,185,129,0.15)]">
+              <div className="inline-flex items-center space-x-2.5 text-xs sm:text-sm font-medium text-white/90 animate-[fadeIn_0.3s_ease-out_both] select-none py-1.5 sm:py-2 px-4 sm:px-5 rounded-full bg-emerald-500/10 border border-emerald-500/25 shadow-[0_0_16px_rgba(10,185,129,0.15)]">
                 <svg
-                  className="w-4 h-4 text-emerald-400 shrink-0"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -119,17 +119,17 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
                 <button
                   type="button"
                   onClick={() => setShowQuiz(true)}
-                  className="relative rounded-full px-5 py-2.5 bg-[#080814]/95 backdrop-blur-xl flex items-center space-x-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] select-none group-hover:bg-[#0c0c20]/95"
+                  className="relative rounded-full px-4 py-2 sm:px-5 sm:py-2.5 bg-[#080814]/95 backdrop-blur-xl flex items-center space-x-2 sm:space-x-2.5 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] select-none group-hover:bg-[#0c0c20]/95"
                 >
-                  <ComprehensionQuizIcon />
+                  <ComprehensionQuizIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="text-white font-medium tracking-tight">
                     Take Comprehension Quiz
                   </span>
-                  <span className="text-[#a5a6c2] text-xs font-light tracking-wide">
+                  <span className="text-[#a5a6c2] text-[11px] sm:text-xs font-light tracking-wide">
                     · 3 questions
                   </span>
                   <svg
-                    className="w-3.5 h-3.5 text-[#C4B5FD] group-hover:translate-x-1 transition-transform duration-200 ml-0.5"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#C4B5FD] group-hover:translate-x-1 transition-transform duration-200 ml-0.5"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -146,14 +146,14 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
         </div>
 
         {/* 2. Center Primary Directional Action + Review Trigger */}
-        <div className="flex flex-col items-center space-y-3 shrink-0 py-1">
+        <div className="flex flex-col items-center space-y-2 sm:space-y-3 shrink-0 py-1">
           <button
             type="button"
             onClick={onNextReading}
             aria-label="Start next reading"
-            className="w-16 h-16 sm:w-18 sm:h-18 rounded-full border border-[#3b2b73] bg-[#070814] hover:border-[#A27FF3] hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(112,72,232,0.35)] flex items-center justify-center cursor-pointer group"
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-[#3b2b73] bg-[#070814] hover:border-[#A27FF3] hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(112,72,232,0.35)] flex items-center justify-center cursor-pointer group"
           >
-            <NextReadingArrowIcon />
+            <NextReadingArrowIcon className="w-6 h-6 sm:w-7 sm:h-7" />
           </button>
 
           <span className="text-xs sm:text-sm font-semibold text-white/95 tracking-wide">
@@ -164,50 +164,50 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
             <button
               type="button"
               onClick={onReviewReading}
-              className="group inline-flex items-center space-x-1.5 text-xs text-[#7e8096] hover:text-white transition-colors duration-200 cursor-pointer pt-1"
+              className="group inline-flex items-center space-x-1.5 text-xs text-[#7e8096] hover:text-white transition-colors duration-200 cursor-pointer pt-0.5 sm:pt-1"
             >
-              <ReturnArrowIcon />
+              <ReturnArrowIcon className="w-3.5 h-3.5 text-[#7e8096] group-hover:text-white" />
               <span className="font-light tracking-wide">Re-read article</span>
             </button>
           )}
         </div>
 
         {/* 3. Pure Naked Telemetry Grid */}
-        <div className="w-full pt-2 flex flex-col items-center space-y-3 shrink-0">
-          <span className="text-[10px] font-semibold tracking-[0.25em] text-[#6b6c84] uppercase">
+        <div className="w-full pt-1 sm:pt-2 flex flex-col items-center space-y-2 sm:space-y-3 shrink-0">
+          <span className="text-[9.5px] sm:text-[10px] font-semibold tracking-[0.25em] text-[#6b6c84] uppercase">
             SESSION TELEMETRY
           </span>
 
-          <div className="w-full grid grid-cols-3 text-center items-center py-2 px-1">
+          <div className="w-full grid grid-cols-3 text-center items-center py-1 sm:py-2 px-1">
             {/* Stat 1: Reading Time */}
-            <div className="flex flex-col items-center space-y-1.5 group">
-              <ChronometerIcon />
-              <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-1.5 group">
+              <ChronometerIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-sm sm:text-lg font-semibold text-white tracking-tight">
                 {readingTimeMin} min
               </span>
-              <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
+              <span className="text-[10px] sm:text-xs text-[#7e8096] font-light tracking-wide">
                 Reading Time
               </span>
             </div>
 
             {/* Stat 2: Dynamic Words read */}
-            <div className="flex flex-col items-center space-y-1.5 border-x border-white/[0.08] group">
-              <LexiconWordCountIcon />
-              <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-1.5 border-x border-white/[0.08] group">
+              <LexiconWordCountIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-sm sm:text-lg font-semibold text-white tracking-tight">
                 {wordCount} words
               </span>
-              <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
+              <span className="text-[10px] sm:text-xs text-[#7e8096] font-light tracking-wide">
                 Completed
               </span>
             </div>
 
             {/* Stat 3: CEFR Level */}
-            <div className="flex flex-col items-center space-y-1.5 group">
-              <CefrGraduatedTierIcon />
-              <span className="text-base sm:text-lg font-semibold text-white tracking-tight">
+            <div className="flex flex-col items-center space-y-1 sm:space-y-1.5 group">
+              <CefrGraduatedTierIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-sm sm:text-lg font-semibold text-white tracking-tight">
                 {cefrLevel || "B1"}
               </span>
-              <span className="text-[11px] sm:text-xs text-[#7e8096] font-light tracking-wide">
+              <span className="text-[10px] sm:text-xs text-[#7e8096] font-light tracking-wide">
                 CEFR Level
               </span>
             </div>

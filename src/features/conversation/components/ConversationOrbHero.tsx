@@ -21,7 +21,7 @@ const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
   return (
     <div className="flex flex-col items-center justify-center select-none w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto shrink-0 -mt-2 sm:-mt-3 lg:-mt-4 animate-[fadeIn_0.35s_ease-out_both] font-sans">
       {/* Video Orb with dynamic ambient glow aura */}
-      <div className="relative w-[clamp(140px,28vh,340px)] h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300 overflow-hidden">
+      <div className="relative w-[clamp(160px,26vh,240px)] sm:w-[clamp(140px,28vh,340px)] h-[clamp(160px,26vh,240px)] sm:h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300 overflow-hidden">
         {/* Ambient reactive aura layers */}
         {isListening && (
           <div
@@ -48,7 +48,7 @@ const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
       {statusText && (
         <div className="-mt-1 sm:-mt-2 lg:-mt-2.5 relative z-10 text-center shrink-0">
           <span
-            className={`text-[clamp(16px,2.3vh,22px)] font-sans font-bold tracking-tight bg-gradient-to-r from-[#A78BFA] via-[#C4B5FD] to-[#DDD6FE] bg-clip-text text-transparent drop-shadow-[0_1px_6px_rgba(167,139,250,0.3)] transition-all duration-300 ${
+            className={`text-[clamp(14px,1.9vh,18px)] sm:text-[clamp(16px,2.3vh,22px)] font-sans font-bold tracking-tight bg-gradient-to-r from-[#A78BFA] via-[#C4B5FD] to-[#DDD6FE] bg-clip-text text-transparent drop-shadow-[0_1px_6px_rgba(167,139,250,0.3)] transition-all duration-300 ${
               isThinking ? "animate-pulse opacity-80" : ""
             }`}
           >

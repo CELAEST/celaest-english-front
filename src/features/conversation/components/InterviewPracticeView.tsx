@@ -241,7 +241,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         {/* Center Main Hero Arena: 100% Adaptive Viewport without scroll */}
         <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-6 py-1 sm:py-2 lg:py-4">
           {/* Upper Section: Orb + Status + Question + Live Transcript */}
-          <div className="w-full flex flex-col items-center justify-start gap-2 sm:gap-3 shrink-0">
+          <div className="w-full flex flex-col items-center justify-start gap-1.5 sm:gap-3 shrink-0">
             {/* Glowing Orb & Status */}
             <ConversationOrbHero
               statusText={statusTitle}
@@ -265,7 +265,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
           </div>
 
           {/* Middle Section: Waveform Spectrum */}
-          <div className="w-full flex items-center justify-center my-0.5 sm:my-1 shrink-0">
+          <div className="w-full flex items-center justify-center my-0 sm:my-1 shrink-0">
             <ConversationWaveformSpectrum
               isListening={isListening || isAiSpeaking}
               animated={isListening || isAiSpeaking}
@@ -273,7 +273,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
           </div>
 
           {/* Bottom Section: Mic / Send Action Controls */}
-          <div className="w-full flex flex-col items-center justify-center shrink-0 pb-20 lg:pb-1">
+          <div className="w-full flex flex-col items-center justify-center shrink-0 pb-16 sm:pb-20 lg:pb-1">
             <ConversationMicControl
               isListening={isListening}
               isAiSpeaking={isAiSpeaking}

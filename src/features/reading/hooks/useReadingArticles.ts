@@ -15,23 +15,39 @@ const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
 
 /**
  * Calculates ideal words per page based on viewport height to ensure:
- * - Small screens: zero text clipping & zero scroll (28 words)
- * - Large screens: balanced rich text fill (60-85 words)
+ * - Zero vertical scrolling (never triggers scrollbars or overflow)
+ * - Prudent breathing room (~80-120px) above ReadingBottomBar
+ * - Clean multi-page pagination that turns pages right before container boundaries
  */
 function getTargetWordsForHeight(height: number): number {
-  if (height < 700) return 28; // Small screens: ~4-5 lines
-  if (height < 820) return 42; // Medium laptops: ~5-6 lines
-  if (height < 980) return 60; // Desktop 1080p: ~7-8 lines
-  return 85; // Large 1440p/4K monitors: ~9-11 lines
+  if (height < 680) return 42;  // Compact mobile / small viewports with browser address bar: ~5-6 lines
+  if (height < 780) return 52;  // Standard mobile (iPhone mini / standard): ~6-7 lines
+  if (height < 900) return 58;  // Modern smartphones (iPhone 13/14/15/16): ~7-8 lines
+  if (height < 1050) return 75; // Pro Max / Tablets / Small laptops: ~9-10 lines
+  return 110;                   // Desktop 1080p+: ~10-12 wide lines
 }
 
 /**
- * Dynamic Text Paginator: Splits text into wordsPerPage blocks on sentence boundaries.
+ * Dynamic Viewport-Calibrated Text Paginator:
+ * - Strict Zero-Scroll Guarantee: enforces a hard ceiling so no page exceeds container capacity.
+ * - Prudent Bottom Cushion: guarantees comfortable clearance above ReadingBottomBar.
+ * - Balanced Distribution: breaks on sentence boundaries and balances pages evenly.
  */
 function paginateText(fullText: string, targetWordsPerPage: number): string[] {
   if (!fullText) return [];
   const words = fullText.trim().split(/\s+/);
-  if (words.length <= targetWordsPerPage) return [fullText];
+  if (words.length === 0) return [];
+
+  // Single page only if total words strictly fit within targetWordsPerPage
+  if (words.length <= targetWordsPerPage) {
+    return [fullText];
+  }
+
+  // Calculate balanced number of pages so every page occupies the container harmoniously
+  const numPages = Math.ceil(words.length / targetWordsPerPage);
+  const idealWordsPerPage = Math.ceil(words.length / numPages);
+  // Hard ceiling: no page can exceed targetWordsPerPage under any circumstances
+  const hardMaxPerPage = targetWordsPerPage;
 
   const pages: string[] = [];
   let currentChunk: string[] = [];
@@ -39,14 +55,19 @@ function paginateText(fullText: string, targetWordsPerPage: number): string[] {
   for (let i = 0; i < words.length; i++) {
     currentChunk.push(words[i]);
     const endsWithSentence = /[.!?"']$/.test(words[i]);
+    const isLastPage = pages.length === numPages - 1;
+
+    // Break on sentence boundary when we reach the balanced ideal target, or force break at hard ceiling
     if (
-      (currentChunk.length >= targetWordsPerPage && endsWithSentence) ||
-      currentChunk.length >= targetWordsPerPage + 10
+      !isLastPage &&
+      ((currentChunk.length >= idealWordsPerPage && endsWithSentence) ||
+        currentChunk.length >= hardMaxPerPage)
     ) {
       pages.push(currentChunk.join(" "));
       currentChunk = [];
     }
   }
+
   if (currentChunk.length > 0) {
     pages.push(currentChunk.join(" "));
   }
@@ -260,8 +281,9 @@ export const useReadingArticles = (level?: string, profession?: string) => {
   );
 
   const totalPages = Math.max(1, dynamicPages.length);
-  const progressPercentage = Math.min(100, Math.round(((currentPageIndex + 1) / totalPages) * 100));
-  const currentPageContent = dynamicPages[currentPageIndex] || dynamicPages[0] || fullContent;
+  const safePageIndex = Math.min(Math.max(0, currentPageIndex), totalPages - 1);
+  const progressPercentage = Math.min(100, Math.round(((safePageIndex + 1) / totalPages) * 100));
+  const currentPageContent = dynamicPages[safePageIndex] || dynamicPages[0] || fullContent;
 
   // Proactive Background Audio Prefetching for 0ms Instant Playback (Page-by-Page & Mentor-by-Mentor)
   useEffect(() => {

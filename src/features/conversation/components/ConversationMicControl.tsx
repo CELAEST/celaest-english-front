@@ -146,16 +146,29 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
       </div>
 
       {/* Action Helper Micro-Text */}
-      <span className="font-sans text-xs sm:text-[13px] text-white/50 font-medium tracking-wide text-center pt-[clamp(6px,1vh,12px)]">
-        {isThinking
-          ? "AI is evaluating your response..."
-          : isAiSpeaking
-            ? "Listening to interviewer..."
-            : isListening
-              ? "Tap mic to stop recording • Tap green OK to evaluate"
-              : hasText
-                ? "Tap green OK (or Enter) to evaluate • Tap mic to record again"
-                : "Tap mic to start speaking or type your answer"}
+      <span className="font-sans text-xs sm:text-[13px] text-white/50 font-medium tracking-wide text-center pt-[clamp(4px,0.8vh,12px)] whitespace-nowrap truncate max-w-[92vw]">
+        <span className="sm:hidden">
+          {isThinking
+            ? "Evaluating response..."
+            : isAiSpeaking
+              ? "Interviewer speaking..."
+              : isListening
+                ? "Tap OK to evaluate"
+                : hasText
+                  ? "Tap OK to evaluate"
+                  : "Tap mic to speak"}
+        </span>
+        <span className="hidden sm:inline">
+          {isThinking
+            ? "AI is evaluating your response..."
+            : isAiSpeaking
+              ? "Listening to interviewer..."
+              : isListening
+                ? "Tap mic to stop recording • Tap green OK to evaluate"
+                : hasText
+                  ? "Tap green OK (or Enter) to evaluate • Tap mic to record again"
+                  : "Tap mic to start speaking or type your answer"}
+        </span>
       </span>
     </div>
   );

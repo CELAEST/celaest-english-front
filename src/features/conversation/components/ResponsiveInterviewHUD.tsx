@@ -49,18 +49,19 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
       className="w-full flex xl:hidden items-center justify-between px-3 sm:px-6 py-2.5 bg-transparent select-none z-30 shrink-0 font-sans"
     >
       {/* 1. TOP-LEFT: Clean Telemetry (High-End Inter Typography, Amethyst Accent, Balanced Proportions) */}
-      <div className="flex items-center space-x-2 text-xs">
-        <span className="font-sans text-xs font-semibold tracking-wider text-white/60">
+      <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs shrink-0">
+        <span className="hidden sm:inline font-sans text-xs font-semibold tracking-wider text-white/60 whitespace-nowrap shrink-0">
           ROUND {currentRound.toString().padStart(2, "0")}
         </span>
-        <span className="text-white/20 font-sans">·</span>
-        <span className="font-sans text-xs font-semibold tracking-tight text-white/95">
+        <span className="hidden sm:inline text-white/20 font-sans shrink-0">·</span>
+        <span className="font-sans text-xs font-semibold tracking-tight text-white/95 whitespace-nowrap shrink-0">
           {currentQuestion.toString().padStart(2, "0")}/{totalQuestions.toString().padStart(2, "0")}
         </span>
         <span className="text-white/20 font-sans hidden sm:inline">·</span>
         <span className="font-sans text-xs font-medium text-white/80 tracking-normal truncate max-w-[140px] sm:max-w-[240px] hidden sm:inline">
           {roleName}
         </span>
+        <span className="text-white/20 font-sans sm:hidden">·</span>
         {onSetLevel ? (
           <LevelSelectorPill
             currentLevel={userLevel || "B1"}
@@ -77,13 +78,13 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
       </div>
 
       {/* 2. TOP-RIGHT: Semantic Action Controls (Bespoke Handcrafted SVGs, Zero AI Look, Perfect Baseline) */}
-      <div className="flex items-center space-x-4 sm:space-x-5">
-        {/* A. Repeat Question Action (Bespoke Audio Loop SVG + Nucleus) */}
+      <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+        {/* A. Repeat Question Action (Oculto en mobile porque ya está en el header de la pregunta, visible en sm:) */}
         {onRepeatQuestion && (
           <button
             type="button"
             onClick={onRepeatQuestion}
-            className="h-6 inline-flex items-center space-x-1.5 text-white/70 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+            className="hidden sm:inline-flex h-6 items-center space-x-1.5 text-white/70 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
             title="Repetir pregunta en voz alta"
           >
             <svg
@@ -110,7 +111,7 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
           <button
             type="button"
             onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-            className="h-6 inline-flex items-center space-x-1.5 text-white/70 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+            className="h-6 inline-flex items-center space-x-1 sm:space-x-1.5 text-white/70 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
             title="Velocidad de voz de la IA"
           >
             <svg
@@ -176,7 +177,7 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
           <button
             type="button"
             onClick={onOpenAnalysisModal}
-            className="h-6 inline-flex items-center space-x-1.5 transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+            className="h-6 inline-flex items-center space-x-1 sm:space-x-1.5 transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
             title="Ver análisis y retroalimentación detallada"
           >
             {/* Bespoke Gold Sparkle SVG */}
@@ -241,11 +242,11 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
           </button>
         )}
 
-        {/* E. Cards Panel Drawer Trigger (Bespoke Handcrafted Right-Sidebar Card Inspector SVG) */}
+        {/* E. Cards Panel Drawer Trigger (Oculto en mobile para evitar espacio, visible en sm:) */}
         <button
           type="button"
           onClick={onOpenDrawer}
-          className="h-6 inline-flex items-center text-white/60 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+          className="hidden sm:inline-flex h-6 items-center text-white/60 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
           title="Abrir panel de tarjetas y métricas de sesión"
         >
           <svg

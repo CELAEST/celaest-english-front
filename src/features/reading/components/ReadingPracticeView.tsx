@@ -217,13 +217,13 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col select-none z-10 animate-[fadeIn_0.5s_ease-out_both] overflow-hidden">
-      {/* Top Left Return to Workspace Action */}
+      {/* Top Left Return to Workspace Action (Oculto en mobile porque el dock inferior ya tiene el acceso, visible en sm:) */}
       {onBackToWorkspace && (
         <button
           type="button"
           onClick={onBackToWorkspace}
           aria-label="Back to workspace"
-          className="absolute top-3 left-4 sm:top-4 sm:left-6 z-30 inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] text-[#9b9cb4] hover:text-white transition-all text-xs font-light cursor-pointer group"
+          className="absolute top-3 left-4 sm:top-4 sm:left-6 z-30 hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] text-[#9b9cb4] hover:text-white transition-all text-xs font-light cursor-pointer group"
         >
           <ReturnArrowIcon className="w-3.5 h-3.5 text-[#9b9cb4] group-hover:text-white" />
           <span>Workspace</span>
@@ -231,7 +231,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
       )}
 
       {/* Main Workspace Layout Canvas (Aligned with Writing standard 1:1) */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-10 lg:px-14 py-2 sm:py-5 pt-2 sm:pt-4 gap-4 sm:gap-8 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-4 sm:px-10 lg:px-14 py-1.5 sm:py-5 pt-1.5 sm:pt-4 gap-2 sm:gap-8 z-10 overflow-hidden">
         {/* Left / Central Column: Strictly aligned to the left */}
         <main
           role="main"
@@ -269,7 +269,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
             {/* Central Reader / Completion / Loading Switcher */}
             <div
-              className={`w-full flex-1 min-h-0 flex flex-col overflow-visible ${
+              className={`w-full flex-1 min-h-0 flex flex-col overflow-hidden ${
                 isSpecialView
                   ? "items-center justify-center"
                   : "items-start justify-start text-left"
@@ -326,16 +326,14 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
               )}
             </div>
 
-            {/* Bottom Bar: Available during active reading & completed state to allow returning */}
-            {!isGenerating && !isLoading && (
+            {/* Bottom Bar: Available during active reading (hidden on completion view to prevent UI collision with Telemetry) */}
+            {!isGenerating && !isLoading && !isCompleted && (
               <ReadingBottomBar
-                progressPercentage={isCompleted ? 100 : progressPercentage}
-                readTimeRemaining={
-                  isCompleted ? "Completed" : `${estimatedMinutesRemaining} min read`
-                }
-                currentPage={isCompleted ? totalPages : currentPageIndex + 1}
+                progressPercentage={progressPercentage}
+                readTimeRemaining={`${estimatedMinutesRemaining} min read`}
+                currentPage={currentPageIndex + 1}
                 totalPages={totalPages}
-                onNextPage={isCompleted ? undefined : nextPage}
+                onNextPage={nextPage}
                 onPrevPage={prevPage}
               />
             )}

@@ -36,7 +36,7 @@ const ConversationWaveformSpectrumInner: React.FC<ConversationWaveformSpectrumPr
   const volumeMultiplier = 1 + micVolume * 2.5;
 
   return (
-    <div className="w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto h-[clamp(30px,4.5vh,52px)] relative flex items-center justify-center select-none z-10 shrink-0">
+    <div className="w-full max-w-[240px] sm:max-w-xl md:max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto h-4 sm:h-[clamp(30px,4.5vh,52px)] relative flex items-center justify-center select-none z-10 shrink-0">
       {/* Inline keyframe animation styles for wf-bar */}
       <style>{`
         @keyframes wfBarPulse {
@@ -60,7 +60,7 @@ const ConversationWaveformSpectrumInner: React.FC<ConversationWaveformSpectrumPr
       />
 
       {/* Bars */}
-      <div className="relative flex items-center justify-center gap-[2.5px] sm:gap-[3px] md:gap-[3.5px] lg:gap-[4px] w-full h-full">
+      <div className="relative flex items-center justify-center gap-[1.5px] sm:gap-[3px] md:gap-[3.5px] lg:gap-[4px] w-full h-full">
         {data.map(({ h }, i) => {
           const dynamicHeight = Math.min(44, Math.max(3.5, h * 32 * volumeMultiplier));
           const px = `${dynamicHeight.toFixed(2)}px`;
@@ -73,11 +73,10 @@ const ConversationWaveformSpectrumInner: React.FC<ConversationWaveformSpectrumPr
           return (
             <span
               key={i}
-              className={animated && isListening ? "wf-bar-anim" : ""}
+              className={`max-h-[14px] sm:max-h-none w-[1.5px] sm:w-[2px] ${animated && isListening ? "wf-bar-anim" : ""}`}
               style={{
                 display: "block",
                 flexShrink: 0,
-                width: "2px",
                 height: px,
                 borderRadius: "2px",
                 backgroundColor: `rgba(162,127,243,${opacity})`,

@@ -147,12 +147,15 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
 
     const performLookup = useCallback(
       async (phrase: string, rect: DOMRect) => {
-        const popoverWidth = Math.min(315, window.innerWidth - 32);
-        const estimatedHeight = 330;
+        const isMobile = window.innerWidth < 640;
+        const popoverWidth = Math.min(isMobile ? 275 : 295, window.innerWidth - 24);
+        const bottomSafetyPadding = isMobile ? 86 : 24; // 86px clears the mobile floating navigation dock cleanly
+        const topSafetyPadding = isMobile ? 12 : 16;
         const verticalGap = 8;
+        const estimatedHeight = isMobile ? 320 : 340;
 
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top - topSafetyPadding;
+        const spaceBelow = window.innerHeight - bottomSafetyPadding - rect.bottom;
 
         let top: number;
         if (spaceBelow < estimatedHeight + verticalGap && spaceAbove > spaceBelow) {
@@ -161,9 +164,11 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           top = rect.bottom + verticalGap;
         }
 
-        top = Math.max(16, Math.min(top, window.innerHeight - estimatedHeight - 16));
+        // Clamp so the modal never pushes under the floating mobile dock or off top edge
+        const maxTop = Math.max(topSafetyPadding, window.innerHeight - bottomSafetyPadding - estimatedHeight);
+        top = Math.max(topSafetyPadding, Math.min(top, maxTop));
         let left = rect.left + rect.width / 2 - popoverWidth / 2;
-        left = Math.max(32, Math.min(left, window.innerWidth - popoverWidth - 20));
+        left = Math.max(20, Math.min(left, window.innerWidth - popoverWidth - 14));
 
         setPopoverCoords({ top, left });
         setShowTooltip(true);
@@ -288,9 +293,9 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         aria-label="Reading content"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
-        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-left text-[#d1d2dc] font-sans text-[15px] sm:text-[16px] lg:text-[17px] font-light leading-[1.75] sm:leading-[1.8] select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2"
+        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-[#d1d2dc] font-sans text-[14.5px] sm:text-[16px] lg:text-[17px] font-light leading-[1.68] sm:leading-[1.8] select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2"
       >
-        <div className="tracking-[0.01em] text-[#d1d2dc] leading-[1.75] sm:leading-[1.8] animate-[fadeSlideUp_0.4s_ease-out_both] relative z-10 text-left w-full overflow-hidden">
+        <div className="w-full relative z-10 text-justify [text-align:justify] [text-align-last:left] [text-wrap:pretty] tracking-[-0.006em] sm:tracking-[0.01em] text-[#d1d2dc] leading-[1.68] sm:leading-[1.8] animate-[fadeSlideUp_0.4s_ease-out_both]">
           {rawWords.map((rawWord, idx) => {
             const cleanWord = cleanTokens[idx];
             const phrasalMatch = phrasalSpans.get(idx);
@@ -327,7 +332,8 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
                     : "rounded-none"
                 : "rounded-md";
 
-            const spacingClass = isPhrasalPart && !isSingle && !isEnd ? "mr-[2px]" : "mr-1.5";
+            const isInternalPhrasal = isPhrasalPart && !isSingle && !isEnd;
+            const spacingClass = isInternalPhrasal ? "mr-[1px] sm:mr-[1.5px]" : "";
 
             let visualStyle = "";
             if (isSelected) {
@@ -361,31 +367,33 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             }
 
             return (
-              <span
-                key={`${cleanWord}-${idx}`}
-                className={`inline-block overflow-visible my-0.5 ${spacingClass}`}
-              >
-                <button
-                  ref={(el) => {
-                    if (el) buttonRefs.current.set(idx, el);
-                    else buttonRefs.current.delete(idx);
-                  }}
-                  type="button"
-                  onClick={(e) => handleWordClick(e, idx)}
-                  onMouseEnter={() => {
-                    if (phrasalMatch) setHoveredRange(phrasalMatch);
-                  }}
-                  onMouseLeave={() => {
-                    if (hoveredRange) setHoveredRange(null);
-                  }}
-                  title={cleanWord ? `Click to look up "${cleanWord}"` : undefined}
-                  aria-haspopup="dialog"
-                  aria-expanded={isSelected}
-                  className={`px-1.5 py-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-black inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
+              <React.Fragment key={`${cleanWord}-${idx}`}>
+                <span
+                  className={`inline-block overflow-visible my-0 sm:my-0.5 ${spacingClass}`}
                 >
-                  {rawWord}
-                </button>
-              </span>
+                  <button
+                    ref={(el) => {
+                      if (el) buttonRefs.current.set(idx, el);
+                      else buttonRefs.current.delete(idx);
+                    }}
+                    type="button"
+                    onClick={(e) => handleWordClick(e, idx)}
+                    onMouseEnter={() => {
+                      if (phrasalMatch) setHoveredRange(phrasalMatch);
+                    }}
+                    onMouseLeave={() => {
+                      if (hoveredRange) setHoveredRange(null);
+                    }}
+                    title={cleanWord ? `Click to look up "${cleanWord}"` : undefined}
+                    aria-haspopup="dialog"
+                    aria-expanded={isSelected}
+                    className={`px-[1px] sm:px-1 py-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-black inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
+                  >
+                    {rawWord}
+                  </button>
+                </span>
+                {!isInternalPhrasal && idx < rawWords.length - 1 ? " " : null}
+              </React.Fragment>
             );
           })}
         </div>

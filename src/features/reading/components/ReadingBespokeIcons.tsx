@@ -8,7 +8,7 @@ export interface IconProps {
  * ReadingSuccessIcon: Clean, luxury modern success badge with organic emerald glow and single crisp geometric checkmark.
  */
 export const ReadingSuccessIcon: React.FC<IconProps> = ({
-  className = "w-13 h-13 sm:w-15 sm:h-15",
+  className = "w-12 h-12 sm:w-14 sm:h-14",
 }) => {
   const baseId = useId();
   const softBaseId = `emeraldSoftBase-${baseId}`;
@@ -75,7 +75,7 @@ export const ReadingSuccessIcon: React.FC<IconProps> = ({
  * ComprehensionQuizIcon: Clean, razor-sharp assessment document & pen checklist badge.
  */
 export const ComprehensionQuizIcon: React.FC<IconProps> = ({
-  className = "w-4.5 h-4.5 sm:w-5 sm:h-5",
+  className = "w-4 h-4 sm:w-5 sm:h-5",
 }) => (
   <svg
     className={`shrink-0 transition-transform duration-200 ${className}`}

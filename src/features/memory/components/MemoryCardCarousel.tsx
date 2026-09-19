@@ -125,19 +125,29 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     const prevData = getPeekData(prevCard);
     const nextData = getPeekData(nextCard);
 
-    const isDraggingRef = React.useRef(false);
+    const dragDistanceRef = React.useRef(0);
 
     const handleDragStart = React.useCallback(() => {
-      isDraggingRef.current = true;
+      dragDistanceRef.current = 0;
     }, []);
+
+    const handleDrag = React.useCallback(
+      (
+        _e: MouseEvent | TouchEvent | PointerEvent,
+        info: { offset: { x: number; y: number } },
+      ) => {
+        dragDistanceRef.current = Math.abs(info.offset.x);
+      },
+      [],
+    );
 
     const handleDragEnd = React.useCallback(
       (
         _e: MouseEvent | TouchEvent | PointerEvent,
         info: { offset: { x: number; y: number }; velocity: { x: number; y: number } },
       ) => {
-        const swipeThreshold = 45;
-        const velocityThreshold = 240;
+        const swipeThreshold = 30;
+        const velocityThreshold = 160;
 
         const isSwipeLeft =
           info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold;
@@ -151,14 +161,15 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
         }
 
         setTimeout(() => {
-          isDraggingRef.current = false;
-        }, 120);
+          dragDistanceRef.current = 0;
+        }, 50);
       },
       [onNext, onPrev, total],
     );
 
     const handleClickCapture = React.useCallback((e: React.MouseEvent) => {
-      if (isDraggingRef.current) {
+      // Only suppress click if the gesture was an actual horizontal swipe (> 8px)
+      if (dragDistanceRef.current > 8) {
         e.stopPropagation();
         e.preventDefault();
       }
@@ -255,6 +266,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
                 dragDirectionLock
                 dragSnapToOrigin
                 onDragStart={handleDragStart}
+                onDrag={handleDrag}
                 onDragEnd={handleDragEnd}
                 transition={{
                   x: { type: "spring", stiffness: 320, damping: 30 },

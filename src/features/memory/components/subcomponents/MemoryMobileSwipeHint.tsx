@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface MemoryMobileSwipeHintProps {
   activeIndex: number;
@@ -54,16 +55,27 @@ function getPaginationDots(total: number, active: number): DotItem[] {
 
 /**
  * CELAEST Mobile Card Pagination Indicator
- * Free-floating, borderless, zero-container dots that blend invisibly with the background canvas.
+ * Free-floating, borderless dots with tactile chevron controls for seamless card passing.
  */
 export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React.memo(
-  ({ activeIndex, totalCards, onSelectIndex }) => {
+  ({ activeIndex, totalCards, onPrev, onNext, onSelectIndex }) => {
     if (totalCards <= 1) return null;
 
     const dots = getPaginationDots(totalCards, activeIndex);
 
     return (
-      <div className="sm:hidden flex items-center justify-center w-full pt-5 pb-2 select-none z-20">
+      <div className="sm:hidden flex items-center justify-center w-full pt-2.5 pb-1 select-none z-20 gap-2.5">
+        {onPrev && (
+          <button
+            type="button"
+            onClick={onPrev}
+            aria-label="Previous card"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 active:text-white active:bg-white/[0.1] transition-all cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         <div
           className="flex items-center gap-1.5"
           role="tablist"
@@ -96,6 +108,17 @@ export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React
             </button>
           ))}
         </div>
+
+        {onNext && (
+          <button
+            type="button"
+            onClick={onNext}
+            aria-label="Next card"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 active:text-white active:bg-white/[0.1] transition-all cursor-pointer"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     );
   },

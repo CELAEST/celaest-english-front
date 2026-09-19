@@ -124,6 +124,22 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     const nextData = getPeekData(nextCard);
 
     const dragDistanceRef = React.useRef(0);
+    const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null);
+    const lastSwipeTimeRef = React.useRef(0);
+
+    const triggerNext = React.useCallback(() => {
+      const now = Date.now();
+      if (now - lastSwipeTimeRef.current < 320 || total <= 1) return;
+      lastSwipeTimeRef.current = now;
+      onNext();
+    }, [onNext, total]);
+
+    const triggerPrev = React.useCallback(() => {
+      const now = Date.now();
+      if (now - lastSwipeTimeRef.current < 320 || total <= 1) return;
+      lastSwipeTimeRef.current = now;
+      onPrev();
+    }, [onPrev, total]);
 
     const handleDragStart = React.useCallback(() => {
       dragDistanceRef.current = 0;
@@ -144,25 +160,68 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
         _e: MouseEvent | TouchEvent | PointerEvent,
         info: { offset: { x: number; y: number }; velocity: { x: number; y: number } },
       ) => {
-        const swipeThreshold = 30;
-        const velocityThreshold = 160;
+        const swipeThreshold = 25;
+        const velocityThreshold = 120;
 
         const isSwipeLeft =
           info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold;
         const isSwipeRight =
           info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold;
 
-        if (isSwipeLeft && total > 1) {
-          onNext();
-        } else if (isSwipeRight && total > 1) {
-          onPrev();
+        if (isSwipeLeft) {
+          triggerNext();
+        } else if (isSwipeRight) {
+          triggerPrev();
         }
 
         setTimeout(() => {
           dragDistanceRef.current = 0;
         }, 50);
       },
-      [onNext, onPrev, total],
+      [triggerNext, triggerPrev],
+    );
+
+    const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch) {
+        touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+      }
+    }, []);
+
+    const handleTouchMove = React.useCallback((e: React.TouchEvent) => {
+      if (!touchStartPosRef.current) return;
+      const touch = e.touches[0];
+      if (touch) {
+        const deltaX = Math.abs(touch.clientX - touchStartPosRef.current.x);
+        dragDistanceRef.current = Math.max(dragDistanceRef.current, deltaX);
+      }
+    }, []);
+
+    const handleTouchEnd = React.useCallback(
+      (e: React.TouchEvent) => {
+        if (!touchStartPosRef.current) return;
+        const touch = e.changedTouches[0];
+        if (touch) {
+          const deltaX = touch.clientX - touchStartPosRef.current.x;
+          const deltaY = touch.clientY - touchStartPosRef.current.y;
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+
+          // Horizontal swipe with distinct horizontal intent (absX > 30 and horizontal movement exceeds vertical)
+          if (absX > 30 && absX > absY * 0.75) {
+            if (deltaX < 0) {
+              triggerNext();
+            } else {
+              triggerPrev();
+            }
+          }
+        }
+        touchStartPosRef.current = null;
+        setTimeout(() => {
+          dragDistanceRef.current = 0;
+        }, 80);
+      },
+      [triggerNext, triggerPrev],
     );
 
     const handleClickCapture = React.useCallback((e: React.MouseEvent) => {
@@ -174,7 +233,12 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     }, []);
 
     return (
-      <div className="relative w-full select-none flex flex-col items-center justify-center my-auto px-2 sm:px-4">
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative w-full select-none flex flex-col items-center justify-center my-auto px-2 sm:px-4 touch-pan-y"
+      >
         {/* ── Main Deck Carousel Row ── */}
         <div className="relative w-full flex items-center justify-center gap-3 sm:gap-5 lg:gap-7 2xl:gap-8">
           {/* Left Navigation Arrow */}
@@ -260,8 +324,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
                 exit="exit"
                 drag={total > 1 ? "x" : false}
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.18}
-                dragDirectionLock
+                dragElastic={0.25}
                 onDragStart={handleDragStart}
                 onDrag={handleDrag}
                 onDragEnd={handleDragEnd}
@@ -270,7 +333,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
                   opacity: { duration: 0.18, ease: "easeOut" },
                   scale: { duration: 0.18, ease: "easeOut" },
                 }}
-                className="w-full cursor-grab active:cursor-grabbing touch-pan-y will-change-transform"
+                className="w-full cursor-grab active:cursor-grabbing touch-pan-y will-change-transform select-none"
               >
                 <MemoryFlashcard
                   card={current}

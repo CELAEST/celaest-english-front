@@ -182,7 +182,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
              ═══════════════════════════════════════════════════════════════════ */}
           <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-3.5 xs:p-4 sm:p-6 lg:p-7 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent pointer-events-none" />
 
             {/* Top Bar: Clean Category + Counter + Bookmark */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
@@ -221,7 +221,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             </div>
 
             {/* Dynamic Polymorphic Front Face Content */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+            <div className="flex-1 min-h-0 flex flex-col justify-center py-1 touch-pan-y select-none">
               {normalizedCategory === "SPEAKING" && (
                 <MemorySpeakingFront
                   card={card}
@@ -277,7 +277,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
              ═══════════════════════════════════════════════════════════════════ */}
           <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-3.5 xs:p-4.5 sm:p-6 lg:p-7 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
+            <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent pointer-events-none" />
 
             {/* Top Bar: Clean Back Header + Audio + Actions */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
@@ -313,7 +313,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             </div>
 
             {/* Dynamic Polymorphic Back Face Content */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] select-none">
               {normalizedCategory === "SPEAKING" && <MemorySpeakingBack card={card} />}
               {normalizedCategory === "WRITING" && <MemoryWritingBack card={card} />}
               {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}

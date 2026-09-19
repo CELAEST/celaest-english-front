@@ -312,42 +312,43 @@ export const SettingsAiProvidersSection: React.FC = () => {
                     <ProviderMark providerId={provider.id} isActive={isActive} size="md" />
                   </span>
                   <div className="flex flex-col items-start min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                      <span className="text-[13px] sm:text-sm font-medium text-zinc-100 leading-tight tracking-wide">
-                        {provider.name.replace(" (Recomendado)", "")}
-                      </span>
-                      {isActive && (
-                        <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono tracking-wider uppercase text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          Activo
-                        </span>
-                      )}
-                      {isGroq && (
-                        <span className="text-[9px] sm:text-[10px] font-mono tracking-wider uppercase text-[#FFB020] bg-[#FFB020]/10 border border-[#FFB020]/20 px-1.5 py-0.5 rounded-full shrink-0">
-                          <span className="hidden sm:inline">Recomendado · </span>Gratis
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-[13px] sm:text-sm font-medium text-zinc-100 leading-tight tracking-wide">
+                      {provider.name.replace(" (Recomendado)", "")}
+                    </span>
                     <span className="text-[11px] sm:text-xs text-zinc-500 font-light leading-tight mt-0.5 truncate max-w-full">
-                      {isGroq ? (
-                        <>
-                          <span className="sm:hidden">Ultra-rápido (~85 ms) · Gratuito</span>
-                          <span className="hidden sm:inline">Ultra-rápido (~85 ms) · Sin límites de costo ni tarjeta</span>
-                        </>
-                      ) : provider.type === "local" ? (
-                        "Ejecución local en tu equipo"
-                      ) : (
-                        `${provider.models.length} modelos de inferencia`
-                      )}
+                      {isGroq
+                        ? "Recomendado · Ultra-rápido (~85 ms)"
+                        : provider.type === "local"
+                          ? "Ejecución local en tu equipo"
+                          : `${provider.models.length} modelos de inferencia`}
                     </span>
                   </div>
                 </div>
 
                 {/* Right: Value + Chevron */}
                 <div className="flex items-center gap-2 shrink-0 ml-2 sm:ml-4">
-                  <span className="text-xs sm:text-sm text-zinc-400 font-light group-hover:text-zinc-200 transition-colors duration-300 whitespace-nowrap">
-                    {hasKeys ? (keys.length === 1 ? "1 Clave" : `${keys.length} Claves`) : "Sin configurar"}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-light whitespace-nowrap">
+                    {isActive && (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)] shrink-0" />
+                        <span className="text-emerald-400 font-normal">Activo</span>
+                        <span className="text-white/20">·</span>
+                      </>
+                    )}
+                    <span
+                      className={
+                        isActive
+                          ? "text-zinc-300"
+                          : "text-zinc-400 group-hover:text-zinc-200 transition-colors duration-300"
+                      }
+                    >
+                      {hasKeys
+                        ? keys.length === 1
+                          ? "1 Clave"
+                          : `${keys.length} Claves`
+                        : "Sin configurar"}
+                    </span>
+                  </div>
                   <svg
                     className={`w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-transform duration-300 shrink-0 ${
                       isExpanded ? "rotate-90 text-zinc-200" : ""

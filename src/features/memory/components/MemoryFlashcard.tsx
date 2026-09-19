@@ -144,7 +144,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
         onClick={onFlip}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[395px] xs:h-[415px] sm:h-[450px] lg:h-[480px] max-h-[calc(100dvh-230px)] min-h-[360px] cursor-pointer select-none [perspective:1400px] group mx-auto"
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[415px] xs:h-[435px] sm:h-[455px] lg:h-[485px] max-h-[calc(100dvh-180px)] min-h-[380px] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
         {/* ── Subtle Atmospheric Backlight Aura (Soft Whisper Shading) ── */}
         <div
@@ -179,7 +179,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
           {/* ═══════════════════════════════════════════════════════════════════
               FRONT FACE: Minimalist Luxury Glass
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-4 xs:p-5 sm:p-7 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-3.5 xs:p-4.5 sm:p-6 lg:p-7 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
@@ -220,30 +220,32 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             </div>
 
             {/* Dynamic Polymorphic Front Face Content */}
-            {normalizedCategory === "SPEAKING" && (
-              <MemorySpeakingFront
-                card={card}
-                isPlayingAudio={isPlayingAudio}
-                onPlayVoice={handlePlayVoice}
-              />
-            )}
-            {normalizedCategory === "WRITING" && (
-              <MemoryWritingFront
-                card={card}
-                isPlayingAudio={isPlayingAudio}
-                onPlayVoice={handlePlayVoice}
-              />
-            )}
-            {normalizedCategory === "READING" && (
-              <MemoryReadingFront
-                card={card}
-                isPlayingAudio={isPlayingAudio}
-                onPlayVoice={handlePlayVoice}
-              />
-            )}
+            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+              {normalizedCategory === "SPEAKING" && (
+                <MemorySpeakingFront
+                  card={card}
+                  isPlayingAudio={isPlayingAudio}
+                  onPlayVoice={handlePlayVoice}
+                />
+              )}
+              {normalizedCategory === "WRITING" && (
+                <MemoryWritingFront
+                  card={card}
+                  isPlayingAudio={isPlayingAudio}
+                  onPlayVoice={handlePlayVoice}
+                />
+              )}
+              {normalizedCategory === "READING" && (
+                <MemoryReadingFront
+                  card={card}
+                  isPlayingAudio={isPlayingAudio}
+                  onPlayVoice={handlePlayVoice}
+                />
+              )}
+            </div>
 
             {/* Bottom Footer: Minimalist Tap to flip without SM-2 clutter */}
-            <div className="pt-2.5 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
+            <div className="pt-2 sm:pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0 mt-auto">
               <span className="flex items-center gap-2 hover:text-white transition-colors">
                 <RotateCw className="w-3.5 h-3.5 text-[#A27FF3] shrink-0" />
                 <span className="tracking-wide">
@@ -263,7 +265,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
           {/* ═══════════════════════════════════════════════════════════════════
               BACK FACE: Minimalist Luxury Glass ($180^\circ$ Flip)
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-4 xs:p-5 sm:p-7 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-3.5 xs:p-4.5 sm:p-6 lg:p-7 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
@@ -301,12 +303,14 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             </div>
 
             {/* Dynamic Polymorphic Back Face Content */}
-            {normalizedCategory === "SPEAKING" && <MemorySpeakingBack card={card} />}
-            {normalizedCategory === "WRITING" && <MemoryWritingBack card={card} />}
-            {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}
+            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+              {normalizedCategory === "SPEAKING" && <MemorySpeakingBack card={card} />}
+              {normalizedCategory === "WRITING" && <MemoryWritingBack card={card} />}
+              {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}
+            </div>
 
             {/* 4 Integrated SM-2 Rating Chips */}
-            <div className="pt-2 sm:pt-3 border-t border-white/[0.04] flex flex-col space-y-1.5 sm:space-y-2 z-10 shrink-0">
+            <div className="pt-2 sm:pt-2.5 border-t border-white/[0.06] flex flex-col space-y-1.5 sm:space-y-2 z-20 shrink-0 mt-auto">
               <div className="grid grid-cols-4 gap-1.5">
                 {ratingChips.map((chip) => {
                   const isSelected = selectedScore === chip.score;

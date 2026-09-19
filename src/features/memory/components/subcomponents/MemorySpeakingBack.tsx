@@ -2,7 +2,7 @@ import React from "react";
 import { MemoryCard } from "../../../../domain/entities/MemoryCard";
 import {
   sanitizeQuotes,
-  getDynamicDefinitionClass,
+  getDynamicBackTranslationClass,
   getDynamicExplanationClass,
 } from "./typographyHelpers";
 
@@ -14,20 +14,27 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
   const cleanTranslation = sanitizeQuotes(card.translationSpanish);
   const cleanExplanation = sanitizeQuotes(card.grammarExplanation);
 
-  const definitionClass = getDynamicDefinitionClass(cleanTranslation);
+  const isLongExplanation = cleanExplanation.length > 120;
+  const translationClass = getDynamicBackTranslationClass(cleanTranslation, isLongExplanation);
   const explanationClass = getDynamicExplanationClass(cleanExplanation);
 
-  const isShortContent = cleanTranslation.length + cleanExplanation.length < 90;
+  const totalLength = cleanTranslation.length + cleanExplanation.length;
+  const isLongContent = isLongExplanation || totalLength > 160;
+  const isShortContent = totalLength < 80;
+
+  const spacingClass = isLongContent
+    ? "space-y-2 sm:space-y-2.5"
+    : isShortContent
+    ? "space-y-5 sm:space-y-6"
+    : "space-y-3 sm:space-y-4";
 
   return (
     <div
-      className={`flex flex-col justify-center ${
-        isShortContent ? "space-y-6 sm:space-y-7" : "space-y-4 sm:space-y-5"
-      } my-auto py-2 z-10 select-none`}
+      className={`flex flex-col justify-center ${spacingClass} my-auto py-1 sm:py-2 z-10 select-none`}
     >
       {/* 1. Specific Error Diff */}
       {(card.errorWord || card.correctWord) && (
-        <div className="space-y-1.5 pl-3.5 border-l-2 border-white/20">
+        <div className="space-y-1 pl-3 sm:pl-3.5 border-l-2 border-white/20">
           <span className="block text-[10px] font-mono uppercase tracking-widest text-white/40">
             Correction Syntax Diff
           </span>
@@ -51,11 +58,11 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
 
       {/* 2. Spanish Translation */}
       {cleanTranslation && (
-        <div className="space-y-1.5 pl-3.5 border-l-2 border-[#A27FF3]">
+        <div className="space-y-1 pl-3 sm:pl-3.5 border-l-2 border-[#A27FF3]">
           <span className="block text-[10px] font-mono uppercase tracking-widest text-[#A27FF3]">
             Traducción al Español
           </span>
-          <p className={`${definitionClass} text-white/95 leading-snug`}>
+          <p className={`${translationClass} text-white/95 leading-snug`}>
             “{cleanTranslation}”
           </p>
         </div>
@@ -68,7 +75,7 @@ export const MemorySpeakingBack: React.FC<MemorySpeakingBackProps> = ({ card }) 
 
       {/* 3. Grammar Rule / Explanation */}
       {cleanExplanation && (
-        <div className="space-y-1.5 pl-3.5 border-l-2 border-white/20">
+        <div className="space-y-1 pl-3 sm:pl-3.5 border-l-2 border-white/20">
           <span className="block text-[10px] font-mono uppercase tracking-widest text-white/40">
             Grammar Rule & Context
           </span>

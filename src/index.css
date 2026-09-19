@@ -22,7 +22,16 @@
   --glass-border-hover: rgba(255, 255, 255, 0.15);
   --glass-border-active: rgba(120, 80, 240, 0.4);
   --glass-blur: 20px;
+}
 
+/* Low-power GPU optimization: Reduce backdrop blur radius on mobile devices for 60 FPS silky fluidity */
+@media (max-width: 768px) {
+  :root {
+    --glass-blur: 8px;
+  }
+}
+
+:root {
   /* ==========================================================================
      2. PRIMARY BRAND ACCENTS (Glowing Electric Violet & Indigo)
      ========================================================================== */

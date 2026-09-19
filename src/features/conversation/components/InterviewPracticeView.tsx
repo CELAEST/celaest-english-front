@@ -21,6 +21,7 @@ export interface InterviewPracticeViewProps {
   roleName?: string;
   userLevel?: string;
   onSelectLevel?: (level: CefrLevelCode) => void;
+  isActive?: boolean;
 }
 
 export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
@@ -29,6 +30,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   roleName = "Professional",
   userLevel,
   onSelectLevel,
+  isActive = true,
 }) => {
   const {
     isListening,
@@ -76,8 +78,10 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   const [showAudioSettings, setShowAudioSettings] = useState<boolean>(false);
   const [showControlsDrawer, setShowControlsDrawer] = useState<boolean>(false);
 
-  // Keyboard shortcut listener (Space to pause/resume, Enter to finish speaking)
+  // Keyboard shortcut listener (Space to pause/resume, Enter to finish speaking) - Only active when view is active
   useEffect(() => {
+    if (!isActive) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const activeEl = document.activeElement as HTMLElement | null;
@@ -105,6 +109,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
+    isActive,
     toggleListening,
     finishTurnManual,
     isListening,

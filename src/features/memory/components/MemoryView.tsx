@@ -270,41 +270,37 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
 
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-2.5 xs:p-3 sm:p-5 lg:px-8 pt-1.5 xs:pt-2 sm:pt-4 pb-20 sm:pb-26 lg:pb-5">
-      {/* ── Subtle Permanent Ambient Background Illuminations ── */}
+      {/* ── Subtle Permanent Ambient Background Illuminations (GPU-optimized for mobile) ── */}
       {/* Violet core glow — center-left, anchors the card area */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-[35%] left-[30%] w-[500px] h-[400px] z-0"
+        className="pointer-events-none absolute top-[35%] left-[30%] w-[320px] sm:w-[500px] h-[260px] sm:h-[400px] z-0 blur-[36px] sm:blur-[80px]"
         style={{
           background: "radial-gradient(ellipse at center, rgba(112, 72, 232, 0.12), transparent 70%)",
-          filter: "blur(80px)",
         }}
       />
       {/* Emerald accent — bottom-right, subtle warmth */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[10%] right-[15%] w-[420px] h-[350px] z-0"
+        className="pointer-events-none absolute bottom-[10%] right-[15%] w-[280px] sm:w-[420px] h-[220px] sm:h-[350px] z-0 blur-[36px] sm:blur-[90px]"
         style={{
           background: "radial-gradient(ellipse at center, rgba(52, 211, 153, 0.07), transparent 70%)",
-          filter: "blur(90px)",
         }}
       />
-      {/* Indigo whisper — top-right, secondary depth layer */}
+      {/* Indigo whisper — top-right, secondary depth layer (hidden on mobile to prevent GPU fill-rate throttling) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-[5%] right-[25%] w-[380px] h-[300px] z-0"
+        className="pointer-events-none absolute -top-[5%] right-[25%] w-[380px] h-[300px] z-0 hidden sm:block blur-[70px]"
         style={{
           background: "radial-gradient(ellipse at center, rgba(162, 127, 243, 0.09), transparent 70%)",
-          filter: "blur(70px)",
         }}
       />
-      {/* Warm crimson hint — bottom-left, very faint for tonal richness */}
+      {/* Warm crimson hint — bottom-left, very faint for tonal richness (hidden on mobile to save GPU cycles) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[20%] left-[10%] w-[300px] h-[250px] z-0"
+        className="pointer-events-none absolute bottom-[20%] left-[10%] w-[300px] h-[250px] z-0 hidden sm:block blur-[80px]"
         style={{
           background: "radial-gradient(ellipse at center, rgba(248, 113, 113, 0.05), transparent 70%)",
-          filter: "blur(80px)",
         }}
       />
 

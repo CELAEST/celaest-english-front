@@ -269,7 +269,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   );
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-3 sm:p-5 lg:px-8 pt-2 sm:pt-4 pb-20 sm:pb-24 lg:pb-5">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-3 sm:p-5 lg:px-8 pt-2 sm:pt-4 pb-24 sm:pb-26 lg:pb-5">
       {/* ── Subtle Permanent Ambient Background Illuminations ── */}
       {/* Violet core glow — center-left, anchors the card area */}
       <div

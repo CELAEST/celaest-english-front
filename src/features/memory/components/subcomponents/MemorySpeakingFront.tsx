@@ -15,13 +15,13 @@ export const MemorySpeakingFront: React.FC<MemorySpeakingFrontProps> = ({
   onPlayVoice,
 }) => {
   return (
-    <div className="flex flex-col justify-center space-y-3 sm:space-y-6 my-auto py-1 sm:py-2 z-10 select-none">
+    <div className="flex flex-col justify-center space-y-4 sm:space-y-6 my-auto py-1 sm:py-2 z-10 select-none">
       {/* 1. YOU SAID Section */}
-      <div className="space-y-1.5 sm:space-y-2">
-        <span className="block text-[10px] font-mono uppercase tracking-widest text-[#F87171]/80">
+      <div className="space-y-2">
+        <span className="block text-[10.5px] sm:text-[11px] font-mono uppercase tracking-widest text-[#F87171]/80 font-medium">
           YOU SAID
         </span>
-        <p className="text-sm sm:text-xl lg:text-2xl font-normal text-white/90 leading-relaxed pl-2.5 sm:pl-3 border-l border-[#F87171]/40">
+        <p className="text-[15px] sm:text-xl lg:text-2xl font-normal text-white/90 leading-relaxed pl-3 sm:pl-3.5 border-l-2 border-[#F87171]/50">
           "
           <HighlightWord
             sentence={card.userSaid}
@@ -36,9 +36,9 @@ export const MemorySpeakingFront: React.FC<MemorySpeakingFrontProps> = ({
       <div className="w-full h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
       {/* 2. BETTER WAY Section */}
-      <div className="space-y-1.5 sm:space-y-2">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="block text-[10px] font-mono uppercase tracking-widest text-[#34D399]/80">
+          <span className="block text-[10.5px] sm:text-[11px] font-mono uppercase tracking-widest text-[#34D399]/80 font-medium">
             BETTER WAY
           </span>
 
@@ -57,7 +57,7 @@ export const MemorySpeakingFront: React.FC<MemorySpeakingFrontProps> = ({
           </button>
         </div>
 
-        <p className="text-sm sm:text-xl lg:text-2xl font-normal text-white leading-relaxed pl-2.5 sm:pl-3 border-l border-[#34D399]/60">
+        <p className="text-[15px] sm:text-xl lg:text-2xl font-normal text-white leading-relaxed pl-3 sm:pl-3.5 border-l-2 border-[#34D399]/70">
           "
           <HighlightWord
             sentence={card.betterWay}

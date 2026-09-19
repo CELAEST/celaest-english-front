@@ -22,13 +22,13 @@ export const MemoryReadingBack: React.FC<MemoryReadingBackProps> = ({ card }) =>
   return (
     <div
       className={`flex flex-col justify-center ${
-        isShortContent ? "space-y-6 sm:space-y-7" : "space-y-4 sm:space-y-5"
+        isShortContent ? "space-y-6 sm:space-y-8" : "space-y-5 sm:space-y-6"
       } my-auto py-2 z-10 select-none`}
     >
       {/* 1. Spanish Definition & Meaning */}
       {cleanTranslation && (
-        <div className="space-y-1.5 pl-3.5 border-l-2 border-[#A27FF3]">
-          <span className="block text-[10px] font-mono uppercase tracking-widest text-[#A27FF3]">
+        <div className="space-y-2 pl-3.5 border-l-2 border-[#A27FF3]">
+          <span className="block text-[10.5px] sm:text-[11px] font-mono uppercase tracking-widest text-[#A27FF3] font-medium">
             Definición & Significado
           </span>
           <p className={`${definitionClass} text-white/95 leading-snug`}>

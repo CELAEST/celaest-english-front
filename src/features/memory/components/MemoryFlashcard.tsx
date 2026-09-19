@@ -144,7 +144,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
         onClick={onFlip}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[385px] xs:h-[405px] sm:h-[440px] lg:h-[470px] cursor-pointer select-none [perspective:1400px] group mx-auto"
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[395px] xs:h-[415px] sm:h-[450px] lg:h-[480px] max-h-[calc(100dvh-230px)] min-h-[360px] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
         {/* ── Subtle Atmospheric Backlight Aura (Soft Whisper Shading) ── */}
         <div
@@ -179,23 +179,29 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
           {/* ═══════════════════════════════════════════════════════════════════
               FRONT FACE: Minimalist Luxury Glass
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-3xl p-4 xs:p-5 sm:p-7 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
-            {/* Top Bar: Category + Syntax Tag + Counter + Bookmark */}
-            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
-              <span className="tracking-widest uppercase">
-                {normalizedCategory} •{" "}
-                {normalizedCategory === "READING"
-                  ? "VOCABULARY & RETENTION"
-                  : card.errorWord
-                  ? "SYNTAX & RETENTION"
-                  : "CORE LEXICON"}
-              </span>
+            {/* Top Bar: Clean Category + Counter + Bookmark */}
+            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    normalizedCategory === "READING"
+                      ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.7)]"
+                      : normalizedCategory === "WRITING"
+                      ? "bg-[#F59E0B] shadow-[0_0_6px_rgba(245,158,11,0.7)]"
+                      : "bg-[#34D399] shadow-[0_0_6px_rgba(52,211,153,0.7)]"
+                  }`}
+                />
+                <span className="tracking-widest uppercase text-white/60 font-medium">
+                  {normalizedCategory}
+                </span>
+              </div>
 
               <div className="flex items-center gap-3">
-                <span className="tracking-widest shrink-0">
+                <span className="tracking-widest shrink-0 text-white/40">
                   Card {formattedIndex}/{formattedTotal}
                 </span>
 
@@ -247,34 +253,43 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               />
             )}
 
-            {/* Bottom Footer: Click to inspect + SM-2 Interval */}
-            <div className="pt-2 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/40 z-10 shrink-0 gap-2 overflow-hidden">
-              <span className="flex items-center gap-1.5 hover:text-white transition-colors min-w-0 truncate">
-                <RotateCw className="w-3 h-3 text-[#A27FF3] shrink-0" />
-                <span className="truncate">
+            {/* Bottom Footer: Minimalist Tap to flip without SM-2 clutter */}
+            <div className="pt-2.5 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0">
+              <span className="flex items-center gap-2 hover:text-white transition-colors">
+                <RotateCw className="w-3.5 h-3.5 text-[#A27FF3] shrink-0" />
+                <span className="tracking-wide">
                   {normalizedCategory === "READING"
-                    ? "Click to flip for definition & meaning"
+                    ? "Tap to flip for definition"
                     : normalizedCategory === "WRITING"
-                    ? "Click to inspect structural rules"
-                    : "Click to inspect grammar rule"}
+                    ? "Tap to inspect structural rules"
+                    : "Tap to inspect grammar rule"}
                 </span>
               </span>
-              <span className="shrink-0 whitespace-nowrap">SM-2 Interval</span>
+              <span className="text-[10px] text-white/25 hidden sm:inline tracking-widest uppercase">
+                Space to flip
+              </span>
             </div>
           </article>
 
           {/* ═══════════════════════════════════════════════════════════════════
               BACK FACE: Minimalist Luxury Glass ($180^\circ$ Flip)
              ═══════════════════════════════════════════════════════════════════ */}
-          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
+          <article className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-3xl p-4 xs:p-5 sm:p-7 lg:p-8 bg-gradient-to-b from-[#0d0b1a]/95 via-[#070510]/98 to-[#020206] border border-white/[0.1] shadow-[0_24px_50px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)] flex flex-col justify-between overflow-hidden">
             {/* Top 1px Specular Hairline */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
 
-            {/* Top Bar: Details + Audio + Actions */}
-            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40">
-              <span className="tracking-widest uppercase">
-                {normalizedCategory === "READING" ? "Definition & Lexicon Context" : "Grammar Rule & Context"} • {normalizedCategory}
-              </span>
+            {/* Top Bar: Clean Back Header + Audio + Actions */}
+            <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] shadow-[0_0_6px_rgba(52,211,153,0.7)] shrink-0" />
+                <span className="tracking-widest uppercase text-white/60 font-medium">
+                  {normalizedCategory === "READING"
+                    ? "Definition"
+                    : normalizedCategory === "WRITING"
+                    ? "Editorial Polish"
+                    : "Grammar Rule"}
+                </span>
+              </div>
 
               <div className="flex items-center gap-3">
                 <button

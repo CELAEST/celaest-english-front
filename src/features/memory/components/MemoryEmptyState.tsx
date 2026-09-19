@@ -69,7 +69,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
       >
         <div
-          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-10 xs:-translate-y-12 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.46] xs:scale-[1.52] sm:scale-100 origin-center"
+          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-8 xs:-translate-y-10 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.26] xs:scale-[1.32] sm:scale-100 origin-center"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -81,7 +81,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
             muted
             playsInline
             preload="auto"
-            className="w-auto h-auto max-w-[min(98vw,1440px)] max-h-[58vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
+            className="w-auto h-auto max-w-[min(98vw,1440px)] max-h-[46vh] xs:max-h-[50vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
           />
         </div>
       </div>
@@ -112,7 +112,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
       )}
 
       {/* ── Foreground Actions — Por encima del video (z-20) ── */}
-      <div className="relative z-20 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 pb-3 sm:pb-4 lg:pb-6 animate-[fadeIn_0.4s_ease-out_both]">
+      <div className="relative z-20 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 pb-2 sm:pb-4 lg:pb-6 animate-[fadeIn_0.4s_ease-out_both]">
         {isCategoryCatchUp && onSwitchCategory && (
           <button
             type="button"

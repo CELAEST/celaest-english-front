@@ -3,6 +3,8 @@ import {
   directClientAiService,
   parseProviderError,
   AiInfrastructureError,
+  repairTruncatedJson,
+  extractFirstJsonObject,
 } from "../directClientAiService";
 import { providerKeyVault } from "../providerKeyVault";
 
@@ -108,6 +110,21 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
     it("classifies 503 status as CLUSTER_OUTAGE", () => {
       const err = parseProviderError(503, "Service Unavailable", "groq");
       expect(err.code).toBe("CLUSTER_OUTAGE");
+    });
+
+    it("classifies json_validate_failed and token exhaustion cutoff as GATEWAY_TIMEOUT with friendly Spanish copy", () => {
+      const groqJsonErr = JSON.stringify({
+        error: {
+          message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+          type: "invalid_request_error",
+          code: "json_validate_failed",
+          failed_generation: "max completion tokens reached before generating a valid document",
+        },
+      });
+
+      const err = parseProviderError(400, groqJsonErr, "groq");
+      expect(err.code).toBe("GATEWAY_TIMEOUT");
+      expect(err.message).toContain("agotó su capacidad de tokens");
     });
   });
 
@@ -342,6 +359,83 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       expect(result).toBe('{"poolSuccess": true}');
       expect(keysUsed).toContain("gsk_key_exhausted");
       expect(keysUsed).toContain("gsk_key_backup");
+    });
+
+    it("auto-recovers from json_validate_failed max completion tokens cutoff by retrying in relaxed JSON mode with 8192 tokens", async () => {
+      await providerKeyVault.saveKey("groq", "gsk_test_groq_key");
+
+      const capturedRequests: any[] = [];
+      global.fetch = vi.fn(async (_url: any, init: any) => {
+        const body = JSON.parse(init?.body || "{}");
+        capturedRequests.push(body);
+
+        if (capturedRequests.length === 1) {
+          return {
+            ok: false,
+            status: 400,
+            text: async () =>
+              JSON.stringify({
+                error: {
+                  message: "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+                  type: "invalid_request_error",
+                  code: "json_validate_failed",
+                  failed_generation: "max completion tokens reached before generating a valid document",
+                },
+              }),
+          } as any;
+        }
+
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            choices: [{ message: { content: '{"overallScore": 98, "summary": "Excelente recuperación"}' } }],
+          }),
+        } as any;
+      });
+
+      const result = await directClientAiService.chatCompletion({
+        systemPrompt: "You must return valid raw JSON matching this schema",
+        userPrompt: "Evaluate my essay in JSON",
+        providerId: "groq",
+      });
+
+      expect(result).toBe('{"overallScore": 98, "summary": "Excelente recuperación"}');
+      expect(capturedRequests).toHaveLength(2);
+      // First attempt included strict response_format
+      expect(capturedRequests[0].response_format).toEqual({ type: "json_object" });
+      // Second attempt (auto-recovery) omits strict response_format and expands tokens to 8192
+      expect(capturedRequests[1].response_format).toBeUndefined();
+      expect(capturedRequests[1].max_tokens).toBe(8192);
+    });
+  });
+
+  describe("repairTruncatedJson & extractFirstJsonObject - Self-Healing JSON", () => {
+    it("repairs truncated JSON cut off mid-string and balances braces", () => {
+      const truncated = '{"score": 90, "feedback": "Great job, but you could improv';
+      const repaired = repairTruncatedJson(truncated);
+      expect(repaired).not.toBeNull();
+      const parsed = JSON.parse(repaired!);
+      expect(parsed.score).toBe(90);
+      expect(parsed.feedback).toContain("Great job");
+    });
+
+    it("repairs truncated JSON cut off inside nested arrays and objects", () => {
+      const truncated = '{"items": [{"id": 1, "name": "Task 1"}, {"id": 2, "name": "Task 2"';
+      const repaired = repairTruncatedJson(truncated);
+      expect(repaired).not.toBeNull();
+      const parsed = JSON.parse(repaired!);
+      expect(parsed.items).toHaveLength(2);
+      expect(parsed.items[1].name).toBe("Task 2");
+    });
+
+    it("extractFirstJsonObject seamlessly falls back to repairTruncatedJson when input is cut off", () => {
+      const cutOff = 'Here is the result:\n```json\n{"summary": "All good", "details": {"score": 85';
+      const extracted = extractFirstJsonObject(cutOff);
+      expect(extracted).not.toBeNull();
+      const parsed = JSON.parse(extracted!);
+      expect(parsed.summary).toBe("All good");
+      expect(parsed.details.score).toBe(85);
     });
   });
 });

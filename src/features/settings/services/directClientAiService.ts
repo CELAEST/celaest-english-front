@@ -197,7 +197,24 @@ export function parseProviderError(
     );
   }
 
-  // 7. Clean Fallback: Never dump raw developer JSON to the user
+  // 7. JSON Structure / Token Validation Exhaustion
+  const isJsonValidateOrTokenLimit =
+    parsedCode === "json_validate_failed" ||
+    lowerMsg.includes("json_validate_failed") ||
+    lowerMsg.includes("max completion tokens reached") ||
+    lowerMsg.includes("failed to generate json");
+
+  if (isJsonValidateOrTokenLimit) {
+    return new AiInfrastructureError(
+      "GATEWAY_TIMEOUT",
+      `El modelo de ${friendlyName} agotó su capacidad de tokens antes de finalizar la respuesta estructurada. Por favor, reintenta tu solicitud.`,
+      status,
+      providerId,
+      errBody,
+    );
+  }
+
+  // 8. Clean Fallback: Never dump raw developer JSON to the user
   return new AiInfrastructureError(
     "CLUSTER_OUTAGE",
     `No pudimos conectar con ${friendlyName}. Revisa tu clave o puedes usar Groq (100% gratis).`,
@@ -219,6 +236,8 @@ export const directClientAiService = {
     maxTokens?: number;
     _triedModels?: string[];
     _keyIndex?: number;
+    _relaxedJsonMode?: boolean;
+    _expandedTokens?: boolean;
   }): Promise<string> {
     const activeProvider = params.providerId || (await providerKeyVault.getActiveProviderId()) || "groq";
     const keys = await providerKeyVault.getKeys(activeProvider);
@@ -336,14 +355,16 @@ export const directClientAiService = {
       if (activeProvider === "groq") {
         if (model.includes("qwen")) {
           // Groq enforces a strict 1,000 Output Tokens Per Minute (OTPM) limit on Qwen free tier.
-          // Clamping to 750 tokens prevents "Request too large ... OTPM: Limit 1000" errors.
-          effectiveMaxTokens = Math.min(effectiveMaxTokens, 750);
-        } else if (model.includes("gpt-oss")) {
-          effectiveMaxTokens = Math.min(effectiveMaxTokens, 1500);
+          // Clamping to 850 tokens prevents "Request too large ... OTPM: Limit 1000" errors.
+          effectiveMaxTokens = Math.min(effectiveMaxTokens, 850);
         } else {
-          effectiveMaxTokens = Math.min(effectiveMaxTokens, 1000);
+          // For gpt-oss-120b, gpt-oss-20b and standard models, Groq supports up to 8,192 completion tokens.
+          // Never artificially clamp to 1000/1500 tokens, which causes premature JSON cutoffs and HTTP 400 json_validate_failed!
+          effectiveMaxTokens = Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
         }
       }
+
+      const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode;
 
       const url = `${endpoint}/chat/completions`;
       const res = await fetch(url, {
@@ -358,7 +379,7 @@ export const directClientAiService = {
             { role: "system", content: params.systemPrompt },
             { role: "user", content: params.userPrompt },
           ],
-          ...(expectsJson ? { response_format: { type: "json_object" } } : {}),
+          ...(sendStrictJsonFormat ? { response_format: { type: "json_object" } } : {}),
           max_tokens: effectiveMaxTokens,
         }),
         signal: controller.signal,
@@ -370,27 +391,12 @@ export const directClientAiService = {
         const errBody = await res.text().catch(() => "");
         logger.warn(`[directClientAiService] ${activeProvider} HTTP ${res.status}:`, errBody);
 
-        // Handle token limit cutoffs gracefully by expanding token budget (only for providers without tight OTPM)
-        const isTokenLimit =
-          errBody.includes("max completion tokens reached") ||
-          errBody.includes("finish_reason: length") ||
-          errBody.includes("length");
-
-        if (isTokenLimit && activeProvider !== "groq" && (params.maxTokens || 4096) < 8192) {
-          logger.warn(`[directClientAiService] Token limit reached. Retrying with 8192 tokens...`);
-          return directClientAiService.chatCompletion({
-            ...params,
-            maxTokens: 8192,
-          });
-        }
-
-        // When Groq returns json_validate_failed, it includes failed_generation.
-        // Attempt to extract the first valid JSON object directly from it.
+        // A. When Groq returns json_validate_failed, check if failed_generation contains usable JSON
         if (activeProvider === "groq" && errBody.includes("json_validate_failed")) {
           try {
             const errObj = JSON.parse(errBody);
             const failedGen = errObj?.error?.failed_generation;
-            if (typeof failedGen === "string") {
+            if (typeof failedGen === "string" && failedGen.includes("{")) {
               const salvaged = extractFirstJsonObject(failedGen);
               if (salvaged) {
                 logger.info("[directClientAiService] Successfully salvaged valid JSON from failed_generation!");
@@ -400,6 +406,38 @@ export const directClientAiService = {
           } catch {
             // ignore JSON parse error of error body
           }
+        }
+
+        // B. Auto-recovery from JSON validation failure or token limit cutoff:
+        // When Groq's validator aborts ('max completion tokens reached before generating a valid document'),
+        // immediately auto-recover by retrying in relaxed JSON mode with 8192 tokens.
+        const isJsonValidateOrTokenLimit =
+          errBody.includes("json_validate_failed") ||
+          errBody.includes("max completion tokens reached") ||
+          errBody.includes("Failed to generate JSON") ||
+          errBody.includes("finish_reason: length") ||
+          errBody.includes("length");
+
+        if (isJsonValidateOrTokenLimit && !params._relaxedJsonMode) {
+          logger.warn(
+            `[directClientAiService] Strict JSON validation / token limit triggered on ${activeProvider}. Auto-recovering in relaxed JSON mode with 8192 tokens...`,
+          );
+          return directClientAiService.chatCompletion({
+            ...params,
+            maxTokens: 8192,
+            _relaxedJsonMode: true,
+            _expandedTokens: true,
+          });
+        }
+
+        if (isJsonValidateOrTokenLimit && (params.maxTokens || 4096) < 8192 && !params._expandedTokens) {
+          logger.warn(`[directClientAiService] Expanding tokens to 8192 for ${activeProvider}...`);
+          return directClientAiService.chatCompletion({
+            ...params,
+            maxTokens: 8192,
+            _expandedTokens: true,
+            _relaxedJsonMode: true,
+          });
         }
 
         const isRateLimitOrQuota =
@@ -448,6 +486,8 @@ export const directClientAiService = {
               ...params,
               overrideModel: nextModel,
               _triedModels: [...tried, nextModel],
+              _relaxedJsonMode: true,
+              maxTokens: Math.max(params.maxTokens || 4096, 4096),
             });
           }
         }
@@ -483,6 +523,15 @@ export const directClientAiService = {
       if (!content) {
         throw new AiInfrastructureError("GATEWAY_TIMEOUT", "Respuesta vacía del modelo.", 500, activeProvider);
       }
+
+      // If expecting JSON, self-heal and extract clean balanced JSON object
+      if (expectsJson) {
+        const balanced = extractFirstJsonObject(content);
+        if (balanced) {
+          return balanced;
+        }
+      }
+
       return content;
     } catch (err) {
       clearTimeout(timeout);
@@ -506,12 +555,133 @@ export const directClientAiService = {
 };
 
 /**
+ * Resiliently repairs and completes truncated JSON strings cut off by token exhaustion.
+ * Closes unclosed quotes, trims dangling keys or trailing commas, and balances brackets/braces.
+ */
+export function repairTruncatedJson(str: string): string | null {
+  if (!str || typeof str !== "string") return null;
+
+  let clean = str.replace(/```json/gi, "").replace(/```/g, "").trim();
+
+  const firstBrace = clean.indexOf("{");
+  const firstBracket = clean.indexOf("[");
+  let startIdx = -1;
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    startIdx = firstBrace;
+  } else if (firstBracket !== -1) {
+    startIdx = firstBracket;
+  } else {
+    return null;
+  }
+
+  let s = clean.slice(startIdx);
+
+  // Quick check if already valid
+  try {
+    JSON.parse(s);
+    return s;
+  } catch {
+    // Proceed to repair
+  }
+
+  // Scan quotes, escapes, and initial state
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (c === "\\") {
+      escape = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      continue;
+    }
+  }
+
+  // If truncated inside an open string, close it
+  if (inString) {
+    s += '"';
+  }
+
+  // Remove incomplete trailing tokens after string closure
+  // e.g. dangling key without value: ,"someKey":
+  s = s.replace(/,\s*"[^"]*"\s*:\s*$/, "");
+  // dangling colon:
+  s = s.replace(/:\s*$/, ": null");
+  // dangling open brace or bracket preceded by comma: , { or , [
+  s = s.replace(/,\s*[\{\[]\s*$/, "");
+  // trailing comma:
+  s = s.replace(/,\s*$/, "");
+
+  // Re-scan with strict LIFO nesting stack
+  const finalStack: string[] = [];
+  inString = false;
+  escape = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (c === "\\") {
+      escape = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (c === "{" || c === "[") {
+        finalStack.push(c);
+      } else if (c === "}" && finalStack.length > 0 && finalStack[finalStack.length - 1] === "{") {
+        finalStack.pop();
+      } else if (c === "]" && finalStack.length > 0 && finalStack[finalStack.length - 1] === "[") {
+        finalStack.pop();
+      }
+    }
+  }
+
+  if (inString) {
+    s += '"';
+  }
+
+  s = s.replace(/,\s*$/, "");
+
+  // Close unclosed structures in reverse LIFO order
+  while (finalStack.length > 0) {
+    const opener = finalStack.pop();
+    if (opener === "{") {
+      s += "}";
+    } else if (opener === "[") {
+      s += "]";
+    }
+  }
+
+  try {
+    JSON.parse(s);
+    return s;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Extracts the first balanced JSON object from a string that starts with or contains '{'.
  * Essential for salvaging failed_generation when models output commentary or multiple blocks.
+ * Falls back to repairTruncatedJson if the model cut off before closing depth was reached.
  */
 export function extractFirstJsonObject(str: string): string | null {
   const startIdx = str.indexOf("{");
-  if (startIdx === -1) return null;
+  if (startIdx === -1) return repairTruncatedJson(str);
 
   let depth = 0;
   let inString = false;
@@ -541,13 +711,13 @@ export function extractFirstJsonObject(str: string): string | null {
             JSON.parse(candidate);
             return candidate;
           } catch {
-            return null;
+            return repairTruncatedJson(str);
           }
         }
       }
     }
   }
-  return null;
+  return repairTruncatedJson(str);
 }
 
 function getDefaultModel(provider: AiProviderId): string {

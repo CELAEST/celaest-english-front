@@ -12,7 +12,7 @@
 import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
-import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
+import { directClientAiService, AiInfrastructureError, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { logger } from "../../../shared/utils/logger";
 
 export interface GenerateReadingOptions {
@@ -106,7 +106,15 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
     clean = clean.trim();
 
     try {
-      const parsed = JSON.parse(clean) as AiStoryRawResponse;
+      let toParse = clean;
+      try {
+        JSON.parse(toParse);
+      } catch {
+        const salvaged = extractFirstJsonObject(clean);
+        if (salvaged) toParse = salvaged;
+      }
+
+      const parsed = JSON.parse(toParse) as AiStoryRawResponse;
       if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
         const fullContent = parsed.pages.join(" ");
         return {

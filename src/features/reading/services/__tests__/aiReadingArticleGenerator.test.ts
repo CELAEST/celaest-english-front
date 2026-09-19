@@ -12,7 +12,8 @@ vi.mock("../../../settings/services/providerKeyVault", () => ({
   },
 }));
 
-vi.mock("../../../settings/services/directClientAiService", () => {
+vi.mock("../../../settings/services/directClientAiService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../settings/services/directClientAiService")>();
   class MockAiInfrastructureError extends Error {
     constructor(
       public code: string,
@@ -26,6 +27,7 @@ vi.mock("../../../settings/services/directClientAiService", () => {
   }
 
   return {
+    ...actual,
     AiInfrastructureError: MockAiInfrastructureError,
     directClientAiService: {
       chatCompletion: vi.fn(),

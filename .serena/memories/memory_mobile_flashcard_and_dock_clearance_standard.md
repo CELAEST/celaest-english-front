@@ -2,9 +2,11 @@
 
 ## 1. Flashcard Visual Cleanliness (Anti-Clutter Standards)
 - **Top Bar Header**:
-  - Replaced crowded and repetitive text (`READING • VOCABULARY & RETENTION`, `WRITING • SYNTAX & RETENTION`) with a clean glowing category dot and minimalist uppercase label:
-    `<span className="w-1.5 h-1.5 rounded-full ... bg-[#A27FF3] ... />` + `<span className="tracking-widest uppercase text-white/60 font-medium">{normalizedCategory}</span>`.
-  - Avoids wrapping and collisions with the card counter and bookmark icon on 360-390px screens.
+  - ZERO bullets, dots, or decorative shapes next to the category name.
+  - Category typography MUST strictly match the exact monospace styling of the `Card 08/09` counter:
+    `<span className="tracking-widest uppercase">{normalizedCategory}</span>` inside `<div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">`.
+  - Both sides of the top bar share the identical font, tracking, weight, and `text-white/40` opacity.
+  - Eliminated wordy suffixes (`VOCABULARY & RETENTION`, `SYNTAX & RETENTION`).
 - **Bottom Footer & Anti-Jargon Rule**:
   - "SM-2 Interval" was an internal algorithmic detail that leaked into the learner UI and caused footer text truncation.
   - Completely eliminated "SM-2 Interval" from the flashcard footer.

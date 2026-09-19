@@ -185,23 +185,12 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
 
             {/* Top Bar: Clean Category + Counter + Bookmark */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    normalizedCategory === "READING"
-                      ? "bg-[#A27FF3] shadow-[0_0_6px_rgba(162,127,243,0.7)]"
-                      : normalizedCategory === "WRITING"
-                      ? "bg-[#F59E0B] shadow-[0_0_6px_rgba(245,158,11,0.7)]"
-                      : "bg-[#34D399] shadow-[0_0_6px_rgba(52,211,153,0.7)]"
-                  }`}
-                />
-                <span className="tracking-widest uppercase text-white/60 font-medium">
-                  {normalizedCategory}
-                </span>
-              </div>
+              <span className="tracking-widest uppercase">
+                {normalizedCategory}
+              </span>
 
               <div className="flex items-center gap-3">
-                <span className="tracking-widest shrink-0 text-white/40">
+                <span className="tracking-widest shrink-0">
                   Card {formattedIndex}/{formattedTotal}
                 </span>
 
@@ -280,16 +269,13 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
 
             {/* Top Bar: Clean Back Header + Audio + Actions */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] shadow-[0_0_6px_rgba(52,211,153,0.7)] shrink-0" />
-                <span className="tracking-widest uppercase text-white/60 font-medium">
-                  {normalizedCategory === "READING"
-                    ? "Definition"
-                    : normalizedCategory === "WRITING"
-                    ? "Editorial Polish"
-                    : "Grammar Rule"}
-                </span>
-              </div>
+              <span className="tracking-widest uppercase">
+                {normalizedCategory === "READING"
+                  ? "Definition"
+                  : normalizedCategory === "WRITING"
+                  ? "Editorial Polish"
+                  : "Grammar Rule"}
+              </span>
 
               <div className="flex items-center gap-3">
                 <button

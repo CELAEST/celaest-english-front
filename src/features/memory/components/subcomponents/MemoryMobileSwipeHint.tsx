@@ -64,7 +64,7 @@ export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React
     const dots = getPaginationDots(totalCards, activeIndex);
 
     return (
-      <div className="sm:hidden flex items-center justify-center w-full pt-2.5 pb-1 select-none z-20 gap-2.5">
+      <div className="sm:hidden flex items-center justify-center w-full pt-5 pb-2.5 select-none z-20 gap-2.5">
         {onPrev && (
           <button
             type="button"

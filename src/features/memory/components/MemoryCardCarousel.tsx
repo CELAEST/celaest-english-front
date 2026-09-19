@@ -21,22 +21,20 @@ export interface MemoryCardCarouselProps {
 
 const slideVariants = {
   enter: (dir: number) => ({
-    x: dir > 0 ? 100 : dir < 0 ? -100 : 0,
+    x: dir > 0 ? 120 : dir < 0 ? -120 : 0,
     opacity: 0,
-    scale: 0.95,
-    rotateY: dir > 0 ? 8 : dir < 0 ? -8 : 0,
+    scale: 0.96,
   }),
   center: {
+    zIndex: 1,
     x: 0,
     opacity: 1,
     scale: 1,
-    rotateY: 0,
   },
   exit: (dir: number) => ({
-    x: dir > 0 ? -100 : dir < 0 ? 100 : 0,
+    x: dir > 0 ? -160 : dir < 0 ? 160 : 0,
     opacity: 0,
     scale: 0.95,
-    rotateY: dir > 0 ? -8 : dir < 0 ? 8 : 0,
   }),
 };
 
@@ -262,19 +260,17 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
                 exit="exit"
                 drag={total > 1 ? "x" : false}
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.65}
+                dragElastic={0.18}
                 dragDirectionLock
-                dragSnapToOrigin
                 onDragStart={handleDragStart}
                 onDrag={handleDrag}
                 onDragEnd={handleDragEnd}
                 transition={{
-                  x: { type: "spring", stiffness: 320, damping: 30 },
-                  rotateY: { type: "spring", stiffness: 320, damping: 30 },
-                  opacity: { duration: 0.22, ease: "easeOut" },
-                  scale: { duration: 0.22, ease: "easeOut" },
+                  x: { type: "spring", stiffness: 450, damping: 32 },
+                  opacity: { duration: 0.18, ease: "easeOut" },
+                  scale: { duration: 0.18, ease: "easeOut" },
                 }}
-                className="w-full cursor-grab active:cursor-grabbing touch-pan-y"
+                className="w-full cursor-grab active:cursor-grabbing touch-pan-y will-change-transform"
               >
                 <MemoryFlashcard
                   card={current}

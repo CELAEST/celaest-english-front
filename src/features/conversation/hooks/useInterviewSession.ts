@@ -230,6 +230,17 @@ export const useInterviewSession = (
     }
   }, [initialLevel, setActiveCefrLevel]);
 
+  useEffect(() => {
+    const onLevelChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setActiveCefrLevel(customEvent.detail);
+      }
+    };
+    window.addEventListener("celaest:level-changed", onLevelChanged);
+    return () => window.removeEventListener("celaest:level-changed", onLevelChanged);
+  }, [setActiveCefrLevel]);
+
   // Synchronize when role changes while user is at the initial question (e.g. after profile finishes loading)
   const prevEffectiveRoleRef = useRef<string>(effectiveRoleName);
   useEffect(() => {

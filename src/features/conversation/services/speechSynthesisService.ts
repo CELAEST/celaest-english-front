@@ -56,7 +56,10 @@ export class SpeechSynthesisService {
             voiceId,
           )}&rate=%2B0%25`;
 
-      const audio = new Audio(audioSource);
+      const audio = new Audio();
+      audio.crossOrigin = "anonymous";
+      audio.preload = "auto";
+      audio.src = audioSource;
       if (options.rate) {
         audio.playbackRate = options.rate;
       }
@@ -107,9 +110,36 @@ export class SpeechSynthesisService {
 
       audio.onended = handleEnd;
 
-      audio.onerror = (e) => {
+      audio.onerror = async (e) => {
         if (this.activePlaybackId !== playbackId) return;
-        logger.warn("[SpeechSynthesisService] Neural stream failed, falling back to browser speech synthesis:", e);
+        logger.warn("[SpeechSynthesisService] Direct audio stream error, attempting Blob retry:", e);
+        try {
+          const resp = await fetch(audioSource, { headers: { Accept: "audio/mpeg" } });
+          if (resp.ok) {
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const retryAudio = new Audio(blobUrl);
+            retryAudio.crossOrigin = "anonymous";
+            if (options.rate) retryAudio.playbackRate = options.rate;
+            this.currentAudio = retryAudio;
+            retryAudio.onplay = () => {
+              if (this.activePlaybackId !== playbackId) return;
+              if (options.onStart) options.onStart();
+            };
+            retryAudio.onended = () => {
+              URL.revokeObjectURL(blobUrl);
+              handleEnd();
+            };
+            retryAudio.onerror = () => {
+              URL.revokeObjectURL(blobUrl);
+              this.speakFallback(trimmed, options, playbackId);
+            };
+            await retryAudio.play();
+            return;
+          }
+        } catch {
+          // Continue to speakFallback below
+        }
         this.currentAudio = null;
         this.speakFallback(trimmed, options, playbackId);
       };
@@ -121,7 +151,37 @@ export class SpeechSynthesisService {
         // Deliberate user navigation or audio interruption — do not trigger fallback voice
         return;
       }
-      logger.warn("[SpeechSynthesisService] Error initiating audio, falling back to browser speech synthesis:", err);
+      logger.warn("[SpeechSynthesisService] Error initiating audio, attempting Blob retry before fallback:", err);
+      try {
+        const audioSource = `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
+          voiceId,
+        )}&rate=%2B0%25`;
+        const resp = await fetch(audioSource, { headers: { Accept: "audio/mpeg" } });
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const retryAudio = new Audio(blobUrl);
+          retryAudio.crossOrigin = "anonymous";
+          if (options.rate) retryAudio.playbackRate = options.rate;
+          this.currentAudio = retryAudio;
+          retryAudio.onplay = () => {
+            if (this.activePlaybackId !== playbackId) return;
+            if (options.onStart) options.onStart();
+          };
+          retryAudio.onended = () => {
+            URL.revokeObjectURL(blobUrl);
+            if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
+          };
+          retryAudio.onerror = () => {
+            URL.revokeObjectURL(blobUrl);
+            this.speakFallback(trimmed, options, playbackId);
+          };
+          await retryAudio.play();
+          return;
+        }
+      } catch {
+        // Continue to speakFallback below
+      }
       this.currentAudio = null;
       this.speakFallback(trimmed, options, playbackId);
     }
@@ -174,7 +234,7 @@ export class SpeechSynthesisService {
   /**
    * Selects the most natural English voice available on device for fallback
    */
-  public static async getBestVoice(): Promise<SpeechSynthesisVoice | null> {
+  public static async getBestVoice(preferredGender?: "male" | "female"): Promise<SpeechSynthesisVoice | null> {
     const voices = await this.getVoices();
     if (!voices || voices.length === 0) return null;
 
@@ -184,21 +244,44 @@ export class SpeechSynthesisService {
 
     if (englishVoices.length === 0) return voices[0] || null;
 
+    // 1. Gender-specific high-fidelity system voices
+    if (preferredGender === "male") {
+      const maleKeywords = ["christopher", "guy", "daniel", "david", "george", "male", "mark", "steven", "oliver", "tom"];
+      for (const kw of maleKeywords) {
+        const match = englishVoices.find((v) => v.name.toLowerCase().includes(kw));
+        if (match) return match;
+      }
+    } else if (preferredGender === "female") {
+      const femaleKeywords = ["aria", "jenny", "samantha", "zira", "karen", "female", "victoria", "catherine", "ava", "allison"];
+      for (const kw of femaleKeywords) {
+        const match = englishVoices.find((v) => v.name.toLowerCase().includes(kw));
+        if (match) return match;
+      }
+    }
+
+    // 2. High-fidelity neural keywords (NEVER prefer robotic "google")
     const priorityKeywords = [
       "natural",
       "neural",
       "online",
-      "google",
-      "samantha",
-      "daniel",
+      "multilingual",
+      "microsoft",
       "enhanced",
       "premium",
+      "samantha",
+      "daniel",
     ];
 
     for (const keyword of priorityKeywords) {
       const match = englishVoices.find((v) => v.name.toLowerCase().includes(keyword));
       if (match) return match;
     }
+
+    // 3. Fallback to any non-Google en-US voice first
+    const nonGoogleUsMatch = englishVoices.find(
+      (v) => (v.lang === "en-US" || v.lang === "en_US") && !v.name.toLowerCase().includes("google"),
+    );
+    if (nonGoogleUsMatch) return nonGoogleUsMatch;
 
     const usMatch = englishVoices.find((v) => v.lang === "en-US" || v.lang === "en_US");
     return usMatch || englishVoices[0];
@@ -220,7 +303,9 @@ export class SpeechSynthesisService {
 
     window.speechSynthesis.cancel();
 
-    const voice = await this.getBestVoice();
+    const voiceId = String(options.voice || "en-US-AriaNeural");
+    const isMale = voiceId.toLowerCase().includes("christopher") || voiceId.toLowerCase().includes("male") || voiceId.toLowerCase().includes("chris");
+    const voice = await this.getBestVoice(isMale ? "male" : "female");
     if (this.activePlaybackId !== playbackId) return;
     const utterance = new SpeechSynthesisUtterance(text);
 

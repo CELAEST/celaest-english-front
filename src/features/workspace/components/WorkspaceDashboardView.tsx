@@ -140,6 +140,17 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     [updateProfileSettings],
   );
 
+  React.useEffect(() => {
+    const handleLevelChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        handleGlobalSelectLevel(customEvent.detail as CefrLevelCode);
+      }
+    };
+    window.addEventListener("celaest:level-changed", handleLevelChanged);
+    return () => window.removeEventListener("celaest:level-changed", handleLevelChanged);
+  }, [handleGlobalSelectLevel]);
+
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#030208] text-slate-100 font-sans flex overflow-hidden select-none">
       {/* 1. Full Bleed Background Video with keep-alive visibility and power-saving pause */}
@@ -396,6 +407,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 <SettingsView
                   userName={activeUserName}
                   onBackToWorkspace={() => handleSelectNav("workspace")}
+                  onSelectLevel={handleGlobalSelectLevel}
                 />
               </Suspense>
             </ErrorBoundary>

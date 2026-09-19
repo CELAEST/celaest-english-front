@@ -41,6 +41,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
     const rafIdRef = useRef<number | null>(null);
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+      if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return;
       const el = cardRef.current;
       if (!el) return;
 
@@ -144,7 +145,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
         onClick={onFlip}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[365px] xs:h-[385px] sm:h-[440px] lg:h-[475px] max-h-[calc(100dvh-220px)] min-h-[320px] cursor-pointer select-none [perspective:1400px] group mx-auto"
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[415px] xs:h-[435px] sm:h-[460px] lg:h-[490px] max-h-[calc(100dvh-180px)] min-h-[380px] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
         {/* ── Subtle Atmospheric Backlight Aura (Soft Whisper Shading) ── */}
         <div
@@ -219,8 +220,8 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               </div>
             </div>
 
-            {/* Dynamic Polymorphic Front Face Content (zero scroll interference) */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center py-1">
+            {/* Dynamic Polymorphic Front Face Content */}
+            <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto overscroll-contain py-1 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
               {normalizedCategory === "SPEAKING" && (
                 <MemorySpeakingFront
                   card={card}

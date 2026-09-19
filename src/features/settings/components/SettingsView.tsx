@@ -15,12 +15,21 @@ import { SettingsPrivacyModal } from "./SettingsPrivacyModal";
 import { SettingsAboutModal } from "./SettingsAboutModal";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
+import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
+import { logger } from "../../../shared/utils/logger";
+import { ArrowLeft } from "lucide-react";
+
 export interface SettingsViewProps {
   userName?: string | undefined;
   onBackToWorkspace?: (() => void) | undefined;
+  onSelectLevel?: ((level: CefrLevelCode) => Promise<void> | void) | undefined;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: SettingsViewProps) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  userName,
+  onBackToWorkspace,
+  onSelectLevel,
+}: SettingsViewProps) => {
   const { displayName, currentLevel, currentFocus, profile, isLoading, updateSettings } =
     useSettingsProfile(userName);
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
@@ -40,21 +49,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-3.5 sm:p-6 lg:px-10 pt-3 sm:pt-6 pb-0 lg:pb-4">
       {/*  Header: Title + Orb + Back Button (Fixed Top Section)  */}
       <div className="relative flex items-center justify-between mb-3 sm:mb-6 pt-1 sm:pt-4 shrink-0 z-20">
-        <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">
-          {/* Category Tag */}
-          <span className="text-[10.5px] sm:text-[11px] font-sans font-bold tracking-[0.22em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both]">
-            YOUR SETTINGS
-          </span>
+        <div className="flex items-center gap-3">
+          {onBackToWorkspace && (
+            <button
+              onClick={onBackToWorkspace}
+              type="button"
+              className="lg:hidden p-2 rounded-xl bg-white/[0.04] border border-white/10 text-white/70 hover:text-white transition-colors"
+              aria-label="Back to workspace"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div className="flex flex-col space-y-1.5 sm:space-y-2 z-10">
+            {/* Category Tag */}
+            <span className="text-[10.5px] sm:text-[11px] font-sans font-bold tracking-[0.22em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both]">
+              YOUR SETTINGS
+            </span>
 
-          {/* Title */}
-          <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-[34px] font-sans text-[#f8f8f8] font-light tracking-wide leading-tight animate-[fadeSlideUp_0.5s_ease-out_0.08s_both]">
-            Make Lingua <span className="text-[#A27FF3] font-light">yours.</span>
-          </h1>
+            {/* Title */}
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-[34px] font-sans text-[#f8f8f8] font-light tracking-wide leading-tight animate-[fadeSlideUp_0.5s_ease-out_0.08s_both]">
+              Make Lingua <span className="text-[#A27FF3] font-light">yours.</span>
+            </h1>
 
-          {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-[#999a9b] font-light tracking-wide pt-0.5 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both]">
-            Your goals, your mentors, your way.
-          </p>
+            {/* Subtitle */}
+            <p className="text-xs sm:text-sm text-[#999a9b] font-light tracking-wide pt-0.5 animate-[fadeSlideUp_0.5s_ease-out_0.16s_both]">
+              Your goals, your mentors, your way.
+            </p>
+          </div>
         </div>
 
         {/* 3D Orb Hero — orve video — fluido (visible on sm+ screens) */}
@@ -119,7 +140,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
         isOpen={isLevelModalOpen}
         currentLevel={currentLevel}
         onSelectLevel={async (newLevel) => {
-          await updateSettings({ cefrLevel: newLevel });
+          const norm = normalizeCefr(newLevel.split(" ")[0]);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("celaest:cefrLevel", norm);
+              localStorage.setItem("celaest:writing:cefrLevel", norm);
+              localStorage.setItem("celaest:interview:cefrLevel", norm);
+              window.dispatchEvent(new CustomEvent("celaest:level-changed", { detail: norm }));
+            } catch {
+              // ignore storage errors
+            }
+          }
+          if (onSelectLevel) {
+            void onSelectLevel(norm);
+          }
+          try {
+            await updateSettings({ cefrLevel: newLevel });
+          } catch (err) {
+            logger.warn("[SettingsView] Failed to persist level to backend, local state updated:", err);
+          }
         }}
         onClose={() => setIsLevelModalOpen(false)}
       />

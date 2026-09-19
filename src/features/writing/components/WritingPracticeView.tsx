@@ -116,6 +116,17 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       }
     }, [userLevel, handleSelectLevel]);
 
+    useEffect(() => {
+      const onLevelChanged = (e: Event) => {
+        const customEvent = e as CustomEvent<string>;
+        if (customEvent.detail) {
+          handleSelectLevel(normalizeCefr(customEvent.detail) as CefrLevelCode);
+        }
+      };
+      window.addEventListener("celaest:level-changed", onLevelChanged);
+      return () => window.removeEventListener("celaest:level-changed", onLevelChanged);
+    }, [handleSelectLevel]);
+
     // Restore the draft saved for the active task or submission content (survives page reloads)
     const [editorText, setEditorText] = useState<string>(() => {
       if (initialStored?.submission?.content) {

@@ -24,6 +24,26 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 
+export const READING_FONT_SIZES = [
+  {
+    label: "Estándar",
+    className:
+      "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]",
+  },
+  {
+    label: "Grande",
+    className:
+      "text-[19px] sm:text-[20px] lg:text-[20.5px] leading-[1.8] sm:leading-[1.9]",
+  },
+  {
+    label: "Extra",
+    className:
+      "text-[21px] sm:text-[22px] lg:text-[22.5px] leading-[1.85] sm:leading-[1.95]",
+  },
+] as const;
+
+const FONT_SIZE_STORAGE_KEY = "celaest:reading:font_size";
+
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
   roleName?: string | undefined;
@@ -33,6 +53,35 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   onBackToWorkspace,
   roleName,
 }) => {
+  const [fontSizeIndex, setFontSizeIndex] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
+        if (stored !== null) {
+          const idx = parseInt(stored, 10);
+          if (idx >= 0 && idx < READING_FONT_SIZES.length) return idx;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    return 0;
+  });
+
+  const handleCycleFontSize = useCallback(() => {
+    setFontSizeIndex((prev) => {
+      const next = (prev + 1) % READING_FONT_SIZES.length;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(FONT_SIZE_STORAGE_KEY, String(next));
+        } catch {
+          // Safe storage write
+        }
+      }
+      return next;
+    });
+  }, []);
+
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
   const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
     ERROR_DATA["keys-exhausted-pool"],
@@ -264,6 +313,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                 onToggleAudio={toggleAudioPlay}
                 onRestartAudio={restartAudioPlay}
                 onCycleAudioRate={cycleAudioRate}
+                fontSizeLabel={READING_FONT_SIZES[fontSizeIndex].label}
+                onCycleFontSize={handleCycleFontSize}
               />
             )}
 
@@ -322,6 +373,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                   onDirectTranslate={translateWordDirect}
                   activeKaraokeWordIndex={activeKaraokeWordIndex}
                   isWordSaved={isWordSaved}
+                  fontSizeClassName={READING_FONT_SIZES[fontSizeIndex].className}
                 />
               )}
             </div>

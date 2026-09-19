@@ -16,6 +16,8 @@ export interface ReadingArticleHeaderProps {
   onToggleAudio?: (() => void) | undefined;
   onRestartAudio?: (() => void) | undefined;
   onCycleAudioRate?: (() => void) | undefined;
+  fontSizeLabel?: string | undefined;
+  onCycleFontSize?: (() => void) | undefined;
 }
 
 export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.memo(
@@ -34,6 +36,8 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     onToggleAudio,
     onRestartAudio,
     onCycleAudioRate,
+    fontSizeLabel,
+    onCycleFontSize,
   }) => {
     return (
       <div className="w-full flex flex-col items-start text-left space-y-1 sm:space-y-1.5 select-none pt-0.5 sm:pt-2 mb-1 sm:mb-2 shrink-0 transition-all">
@@ -43,19 +47,38 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
             {category} {cefrLevel ? `· ${cefrLevel}` : ""} · {readTime}
           </span>
 
-          {onToggleAudio && (
-            <ReadingAudioNarratorButton
-              isPlaying={isPlayingAudio}
-              isPaused={isPausedAudio}
-              playbackRate={playbackRate}
-              selectedVoice={selectedVoice}
-              onSelectVoice={onSelectVoice}
-              onToggleVoice={onToggleVoice}
-              onTogglePlay={onToggleAudio}
-              onRestart={onRestartAudio}
-              onCycleRate={onCycleAudioRate ?? (() => {})}
-            />
-          )}
+          <div className="inline-flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {onCycleFontSize && (
+              <button
+                type="button"
+                onClick={onCycleFontSize}
+                title={`Tamaño de texto: ${fontSizeLabel || "Estándar"}. Toca para cambiar`}
+                aria-label={`Cambiar tamaño de texto. Actual: ${fontSizeLabel || "Estándar"}`}
+                className="inline-flex items-center gap-1 text-[11px] font-sans text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none active:scale-95 select-none"
+              >
+                <span className="font-mono font-medium tracking-tighter text-[11.5px] sm:text-xs">aA</span>
+                <span className="text-[10px] text-white/30 font-light hidden sm:inline">{fontSizeLabel}</span>
+              </button>
+            )}
+
+            {onCycleFontSize && onToggleAudio && (
+              <span className="text-white/20 text-[10px] select-none font-light leading-none">|</span>
+            )}
+
+            {onToggleAudio && (
+              <ReadingAudioNarratorButton
+                isPlaying={isPlayingAudio}
+                isPaused={isPausedAudio}
+                playbackRate={playbackRate}
+                selectedVoice={selectedVoice}
+                onSelectVoice={onSelectVoice}
+                onToggleVoice={onToggleVoice}
+                onTogglePlay={onToggleAudio}
+                onRestart={onRestartAudio}
+                onCycleRate={onCycleAudioRate ?? (() => {})}
+              />
+            )}
+          </div>
         </div>
 
         {/* Article Main Title */}

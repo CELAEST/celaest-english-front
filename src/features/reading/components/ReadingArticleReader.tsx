@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { ReadingWordModal } from "./ReadingWordModal";
+import { VocabloTranslateIcon } from "./ReadingBespokeIcons";
 import { logger } from "../../../shared/utils/logger";
 import {
   VERIFIED_PHRASAL_VERBS_SET,
@@ -17,6 +18,7 @@ export interface ReadingArticleReaderProps {
   onDirectTranslate?: (word: string, context?: string) => Promise<string | null>;
   activeKaraokeWordIndex?: number | null | undefined;
   isWordSaved?: ((word: string) => boolean) | undefined;
+  fontSizeClassName?: string | undefined;
 }
 
 interface WordRange {
@@ -35,6 +37,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     onDirectTranslate,
     activeKaraokeWordIndex,
     isWordSaved,
+    fontSizeClassName,
   }) => {
     const [hoveredRange, setHoveredRange] = useState<WordRange | null>(null);
     const [activeRange, setActiveRange] = useState<WordRange | null>(null);
@@ -293,9 +296,20 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         aria-label="Reading content"
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
-        className="w-full flex-1 min-h-0 flex flex-col justify-start items-start text-[#d1d2dc] font-sans text-[14.5px] sm:text-[16px] lg:text-[17px] font-light leading-[1.68] sm:leading-[1.8] select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2"
+        className={`w-full flex-1 min-h-0 flex flex-col justify-start items-start text-[#d1d2dc] font-sans ${
+          fontSizeClassName ||
+          "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]"
+        } font-light select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2`}
       >
-        <div className="w-full relative z-10 text-justify [text-align:justify] [text-align-last:left] [text-wrap:pretty] tracking-[-0.006em] sm:tracking-[0.01em] text-[#d1d2dc] leading-[1.68] sm:leading-[1.8] animate-[fadeSlideUp_0.4s_ease-out_both]">
+        {/* Mobile-Friendly Word Affordance Hint Pill */}
+        <div className="w-full flex items-center justify-between pb-2 pt-0.5 select-none animate-[fadeIn_0.4s_ease-out]">
+          <div className="inline-flex items-center gap-1.5 text-[11.5px] sm:text-xs text-[#A27FF3] font-sans tracking-wide">
+            <VocabloTranslateIcon className="w-3.5 h-3.5 text-[#A27FF3]" />
+            <span>Toca cualquier palabra para ver traducción y fonética</span>
+          </div>
+        </div>
+
+        <div className="w-full relative z-10 text-justify [text-align:justify] [text-align-last:left] [text-wrap:pretty] tracking-[-0.006em] sm:tracking-[0.01em] text-[#d1d2dc] leading-[inherit] animate-[fadeSlideUp_0.4s_ease-out_both]">
           {rawWords.map((rawWord, idx) => {
             const cleanWord = cleanTokens[idx];
             const phrasalMatch = phrasalSpans.get(idx);
@@ -387,7 +401,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
                     title={cleanWord ? `Click to look up "${cleanWord}"` : undefined}
                     aria-haspopup="dialog"
                     aria-expanded={isSelected}
-                    className={`px-[1px] sm:px-1 py-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-black inline-flex items-center text-left ${roundingClass} ${visualStyle}`}
+                    className={`px-[1px] sm:px-1 py-0.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-black inline-flex items-center text-left active:scale-[0.97] active:bg-white/20 active:text-white transition-transform ${roundingClass} ${visualStyle}`}
                   >
                     {rawWord}
                   </button>

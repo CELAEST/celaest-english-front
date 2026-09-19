@@ -821,6 +821,7 @@ export const useInterviewSession = (
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(MENTOR_VOICE_STORAGE_KEY, voice);
+          localStorage.setItem("celaest:interview:hasInteracted", "true");
         } catch {
           // Safe storage write
         }
@@ -828,10 +829,8 @@ export const useInterviewSession = (
       if (currentQuestionRef.current) {
         SpeechSynthesisService.prefetch(currentQuestionRef.current.question, voice);
       }
-      // If AI is currently speaking, live-replay question with the new mentor voice!
-      if (isAiSpeakingRef.current) {
-        void speakQuestion();
-      }
+      // Direct user gesture: immediately speak the question with the newly selected mentor voice
+      void speakQuestion();
     },
     [speakQuestion],
   );

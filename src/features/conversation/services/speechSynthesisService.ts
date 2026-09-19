@@ -16,9 +16,6 @@ export interface SpeakOptions {
 
 export class SpeechSynthesisService {
   private static currentAudio: HTMLAudioElement | null = null;
-  private static audioCtx: AudioContext | null = null;
-  private static aiAnalyser: AnalyserNode | null = null;
-  private static mediaSourceMap = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>();
   private static activePlaybackId: number = 0;
 
   /**
@@ -56,43 +53,12 @@ export class SpeechSynthesisService {
             voiceId,
           )}&rate=%2B0%25`;
 
-      const audio = new Audio();
-      audio.crossOrigin = "anonymous";
+      const audio = new Audio(audioSource);
       audio.preload = "auto";
-      audio.src = audioSource;
       if (options.rate) {
         audio.playbackRate = options.rate;
       }
       this.currentAudio = audio;
-
-      // Connect to Web Audio Analyser for live visualizer interaction
-      try {
-        const AudioCtx =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (AudioCtx) {
-          if (!this.audioCtx || this.audioCtx.state === "closed") {
-            this.audioCtx = new AudioCtx();
-          }
-          if (this.audioCtx.state === "suspended") {
-            void this.audioCtx.resume();
-          }
-          if (!this.aiAnalyser) {
-            this.aiAnalyser = this.audioCtx.createAnalyser();
-            this.aiAnalyser.fftSize = 128;
-            this.aiAnalyser.smoothingTimeConstant = 0.72;
-            this.aiAnalyser.connect(this.audioCtx.destination);
-          }
-          let source = this.mediaSourceMap.get(audio);
-          if (!source) {
-            source = this.audioCtx.createMediaElementSource(audio);
-            this.mediaSourceMap.set(audio, source);
-            source.connect(this.aiAnalyser);
-          }
-        }
-      } catch {
-        // Fallback: in case of strict browser cross-origin policy, audio plays via default channel
-      }
 
       let hasEnded = false;
       const handleEnd = () => {
@@ -119,7 +85,6 @@ export class SpeechSynthesisService {
             const blob = await resp.blob();
             const blobUrl = URL.createObjectURL(blob);
             const retryAudio = new Audio(blobUrl);
-            retryAudio.crossOrigin = "anonymous";
             if (options.rate) retryAudio.playbackRate = options.rate;
             this.currentAudio = retryAudio;
             retryAudio.onplay = () => {
@@ -161,7 +126,6 @@ export class SpeechSynthesisService {
           const blob = await resp.blob();
           const blobUrl = URL.createObjectURL(blob);
           const retryAudio = new Audio(blobUrl);
-          retryAudio.crossOrigin = "anonymous";
           if (options.rate) retryAudio.playbackRate = options.rate;
           this.currentAudio = retryAudio;
           retryAudio.onplay = () => {
@@ -191,14 +155,8 @@ export class SpeechSynthesisService {
    * Populates targetArray with live frequency bin bytes (0..255) from the AI speech playback.
    * Returns true if analyser was active, false otherwise.
    */
-  public static getAiByteFrequencyData(targetArray: Uint8Array): boolean {
-    if (!this.aiAnalyser || !this.currentAudio || this.currentAudio.paused) return false;
-    try {
-      this.aiAnalyser.getByteFrequencyData(targetArray as any);
-      return true;
-    } catch {
-      return false;
-    }
+  public static getAiByteFrequencyData(_targetArray: Uint8Array): boolean {
+    return false;
   }
 
   /**
@@ -368,19 +326,10 @@ export class SpeechSynthesisService {
   }
 
   /**
-   * Completely cleans up speech synthesis resources, closing Web Audio Context
+   * Completely cleans up speech synthesis resources
    */
   public static cleanup(): void {
     this.stop();
-    if (this.audioCtx && this.audioCtx.state !== "closed") {
-      try {
-        this.audioCtx.close();
-      } catch {
-        // ignore
-      }
-      this.audioCtx = null;
-      this.aiAnalyser = null;
-    }
   }
 
   /**

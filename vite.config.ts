@@ -59,8 +59,8 @@ function createSecurityPolicy(mode: string, command: string): string {
     "https://*.githubusercontent.com",
   ];
   if (isDev) {
-    // HMR websocket + local service discovery + AI model CDNs during development
-    connectSrc.push("https:", "ws:", "wss:", "http://localhost:*", "http://127.0.0.1:*");
+    // HMR websocket + local service discovery + AI model CDNs + local network mobile devices during development
+    connectSrc.push("https:", "ws:", "wss:", "http://localhost:*", "http://127.0.0.1:*", "http:", "ws:");
   }
 
   return [
@@ -70,7 +70,7 @@ function createSecurityPolicy(mode: string, command: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com data:",
     "img-src 'self' data: blob:",
-    "media-src 'self' blob: data: http://localhost:* http://127.0.0.1:* https://translate.google.com https:",
+    `media-src 'self' blob: data: http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
     `connect-src ${connectSrc.join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",

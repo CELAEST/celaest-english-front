@@ -1,5 +1,6 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { CleanSkeletonStudioShowcase } from "./CleanSkeletonStudioShowcase";
 import { AuthCallbackLuxuryShowcase } from "./AuthCallbackLuxuryShowcase";
 import { AiEngineErrorsLuxuryStudio } from "./AiEngineErrorsLuxuryStudio";
 import { AdaptiveLuxuryLevelStudio } from "./AdaptiveLuxuryLevelStudio";
@@ -40,6 +41,11 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
       <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
+
+        {/* SECTION 00.SKELETON_STUDIO: Clean Intelligent Skeletons Studio (TOP PRIORITY FOR APPROVAL) */}
+        <div className="flex flex-col space-y-4">
+          <CleanSkeletonStudioShowcase />
+        </div>
 
         {/* SECTION 00.FEATURE_ICONS: Feature-Referent Sidenav Icon Suite (PROPOSAL FOR APPROVAL) */}
         <div className="flex flex-col space-y-4">

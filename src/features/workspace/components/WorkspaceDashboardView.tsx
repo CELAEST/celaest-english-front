@@ -27,6 +27,13 @@ const LabView = lazy(() =>
   import("../../lab").then((m) => ({ default: m.LabView })),
 );
 
+// Intelligent Skeletons adapted 1:1 to each feature anatomy (zero generic spinners)
+import { InterviewSkeleton } from "../../conversation/components/InterviewSkeleton";
+import { WritingSkeleton } from "../../writing/components/WritingSkeleton";
+import { ReadingSkeleton } from "../../reading/components/ReadingSkeleton";
+import { MemorySkeleton } from "../../memory/components/MemorySkeleton";
+import { SettingsSkeleton } from "../../settings/components/SettingsSkeleton";
+
 const TabLoadingFallback: React.FC = () => (
   <div className="flex h-full w-full items-center justify-center bg-[#000003]/80">
     <div className="h-8 w-8 rounded-full border-2 border-accent-violet-500/30 border-t-accent-violet-500 animate-spin" />
@@ -185,7 +192,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<TabLoadingFallback />}>
+              <Suspense fallback={<InterviewSkeleton />}>
                 <InterviewPracticeView
                   roleName={userProfession}
                   userLevel={activeUserLevel}
@@ -217,7 +224,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<TabLoadingFallback />}>
+              <Suspense fallback={<WritingSkeleton />}>
                 <WritingPracticeView
                   roleName={userProfession}
                   userLevel={activeUserLevel}
@@ -248,7 +255,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<TabLoadingFallback />}>
+              <Suspense fallback={<ReadingSkeleton />}>
                 <ReadingPracticeView
                   roleName={userProfession}
                   onBackToWorkspace={handleBackToWorkspace}
@@ -277,7 +284,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<TabLoadingFallback />}>
+              <Suspense fallback={<MemorySkeleton />}>
                 <MemoryView
                   onBackToWorkspace={handleBackToWorkspace}
                   onNavigate={handleSelectNav}
@@ -369,7 +376,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<TabLoadingFallback />}>
+              <Suspense fallback={<SettingsSkeleton />}>
                 <SettingsView
                   userName={activeUserName}
                   onBackToWorkspace={() => handleSelectNav("workspace")}

@@ -313,6 +313,14 @@ const CelaestLogoMark: React.FC<{ className?: string }> = ({ className = "w-5 h-
 );
 
 // Mobile Floating Glass Bottom Dock (Visible only on viewports < lg)
+const prefetchTabRoute = (id: string) => {
+  if (id === "interview") void import("../../conversation");
+  else if (id === "writing") void import("../../writing");
+  else if (id === "reading") void import("../../reading");
+  else if (id === "memory") void import("../../memory");
+  else if (id === "settings") void import("../../settings");
+};
+
 const MobileBottomDock: React.FC<{
   navItems: Array<{ id: string; label: string; renderIcon: (active: boolean) => React.ReactNode }>;
   activeItem: string;
@@ -339,6 +347,9 @@ const MobileBottomDock: React.FC<{
             key={item.id}
             aria-label={item.label}
             onClick={() => onSelectNav && onSelectNav(item.id)}
+            onMouseEnter={() => prefetchTabRoute(item.id)}
+            onTouchStart={() => prefetchTabRoute(item.id)}
+            onFocus={() => prefetchTabRoute(item.id)}
             className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
               isActive ? "text-white" : "text-zinc-400 hover:text-white"
             }`}
@@ -502,6 +513,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => onSelectNav && onSelectNav(item.id)}
+                    onMouseEnter={() => prefetchTabRoute(item.id)}
+                    onTouchStart={() => prefetchTabRoute(item.id)}
+                    onFocus={() => prefetchTabRoute(item.id)}
                     className={`relative flex items-center w-full h-11 rounded-xl transition-colors cursor-pointer group ${
                       isActive ? "text-amber-300 font-medium" : "text-stone-400 hover:text-white"
                     }`}
@@ -626,6 +640,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => onSelectNav && onSelectNav(item.id)}
+                    onMouseEnter={() => prefetchTabRoute(item.id)}
+                    onTouchStart={() => prefetchTabRoute(item.id)}
+                    onFocus={() => prefetchTabRoute(item.id)}
                     className={`relative flex items-center w-full h-11 rounded-xl transition-colors cursor-pointer group ${
                       isActive ? "text-white font-medium" : "text-zinc-400 hover:text-white"
                     }`}
@@ -760,6 +777,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   key={item.id}
                   aria-label={item.label}
                   onClick={() => onSelectNav && onSelectNav(item.id)}
+                  onMouseEnter={() => prefetchTabRoute(item.id)}
+                  onTouchStart={() => prefetchTabRoute(item.id)}
+                  onFocus={() => prefetchTabRoute(item.id)}
                   className={`relative flex items-center w-full h-11 rounded-xl transition-colors duration-150 cursor-pointer group ${
                     isActive ? "text-white font-medium" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                   }`}

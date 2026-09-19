@@ -60,15 +60,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName }: Settings
         {/* 3D Orb Hero — orve video — fluido (visible on sm+ screens) */}
         <div className="hidden sm:flex absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none items-center justify-center z-0 overflow-hidden">
           <video
-            src="/assets/orve.mp4"
             autoPlay
             muted
             loop
             playsInline
-            preload="auto"
+            preload="metadata"
             className="w-full h-full object-contain pointer-events-none mix-blend-screen"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-          />
+          >
+            <source src="/assets/orve.webm" type="video/webm" />
+            <source src="/assets/orve.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
 

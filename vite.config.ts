@@ -114,7 +114,7 @@ export default defineConfig(({ command, mode }) => ({
   build: {
     target: "es2020",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -123,6 +123,7 @@ export default defineConfig(({ command, mode }) => ({
           "vendor-icons": ["lucide-react"],
           "vendor-query": ["@tanstack/react-query"],
           "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-sentry": ["@sentry/react"],
         },
       },
     },

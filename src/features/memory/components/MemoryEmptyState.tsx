@@ -75,14 +75,17 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         >
           <video
             ref={videoRef}
-            src="/assets/cards.mp4"
-            poster="/assets/cards_poster.png"
+            poster="/assets/cards_poster.webp"
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             className="w-auto h-auto max-w-[min(98vw,1440px)] max-h-[46vh] xs:max-h-[50vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
-          />
+            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
+          >
+            <source src="/assets/cards.webm" type="video/webm" />
+            <source src="/assets/cards.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
 

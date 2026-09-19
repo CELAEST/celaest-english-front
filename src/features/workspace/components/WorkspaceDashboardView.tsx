@@ -57,6 +57,20 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
+  // Intelligent Idle Prefetcher: preload lazy tabs during browser idle time so clicking mounts in 0ms ("de una")
+  React.useEffect(() => {
+    const prefetchTimer = setTimeout(() => {
+      void Promise.allSettled([
+        import("../../conversation"),
+        import("../../writing"),
+        import("../../reading"),
+        import("../../memory"),
+        import("../../settings"),
+      ]);
+    }, 1000);
+    return () => clearTimeout(prefetchTimer);
+  }, []);
+
   React.useEffect(() => {
     setMountedTabs((prev) => {
       if (prev.has(activeTab)) return prev;
@@ -137,21 +151,23 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       >
         <video
           ref={videoRef}
-          src="/assets/home.mp4"
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
           disablePictureInPicture
-          poster="/assets/workspace_room_bg.png"
+          poster="/assets/workspace_room_bg.webp"
           className="w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none transition-all duration-300"
           style={{
             willChange: "transform",
             backfaceVisibility: "hidden",
             transform: "translateZ(0)",
           }}
-        />
+        >
+          <source src="/assets/home.webm" type="video/webm" />
+          <source src="/assets/home.mp4" type="video/mp4" />
+        </video>
         {/* Soft vignette gradients ensuring 100% text legibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#030208]/95 via-[#030208]/30 to-[#030208]/20 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#030208]/35 via-transparent to-[#030208]/85 pointer-events-none" />

@@ -132,7 +132,6 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
   return (
     <video
       ref={videoRef}
-      src="/assets/orve.mp4"
       poster={poster}
       autoPlay
       muted
@@ -163,7 +162,10 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
       onStalled={() => {
         if (isActive && isIntersectingRef.current) tryPlay();
       }}
-    />
+    >
+      <source src="/assets/orve.webm" type="video/webm" />
+      <source src="/assets/orve.mp4" type="video/mp4" />
+    </video>
   );
 };
 

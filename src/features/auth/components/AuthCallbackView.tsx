@@ -332,15 +332,17 @@ export const AuthCallbackView: React.FC = () => {
     <div className="relative min-h-[100dvh] w-full bg-[#000003] text-slate-100 flex flex-col items-center justify-center select-none overflow-hidden font-sans">
       {/* Ambient Cosmic Hero Video Background — begin1 — fluido sin salto */}
       <video
-        src="/assets/begin1.mp4"
         autoPlay
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
         style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-      />
+      >
+        <source src="/assets/begin1.webm" type="video/webm" />
+        <source src="/assets/begin1.mp4" type="video/mp4" />
+      </video>
 
       {/* Atmospheric Vignette & Micro Bottom Edge Softener */}
       <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />

@@ -43,9 +43,9 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
       : "Tech Career & AI Simulation";
 
   // Dynamic approved contextual images (with user-selected overrides from localStorage)
-  const [memoryImg, setMemoryImg] = useState<string>("/assets/vocab_headphones_focus.jpg");
-  const [readingImg, setReadingImg] = useState<string>("/assets/reading_modern_architecture.jpg");
-  const [speakingImg, setSpeakingImg] = useState<string>("/assets/speaking_studio_mic.jpg");
+  const [memoryImg, setMemoryImg] = useState<string>("/assets/vocab_headphones_focus.webp");
+  const [readingImg, setReadingImg] = useState<string>("/assets/reading_modern_architecture.webp");
+  const [speakingImg, setSpeakingImg] = useState<string>("/assets/speaking_studio_mic.webp");
 
   useEffect(() => {
     if (typeof window !== "undefined") {

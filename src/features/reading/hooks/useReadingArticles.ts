@@ -19,12 +19,25 @@ const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
  * - Prudent breathing room (~80-120px) above ReadingBottomBar
  * - Clean multi-page pagination that turns pages right before container boundaries
  */
-function getTargetWordsForHeight(height: number): number {
-  if (height < 680) return 42;  // Compact mobile / small viewports with browser address bar: ~5-6 lines
-  if (height < 780) return 52;  // Standard mobile (iPhone mini / standard): ~6-7 lines
-  if (height < 900) return 58;  // Modern smartphones (iPhone 13/14/15/16): ~7-8 lines
-  if (height < 1050) return 75; // Pro Max / Tablets / Small laptops: ~9-10 lines
-  return 110;                   // Desktop 1080p+: ~10-12 wide lines
+function getTargetWordsForHeight(height: number, fontSizeIndex: number = 0): number {
+  let baseWords: number;
+  if (height < 680) baseWords = 38;  // Compact mobile / small viewports with browser address bar
+  else if (height < 780) baseWords = 46;  // Standard mobile (iPhone mini / standard)
+  else if (height < 900) baseWords = 52;  // Modern smartphones (iPhone 13/14/15/16)
+  else if (height < 1050) baseWords = 68; // Pro Max / Tablets / Small laptops
+  else baseWords = 95;                   // Desktop 1080p+
+
+  // Scaling words-per-page based on active text size:
+  // fontSizeIndex 0: Estándar (17px) -> baseWords
+  // fontSizeIndex 1: Grande (19px) -> ~26% fewer words so lines fit without overflowing
+  // fontSizeIndex 2: Extra (21px) -> ~46% fewer words so large text fits comfortably without any cut-off
+  if (fontSizeIndex === 1) {
+    return Math.max(20, Math.round(baseWords * 0.74));
+  }
+  if (fontSizeIndex === 2) {
+    return Math.max(16, Math.round(baseWords * 0.54));
+  }
+  return baseWords;
 }
 
 /**
@@ -108,7 +121,7 @@ function readInitialState(): InitialReadingState {
   return { cachedArticles, activeArticleId };
 }
 
-export const useReadingArticles = (level?: string, profession?: string) => {
+export const useReadingArticles = (level?: string, profession?: string, fontSizeIndex: number = 0) => {
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
 
@@ -274,7 +287,10 @@ export const useReadingArticles = (level?: string, profession?: string) => {
     return "";
   }, [currentArticle]);
 
-  const targetWords = useMemo(() => getTargetWordsForHeight(viewportHeight), [viewportHeight]);
+  const targetWords = useMemo(
+    () => getTargetWordsForHeight(viewportHeight, fontSizeIndex),
+    [viewportHeight, fontSizeIndex],
+  );
   const dynamicPages = useMemo(
     () => paginateText(fullContent, targetWords),
     [fullContent, targetWords],

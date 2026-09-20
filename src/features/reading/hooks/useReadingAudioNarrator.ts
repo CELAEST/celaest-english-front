@@ -518,6 +518,7 @@ export function useReadingAudioNarrator(
 
         audio.onerror = () => {
           logger.warn("[ReadingTTS] Stream error, using speech synthesis fallback");
+          audioRef.current = null;
           playSpeechSynthesisFallback(trimmed);
         };
 
@@ -528,9 +529,11 @@ export function useReadingAudioNarrator(
           })
           .catch((err: any) => {
             if (err?.name === "AbortError") return;
+            audioRef.current = null;
             playSpeechSynthesisFallback(trimmed);
           });
       } catch {
+        audioRef.current = null;
         playSpeechSynthesisFallback(trimmed);
       }
     },
@@ -605,8 +608,12 @@ export function useReadingAudioNarrator(
           window.speechSynthesis.resume();
           setIsPaused(false);
         } else {
-          window.speechSynthesis.pause();
-          setIsPaused(true);
+          // On mobile browsers, window.speechSynthesis.pause() is often ignored or causes state hangs.
+          // Cancelling cleanly halts speech immediately without ghost audio.
+          window.speechSynthesis.cancel();
+          setIsPlaying(false);
+          setIsPaused(false);
+          setCurrentWordIndex(null);
         }
         return;
       }

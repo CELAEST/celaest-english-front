@@ -121,7 +121,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     getOrFetchQuiz,
     instantWordLookup,
     translateWordDirect,
-  } = useReadingArticles(userLevel, effectiveProfession);
+  } = useReadingArticles(userLevel, effectiveProfession, fontSizeIndex);
 
   const {
     isPlaying: isPlayingAudio,

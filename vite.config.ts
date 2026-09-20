@@ -108,8 +108,26 @@ export default defineConfig(({ command, mode }) => ({
     },
   },
   server: {
+    host: true,
     port: 3000,
     open: true,
+    proxy: {
+      "/api/v1": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/core-ai": {
+        target: "http://127.0.0.1:8085",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/core-ai/, "/api/v1"),
+      },
+      "/celaest-back": {
+        target: "http://localhost:3101",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/celaest-back/, "/api/v1"),
+      },
+    },
   },
   build: {
     target: "es2020",

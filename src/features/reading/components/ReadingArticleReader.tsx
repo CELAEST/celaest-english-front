@@ -189,12 +189,33 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           setIsLoadingLookup(true);
           try {
             const data = await onLookupWord(phrase, contextSentence);
+            if ((!data.spanishTranslation || data.spanishTranslation.trim() === "") && onDirectTranslate) {
+              try {
+                const directTranslation = await onDirectTranslate(phrase, contextSentence);
+                if (directTranslation) {
+                  data.spanishTranslation = directTranslation;
+                }
+              } catch {
+                // Ignore background direct translation failure
+              }
+            }
             setActiveWordData(data);
           } catch (err) {
             logger.warn("Failed lookup for phrase:", phrase, err);
+            let spanishFallback = "";
+            if (onDirectTranslate) {
+              try {
+                const directTranslation = await onDirectTranslate(phrase, contextSentence);
+                if (directTranslation) {
+                  spanishFallback = directTranslation;
+                }
+              } catch {
+                // Ignore fallback translation failure
+              }
+            }
             setActiveWordData({
               word: phrase,
-              spanishTranslation: "",
+              spanishTranslation: spanishFallback,
               phonetic: `/${phrase}/`,
               partOfSpeech: phrase.includes(" ") ? "phrasal verb" : "vocabulary",
               definition: `Contextual meaning for '${phrase}'.`,
@@ -206,7 +227,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           }
         }
       },
-      [onLookupWord, content],
+      [onLookupWord, onDirectTranslate, content],
     );
 
     const handleWordClick = useCallback(
@@ -299,7 +320,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         className={`w-full flex-1 min-h-0 flex flex-col justify-start items-start text-[#d1d2dc] font-sans ${
           fontSizeClassName ||
           "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]"
-        } font-light select-text overflow-hidden relative transition-all pt-0.5 pb-1 sm:pb-2`}
+        } font-light select-text overflow-y-auto no-scrollbar relative transition-all pt-0.5 pb-1 sm:pb-2`}
       >
         {/* Mobile-Friendly Word Affordance Hint Pill */}
         <div className="w-full flex items-center justify-between pb-2 pt-0.5 select-none animate-[fadeIn_0.4s_ease-out]">

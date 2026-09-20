@@ -150,18 +150,24 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
 
-        audio.onended = () => setIsPlayingAudio(false);
+        audio.onended = () => {
+          setIsPlayingAudio(false);
+          audioRef.current = null;
+        };
         audio.onerror = () => {
+          audioRef.current = null;
           speakFallback(wordData.word);
         };
 
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => {
+            audioRef.current = null;
             speakFallback(wordData.word);
           });
         }
       } catch {
+        audioRef.current = null;
         speakFallback(wordData.word);
       }
     };

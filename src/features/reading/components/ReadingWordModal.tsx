@@ -223,11 +223,17 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
     return (
       <>
-        {/* Backdrop click dismiss */}
+        {/* Backdrop click dismiss — cursor-pointer and touch handler required for iOS Safari tap dispatch */}
         <div
-          className="fixed inset-0 z-[9998] bg-transparent"
+          role="button"
+          tabIndex={-1}
+          className="fixed inset-0 z-[9998] bg-transparent cursor-pointer select-none"
           onClick={onClose}
-          aria-hidden="true"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+          aria-label="Cerrar modal"
         />
 
         {/* Spatial 3D Flashcard Container Style with Subtle White Backlight Glow */}

@@ -8,3 +8,5 @@ build
 /*.png
 scratch/
 public/assets/backup_originals/
+certs/
+*.pem

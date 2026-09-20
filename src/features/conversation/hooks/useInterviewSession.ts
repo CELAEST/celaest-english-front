@@ -499,7 +499,10 @@ export const useInterviewSession = (
    */
   const startRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
-    if (isAiSpeakingRef.current) return;
+    if (isAiSpeakingRef.current) {
+      SpeechSynthesisService.stop();
+      isAiSpeakingRef.current = false;
+    }
     try {
       if (typeof window !== "undefined") localStorage.setItem("celaest:interview:hasInteracted", "1");
     } catch {}
@@ -667,6 +670,11 @@ export const useInterviewSession = (
   const toggleRecording = useCallback(() => {
     if (status === "RECORDING") {
       void stopRecording();
+    } else if (status === "AI_SPEAKING") {
+      // Barge-in: immediately stop AI speech and transition directly to listening
+      SpeechSynthesisService.stop();
+      isAiSpeakingRef.current = false;
+      startRecording();
     } else if (status === "IDLE" || status === "PAUSED") {
       startRecording();
     }
@@ -846,12 +854,8 @@ export const useInterviewSession = (
     }
   }, [currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
-  // Trigger initial question on question change — blindado: no auto-play sin interacción para no crashear por autoplay policy
+  // Trigger question speech on question index change
   useEffect(() => {
-    // Solo habla automáticamente si el usuario ya interactuó con el mic una vez; evita crash en primer mount
-    if (typeof window !== "undefined" && !window.localStorage.getItem("celaest:interview:hasInteracted")) {
-      return;
-    }
     const raf = requestAnimationFrame(() => {
       void speakQuestion().catch(() => {});
     });

@@ -54,7 +54,7 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
                 onClick={onCycleFontSize}
                 title={`Tamaño de texto: ${fontSizeLabel || "Estándar"}. Toca para cambiar`}
                 aria-label={`Cambiar tamaño de texto. Actual: ${fontSizeLabel || "Estándar"}`}
-                className="inline-flex items-center gap-1 text-[11px] font-sans text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none active:scale-95 select-none"
+                className="inline-flex items-center gap-1 text-[11px] font-sans text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-0 py-1.5 px-2 -my-1.5 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 select-none touch-manipulation"
               >
                 <span className="font-mono font-medium tracking-tighter text-[11.5px] sm:text-xs">aA</span>
                 <span className="text-[10px] text-white/30 font-light hidden sm:inline">{fontSizeLabel}</span>

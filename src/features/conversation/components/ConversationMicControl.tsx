@@ -72,14 +72,14 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
           onKeyDown={(e) => {
             if (e.key === " " || e.key === "Enter") e.stopPropagation();
           }}
-          disabled={isThinking || isAiSpeaking}
-          aria-label={isListening ? "Stop microphone" : "Start speaking"}
-          title={isListening ? "Stop microphone (Space)" : "Start speaking (Space)"}
+          disabled={isThinking}
+          aria-label={isListening ? "Stop microphone" : isAiSpeaking ? "Interrumpir y hablar" : "Start speaking"}
+          title={isListening ? "Stop microphone (Space)" : isAiSpeaking ? "Interrumpir y hablar (Space)" : "Start speaking (Space)"}
           className={`w-[clamp(58px,8.5vh,88px)] h-[clamp(58px,8.5vh,88px)] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer group shrink-0 ${
-            isAiSpeaking
-              ? "bg-[#090A14] border-2 border-[#7750a7]/50 opacity-60 cursor-not-allowed shadow-[0_0_20px_rgba(162,127,243,0.2)]"
-              : isListening
-                ? "bg-[#090A14] border-2 border-[#A27FF3] animate-[softPulse_2.5s_ease-in-out_infinite] shadow-[0_0_28px_rgba(162,127,243,0.5)] scale-105"
+            isListening
+              ? "bg-[#090A14] border-2 border-[#A27FF3] animate-[softPulse_2.5s_ease-in-out_infinite] shadow-[0_0_28px_rgba(162,127,243,0.5)] scale-105"
+              : isAiSpeaking
+                ? "bg-[#090A14] border-2 border-[#A27FF3]/50 hover:border-[#A27FF3] shadow-[0_0_20px_rgba(162,127,243,0.3)] animate-pulse"
                 : "bg-[#090A14] border-2 border-white/[0.14] hover:border-[#A27FF3]/60 hover:shadow-[0_0_24px_rgba(162,127,243,0.3)] shadow-[0_0_20px_rgba(0,0,0,0.6)]"
           }`}
         >

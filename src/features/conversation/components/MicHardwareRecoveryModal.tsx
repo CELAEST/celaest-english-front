@@ -51,7 +51,12 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
     try {
       if (typeof window === "undefined" || !navigator?.mediaDevices?.getUserMedia) {
         setPermissionState("denied");
-        setErrorMessage("Este navegador no soporta captura de audio con la Web Audio API.");
+        const isInsecure = typeof window !== "undefined" && !window.isSecureContext;
+        setErrorMessage(
+          isInsecure
+            ? "El navegador móvil bloquea el acceso al micrófono en conexiones HTTP no seguras. Abre la app con HTTPS o escribe tu respuesta en el área de texto inferior."
+            : "Este navegador no soporta captura de audio con la Web Audio API.",
+        );
         return;
       }
 

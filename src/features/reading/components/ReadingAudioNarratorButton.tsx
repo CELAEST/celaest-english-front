@@ -47,7 +47,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
           onClick={handleSelectAria}
           title="Narrator: Aria (Femenino)"
           aria-label="Select Aria narrator voice"
-          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
+          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 py-1.5 px-1.5 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none touch-manipulation ${
             isAria
               ? "text-white font-semibold"
               : "text-white/40 hover:text-white/70 font-normal"
@@ -67,7 +67,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
           onClick={handleSelectChris}
           title="Narrator: Christopher (Ejecutivo)"
           aria-label="Select Christopher narrator voice"
-          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
+          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 py-1.5 px-1.5 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none touch-manipulation ${
             !isAria
               ? "text-white font-semibold"
               : "text-white/40 hover:text-white/70 font-normal"
@@ -92,7 +92,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
                 : "Pause audio narration"
               : "Listen to this page (Audio Narrator)"
           }
-          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none active:scale-95 ml-0.5 group ${
+          className={`inline-flex items-center gap-1 text-[11px] font-sans transition-colors cursor-pointer bg-transparent border-0 py-1.5 px-2 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 ml-0.5 group touch-manipulation ${
             isPlaying
               ? "text-white font-semibold"
               : "text-white/40 hover:text-white font-normal"
@@ -152,7 +152,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
             }}
             title="Reiniciar lectura desde el principio"
             aria-label="Restart audio narration from the beginning"
-            className="text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ml-0.5 active:scale-90"
+            className="text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 py-1 px-1.5 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none ml-0.5 active:scale-90 touch-manipulation"
           >
             <svg
               className="w-3 h-3 text-white/60 hover:text-white transition-colors"
@@ -177,7 +177,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
             onClick={onCycleRate}
             aria-label={`Playback speed: ${playbackRate}x. Click to change.`}
             title="Click to cycle speed"
-            className="text-[10px] font-mono font-medium text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ml-0.5 active:scale-95"
+            className="text-[10px] font-mono font-medium text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 py-1 px-1.5 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none ml-0.5 active:scale-95 touch-manipulation"
           >
             ({playbackRate === 0.85 ? "0.85x" : `${playbackRate}x`})
           </button>

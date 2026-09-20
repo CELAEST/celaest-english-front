@@ -116,6 +116,13 @@ export class SpeechSynthesisService {
         // Deliberate user navigation or audio interruption — do not trigger fallback voice
         return;
       }
+      if (err?.name === "NotAllowedError") {
+        // Autoplay policy prevented playback on mobile (requires user gesture)
+        logger.warn("[SpeechSynthesisService] Audio playback blocked by browser autoplay policy:", err);
+        this.currentAudio = null;
+        if (options.onEnd) options.onEnd();
+        return;
+      }
       logger.warn("[SpeechSynthesisService] Error initiating audio, attempting Blob retry before fallback:", err);
       try {
         const audioSource = `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
@@ -277,6 +284,26 @@ export class SpeechSynthesisService {
     utterance.rate = options.rate ?? 0.95;
     utterance.pitch = options.pitch ?? 1.0;
 
+    const estimatedWords = text.split(/\s+/).filter(Boolean).length;
+    const maxFallbackDurationMs = Math.max(3000, Math.ceil((estimatedWords / 1.8) * 1000) + 2500);
+
+    let hasEnded = false;
+    let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
+    const safeEnd = () => {
+      if (hasEnded) return;
+      hasEnded = true;
+      if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
+      if (this.activePlaybackId !== playbackId) return;
+      if (options.onEnd) options.onEnd();
+    };
+
+    watchdogTimer = setTimeout(() => {
+      safeEnd();
+    }, maxFallbackDurationMs);
+
     utterance.onstart = () => {
       if (this.activePlaybackId !== playbackId) {
         window.speechSynthesis.cancel();
@@ -285,19 +312,21 @@ export class SpeechSynthesisService {
       if (options.onStart) options.onStart();
     };
 
-    utterance.onend = () => {
-      if (this.activePlaybackId !== playbackId) return;
-      if (options.onEnd) options.onEnd();
-    };
+    utterance.onend = safeEnd;
 
     utterance.onerror = (e) => {
       if (this.activePlaybackId !== playbackId) return;
       logger.warn("Speech synthesis notice:", e);
-      if (options.onEnd) options.onEnd();
+      safeEnd();
       if (options.onError) options.onError(e);
     };
 
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (speakErr) {
+      logger.warn("speechSynthesis.speak threw:", speakErr);
+      safeEnd();
+    }
   }
 
   /**
@@ -343,3 +372,43 @@ export class SpeechSynthesisService {
     );
   }
 }
+
+/**
+ * MobileAudioUnlocker — Solves iOS Safari & Android Chrome Media Autoplay Quarantine.
+ * Captures the very first user touch/pointer gesture on the document and activates
+ * an inaudible audio element, permanently granting audio playback permissions to the page.
+ */
+export class MobileAudioUnlocker {
+  private static isUnlocked = false;
+
+  public static init(): void {
+    if (typeof window === "undefined" || this.isUnlocked) return;
+
+    const unlockHandler = () => {
+      if (this.isUnlocked) return;
+      this.isUnlocked = true;
+
+      try {
+        const silentAudio = new Audio(
+          "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA",
+        );
+        silentAudio.volume = 0.01;
+        const p = silentAudio.play();
+        if (p) p.catch(() => {});
+      } catch {}
+
+      try {
+        localStorage.setItem("celaest:interview:hasInteracted", "1");
+      } catch {}
+
+      window.removeEventListener("pointerdown", unlockHandler, true);
+      window.removeEventListener("touchstart", unlockHandler, true);
+      window.removeEventListener("keydown", unlockHandler, true);
+    };
+
+    window.addEventListener("pointerdown", unlockHandler, { passive: true, capture: true });
+    window.addEventListener("touchstart", unlockHandler, { passive: true, capture: true });
+    window.addEventListener("keydown", unlockHandler, { passive: true, capture: true });
+  }
+}
+

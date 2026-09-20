@@ -6,6 +6,7 @@ import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
+import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
 // Dynamic code-splitting: Heavy feature modules are loaded on-demand, reducing initial JS execution by >60%
 const InterviewPracticeView = lazy(() =>
@@ -112,6 +113,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const handleSelectNav = React.useCallback(
     (route: string, categoryHint?: string) => {
+      // Synchronously unlock mobile audio hardware on user navigation gesture
+      MobileAudioUnlocker.unlock();
       if (route === "lab" && !import.meta.env.DEV) {
         setActiveTab("workspace");
         return;

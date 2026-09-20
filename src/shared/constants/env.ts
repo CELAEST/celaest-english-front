@@ -20,13 +20,19 @@ const isProd = import.meta.env.PROD;
 const isTest = import.meta.env.MODE === "test";
 const isBrowser = typeof window !== "undefined";
 
+const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
+const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
+const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
+
 const resolvedApiUrl = trimTrailingSlash(
   apiUrl ||
     (isTest
       ? "http://localhost:8080/api/v1"
-      : isBrowser
-        ? `${window.location.origin}/api/v1`
-        : "http://localhost:8080/api/v1"),
+      : isProd
+        ? defaultProdApiUrl
+        : isBrowser
+          ? `${window.location.origin}/api/v1`
+          : "http://localhost:8080/api/v1"),
 );
 
 export const ENV = {
@@ -37,17 +43,19 @@ export const ENV = {
     celaestBackUrl ||
       (isTest
         ? "http://localhost:3101/api/v1"
-        : isBrowser && !isProd
-          ? `${window.location.origin}/celaest-back`
-          : "http://localhost:3101/api/v1"),
+        : isProd
+          ? defaultProdCelaestBackUrl
+          : isBrowser
+            ? `${window.location.origin}/celaest-back`
+            : "http://localhost:3101/api/v1"),
   ),
   /** CELAEST-CORE IA-Mesh base URL for AI chat/transcription (no trailing slash). */
   coreAiUrl: trimTrailingSlash(
     coreAiUrl ||
-      (isProd
-        ? apiUrl || resolvedApiUrl
-        : isTest
-          ? "http://127.0.0.1:8085/api/v1"
+      (isTest
+        ? "http://127.0.0.1:8085/api/v1"
+        : isProd
+          ? defaultProdCoreAiUrl
           : isBrowser
             ? `${window.location.origin}/core-ai`
             : "http://127.0.0.1:8085/api/v1"),

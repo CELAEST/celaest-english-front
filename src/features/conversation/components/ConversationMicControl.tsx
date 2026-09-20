@@ -1,4 +1,5 @@
 import React from "react";
+import { MobileAudioUnlocker } from "../services/speechSynthesisService";
 
 export interface ConversationMicControlProps {
   isListening?: boolean;
@@ -23,6 +24,7 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
 }) => {
   const handleSubmit = () => {
     if (isThinking) return;
+    MobileAudioUnlocker.unlock();
     if (onSubmitText) {
       onSubmitText();
     } else if (onFinishTurn) {
@@ -32,6 +34,7 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
 
   const handleMicClick = () => {
     if (isThinking) return;
+    MobileAudioUnlocker.unlock();
     if (onToggleListening) {
       onToggleListening();
     }

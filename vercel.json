@@ -5,6 +5,18 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/v1/:path*",
+      "destination": "https://celaest-english-back.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/core-ai/:path*",
+      "destination": "https://celaest-core.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/celaest-back/:path*",
+      "destination": "https://celaest-back.onrender.com/api/v1/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

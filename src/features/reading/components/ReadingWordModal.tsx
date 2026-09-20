@@ -103,17 +103,18 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       const raw = wordData.phonetic?.trim();
       const cleanWord = wordData.word.trim().toLowerCase();
 
+      const stripped = (raw || "").replace(/^\/+|\/+$/g, "").trim().toLowerCase();
       const isFakePhonetic =
         !raw ||
         raw === `/${cleanWord}/` ||
         raw === `/${wordData.word}/` ||
         raw === cleanWord ||
         raw === wordData.word ||
-        raw.startsWith("/'") ||
-        /^\/[a-zA-Z\s_-]+\/$/.test(raw);
+        stripped === cleanWord;
 
       if (!isFakePhonetic && raw) {
-        return raw.replace(/^\/'/, "/").split(",")[0].trim();
+        const normalized = raw.startsWith("/") && raw.endsWith("/") ? raw : `/${stripped}/`;
+        return normalized.split(",")[0].trim();
       }
 
       return phoneticLookupService.getPhonetic(wordData.word);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { SpeechSynthesisService } from "../services/speechSynthesisService";
+import { SpeechSynthesisService, MobileAudioUnlocker } from "../services/speechSynthesisService";
 import {
   FlagshipVoiceId,
 } from "../../reading/services/readingAudioPrefetcher";
@@ -834,6 +834,8 @@ export const useInterviewSession = (
           // Safe storage write
         }
       }
+      // Synchronously unlock mobile audio hardware on user gesture
+      MobileAudioUnlocker.unlock();
       if (currentQuestionRef.current) {
         SpeechSynthesisService.prefetch(currentQuestionRef.current.question, voice);
       }
@@ -868,6 +870,7 @@ export const useInterviewSession = (
    */
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
+      MobileAudioUnlocker.unlock();
       const targetRate = slow ? Math.max(0.7, speechRate - 0.2) : speechRate;
       speakQuestion(targetRate);
     },

@@ -488,6 +488,11 @@ export class MobileAudioUnlocker {
       if (typeof audioUrlOrBlob === "string") {
         const resp = await fetch(audioUrlOrBlob, { headers: { Accept: "audio/mpeg" } });
         if (!resp.ok) return false;
+        const contentType = resp.headers.get("content-type") || "";
+        if (contentType.includes("text/html") || contentType.includes("application/json")) {
+          logger.warn("[MobileAudioUnlocker] Expected audio stream, received:", contentType);
+          return false;
+        }
         arrayBuffer = await resp.arrayBuffer();
       } else {
         arrayBuffer = await audioUrlOrBlob.arrayBuffer();

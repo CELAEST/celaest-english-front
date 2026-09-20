@@ -545,7 +545,8 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
           }
 
           // Ensure phonetic is valid IPA and never a fallback /word/ string
-          if (!lookupResult.phonetic || lookupResult.phonetic === `/${cleanWord}/` || lookupResult.phonetic.startsWith("/'")) {
+          const strippedPhonetic = (lookupResult.phonetic || "").replace(/^\/+|\/+$/g, "").trim().toLowerCase();
+          if (!lookupResult.phonetic || strippedPhonetic === cleanWord) {
             lookupResult.phonetic = phoneticLookupService.getPhonetic(cleanWord);
           }
 

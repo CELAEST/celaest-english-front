@@ -27,9 +27,9 @@ function originOf(url: string | undefined, fallback: string): string {
  */
 function createSecurityPolicy(mode: string, command: string): string {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiOrigin = originOf(env.VITE_API_URL, "http://localhost:8080");
-  const celaestBackOrigin = originOf(env.VITE_CELAEST_BACK_URL, "http://localhost:3101");
-  const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "http://127.0.0.1:8085");
+  const apiOrigin = originOf(env.VITE_API_URL, "https://celaest-english-back.onrender.com");
+  const celaestBackOrigin = originOf(env.VITE_CELAEST_BACK_URL, "https://celaest-back.onrender.com");
+  const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "https://celaest-core.onrender.com");
   const isDev = command === "serve";
 
   const connectSrc = [
@@ -37,6 +37,10 @@ function createSecurityPolicy(mode: string, command: string): string {
     apiOrigin,
     celaestBackOrigin,
     coreAiOrigin,
+    "https://*.onrender.com",
+    "https://celaest-english-back.onrender.com",
+    "https://celaest-core.onrender.com",
+    "https://celaest-back.onrender.com",
     "https://*.supabase.co",
     "https://api.groq.com",
     "https://generativelanguage.googleapis.com",
@@ -70,7 +74,7 @@ function createSecurityPolicy(mode: string, command: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com data:",
     "img-src 'self' data: blob:",
-    `media-src 'self' blob: data: http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
+    `media-src 'self' blob: data: https://*.onrender.com https://celaest-english-back.onrender.com http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
     `connect-src ${connectSrc.join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",

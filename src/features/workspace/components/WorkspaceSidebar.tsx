@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
 export interface WorkspaceSidebarProps {
   userName?: string;
@@ -346,9 +347,15 @@ const MobileBottomDock: React.FC<{
           <button
             key={item.id}
             aria-label={item.label}
-            onClick={() => onSelectNav && onSelectNav(item.id)}
+            onClick={() => {
+              MobileAudioUnlocker.unlock();
+              if (onSelectNav) onSelectNav(item.id);
+            }}
             onMouseEnter={() => prefetchTabRoute(item.id)}
-            onTouchStart={() => prefetchTabRoute(item.id)}
+            onTouchStart={() => {
+              MobileAudioUnlocker.unlock();
+              prefetchTabRoute(item.id);
+            }}
             onFocus={() => prefetchTabRoute(item.id)}
             className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
               isActive ? "text-white" : "text-zinc-400 hover:text-white"

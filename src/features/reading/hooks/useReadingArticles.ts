@@ -9,6 +9,7 @@ import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { directClientAiService } from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
+import { phoneticLookupService } from "../services/phoneticLookupService";
 
 const READING_CACHE_KEY = "lingua_reading_articles_v2";
 const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
@@ -419,9 +420,15 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         const currentArt = currentArticleRef.current;
         const lowerKey = cleanWord.toLowerCase();
         const existingEntry = currentArt.vocabularyMap?.[lowerKey];
+        const rawPhonetic = existingEntry?.phonetic;
+        const validPhonetic =
+          rawPhonetic && rawPhonetic !== `/${cleanWord}/` && !rawPhonetic.startsWith("/'")
+            ? rawPhonetic
+            : phoneticLookupService.getPhonetic(cleanWord);
+
         const updatedEntry: WordLookup = {
           word: cleanWord,
-          phonetic: existingEntry?.phonetic || `/${cleanWord}/`,
+          phonetic: validPhonetic,
           partOfSpeech:
             existingEntry?.partOfSpeech || (cleanWord.includes(" ") ? "phrasal verb" : "vocabulary"),
           spanishTranslation: cleanTranslation,
@@ -461,7 +468,7 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
       if (!cleanWord) {
         return {
           word: word,
-          phonetic: `/${word}/`,
+          phonetic: phoneticLookupService.getPhonetic(word),
           partOfSpeech: "vocabulary",
           spanishTranslation: "",
           definition: `Vocabulary word: ${word}.`,
@@ -537,6 +544,11 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
             }
           }
 
+          // Ensure phonetic is valid IPA and never a fallback /word/ string
+          if (!lookupResult.phonetic || lookupResult.phonetic === `/${cleanWord}/` || lookupResult.phonetic.startsWith("/'")) {
+            lookupResult.phonetic = phoneticLookupService.getPhonetic(cleanWord);
+          }
+
           // Persist the enriched version so future sessions reuse it
           if (currentArticle) {
             upsertLocalArticle({
@@ -552,7 +564,7 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         } catch {
           return {
             word: cleanWord,
-            phonetic: `/${cleanWord}/`,
+            phonetic: phoneticLookupService.getPhonetic(cleanWord),
             partOfSpeech: "vocabulary",
             spanishTranslation: "",
             definition: `Vocabulary term: ${cleanWord}.`,

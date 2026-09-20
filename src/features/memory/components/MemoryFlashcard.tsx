@@ -9,6 +9,7 @@ import {
   MemoryReadingBack,
 } from "./subcomponents";
 import { Bookmark, Trash2, RotateCw, Volume2 } from "lucide-react";
+import { SpeechSynthesisService, MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
 export interface MemoryFlashcardProps {
   card: MemoryCard;
@@ -99,18 +100,15 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
       const textToSpeak = card.betterWay || card.correctWord || card.userSaid;
       if (!textToSpeak) return;
 
+      MobileAudioUnlocker.unlock();
       setIsPlayingAudio(true);
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = "en-US";
-        utterance.rate = 0.9;
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setTimeout(() => setIsPlayingAudio(false), 1000);
-      }
+      void SpeechSynthesisService.speak(textToSpeak, {
+        voice: "en-US-AriaNeural",
+        rate: 0.9,
+        onStart: () => setIsPlayingAudio(true),
+        onEnd: () => setIsPlayingAudio(false),
+        onError: () => setIsPlayingAudio(false),
+      });
     };
 
     const handleScoreClick = (e: React.MouseEvent, score: number) => {

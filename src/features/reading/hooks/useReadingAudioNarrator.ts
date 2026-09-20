@@ -501,6 +501,8 @@ export function useReadingAudioNarrator(
           audio.currentTime = startFromSec;
         }
 
+        MobileAudioUnlocker.unlock();
+
         audio.onplay = () => {
           setIsPlaying(true);
           setIsPaused(false);
@@ -519,8 +521,27 @@ export function useReadingAudioNarrator(
           setCurrentWordIndex(null);
         };
 
-        audio.onerror = () => {
-          logger.warn("[ReadingTTS] Stream error, using speech synthesis fallback");
+        audio.onerror = async () => {
+          logger.warn("[ReadingTTS] Stream error, attempting Web Audio buffer playback");
+          try {
+            const played = await MobileAudioUnlocker.playNeuralBuffer(
+              audioSource,
+              { rate: playbackRate },
+              0,
+              () => {
+                setIsPlaying(true);
+                setIsPaused(false);
+                startTracking();
+              },
+              () => {
+                stopTracker();
+                setIsPlaying(false);
+                setIsPaused(false);
+                setCurrentWordIndex(null);
+              },
+            );
+            if (played) return;
+          } catch {}
           audioRef.current = null;
           playSpeechSynthesisFallback(trimmed);
         };
@@ -530,8 +551,28 @@ export function useReadingAudioNarrator(
           .then(() => {
             startTracking();
           })
-          .catch((err: any) => {
+          .catch(async (err: any) => {
             if (err?.name === "AbortError") return;
+            logger.warn("[ReadingTTS] HTMLAudioElement blocked, playing via Web Audio buffer:", err);
+            try {
+              const played = await MobileAudioUnlocker.playNeuralBuffer(
+                audioSource,
+                { rate: playbackRate },
+                0,
+                () => {
+                  setIsPlaying(true);
+                  setIsPaused(false);
+                  startTracking();
+                },
+                () => {
+                  stopTracker();
+                  setIsPlaying(false);
+                  setIsPaused(false);
+                  setCurrentWordIndex(null);
+                },
+              );
+              if (played) return;
+            } catch {}
             audioRef.current = null;
             playSpeechSynthesisFallback(trimmed);
           });

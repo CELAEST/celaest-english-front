@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
-import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
-import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
+import { SpeechSynthesisService, MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
+import { phoneticLookupService } from "../services/phoneticLookupService";
 
 export interface ReadingWordModalProps {
   wordData: WordLookup | null;
@@ -31,8 +31,6 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     const [isAdding, setIsAdding] = useState(false);
     const [addedSuccess, setAddedSuccess] = useState(false);
     const [isTranslatingDirect, setIsTranslatingDirect] = useState(false);
-    const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // 3D Spatial Tilt Physics & Dynamic Specular Sheen (Direct RAF DOM updates — Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
@@ -72,7 +70,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       }
     }, []);
 
-    // Keyboard accessibility: Dismiss on Escape
+    // Dismiss on Escape and stop audio playback
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -86,13 +84,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = null;
         }
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-        }
+        SpeechSynthesisService.stop();
       };
     }, [onClose]);
 
@@ -101,79 +93,57 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       setAddedSuccess(false);
       setIsAdding(false);
       setIsTranslatingDirect(false);
+      setIsPlayingAudio(false);
+      SpeechSynthesisService.stop();
     }, [wordData?.word]);
 
-    const speakFallback = (text: string) => {
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "en-US";
-        utterance.rate = 0.85;
+    // Compute authentic IPA phonetic transcription (never fake fallback like /word/)
+    const displayPhonetic = useMemo(() => {
+      if (!wordData) return "";
+      const raw = wordData.phonetic?.trim();
+      const cleanWord = wordData.word.trim().toLowerCase();
 
-        const voices = window.speechSynthesis.getVoices();
-        const englishVoice = voices.find(
-          (v) => v.lang.startsWith("en-") && v.name.includes("Google"),
-        );
-        if (englishVoice) {
-          utterance.voice = englishVoice;
-        }
+      const isFakePhonetic =
+        !raw ||
+        raw === `/${cleanWord}/` ||
+        raw === `/${wordData.word}/` ||
+        raw === cleanWord ||
+        raw === wordData.word ||
+        raw.startsWith("/'") ||
+        /^\/[a-zA-Z\s_-]+\/$/.test(raw);
 
-        utterance.onstart = () => setIsPlayingAudio(true);
-        utterance.onend = () => {
-          setIsPlayingAudio(false);
-          currentUtteranceRef.current = null;
-        };
-        utterance.onerror = () => {
-          setIsPlayingAudio(false);
-          currentUtteranceRef.current = null;
-        };
-
-        currentUtteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setTimeout(() => setIsPlayingAudio(false), 800);
+      if (!isFakePhonetic && raw) {
+        return raw.replace(/^\/'/, "/").split(",")[0].trim();
       }
-    };
 
-    const handlePlayAudio = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!wordData) return;
+      return phoneticLookupService.getPhonetic(wordData.word);
+    }, [wordData]);
 
-      setIsPlayingAudio(true);
-      try {
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
+    const handlePlayAudio = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!wordData) return;
 
-        const audioUrl =
-          wordData.audioUrl ||
-          `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(wordData.word)}&voice=en-US-AriaNeural`;
-        const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
-        audio.src = audioUrl;
-        audio.preload = "auto";
-        audioRef.current = audio;
+        // Synchronously unlock mobile audio hardware on user touch/click
+        MobileAudioUnlocker.unlock();
 
-        audio.onended = () => {
-          setIsPlayingAudio(false);
-          audioRef.current = null;
-        };
-        audio.onerror = () => {
-          audioRef.current = null;
-          speakFallback(wordData.word);
-        };
-
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            audioRef.current = null;
-            speakFallback(wordData.word);
-          });
-        }
-      } catch {
-        audioRef.current = null;
-        speakFallback(wordData.word);
-      }
-    };
+        setIsPlayingAudio(true);
+        void SpeechSynthesisService.speak(wordData.word, {
+          voice: "en-US-AriaNeural",
+          rate: 0.9,
+          onStart: () => {
+            setIsPlayingAudio(true);
+          },
+          onEnd: () => {
+            setIsPlayingAudio(false);
+          },
+          onError: () => {
+            setIsPlayingAudio(false);
+          },
+        });
+      },
+      [wordData],
+    );
 
     const handleSaveToMemory = async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -333,8 +303,8 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                   {wordData.word}
                 </h3>
 
-                <span className="text-[11.5px] text-[#8a8b9e] font-mono italic mt-1">
-                  {wordData.phonetic?.replace(/^\/'/, "/").split(",")[0] || `/${wordData.word}/`}
+                <span className="text-[12px] sm:text-[13px] text-[#c4b5fd] font-mono font-medium tracking-wide mt-1.5 select-text">
+                  {displayPhonetic}
                 </span>
               </div>
 

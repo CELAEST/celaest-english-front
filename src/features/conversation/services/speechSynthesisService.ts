@@ -45,14 +45,14 @@ export class SpeechSynthesisService {
     const voiceId: FlagshipVoiceId =
       options.voice === "en-US-ChristopherNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
 
-    try {
-      const cached = readingAudioPrefetcher.get(trimmed, voiceId);
-      const audioSource = cached
-        ? cached.blobUrl
-        : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
-            voiceId,
-          )}&rate=%2B0%25`;
+    const cached = readingAudioPrefetcher.get(trimmed, voiceId);
+    const audioSource = cached
+      ? cached.blobUrl
+      : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
+          voiceId,
+        )}&rate=%2B0%25`;
 
+    try {
       // Re-use pre-unlocked audio element on mobile devices to bypass iOS Safari autoplay quarantine
       const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
       audio.src = audioSource;
@@ -80,34 +80,23 @@ export class SpeechSynthesisService {
 
       audio.onerror = async (e) => {
         if (this.activePlaybackId !== playbackId) return;
-        logger.warn("[SpeechSynthesisService] Direct audio stream error, attempting Blob retry:", e);
+        logger.warn("[SpeechSynthesisService] Direct audio stream error, attempting Web Audio buffer playback:", e);
         try {
-          const resp = await fetch(audioSource, { headers: { Accept: "audio/mpeg" } });
-          if (resp.ok) {
-            const blob = await resp.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            audio.src = blobUrl;
-            if (options.rate) audio.playbackRate = options.rate;
-            audio.onplay = () => {
-              if (this.activePlaybackId !== playbackId) return;
-              if (options.onStart) options.onStart();
-            };
-            audio.onended = () => {
-              URL.revokeObjectURL(blobUrl);
-              handleEnd();
-            };
-            audio.onerror = () => {
-              URL.revokeObjectURL(blobUrl);
-              this.speakFallback(trimmed, options, playbackId);
-            };
-            await audio.play();
-            return;
-          }
-        } catch {
-          // Continue to speakFallback below
-        }
+          const played = await MobileAudioUnlocker.playNeuralBuffer(
+            audioSource,
+            options,
+            playbackId,
+            () => {
+              if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
+            },
+            () => {
+              if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
+            },
+          );
+          if (played) return;
+        } catch {}
         this.currentAudio = null;
-        this.speakFallback(trimmed, options, playbackId);
+        await this.speakFallback(trimmed, options, playbackId);
       };
 
       await audio.play();
@@ -117,44 +106,26 @@ export class SpeechSynthesisService {
         // Deliberate user navigation or audio interruption — do not trigger fallback voice
         return;
       }
-      if (err?.name === "NotAllowedError") {
-        logger.warn("[SpeechSynthesisService] Audio playback blocked by browser autoplay policy, attempting speech synthesis fallback:", err);
-        this.currentAudio = null;
-        await this.speakFallback(trimmed, options, playbackId);
-        return;
-      }
-      logger.warn("[SpeechSynthesisService] Error initiating audio, attempting Blob retry before fallback:", err);
-      try {
-        const audioSource = `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
-          voiceId,
-        )}&rate=%2B0%25`;
-        const resp = await fetch(audioSource, { headers: { Accept: "audio/mpeg" } });
-        if (resp.ok) {
-          const blob = await resp.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
-          audio.src = blobUrl;
-          if (options.rate) audio.playbackRate = options.rate;
-          this.currentAudio = audio;
-          audio.onplay = () => {
-            if (this.activePlaybackId !== playbackId) return;
-            if (options.onStart) options.onStart();
-          };
-          audio.onended = () => {
-            URL.revokeObjectURL(blobUrl);
-            if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
-          };
-          audio.onerror = () => {
-            URL.revokeObjectURL(blobUrl);
-            void this.speakFallback(trimmed, options, playbackId);
-          };
-          await audio.play();
-          return;
-        }
-      } catch {
-        // Continue to speakFallback below
-      }
+      logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked or failed, attempting Web Audio buffer playback:", err);
       this.currentAudio = null;
+
+      try {
+        const played = await MobileAudioUnlocker.playNeuralBuffer(
+          audioSource,
+          options,
+          playbackId,
+          () => {
+            if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
+          },
+          () => {
+            if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
+          },
+        );
+        if (played) return;
+      } catch (webAudioErr) {
+        logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
+      }
+
       await this.speakFallback(trimmed, options, playbackId);
     }
   }
@@ -350,11 +321,16 @@ export class SpeechSynthesisService {
     }
   }
 
+  public static getActivePlaybackId(): number {
+    return this.activePlaybackId;
+  }
+
   /**
    * Stops any ongoing speech immediately across both Neural Audio and browser synthesis
    */
   public static stop(): void {
     this.activePlaybackId++;
+    MobileAudioUnlocker.stopSourceNode();
     if (this.currentAudio) {
       const audio = this.currentAudio;
       audio.onplay = null;
@@ -401,7 +377,24 @@ export class SpeechSynthesisService {
  */
 export class MobileAudioUnlocker {
   private static isUnlocked = false;
+  private static isAudioCtxUnlocked = false;
   private static sharedAudio: HTMLAudioElement | null = null;
+  private static audioCtx: AudioContext | null = null;
+  private static activeSourceNode: AudioBufferSourceNode | null = null;
+  private static bufferCache = new Map<string, AudioBuffer>();
+
+  public static getAudioContext(): AudioContext | null {
+    if (typeof window === "undefined") return null;
+    if (!this.audioCtx || this.audioCtx.state === "closed") {
+      const AudioCtxClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtxClass) {
+        this.audioCtx = new AudioCtxClass();
+      }
+    }
+    return this.audioCtx;
+  }
 
   public static getSharedAudio(): HTMLAudioElement | null {
     if (typeof window === "undefined") return null;
@@ -420,6 +413,26 @@ export class MobileAudioUnlocker {
 
   public static unlock(): void {
     if (typeof window === "undefined") return;
+
+    // 1. Prime Web Audio API AudioContext on user gesture (iOS Safari Gold Standard)
+    try {
+      const ctx = this.getAudioContext();
+      if (ctx) {
+        if (ctx.state === "suspended") {
+          void ctx.resume();
+        }
+        if (!this.isAudioCtxUnlocked) {
+          const buffer = ctx.createBuffer(1, 1, 22050);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start(0);
+          this.isAudioCtxUnlocked = true;
+        }
+      }
+    } catch {}
+
+    // 2. Prime persistent HTMLAudioElement
     const audio = this.getSharedAudio();
     if (!audio) return;
 
@@ -443,6 +456,98 @@ export class MobileAudioUnlocker {
     try {
       localStorage.setItem("celaest:interview:hasInteracted", "1");
     } catch {}
+  }
+
+  /**
+   * Decodes and plays a neural audio stream or blob via Web Audio API.
+   * Completely bypasses iOS Safari and Android media element autoplay quarantine.
+   */
+  public static async playNeuralBuffer(
+    audioUrlOrBlob: string | Blob,
+    options: SpeakOptions = {},
+    playbackId: number,
+    onStart?: () => void,
+    onEnd?: () => void,
+  ): Promise<boolean> {
+    const ctx = this.getAudioContext();
+    if (!ctx) return false;
+
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+      } catch {}
+    }
+
+    let audioBuffer: AudioBuffer | undefined;
+    const cacheKey = typeof audioUrlOrBlob === "string" ? audioUrlOrBlob : null;
+
+    if (cacheKey && this.bufferCache.has(cacheKey)) {
+      audioBuffer = this.bufferCache.get(cacheKey);
+    } else {
+      let arrayBuffer: ArrayBuffer;
+      if (typeof audioUrlOrBlob === "string") {
+        const resp = await fetch(audioUrlOrBlob, { headers: { Accept: "audio/mpeg" } });
+        if (!resp.ok) return false;
+        arrayBuffer = await resp.arrayBuffer();
+      } else {
+        arrayBuffer = await audioUrlOrBlob.arrayBuffer();
+      }
+
+      if (SpeechSynthesisService.getActivePlaybackId() !== playbackId) {
+        return false;
+      }
+
+      audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+      if (cacheKey && audioBuffer) {
+        if (this.bufferCache.size > 50) {
+          const firstKey = this.bufferCache.keys().next().value;
+          if (firstKey) this.bufferCache.delete(firstKey);
+        }
+        this.bufferCache.set(cacheKey, audioBuffer);
+      }
+    }
+
+    if (!audioBuffer || SpeechSynthesisService.getActivePlaybackId() !== playbackId) {
+      return false;
+    }
+
+    this.stopSourceNode();
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    if (options.rate) {
+      source.playbackRate.value = options.rate;
+    }
+
+    source.connect(ctx.destination);
+    this.activeSourceNode = source;
+
+    let hasEnded = false;
+    source.onended = () => {
+      if (hasEnded) return;
+      hasEnded = true;
+      if (this.activeSourceNode === source) {
+        this.activeSourceNode = null;
+      }
+      if (SpeechSynthesisService.getActivePlaybackId() === playbackId && onEnd) {
+        onEnd();
+      }
+    };
+
+    source.start(0);
+    if (onStart) onStart();
+
+    return true;
+  }
+
+  public static stopSourceNode(): void {
+    if (this.activeSourceNode) {
+      try {
+        this.activeSourceNode.stop();
+        this.activeSourceNode.disconnect();
+      } catch {}
+      this.activeSourceNode = null;
+    }
   }
 
   public static init(): void {

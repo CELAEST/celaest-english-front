@@ -3,6 +3,7 @@ import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { ReadingWordModal } from "./ReadingWordModal";
 import { VocabloTranslateIcon } from "./ReadingBespokeIcons";
 import { logger } from "../../../shared/utils/logger";
+import { phoneticLookupService } from "../services/phoneticLookupService";
 import {
   VERIFIED_PHRASAL_VERBS_SET,
   OBJECT_PRONOUNS_SET,
@@ -216,7 +217,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
             setActiveWordData({
               word: phrase,
               spanishTranslation: spanishFallback,
-              phonetic: `/${phrase}/`,
+              phonetic: phoneticLookupService.getPhonetic(phrase),
               partOfSpeech: phrase.includes(" ") ? "phrasal verb" : "vocabulary",
               definition: `Contextual meaning for '${phrase}'.`,
               exampleSentence: contextSentence || `Using '${phrase}' in context enhances clarity and natural English fluency.`,

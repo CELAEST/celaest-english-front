@@ -185,4 +185,70 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
       expect(summary.title).toBe("Default Article");
     });
   });
+
+  describe("4. Universal IPA Phonetics & Mobile Web Audio Neural Buffer Engine", () => {
+    it("provides authentic IPA phonetic transcriptions and NEVER returns fake fallbacks like /word/", async () => {
+      const { phoneticLookupService } = await import("../../../reading/services/phoneticLookupService");
+
+      // Curated dictionary words
+      expect(phoneticLookupService.getPhonetic("paradigm")).toBe("/ˈpær.ə.daɪm/");
+      expect(phoneticLookupService.getPhonetic("throughout")).toBe("/θruːˈaʊt/");
+      expect(phoneticLookupService.getPhonetic("subtle")).toBe("/ˈsʌt.l/");
+      expect(phoneticLookupService.getPhonetic("architecture")).toBe("/ˈɑːr.kɪ.tɛk.tʃər/");
+
+      // Phrasal expressions
+      expect(phoneticLookupService.getPhonetic("figure out")).toBe("/ˈfɪɡ.ər aʊt/");
+      expect(phoneticLookupService.getPhonetic("as well as")).toBe("/æz wɛl æz/");
+
+      // Suffix and derivation
+      expect(phoneticLookupService.getPhonetic("architectures")).toBe("/ˈɑːr.kɪ.tɛk.tʃərs/");
+
+      // Unknown or complex algorithmic word
+      const algorithmicPhonetic = phoneticLookupService.getPhonetic("cryptographic");
+      expect(algorithmicPhonetic.startsWith("/")).toBe(true);
+      expect(algorithmicPhonetic.endsWith("/")).toBe(true);
+      // Invariant: never equal to the raw word itself
+      expect(algorithmicPhonetic).not.toBe("/cryptographic/");
+      expect(algorithmicPhonetic).not.toBe("cryptographic");
+    });
+
+    it("decodes and starts AudioBufferSourceNode via MobileAudioUnlocker.playNeuralBuffer", async () => {
+      const mockAudioContext = {
+        state: "suspended",
+        resume: vi.fn().mockResolvedValue(undefined),
+        decodeAudioData: vi.fn().mockResolvedValue({
+          duration: 1.2,
+          length: 5000,
+          numberOfChannels: 2,
+          sampleRate: 44100,
+        } as unknown as AudioBuffer),
+        createBuffer: vi.fn().mockReturnValue({} as AudioBuffer),
+        createBufferSource: vi.fn().mockReturnValue({
+          buffer: null,
+          playbackRate: { value: 1.0 },
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+          start: vi.fn(),
+          stop: vi.fn(),
+          onended: null,
+        }),
+        destination: {},
+      };
+
+      vi.spyOn(MobileAudioUnlocker, "getAudioContext").mockReturnValue(mockAudioContext as unknown as AudioContext);
+
+      // Create a fake audio blob
+      const fakeBlob = new Blob(["fake audio mpeg bytes"], { type: "audio/mpeg" });
+      const onStart = vi.fn();
+      const onEnd = vi.fn();
+
+      const activeId = SpeechSynthesisService.getActivePlaybackId();
+      const played = await MobileAudioUnlocker.playNeuralBuffer(fakeBlob, { rate: 1.0 }, activeId, onStart, onEnd);
+
+      expect(played).toBe(true);
+      expect(mockAudioContext.resume).toHaveBeenCalled();
+      expect(mockAudioContext.decodeAudioData).toHaveBeenCalled();
+      expect(onStart).toHaveBeenCalled();
+    });
+  });
 });

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useMemoryCards } from "../../memory/hooks/useMemoryCards";
-import { useReadingArticles } from "../../reading/hooks/useReadingArticles";
 
 export interface WorkspaceOrbCalloutsProps {
   learningGoal?: string | undefined;
@@ -14,7 +13,6 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
   onSelectNode,
 }) => {
   const { cards } = useMemoryCards();
-  const { currentArticle, articles } = useReadingArticles();
 
   // Dynamic memory stats from real user cards
   const memoryCount = cards.length;
@@ -25,15 +23,39 @@ export const WorkspaceOrbCallouts: React.FC<WorkspaceOrbCalloutsProps> = ({
       : "Personalized Lexicon Deck";
   const activeMemoryStat = memoryCount > 0 ? `${memoryCount} DUE` : "DECK READY";
 
-  // Dynamic reading article from real repository/cache
-  const targetArticle = currentArticle || articles[0];
-  const wordCount = targetArticle?.content
-    ? targetArticle.content.trim().split(/\s+/).length
-    : 480;
-  const activeReadingTitle =
-    targetArticle?.title || "Architectural Paradigm Shifts in Business";
-  const activeReadingStat = `${targetArticle?.readTimeMin || 4} MIN`;
-  const activeReadingSub = `${targetArticle?.cefrLevel || "C1"} · ${wordCount} words`;
+  // Passive, lightweight reading article summary (zero background timers or audio prefetching)
+  const readingSummary = useMemo(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedStr = localStorage.getItem("lingua_reading_articles_v2");
+        if (cachedStr) {
+          const parsed = JSON.parse(cachedStr);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]) {
+            const first = parsed[0];
+            const words = first.content ? first.content.trim().split(/\s+/).length : 480;
+            return {
+              title: first.title || "Architectural Paradigm Shifts in Business",
+              readTimeMin: first.readTimeMin || 4,
+              cefrLevel: first.cefrLevel || "C1",
+              wordCount: words,
+            };
+          }
+        }
+      } catch {
+        // Safe fallback
+      }
+    }
+    return {
+      title: "Architectural Paradigm Shifts in Business",
+      readTimeMin: 4,
+      cefrLevel: "C1",
+      wordCount: 480,
+    };
+  }, []);
+
+  const activeReadingTitle = readingSummary.title;
+  const activeReadingStat = `${readingSummary.readTimeMin} MIN`;
+  const activeReadingSub = `${readingSummary.cefrLevel} · ${readingSummary.wordCount} words`;
 
   // Dynamic interview simulation from real user settings
   const activeInterviewTitle = learningGoal

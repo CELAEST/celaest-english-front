@@ -90,6 +90,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     }
   }, [activeTab]);
 
+  React.useEffect(() => {
+    if (defaultTab && defaultTab !== activeTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
+
   const { settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
@@ -166,9 +172,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
           disablePictureInPicture
-          poster="/assets/workspace_room_bg.webp"
           className="w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none transition-all duration-300"
           style={{
             willChange: "transform",

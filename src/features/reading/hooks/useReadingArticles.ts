@@ -154,11 +154,15 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
 
   /** Server list merged with local session articles (fresh server articles take priority). */
   const articles = useMemo(() => {
-    if (!fetchedArticles || fetchedArticles.length === 0) return localArticles;
+    const serverList = Array.isArray(fetchedArticles) ? fetchedArticles : [];
+    const localList = Array.isArray(localArticles) ? localArticles : [];
+    if (serverList.length === 0) return localList;
     const map = new Map<string, ReadingArticle>();
-    fetchedArticles.forEach((art) => map.set(art.id, art));
-    localArticles.forEach((art) => {
-      if (!map.has(art.id)) {
+    serverList.forEach((art) => {
+      if (art && art.id) map.set(art.id, art);
+    });
+    localList.forEach((art) => {
+      if (art && art.id && !map.has(art.id)) {
         map.set(art.id, art);
       }
     });
@@ -167,13 +171,13 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
 
   const matchingLevelArticles = useMemo(() => {
     return articles.filter(
-      (a) => !level || a.cefrLevel?.toUpperCase() === level.toUpperCase(),
+      (a) => Boolean(a) && (!level || a.cefrLevel?.toUpperCase() === level.toUpperCase()),
     );
   }, [articles, level]);
 
   const currentArticle = useMemo(
     () => {
-      const active = articles.find((a) => a.id === activeArticleId);
+      const active = articles.find((a) => Boolean(a) && a.id === activeArticleId);
       if (active && (!level || active.cefrLevel?.toUpperCase() === level.toUpperCase())) {
         return active;
       }
@@ -182,22 +186,22 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     [articles, activeArticleId, level, matchingLevelArticles],
   );
 
-  // Restore a stored-active article that only exists server-side, or default
-  // to the first server article when starting without any cache. Runs at most
-  // once per mount, during render (React-endorsed state adjustment pattern).
-  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
-  if (!initialSelectionDone && fetchedArticles && fetchedArticles.length > 0) {
-    setInitialSelectionDone(true);
-    const storedActiveId = localStorage.getItem(ACTIVE_ARTICLE_ID_KEY);
-    const restored =
-      (storedActiveId && matchingLevelArticles.find((a) => a.id === storedActiveId)) ||
-      matchingLevelArticles[0] ||
-      currentArticle ||
-      fetchedArticles[0];
-    if (restored && restored.id !== activeArticleId) {
-      setActiveArticleId(restored.id);
+  // Restore a stored-active article that only exists server-side cleanly via effect
+  const hasInitializedServerSelection = useRef(false);
+  useEffect(() => {
+    if (!hasInitializedServerSelection.current && Array.isArray(fetchedArticles) && fetchedArticles.length > 0) {
+      hasInitializedServerSelection.current = true;
+      const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
+      const restored =
+        (storedActiveId && matchingLevelArticles.find((a) => a && a.id === storedActiveId)) ||
+        matchingLevelArticles[0] ||
+        currentArticle ||
+        fetchedArticles[0];
+      if (restored && restored.id && restored.id !== activeArticleId) {
+        setActiveArticleId(restored.id);
+      }
     }
-  }
+  }, [fetchedArticles, matchingLevelArticles, currentArticle, activeArticleId]);
 
   const prevLevelRef = useRef(level);
   useEffect(() => {
@@ -206,22 +210,23 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
       setCurrentPageIndex(0);
       setHasFinishedArticle(false);
       const matching = articles.find(
-        (a) => !level || a.cefrLevel?.toUpperCase() === level.toUpperCase(),
+        (a) => Boolean(a) && (!level || a.cefrLevel?.toUpperCase() === level.toUpperCase()),
       );
-      if (matching) {
+      if (matching && matching.id) {
         setActiveArticleId(matching.id);
       }
     }
   }, [level, articles]);
 
   // Reset per-article session telemetry whenever the active article changes
-  // (render-phase adjustment instead of a cascading setState effect).
-  const [lastTrackedArticleId, setLastTrackedArticleId] = useState<string | null>(initialActiveId);
-  if (lastTrackedArticleId !== activeArticleId) {
-    setLastTrackedArticleId(activeArticleId);
-    setSessionSeconds(0);
-    setHasFinishedArticle(false);
-  }
+  const lastTrackedArticleIdRef = useRef<string | null>(initialActiveId);
+  useEffect(() => {
+    if (lastTrackedArticleIdRef.current !== activeArticleId) {
+      lastTrackedArticleIdRef.current = activeArticleId;
+      setSessionSeconds(0);
+      setHasFinishedArticle(false);
+    }
+  }, [activeArticleId]);
 
   // Live session reading timer: tracks real elapsed seconds while reading actively
   const trackedArticleId = currentArticle?.id;

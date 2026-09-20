@@ -53,7 +53,9 @@ export class SpeechSynthesisService {
             voiceId,
           )}&rate=%2B0%25`;
 
-      const audio = new Audio(audioSource);
+      // Re-use pre-unlocked audio element on mobile devices to bypass iOS Safari autoplay quarantine
+      const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+      audio.src = audioSource;
       audio.preload = "auto";
       if (options.rate) {
         audio.playbackRate = options.rate;
@@ -84,22 +86,21 @@ export class SpeechSynthesisService {
           if (resp.ok) {
             const blob = await resp.blob();
             const blobUrl = URL.createObjectURL(blob);
-            const retryAudio = new Audio(blobUrl);
-            if (options.rate) retryAudio.playbackRate = options.rate;
-            this.currentAudio = retryAudio;
-            retryAudio.onplay = () => {
+            audio.src = blobUrl;
+            if (options.rate) audio.playbackRate = options.rate;
+            audio.onplay = () => {
               if (this.activePlaybackId !== playbackId) return;
               if (options.onStart) options.onStart();
             };
-            retryAudio.onended = () => {
+            audio.onended = () => {
               URL.revokeObjectURL(blobUrl);
               handleEnd();
             };
-            retryAudio.onerror = () => {
+            audio.onerror = () => {
               URL.revokeObjectURL(blobUrl);
               this.speakFallback(trimmed, options, playbackId);
             };
-            await retryAudio.play();
+            await audio.play();
             return;
           }
         } catch {
@@ -117,10 +118,9 @@ export class SpeechSynthesisService {
         return;
       }
       if (err?.name === "NotAllowedError") {
-        // Autoplay policy prevented playback on mobile (requires user gesture)
-        logger.warn("[SpeechSynthesisService] Audio playback blocked by browser autoplay policy:", err);
+        logger.warn("[SpeechSynthesisService] Audio playback blocked by browser autoplay policy, attempting speech synthesis fallback:", err);
         this.currentAudio = null;
-        if (options.onEnd) options.onEnd();
+        this.speakFallback(trimmed, options, playbackId);
         return;
       }
       logger.warn("[SpeechSynthesisService] Error initiating audio, attempting Blob retry before fallback:", err);
@@ -132,22 +132,23 @@ export class SpeechSynthesisService {
         if (resp.ok) {
           const blob = await resp.blob();
           const blobUrl = URL.createObjectURL(blob);
-          const retryAudio = new Audio(blobUrl);
-          if (options.rate) retryAudio.playbackRate = options.rate;
-          this.currentAudio = retryAudio;
-          retryAudio.onplay = () => {
+          const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+          audio.src = blobUrl;
+          if (options.rate) audio.playbackRate = options.rate;
+          this.currentAudio = audio;
+          audio.onplay = () => {
             if (this.activePlaybackId !== playbackId) return;
             if (options.onStart) options.onStart();
           };
-          retryAudio.onended = () => {
+          audio.onended = () => {
             URL.revokeObjectURL(blobUrl);
             if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
           };
-          retryAudio.onerror = () => {
+          audio.onerror = () => {
             URL.revokeObjectURL(blobUrl);
             this.speakFallback(trimmed, options, playbackId);
           };
-          await retryAudio.play();
+          await audio.play();
           return;
         }
       } catch {
@@ -189,9 +190,25 @@ export class SpeechSynthesisService {
         return;
       }
 
+      let settled = false;
+      const finish = (v: SpeechSynthesisVoice[]) => {
+        if (!settled) {
+          settled = true;
+          try {
+            window.speechSynthesis.onvoiceschanged = null;
+          } catch {}
+          resolve(v);
+        }
+      };
+
+      // Safeguard against mobile iOS Safari where onvoiceschanged may never trigger
+      const timer = setTimeout(() => {
+        finish(window.speechSynthesis.getVoices());
+      }, 400);
+
       window.speechSynthesis.onvoiceschanged = () => {
-        const loaded = window.speechSynthesis.getVoices();
-        resolve(loaded);
+        clearTimeout(timer);
+        finish(window.speechSynthesis.getVoices());
       };
     });
   }
@@ -375,32 +392,56 @@ export class SpeechSynthesisService {
 
 /**
  * MobileAudioUnlocker — Solves iOS Safari & Android Chrome Media Autoplay Quarantine.
- * Captures the very first user touch/pointer gesture on the document and activates
- * an inaudible audio element, permanently granting audio playback permissions to the page.
+ * Maintains a persistent, unlocked HTMLAudioElement instance across the user session.
+ * Captures user touch/pointer gestures and permanently grants audio playback permissions.
  */
 export class MobileAudioUnlocker {
   private static isUnlocked = false;
+  private static sharedAudio: HTMLAudioElement | null = null;
+
+  public static getSharedAudio(): HTMLAudioElement | null {
+    if (typeof window === "undefined") return null;
+    if (!this.sharedAudio) {
+      this.sharedAudio = new Audio();
+      this.sharedAudio.preload = "auto";
+      // @ts-ignore
+      this.sharedAudio.playsInline = true;
+    }
+    return this.sharedAudio;
+  }
+
+  public static unlock(): void {
+    if (typeof window === "undefined") return;
+    const audio = this.getSharedAudio();
+    if (!audio) return;
+
+    try {
+      if (!this.isUnlocked) {
+        audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+        audio.volume = 0.01;
+        const p = audio.play();
+        if (p) {
+          p.then(() => {
+            this.isUnlocked = true;
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+            } catch {}
+          }).catch(() => {});
+        }
+      }
+    } catch {}
+
+    try {
+      localStorage.setItem("celaest:interview:hasInteracted", "1");
+    } catch {}
+  }
 
   public static init(): void {
-    if (typeof window === "undefined" || this.isUnlocked) return;
+    if (typeof window === "undefined") return;
 
     const unlockHandler = () => {
-      if (this.isUnlocked) return;
-      this.isUnlocked = true;
-
-      try {
-        const silentAudio = new Audio(
-          "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA",
-        );
-        silentAudio.volume = 0.01;
-        const p = silentAudio.play();
-        if (p) p.catch(() => {});
-      } catch {}
-
-      try {
-        localStorage.setItem("celaest:interview:hasInteracted", "1");
-      } catch {}
-
+      this.unlock();
       window.removeEventListener("pointerdown", unlockHandler, true);
       window.removeEventListener("touchstart", unlockHandler, true);
       window.removeEventListener("keydown", unlockHandler, true);
@@ -411,4 +452,5 @@ export class MobileAudioUnlocker {
     window.addEventListener("keydown", unlockHandler, { passive: true, capture: true });
   }
 }
+
 

@@ -6,6 +6,7 @@ import {
   FlagshipVoiceId,
   WordBoundaryTimestamp,
 } from "../services/readingAudioPrefetcher";
+import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
 export const MENTOR_VOICE_STORAGE_KEY = "lingua_reading_selected_mentor_voice_v3";
 
@@ -490,7 +491,9 @@ export function useReadingAudioNarrator(
               voiceToUse,
             )}&rate=%2B0%25`;
 
-        const audio = new Audio(audioSource);
+        const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+        audio.src = audioSource;
+        audio.preload = "auto";
         audio.playbackRate = playbackRate;
         audioRef.current = audio;
 

@@ -97,8 +97,10 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   const effectiveProfession = roleName || profile?.profession;
   const userLevel = React.useMemo(() => {
     if (!profile?.cefrLevel) return isProfileLoading ? undefined : "B1";
-    return profile.cefrLevel.split(" ")[0].trim().toUpperCase();
+    return String(profile.cefrLevel).split(" ")[0].trim().toUpperCase();
   }, [profile?.cefrLevel, isProfileLoading]);
+
+  const activeFontSize = READING_FONT_SIZES[fontSizeIndex] || READING_FONT_SIZES[0];
 
   const {
     currentArticle,
@@ -313,7 +315,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                 onToggleAudio={toggleAudioPlay}
                 onRestartAudio={restartAudioPlay}
                 onCycleAudioRate={cycleAudioRate}
-                fontSizeLabel={READING_FONT_SIZES[fontSizeIndex].label}
+                fontSizeLabel={activeFontSize.label}
                 onCycleFontSize={handleCycleFontSize}
               />
             )}
@@ -373,7 +375,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                   onDirectTranslate={translateWordDirect}
                   activeKaraokeWordIndex={activeKaraokeWordIndex}
                   isWordSaved={isWordSaved}
-                  fontSizeClassName={READING_FONT_SIZES[fontSizeIndex].className}
+                  fontSizeClassName={activeFontSize.className}
                 />
               )}
             </div>

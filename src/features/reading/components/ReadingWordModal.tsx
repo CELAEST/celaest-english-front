@@ -3,6 +3,7 @@ import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
+import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
 export interface ReadingWordModalProps {
   wordData: WordLookup | null;
@@ -147,7 +148,9 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         const audioUrl =
           wordData.audioUrl ||
           `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(wordData.word)}&voice=en-US-AriaNeural`;
-        const audio = new Audio(audioUrl);
+        const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+        audio.src = audioUrl;
+        audio.preload = "auto";
         audioRef.current = audio;
 
         audio.onended = () => {

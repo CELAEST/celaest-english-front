@@ -137,7 +137,7 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
       muted
       loop
       playsInline
-      preload="metadata"
+      preload="auto"
       disablePictureInPicture
       // @ts-ignore
       disableRemotePlayback

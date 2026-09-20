@@ -51,28 +51,34 @@ function OnboardingRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const authAdapter = SupabaseAuthAdapter.getInstance();
-  const { settings } = useCurrentUser();
+  const { user, settings } = useCurrentUser();
   const isReset = searchParams.get("reset") === "true";
 
   useEffect(() => {
     if (isReset) {
       localStorage.removeItem("lingua_onboarding_completed");
+      if (user?.id) localStorage.removeItem(`lingua_onboarding_completed_${user.id}`);
+      if (user?.email) localStorage.removeItem(`lingua_onboarding_completed_${user.email}`);
     }
-  }, [isReset]);
+  }, [isReset, user?.id, user?.email]);
 
   const isCompletedLocal =
     !isReset &&
     typeof window !== "undefined" &&
-    localStorage.getItem("lingua_onboarding_completed") === "true";
+    (localStorage.getItem("lingua_onboarding_completed") === "true" ||
+      (user?.id ? localStorage.getItem(`lingua_onboarding_completed_${user.id}`) === "true" : false) ||
+      (user?.email ? localStorage.getItem(`lingua_onboarding_completed_${user.email}`) === "true" : false));
   const hasToken = authAdapter.isAuthenticated();
 
-  // If user is authenticated and backend confirms onboarding completion, navigate to Workspace
+  // If user is authenticated and completed onboarding, navigate immediately to Workspace
   useEffect(() => {
-    if (!isReset && hasToken && settings?.onboardingCompleted) {
+    if (!isReset && hasToken && (isCompletedLocal || settings?.onboardingCompleted)) {
       localStorage.setItem("lingua_onboarding_completed", "true");
+      if (user?.id) localStorage.setItem(`lingua_onboarding_completed_${user.id}`, "true");
+      if (user?.email) localStorage.setItem(`lingua_onboarding_completed_${user.email}`, "true");
       navigate(ROUTES.HOME, { replace: true });
     }
-  }, [isReset, hasToken, settings?.onboardingCompleted, navigate]);
+  }, [isReset, hasToken, settings?.onboardingCompleted, isCompletedLocal, user?.id, user?.email, navigate]);
 
   if (!isReset && hasToken && (isCompletedLocal || settings?.onboardingCompleted)) {
     return <Navigate to={ROUTES.HOME} replace />;
@@ -82,6 +88,8 @@ function OnboardingRoute() {
     <OnboardingView
       onFinish={() => {
         localStorage.setItem("lingua_onboarding_completed", "true");
+        if (user?.id) localStorage.setItem(`lingua_onboarding_completed_${user.id}`, "true");
+        if (user?.email) localStorage.setItem(`lingua_onboarding_completed_${user.email}`, "true");
         navigate(ROUTES.HOME, { replace: true });
       }}
     />
@@ -104,7 +112,6 @@ function WorkspaceWrapper() {
   useEffect(() => {
     const handleUnauthorized = () => {
       authAdapter.logout();
-      localStorage.removeItem("lingua_onboarding_completed");
       navigate(ROUTES.ONBOARDING, { replace: true });
     };
 
@@ -114,26 +121,24 @@ function WorkspaceWrapper() {
     };
   }, [authAdapter, navigate]);
 
+  const isCompletedLocal =
+    typeof window !== "undefined" &&
+    (localStorage.getItem("lingua_onboarding_completed") === "true" ||
+      (user?.id ? localStorage.getItem(`lingua_onboarding_completed_${user.id}`) === "true" : false) ||
+      (user?.email ? localStorage.getItem(`lingua_onboarding_completed_${user.email}`) === "true" : false));
+  const isCompleted = isCompletedLocal || settings?.onboardingCompleted === true;
+
   // Auth & Onboarding Guard
   useEffect(() => {
     if (!hasToken) {
       navigate(ROUTES.ONBOARDING, { replace: true });
       return;
     }
-    // If backend reports onboarding is genuinely not completed, redirect to diagnostic flow
-    if (!loading && settings && settings.onboardingCompleted === false) {
-      const isCompletedLocal =
-        typeof window !== "undefined" &&
-        localStorage.getItem("lingua_onboarding_completed") === "true";
-      if (!isCompletedLocal) {
-        navigate(ROUTES.ONBOARDING, { replace: true });
-      }
+    // If backend reports onboarding is genuinely not completed, redirect only if never completed locally
+    if (!loading && settings && settings.onboardingCompleted === false && !isCompletedLocal) {
+      navigate(ROUTES.ONBOARDING, { replace: true });
     }
-  }, [hasToken, loading, settings, navigate]);
-
-  const isCompletedLocal =
-    typeof window !== "undefined" && localStorage.getItem("lingua_onboarding_completed") === "true";
-  const isCompleted = isCompletedLocal || settings?.onboardingCompleted === true;
+  }, [hasToken, loading, settings, isCompletedLocal, navigate]);
 
   // If unauthenticated or never completed onboarding placement diagnostic, protect workspace
   if (!hasToken || (!loading && !isCompleted && settings?.onboardingCompleted === false)) {

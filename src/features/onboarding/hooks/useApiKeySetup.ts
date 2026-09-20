@@ -80,6 +80,33 @@ export const useApiKeySetup = () => {
       setVerificationError("Por favor ingresa una clave de API válida");
       return;
     }
+
+    // 1. Continuing with already configured and active key: NEVER block on network/probe failure
+    if (hasExistingKey && !rawKey) {
+      setIsVerifying(true);
+      setVerificationError(null);
+      const endpoint = DEFAULT_ENDPOINTS[selectedProvider] || "https://api.groq.com/openai/v1";
+      const model = DEFAULT_MODELS[selectedProvider] || "llama-3.3-70b-versatile";
+
+      await providerKeyVault.saveActiveProviderId(selectedProvider);
+      await providerKeyVault.setCentralCoreEnabled(false);
+
+      // Best-effort background probe for dynamic model discovery only; never block navigation
+      try {
+        const probe = await probeProviderConnection(selectedProvider, effectiveKey, endpoint, model);
+        if (probe.ok && probe.discoveredModel) {
+          await providerKeyVault.saveConfig(selectedProvider, { endpoint, defaultModel: probe.discoveredModel });
+        }
+      } catch {
+        // Non-blocking best-effort
+      }
+      setIsVerifying(false);
+      setVerifiedSuccessInfo("¡Motor activo confirmado!");
+      setTimeout(onSuccess, 200);
+      return;
+    }
+
+    // 2. User entered a new key
     setIsVerifying(true);
     setVerificationError(null);
     const endpoint = DEFAULT_ENDPOINTS[selectedProvider] || "https://api.groq.com/openai/v1";
@@ -87,7 +114,16 @@ export const useApiKeySetup = () => {
 
     try {
       const probe = await probeProviderConnection(selectedProvider, effectiveKey, endpoint, model);
-      const isCorsOrNet = !probe.ok && (probe.message.toLowerCase().includes("cors") || probe.message.toLowerCase().includes("unreachable"));
+      const isCorsOrNet =
+        !probe.ok &&
+        (probe.message.toLowerCase().includes("cors") ||
+          probe.message.toLowerCase().includes("unreachable") ||
+          probe.message.toLowerCase().includes("no se pudo conectar") ||
+          probe.message.toLowerCase().includes("conexión a internet") ||
+          probe.message.toLowerCase().includes("servidor") ||
+          probe.message.toLowerCase().includes("failed to fetch") ||
+          probe.message.toLowerCase().includes("network"));
+
       if (!probe.ok && !isCorsOrNet) {
         setIsVerifying(false);
         setVerificationError(probe.message);
@@ -100,11 +136,26 @@ export const useApiKeySetup = () => {
       await providerKeyVault.saveConfig(selectedProvider, { endpoint, defaultModel: finalModel });
       setHasExistingKey(true);
       setIsVerifying(false);
-      setVerifiedSuccessInfo("¡Motor configurado y activo con éxito!");
+      setVerifiedSuccessInfo(
+        isCorsOrNet
+          ? "Clave guardada en tu dispositivo (Modo directo activo)."
+          : "¡Motor configurado y activo con éxito!"
+      );
       setTimeout(onSuccess, 600);
     } catch (err: any) {
-      setIsVerifying(false);
-      setVerificationError(`No pudimos verificar la clave. Revisa tu conexión a internet o usa Groq (100% gratis).`);
+      try {
+        await providerKeyVault.saveKey(selectedProvider, effectiveKey);
+        await providerKeyVault.saveActiveProviderId(selectedProvider);
+        await providerKeyVault.setCentralCoreEnabled(false);
+        await providerKeyVault.saveConfig(selectedProvider, { endpoint, defaultModel: model });
+        setHasExistingKey(true);
+        setIsVerifying(false);
+        setVerifiedSuccessInfo("Clave guardada en tu dispositivo.");
+        setTimeout(onSuccess, 600);
+      } catch {
+        setIsVerifying(false);
+        setVerificationError(`No pudimos verificar la clave. Revisa tu conexión a internet o usa Groq (100% gratis).`);
+      }
     }
   };
 

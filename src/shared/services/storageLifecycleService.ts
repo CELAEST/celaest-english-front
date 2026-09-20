@@ -112,7 +112,6 @@ export class StorageLifecycleService {
       "lingua_access_token",
       "lingua_refresh_token",
       "lingua_user",
-      "lingua_onboarding_completed",
       "celaest:interview-progress:v2",
       "celaest:interview-progress:v1",
       "celaest:interview:hasInteracted",

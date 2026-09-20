@@ -109,14 +109,29 @@ export const AuthCallbackView: React.FC = () => {
         })
         .catch((e) => logger.warn("[AuthCallback] supabase.auth.setSession background notice", e));
 
+      const isUserCompletedLocal =
+        (authUser.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
+        (authUser.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
+        localStorage.getItem("lingua_onboarding_completed") === "true";
+
+      if (isUserCompletedLocal) {
+        localStorage.setItem("lingua_onboarding_completed", "true");
+        if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+        if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+        if (isMounted) navigate(ROUTES.HOME, { replace: true });
+        return;
+      }
+
       try {
         const profile = await Promise.race([
           apiSettingsRepository.getProfile(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
         ]);
 
         if (profile && profile.onboardingCompleted) {
           localStorage.setItem("lingua_onboarding_completed", "true");
+          if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+          if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
           if (isMounted) navigate(ROUTES.HOME, { replace: true });
           return;
         }
@@ -124,7 +139,6 @@ export const AuthCallbackView: React.FC = () => {
         logger.warn("[AuthCallback] Profile fetch check bypassed for new user", err);
       }
 
-      localStorage.removeItem("lingua_onboarding_completed");
       if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
     };
 

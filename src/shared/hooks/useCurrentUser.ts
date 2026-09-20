@@ -42,7 +42,32 @@ export const useCurrentUser = () => {
   );
 
   const settings: UserSettings = useMemo(() => {
+    const userScopedCompleted =
+      typeof window !== "undefined" && user?.id
+        ? localStorage.getItem(`lingua_onboarding_completed_${user.id}`) === "true" ||
+          (user.email ? localStorage.getItem(`lingua_onboarding_completed_${user.email}`) === "true" : false)
+        : false;
+    const globalCompleted =
+      typeof window !== "undefined" &&
+      localStorage.getItem("lingua_onboarding_completed") === "true";
+    const fallbackCompleted = userScopedCompleted || globalCompleted;
+
+    const cachedProf =
+      typeof window !== "undefined"
+        ? localStorage.getItem("celaest:active_profession") || ""
+        : "";
+
     if (profile) {
+      const isCompleted = profile.onboardingCompleted === true || fallbackCompleted;
+      if (typeof window !== "undefined" && isCompleted) {
+        try {
+          localStorage.setItem("lingua_onboarding_completed", "true");
+          if (user?.id) localStorage.setItem(`lingua_onboarding_completed_${user.id}`, "true");
+          if (user?.email) localStorage.setItem(`lingua_onboarding_completed_${user.email}`, "true");
+        } catch {
+          // ignore
+        }
+      }
       if (profile.profession && typeof window !== "undefined") {
         try {
           localStorage.setItem("celaest:active_profession", profile.profession);
@@ -51,22 +76,19 @@ export const useCurrentUser = () => {
         }
       }
       return {
-        name: profile.name ?? "",
+        name: profile.name ?? user?.name ?? "",
         email: profile.email ?? user?.email ?? "",
         cefrLevel: profile.cefrLevel ?? "",
         dailyFocus: profile.dailyFocus ?? "",
         learningGoal: profile.learningGoal ?? "",
         preferenceStyle: profile.preferenceStyle ?? "",
-        profession: profile.profession ?? "",
-        onboardingCompleted: profile.onboardingCompleted ?? false,
+        profession: profile.profession ?? cachedProf,
+        onboardingCompleted: isCompleted,
         streakDays: profile.streakDays ?? 0,
       };
     }
-    // Offline / loading: recover persisted active profession so child components don't flash default
-    const cachedProf =
-      typeof window !== "undefined"
-        ? localStorage.getItem("celaest:active_profession") || ""
-        : "";
+
+    // Offline / loading: recover persisted active profession and onboarding status
     return {
       name: user?.name ?? "",
       email: user?.email ?? "",
@@ -75,13 +97,22 @@ export const useCurrentUser = () => {
       learningGoal: "",
       preferenceStyle: "",
       profession: cachedProf,
-      onboardingCompleted: false,
+      onboardingCompleted: fallbackCompleted,
       streakDays: 0,
     };
   }, [profile, user]);
 
   const updateProfileSettings = useCallback(
     async (partial: Partial<UserSettings>) => {
+      if (partial.onboardingCompleted && typeof window !== "undefined") {
+        try {
+          localStorage.setItem("lingua_onboarding_completed", "true");
+          if (user?.id) localStorage.setItem(`lingua_onboarding_completed_${user.id}`, "true");
+          if (user?.email) localStorage.setItem(`lingua_onboarding_completed_${user.email}`, "true");
+        } catch {
+          // ignore
+        }
+      }
       await updateSettings({
         ...(partial.name !== undefined ? { name: partial.name } : {}),
         ...(partial.cefrLevel !== undefined ? { cefrLevel: partial.cefrLevel } : {}),
@@ -96,7 +127,7 @@ export const useCurrentUser = () => {
           : {}),
       });
     },
-    [updateSettings],
+    [updateSettings, user],
   );
 
   return {

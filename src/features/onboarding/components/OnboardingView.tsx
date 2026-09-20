@@ -11,6 +11,7 @@ import { OnboardingFirstConversationStep } from "./OnboardingFirstConversationSt
 import { OnboardingReadyStep } from "./OnboardingReadyStep";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 
@@ -32,7 +33,23 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
     answers,
   } = useOnboardingFlow();
 
-  const { updateProfileSettings } = useCurrentUser();
+  const { updateProfileSettings, settings } = useCurrentUser();
+  const authAdapter = SupabaseAuthAdapter.getInstance();
+  const isAuth = authAdapter.isAuthenticated();
+  const storedUser = authAdapter.getStoredUser();
+
+  // If already completed onboarding, auto-finish immediately (zero amnesia, zero restart)
+  React.useEffect(() => {
+    const isCompleted =
+      localStorage.getItem("lingua_onboarding_completed") === "true" ||
+      (storedUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.id}`) === "true" : false) ||
+      (storedUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.email}`) === "true" : false) ||
+      settings?.onboardingCompleted;
+
+    if (isAuth && isCompleted && onFinish) {
+      onFinish();
+    }
+  }, [isAuth, settings?.onboardingCompleted, storedUser?.id, storedUser?.email, onFinish]);
 
   const handleStartLearning = async () => {
     try {
@@ -49,6 +66,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
       logger.warn("[OnboardingView] Error saving profile settings on finish", e);
     }
     localStorage.setItem("lingua_onboarding_completed", "true");
+    if (storedUser?.id) localStorage.setItem(`lingua_onboarding_completed_${storedUser.id}`, "true");
+    if (storedUser?.email) localStorage.setItem(`lingua_onboarding_completed_${storedUser.email}`, "true");
     if (onFinish) onFinish();
     else logger.info("Onboarding complete — Start Learning");
   };
@@ -132,7 +151,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                 // 2. Returning User Login or Profile already completed
                 try {
                   const profile = await apiSettingsRepository.getProfile();
-                  if (profile && (profile.onboardingCompleted || mode === "login")) {
+                  const isUserCompletedLocal =
+                    (authUser?.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
+                    (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
+                    localStorage.getItem("lingua_onboarding_completed") === "true";
+
+                  if (profile && (profile.onboardingCompleted || mode === "login" || isUserCompletedLocal)) {
                     updateLearnerProfile({
                       name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
                       email: (profile.email || authUser?.email || learnerProfile.email || "") as string,
@@ -143,6 +167,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                       profession: profile.profession || learnerProfile.profession,
                     });
                     localStorage.setItem("lingua_onboarding_completed", "true");
+                    if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+                    if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
                     if (onFinish) {
                       onFinish();
                       return;
@@ -153,6 +179,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   // If login succeeded and backend is temporarily unreachable, let returning users in
                   if (mode === "login") {
                     localStorage.setItem("lingua_onboarding_completed", "true");
+                    if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+                    if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
                     if (onFinish) {
                       onFinish();
                       return;
@@ -181,6 +209,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                     logger.warn("[OnboardingView] Error saving pre-calibrated test data on register", e);
                   }
                   localStorage.setItem("lingua_onboarding_completed", "true");
+                  if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+                  if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
                   if (onFinish) {
                     onFinish();
                     return;
@@ -188,7 +218,6 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                 }
 
                 // 4. Fresh registration: Proceed straight into configuration, never bounce to "Begin"
-                localStorage.removeItem("lingua_onboarding_completed");
                 const hasExistingKey =
                   (await providerKeyVault.hasKey("groq")) ||
                   (await providerKeyVault.hasKey("gemini")) ||

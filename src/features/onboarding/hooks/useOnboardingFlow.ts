@@ -7,8 +7,18 @@ export const useOnboardingFlow = () => {
   const storedUser = authAdapter.getStoredUser();
   const isAuth = authAdapter.isAuthenticated();
 
-  // If genuinely authenticated with valid token, land on Welcome; otherwise ALWAYS auth (login)
-  const [step, setStep] = useState<OnboardingStep>(() => (isAuth ? "welcome" : "auth"));
+  // If not authenticated, always auth. If authenticated and already completed, skip straight to ready
+  const isCompleted =
+    typeof window !== "undefined" &&
+    (localStorage.getItem("lingua_onboarding_completed") === "true" ||
+      (storedUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.id}`) === "true" : false) ||
+      (storedUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.email}`) === "true" : false));
+
+  const [step, setStep] = useState<OnboardingStep>(() => {
+    if (!isAuth) return "auth";
+    if (isCompleted) return "ready";
+    return "welcome";
+  });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 

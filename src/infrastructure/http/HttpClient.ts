@@ -127,7 +127,6 @@ export class HttpClient {
               localStorage.removeItem("lingua_access_token");
               localStorage.removeItem("lingua_refresh_token");
               localStorage.removeItem("lingua_auth_user");
-              localStorage.removeItem("lingua_onboarding_completed");
             } catch {
               // ignore
             }
@@ -158,7 +157,6 @@ export class HttpClient {
             localStorage.removeItem("lingua_access_token");
             localStorage.removeItem("lingua_refresh_token");
             localStorage.removeItem("lingua_auth_user");
-            localStorage.removeItem("lingua_onboarding_completed");
           } catch {
             // ignore
           }

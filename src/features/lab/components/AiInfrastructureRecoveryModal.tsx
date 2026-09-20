@@ -159,7 +159,14 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       const probe = await probeProviderConnection(selectedProvider, rawKey, endpoint, model);
       if (!probe.ok) {
         // If it's a browser CORS / origin restriction, the key may still be valid on proxy/backend
-        const isCorsOrNetwork = probe.message.toLowerCase().includes("cors") || probe.message.toLowerCase().includes("unreachable");
+        const isCorsOrNetwork =
+          probe.message.toLowerCase().includes("cors") ||
+          probe.message.toLowerCase().includes("unreachable") ||
+          probe.message.toLowerCase().includes("no se pudo conectar") ||
+          probe.message.toLowerCase().includes("conexión a internet") ||
+          probe.message.toLowerCase().includes("servidor") ||
+          probe.message.toLowerCase().includes("failed to fetch") ||
+          probe.message.toLowerCase().includes("network");
         if (isCorsOrNetwork) {
           await providerKeyVault.saveKey(selectedProvider, rawKey);
           await providerKeyVault.saveActiveProviderId(selectedProvider);

@@ -462,7 +462,6 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     try {
       const { SupabaseAuthAdapter } = await import("../../../infrastructure/adapters/auth/SupabaseAuthAdapter");
       await SupabaseAuthAdapter.getInstance().logout();
-      localStorage.removeItem("lingua_onboarding_completed");
       localStorage.removeItem("lingua_user_settings");
     } catch (e) {
       console.error("Logout error", e);

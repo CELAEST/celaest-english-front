@@ -20,16 +20,18 @@ const isProd = import.meta.env.PROD;
 const isTest = import.meta.env.MODE === "test";
 const isBrowser = typeof window !== "undefined";
 
+const resolvedApiUrl = trimTrailingSlash(
+  apiUrl ||
+    (isTest
+      ? "http://localhost:8080/api/v1"
+      : isBrowser
+        ? `${window.location.origin}/api/v1`
+        : "http://localhost:8080/api/v1"),
+);
+
 export const ENV = {
   /** Backend REST API base URL (no trailing slash). */
-  apiUrl: trimTrailingSlash(
-    apiUrl ||
-      (isTest
-        ? "http://localhost:8080/api/v1"
-        : isBrowser
-          ? `${window.location.origin}/api/v1`
-          : "http://localhost:8080/api/v1"),
-  ),
+  apiUrl: resolvedApiUrl,
   /** CELAEST Core Auth & Billing Backend (no trailing slash). */
   celaestBackUrl: trimTrailingSlash(
     celaestBackUrl ||
@@ -43,7 +45,7 @@ export const ENV = {
   coreAiUrl: trimTrailingSlash(
     coreAiUrl ||
       (isProd
-        ? apiUrl || ""
+        ? apiUrl || resolvedApiUrl
         : isTest
           ? "http://127.0.0.1:8085/api/v1"
           : isBrowser

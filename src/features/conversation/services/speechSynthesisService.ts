@@ -120,7 +120,7 @@ export class SpeechSynthesisService {
       if (err?.name === "NotAllowedError") {
         logger.warn("[SpeechSynthesisService] Audio playback blocked by browser autoplay policy, attempting speech synthesis fallback:", err);
         this.currentAudio = null;
-        this.speakFallback(trimmed, options, playbackId);
+        await this.speakFallback(trimmed, options, playbackId);
         return;
       }
       logger.warn("[SpeechSynthesisService] Error initiating audio, attempting Blob retry before fallback:", err);
@@ -146,7 +146,7 @@ export class SpeechSynthesisService {
           };
           audio.onerror = () => {
             URL.revokeObjectURL(blobUrl);
-            this.speakFallback(trimmed, options, playbackId);
+            void this.speakFallback(trimmed, options, playbackId);
           };
           await audio.play();
           return;
@@ -155,7 +155,7 @@ export class SpeechSynthesisService {
         // Continue to speakFallback below
       }
       this.currentAudio = null;
-      this.speakFallback(trimmed, options, playbackId);
+      await this.speakFallback(trimmed, options, playbackId);
     }
   }
 
@@ -278,7 +278,11 @@ export class SpeechSynthesisService {
     playbackId: number,
   ): Promise<void> {
     if (this.activePlaybackId !== playbackId) return;
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    if (
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
       if (options.onEnd) options.onEnd();
       return;
     }
@@ -406,6 +410,10 @@ export class MobileAudioUnlocker {
       this.sharedAudio.preload = "auto";
       // @ts-ignore
       this.sharedAudio.playsInline = true;
+      try {
+        this.sharedAudio.setAttribute("playsinline", "true");
+        this.sharedAudio.setAttribute("webkit-playsinline", "true");
+      } catch {}
     }
     return this.sharedAudio;
   }
@@ -442,9 +450,11 @@ export class MobileAudioUnlocker {
 
     const unlockHandler = () => {
       this.unlock();
-      window.removeEventListener("pointerdown", unlockHandler, true);
-      window.removeEventListener("touchstart", unlockHandler, true);
-      window.removeEventListener("keydown", unlockHandler, true);
+      if (this.isUnlocked) {
+        window.removeEventListener("pointerdown", unlockHandler, true);
+        window.removeEventListener("touchstart", unlockHandler, true);
+        window.removeEventListener("keydown", unlockHandler, true);
+      }
     };
 
     window.addEventListener("pointerdown", unlockHandler, { passive: true, capture: true });

@@ -246,7 +246,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-3xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-3xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
     >
       <div
         ref={dialogRef}
@@ -255,13 +255,18 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         aria-labelledby="recovery-modal-headline"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl max-h-[min(92dvh,760px)] my-auto rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none flex flex-col text-left animate-[scaleUp_0.25s_ease-out] outline-none"
+        className="relative w-full max-w-xl h-[94dvh] sm:h-auto max-h-[94dvh] sm:max-h-[min(92dvh,760px)] rounded-t-[26px] sm:rounded-3xl bg-[#04040A] border-t border-white/[0.12] sm:border sm:border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none flex flex-col text-left animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scaleUp_0.25s_ease-out] outline-none"
       >
+        {/* Mobile Grab Handle */}
+        <div className="sm:hidden w-full flex items-center justify-center pt-2.5 pb-0.5 shrink-0 select-none">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Top Specular Hairline matching Reading/Writing Card Standard */}
         <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none z-10" />
 
         {/* Fixed Header Section (Never Clipped) */}
-        <div className="p-5 sm:p-6 pb-3 shrink-0 flex items-start justify-between border-b border-white/[0.04]">
+        <div className="p-4 sm:p-6 pb-3 shrink-0 flex items-start justify-between border-b border-white/[0.04]">
           <div className="space-y-1 pr-2">
             <span className="text-[10px] font-mono tracking-[0.2em] text-[#C4B5FD] uppercase block">
               RECUPERACIÓN INTELIGENTE · CELAEST LINGUA
@@ -281,7 +286,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         </div>
 
         {/* Scrollable Content Body (Fluidly Adapts to Viewport Height) */}
-        <div className="overflow-y-auto no-scrollbar p-5 sm:p-6 space-y-3.5 sm:space-y-4 flex-1">
+        <div className="overflow-y-auto no-scrollbar p-4 sm:p-6 space-y-3.5 sm:space-y-4 flex-1">
           {/* Natural Human Subtext */}
           <p className="text-[11.5px] sm:text-xs text-[#C5C6D0] font-light leading-relaxed">
             {scenario.humanSubtext}
@@ -566,13 +571,13 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         </div>
 
         {/* Fixed Bottom Action (Always Visible, Never Cut Off) */}
-        <div className="p-4 sm:p-5 pt-3 shrink-0 border-t border-white/[0.06] bg-[#04040A]/95 backdrop-blur-md flex flex-wrap items-center justify-between gap-2.5">
-          <span className="text-xs text-[#8E8EA8] font-light">
+        <div className="p-4 sm:p-5 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-5 shrink-0 border-t border-white/[0.06] bg-[#04040A]/95 backdrop-blur-md flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <span className="text-xs text-[#8E8EA8] font-light text-center sm:text-left">
             Elige un proveedor o ingresa tu clave para continuar.
           </span>
           <button
             onClick={onImmediateResume}
-            className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center gap-2"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2"
           >
             <span>{isResolved ? "Continuando..." : "Reanudar Ahora"}</span>
             <span className="text-xs">→</span>

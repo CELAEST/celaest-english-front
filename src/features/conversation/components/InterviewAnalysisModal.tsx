@@ -196,7 +196,7 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
           </defs>
         </svg>
       }
-      bodyClassName="p-5 lg:p-7"
+      bodyClassName="px-3 sm:px-6 py-4 sm:py-6 lg:p-7"
     >
       <div aria-live="polite" role="status" className="sr-only">
         {`Evaluación completada. Puntaje global ${feedback.overallScore} de 100. ` +
@@ -206,7 +206,7 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
           getDynamicInsight(feedback)}
       </div>
 
-      <div className="mx-auto max-w-4xl space-y-5">
+      <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-5">
         <InterviewAnalysisScorecard feedback={feedback} />
 
         <InterviewAnalysisStrategyGrid

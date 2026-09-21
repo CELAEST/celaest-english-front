@@ -24,23 +24,23 @@ export const InterviewAnalysisStrategyGrid: React.FC<InterviewAnalysisStrategyGr
   const hasStructuredContent = parsed.steps.length > 0 || Boolean(parsed.spokenExample);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
       {/* Card 1: Key Insights */}
-      <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
+      <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
         <div>
           <div className="flex items-center justify-between gap-3 mb-3.5">
             <div className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-[#A27FF3] shrink-0" />
-              <h3 className="text-[15px] font-semibold text-white tracking-tight">Key Insights</h3>
+              <Lightbulb className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-[#A27FF3] shrink-0" />
+              <h3 className="text-[14.5px] sm:text-[15px] font-semibold text-white tracking-tight">Key Insights</h3>
             </div>
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">ANÁLISIS</span>
+            <span className="text-[10px] sm:text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">ANÁLISIS</span>
           </div>
 
-          <div className="flex items-start gap-3.5 pl-1 pr-2">
-            <svg className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]" viewBox="0 0 28 22" fill="currentColor">
+          <div className="flex items-start gap-3 sm:gap-3.5 pl-0.5 sm:pl-1 pr-1 sm:pr-2">
+            <svg className="w-[16px] sm:w-[18px] h-[14px] sm:h-[15px] shrink-0 mt-1 text-[#674ee6]" viewBox="0 0 28 22" fill="currentColor">
               <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
             </svg>
-            <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
+            <p className="text-[13px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
               "{getDynamicInsight(feedback)}"
             </p>
           </div>
@@ -48,14 +48,14 @@ export const InterviewAnalysisStrategyGrid: React.FC<InterviewAnalysisStrategyGr
       </article>
 
       {/* Card 2: Strategy Recommendation */}
-      <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
+      <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 shadow-xl flex flex-col justify-between transition-all duration-300">
         <div>
-          <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-3.5 sm:mb-4">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-[#A27FF3] shrink-0" />
-              <h3 className="text-[15px] font-semibold text-white tracking-tight">Strategy Recommendation</h3>
+              <Target className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-[#A27FF3] shrink-0" />
+              <h3 className="text-[14.5px] sm:text-[15px] font-semibold text-white tracking-tight">Strategy Recommendation</h3>
             </div>
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">RECOMENDACIÓN</span>
+            <span className="text-[10px] sm:text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">RECOMENDACIÓN</span>
           </div>
 
           {!hasStructuredContent ? (

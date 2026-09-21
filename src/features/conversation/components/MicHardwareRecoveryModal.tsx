@@ -220,7 +220,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
         ref={trapRef}
@@ -228,8 +228,13 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
         aria-modal="true"
         aria-labelledby="mic-modal-title"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-8 sm:p-9 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
+        className="relative w-full max-w-xl max-h-[92dvh] sm:max-h-none overflow-y-auto rounded-t-[26px] sm:rounded-3xl bg-[#04040A] border-t border-white/[0.12] sm:border sm:border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] select-none p-5 sm:p-8 md:p-9 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-9 flex flex-col space-y-4 sm:space-y-6 text-left animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scaleUp_0.25s_ease-out]"
       >
+        {/* Mobile Grab Handle */}
+        <div className="sm:hidden w-full flex items-center justify-center -mt-2 pb-1 shrink-0 select-none">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Top Specular Hairline */}
         <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
 
@@ -491,8 +496,8 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
         </div>
 
         {/* ── 7. FOOTER ACTION ── */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[#8E8EA8] font-light">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <span className="text-xs text-[#8E8EA8] font-light text-center sm:text-left">
             {permissionState === "granted"
               ? "Hardware enlazado. Tu práctica se reanudará de inmediato."
               : "Tu turno y puntaje están protegidos al 100%."}
@@ -501,7 +506,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
           {permissionState === "granted" ? (
             <button
               onClick={handleResume}
-              className="px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 shrink-0"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Continuar Entrevista →</span>
@@ -509,7 +514,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
           ) : (
             <button
               onClick={() => void activateRealMicrophone()}
-              className="px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center gap-1.5"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 shrink-0"
             >
               <span>
                 {permissionState === "requesting" ? "Encendiendo hardware..." : "Encender Micrófono Real →"}

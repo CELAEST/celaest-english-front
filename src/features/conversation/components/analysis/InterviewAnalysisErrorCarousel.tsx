@@ -47,11 +47,11 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
 
   if (errors.length === 0) {
     return (
-      <div className="p-6 lg:p-8 rounded-2xl border border-[#18152e] bg-[#070611] shadow-2xl flex items-center justify-center gap-4 mt-8">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
-          <CircleCheck className="h-6 w-6 text-[#6ce2a3]" strokeWidth={2.5} />
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl border border-[#18152e] bg-[#070611] shadow-2xl flex items-center justify-center gap-3.5 sm:gap-4 mt-6 sm:mt-8">
+        <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
+          <CircleCheck className="h-5 w-5 sm:h-6 sm:w-6 text-[#6ce2a3]" strokeWidth={2.5} />
         </span>
-        <p className="text-[15px] font-normal text-white/90 tracking-wide text-center leading-relaxed">
+        <p className="text-[13.5px] sm:text-[15px] font-normal text-white/90 tracking-wide text-center leading-relaxed">
           {userSpokenText.split(/\s+/).filter(Boolean).length < 20
             ? "Respuesta breve sin errores gramaticales directos. Te sugerimos ampliar tu argumento con ejemplos de tu experiencia técnica."
             : "Excelente precisión gramatical en tu respuesta. No se detectaron errores sintácticos."}
@@ -61,12 +61,12 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
   }
 
   return (
-    <div className="mt-8">
+    <div className="mt-6 sm:mt-8">
       {/* Header */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-3.5 sm:mb-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5">
-          <h3 className="text-[17px] font-semibold text-white tracking-tight">Análisis de mejora</h3>
-          <span className="text-[12.5px] font-medium text-[#8a8a9e]">
+          <h3 className="text-base sm:text-[17px] font-semibold text-white tracking-tight">Análisis de mejora</h3>
+          <span className="text-xs sm:text-[12.5px] font-medium text-[#8a8a9e]">
             • {errors.length} {errors.length === 1 ? "corrección" : "correcciones"}
           </span>
         </div>
@@ -89,7 +89,7 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
           <button
             onClick={handleSaveAll}
             disabled={isSavingAll}
-            className="flex items-center gap-1.5 text-[13px] font-medium text-[#a7a8b5] hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-[#a7a8b5] hover:text-white transition-colors cursor-pointer"
           >
             <Bookmark className="h-4 w-4" fill={isSavingAll ? "currentColor" : "none"} />
             {isSavingAll ? "Guardando..." : "Guardar todo"}
@@ -108,7 +108,7 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
       >
         {/* Error Card */}
         <article
-          className="edge relative overflow-hidden rounded-2xl p-6 sm:p-7 md:self-stretch md:[grid-area:1/1/4/2] flex flex-col justify-between"
+          className="edge relative overflow-hidden rounded-2xl p-4 sm:p-6 lg:p-7 md:self-stretch md:[grid-area:1/1/4/2] flex flex-col justify-between"
           style={{
             background:
               "radial-gradient(110% 90% at 0% 0%, rgba(216,102,122,0.06), transparent 60%), radial-gradient(120% 80% at 30% 100%, rgba(216,102,122,0.03), transparent 65%), #090A14",
@@ -121,22 +121,22 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
             <div className="relative flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <X className="h-4 w-4 shrink-0 text-[#d8667a]" aria-hidden="true" strokeWidth={2.5} />
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d8667a]">
+                <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.08em] text-[#d8667a]">
                   INCORRECTO / POCO CLARO
                 </span>
               </div>
               {currentError.errorType && (
-                <span className="text-[11px] font-semibold tracking-wider text-[#8a8a9e] uppercase">
+                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-[#8a8a9e] uppercase">
                   {currentError.errorType}
                 </span>
               )}
             </div>
-            <p className="relative mt-4 text-xl font-medium text-[#b0b1c0] line-through decoration-[#d8667a]/60 decoration-1 leading-snug">
+            <p className="relative mt-3.5 sm:mt-4 text-lg sm:text-xl font-medium text-[#b0b1c0] line-through decoration-[#d8667a]/60 decoration-1 leading-snug">
               {currentError.errorWord}
             </p>
           </div>
 
-          <div className="relative mt-6 flex items-center justify-between text-xs">
+          <div className="relative mt-5 sm:mt-6 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 text-[#6f7180]">
               <span className="font-medium">Nivel CEFR:</span>
               <span className="font-semibold text-[#f4f4f7]">{currentError.cefrLevel || "B2"}</span>
@@ -165,7 +165,7 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
 
         {/* Success Card */}
         <article
-          className="edge relative z-10 overflow-hidden self-start rounded-2xl p-6 sm:p-7 md:[grid-area:1/2/2/3]"
+          className="edge relative z-10 overflow-hidden self-start rounded-2xl p-4 sm:p-6 lg:p-7 md:[grid-area:1/2/2/3]"
           style={{
             background: "radial-gradient(110% 90% at 100% 0%, rgba(85,201,164,0.06), transparent 60%), #090A14",
             ["--edge" as string]:
@@ -175,14 +175,14 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
           <TopHighlight />
           <div className="relative flex items-center gap-2">
             <Check className="h-4 w-4 shrink-0 text-[#55c9a4]" aria-hidden="true" strokeWidth={2.5} />
-            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#55c9a4]">MEJOR OPCIÓN</span>
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.08em] text-[#55c9a4]">MEJOR OPCIÓN</span>
           </div>
-          <p className="relative mt-4 text-xl font-medium text-[#55c9a4] sm:text-[1.4rem] sm:leading-snug">
+          <p className="relative mt-3.5 sm:mt-4 text-lg sm:text-xl font-medium text-[#55c9a4] sm:text-[1.4rem] sm:leading-snug">
             {currentError.correctWord}
           </p>
           {currentError.translationSpanish && (
-            <div className="relative mt-3.5">
-              <p className="text-[11px] font-semibold text-[#8a8a9e] uppercase tracking-wider">Traducción al español:</p>
+            <div className="relative mt-3 sm:mt-3.5">
+              <p className="text-[10px] sm:text-[11px] font-semibold text-[#8a8a9e] uppercase tracking-wider">Traducción al español:</p>
               <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-[#d4d4e0]">
                 {cleanRuleNote(currentError.translationSpanish)}
               </p>

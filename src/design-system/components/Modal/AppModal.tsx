@@ -18,6 +18,12 @@ const SIZE_WIDTHS: Record<AppModalSize, string> = {
   lg: "max-w-4xl",
 };
 
+const SIZE_HEIGHTS: Record<AppModalSize, string> = {
+  sm: "max-h-[85dvh]",
+  md: "max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)]",
+  lg: "h-[94dvh] sm:h-auto max-h-[94dvh] sm:max-h-[calc(100dvh-2rem)]",
+};
+
 export interface AppModalProps {
   /** Controlled visibility. Defaults to true for conditionally-mounted usage. */
   isOpen?: boolean;
@@ -75,37 +81,42 @@ export const AppModal: React.FC<AppModalProps> = ({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : ariaLabel}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-5 bg-black/80 backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5 bg-black/85 backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
     >
       <div
         ref={trapRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${SIZE_WIDTHS[size]} flex-col overflow-hidden rounded-3xl border border-white/[0.08] animate-[scaleUp_0.3s_ease-out] outline-none`}
+        className={`relative flex w-full ${SIZE_WIDTHS[size]} ${SIZE_HEIGHTS[size]} flex-col overflow-hidden outline-none rounded-t-[26px] sm:rounded-3xl border-t border-white/[0.12] sm:border sm:border-white/[0.08] border-x-0 border-b-0 animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scaleUp_0.3s_ease-out]`}
         style={{
           background: "linear-gradient(180deg, #0a0917 0%, #05060c 100%)",
           boxShadow:
             "0 32px 90px rgba(0,0,0,0.9), 0 0 60px rgba(112,72,232,0.07), inset 0 1px 0 rgba(255,255,255,0.06)",
         }}
       >
+        {/* Mobile grab handle */}
+        <div className="sm:hidden w-full flex items-center justify-center pt-2.5 pb-0.5 shrink-0 select-none">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Header */}
         {(title || icon || subtitle) && (
-          <div className="flex items-center justify-between gap-3 shrink-0 px-5 py-4 lg:px-6 border-b border-white/[0.06]">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-between gap-3 shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               {icon && (
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#141028] border border-[#251d48] text-[#A27FF3]">
+                <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#141028] border border-[#251d48] text-[#A27FF3]">
                   {icon}
                 </span>
               )}
               <div className="flex flex-col min-w-0">
                 <h2
                   id={titleId}
-                  className="text-[16px] font-medium text-[#f8f8f8] tracking-tight leading-tight truncate"
+                  className="text-[15px] sm:text-[16px] font-medium text-[#f8f8f8] tracking-tight leading-tight truncate"
                 >
                   {title}
                 </h2>
                 {subtitle && (
-                  <p className="text-xs font-light text-[#8a8a9e] truncate mt-0.5">{subtitle}</p>
+                  <p className="text-[11px] sm:text-xs font-light text-[#8a8a9e] truncate mt-0.5">{subtitle}</p>
                 )}
               </div>
             </div>
@@ -113,7 +124,7 @@ export const AppModal: React.FC<AppModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex h-8 w-8 shrink-0 items-center justify-center text-white/40 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center text-white/40 hover:text-white transition-colors duration-200 cursor-pointer rounded-lg hover:bg-white/[0.05]"
             >
               <X className="w-5 h-5" strokeWidth={1.8} />
             </button>
@@ -122,14 +133,14 @@ export const AppModal: React.FC<AppModalProps> = ({
 
         {/* Body */}
         <div
-          className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 sm:p-6 ${bodyClassName}`}
+          className={`flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar p-3.5 sm:p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-6 ${bodyClassName}`}
         >
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="shrink-0 border-t border-white/[0.06] bg-[#070611]/70 px-5 py-4 sm:px-6">
+          <div className="shrink-0 border-t border-white/[0.06] bg-[#070611]/90 px-4 py-3 sm:px-6 sm:py-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-4">
             {footer}
           </div>
         )}

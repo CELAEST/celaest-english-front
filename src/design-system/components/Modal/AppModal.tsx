@@ -1,4 +1,5 @@
 import React, { useEffect, useId } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
@@ -72,7 +73,7 @@ export const AppModal: React.FC<AppModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -133,7 +134,11 @@ export const AppModal: React.FC<AppModalProps> = ({
 
         {/* Body */}
         <div
-          className={`flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar p-3.5 sm:p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-6 ${bodyClassName}`}
+          className={`flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar ${
+            footer
+              ? "p-3.5 sm:p-6 pb-2 sm:pb-3"
+              : "p-3.5 sm:p-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:pb-6"
+          } ${bodyClassName}`}
         >
           {children}
         </div>
@@ -147,4 +152,7 @@ export const AppModal: React.FC<AppModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modalNode, document.body);
 };

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ExternalLink, Info, Check, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { ProviderMark } from "../../settings/components/SettingsProviderIcons";
 import { AiProviderId } from "../../../domain/entities/AiProvider";
@@ -241,7 +242,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       ? "Tu sesión y progreso de lectura permanecen seguros. Ingresa una clave gratuita para continuar."
       : scenario.reassurance;
 
-  return (
+  const modalNode = (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -586,4 +587,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modalNode, document.body);
 };

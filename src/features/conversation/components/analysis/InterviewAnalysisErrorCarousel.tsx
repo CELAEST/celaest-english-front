@@ -210,11 +210,11 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
       </div>
 
       {/* Footer Navigation */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-5 sm:mt-6 flex items-center justify-between">
         <button
           onClick={() => goNav(-1)}
           disabled={errors.length <= 1}
-          className="group inline-flex items-center gap-1.5 text-xs font-medium text-[#8a8a9e] transition-colors hover:text-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+          className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
           aria-label="Ir a la corrección anterior"
         >
           <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -242,7 +242,7 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
         <button
           onClick={() => goNav(1)}
           disabled={errors.length <= 1}
-          className="group inline-flex items-center gap-1.5 text-xs font-medium text-[#8a8a9e] transition-colors hover:text-white disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+          className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
           aria-label="Ir a la siguiente corrección"
         >
           <span>Siguiente</span>

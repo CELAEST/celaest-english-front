@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, Volume2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { AudioCaptureService } from "../services/audioCaptureService";
 import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
@@ -215,7 +216,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -525,4 +526,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modalNode, document.body);
 };

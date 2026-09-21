@@ -196,7 +196,22 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
           </defs>
         </svg>
       }
-      bodyClassName="px-3 sm:px-6 py-4 sm:py-6 lg:p-7"
+      bodyClassName="px-3 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 lg:px-7 lg:pt-6 lg:pb-3"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-[#8a8a9e] hidden sm:block">
+            Revisa los detalles de tu turno o continúa practicando.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7048E8] to-[#A27FF3] text-white text-xs font-semibold transition-all shadow-lg shadow-[#7048E8]/30 hover:opacity-90 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <span>Continuar con la siguiente pregunta</span>
+            <span>→</span>
+          </button>
+        </div>
+      }
     >
       <div aria-live="polite" role="status" className="sr-only">
         {`Evaluación completada. Puntaje global ${feedback.overallScore} de 100. ` +

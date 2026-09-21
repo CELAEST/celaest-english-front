@@ -136,7 +136,7 @@ describe("validateSpeechIntelligibility", () => {
     expect(beginnerCareFollowup.isValid).toBe(true);
   });
 
-  it("permits short structured answers for A1 level without rejecting as insufficient", () => {
+  it("permits short structured answers for A1 and A2 level without rejecting as insufficient", () => {
     const a1Doctor = validateSpeechIntelligibility("I am doctor", 2, "english", { targetLevel: "A1" });
     expect(a1Doctor.isValid).toBe(true);
 
@@ -145,6 +145,15 @@ describe("validateSpeechIntelligibility", () => {
 
     const a1Yes = validateSpeechIntelligibility("Yes, I do", 2, "english", { targetLevel: "A1" });
     expect(a1Yes.isValid).toBe(true);
+
+    const a2Care = validateSpeechIntelligibility("I care for patients", 3, "english", { targetLevel: "A2" });
+    expect(a2Care.isValid).toBe(true);
+
+    const a2Study = validateSpeechIntelligibility("I study medicine", 2, "english", { targetLevel: "A2" });
+    expect(a2Study.isValid).toBe(true);
+
+    const a2Treat = validateSpeechIntelligibility("I treat people", 2, "english", { targetLevel: "A2" });
+    expect(a2Treat.isValid).toBe(true);
   });
 });
 

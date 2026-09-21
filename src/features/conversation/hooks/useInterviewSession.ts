@@ -424,8 +424,6 @@ export const useInterviewSession = (
 
         if (!isMountedRef.current) return;
         if (feedback) {
-          const rawSpokenWords = spokenText.trim().split(/\s+/).filter(Boolean);
-          const feedbackExplanationLower = (feedback.strategicFeedback?.explanation || "").toLowerCase();
           const feedbackTitleLower = (feedback.strategicFeedback?.title || "").toLowerCase();
 
           const isSpanish =
@@ -614,9 +612,13 @@ export const useInterviewSession = (
             const segmentText = trimmed;
             const merged = prefix ? `${prefix} ${segmentText}` : segmentText;
 
-            // WHISPER SOVEREIGNTY: Whisper output is the authoritative canonical transcript
-            setUserTranscript(merged);
-            userTranscriptRef.current = merged;
+            // Only overwrite if Whisper produced equal or more words or current was empty
+            const currentLiveWords = (userTranscriptRef.current || "").split(/\s+/).filter(Boolean).length;
+            const whisperWords = merged.split(/\s+/).filter(Boolean).length;
+            if (whisperWords >= currentLiveWords || currentLiveWords < 3) {
+              setUserTranscript(merged);
+              userTranscriptRef.current = merged;
+            }
 
             if (validation.reason === "INSUFFICIENT_WORDS") {
               setSpeechNotice(validation.message || null);
@@ -686,13 +688,18 @@ export const useInterviewSession = (
               question: currentQuestion.question,
             });
             if (whisperResult && whisperResult.text.trim().length > 0) {
-              textToSubmit = whisperResult.text.trim();
-              detectedLang = whisperResult.language;
-              lastCapturedAudioRef.current.detectedLanguage = detectedLang;
-              lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
-              lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
-              setUserTranscript(textToSubmit);
-              userTranscriptRef.current = textToSubmit;
+              const whisperText = whisperResult.text.trim();
+              const whisperWords = whisperText.split(/\s+/).filter(Boolean).length;
+              const currentWords = textToSubmit.split(/\s+/).filter(Boolean).length;
+              if (whisperWords >= currentWords || currentWords < 3) {
+                textToSubmit = whisperText;
+                detectedLang = whisperResult.language;
+                lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+                lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
+                lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
+                setUserTranscript(textToSubmit);
+                userTranscriptRef.current = textToSubmit;
+              }
             }
           } catch (err) {
             logger.warn("Whisper transcription fallback to web speech on submit:", err);

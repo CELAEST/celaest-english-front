@@ -8,9 +8,8 @@ import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
-const InterviewPracticeView = lazy(() =>
-  import("../../conversation/components/InterviewPracticeView").then((m) => ({ default: m.InterviewPracticeView })),
-);
+import { InterviewPracticeView } from "../../conversation/components/InterviewPracticeView";
+
 const WritingPracticeView = lazy(() =>
   import("../../writing").then((m) => ({ default: m.WritingPracticeView })),
 );
@@ -28,7 +27,6 @@ const LabView = lazy(() =>
 );
 
 // Intelligent Skeletons adapted 1:1 to each feature anatomy (zero generic spinners)
-import { InterviewSkeleton } from "../../conversation/components/InterviewSkeleton";
 import { WritingSkeleton } from "../../writing/components/WritingSkeleton";
 import { ReadingSkeleton } from "../../reading/components/ReadingSkeleton";
 import { MemorySkeleton } from "../../memory/components/MemorySkeleton";
@@ -54,7 +52,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab, "interview"]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
@@ -72,7 +70,6 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   React.useEffect(() => {
     const prefetchTimer = setTimeout(() => {
       void Promise.allSettled([
-        import("../../conversation/components/InterviewPracticeView"),
         import("../../writing"),
         import("../../reading"),
         import("../../memory"),
@@ -260,15 +257,13 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<InterviewSkeleton />}>
-                <InterviewPracticeView
-                  roleName={userProfession}
-                  userLevel={activeUserLevel}
-                  onSelectLevel={handleGlobalSelectLevel}
-                  onBackToWorkspace={handleBackToWorkspace}
-                  isActive={activeTab === "interview"}
-                />
-              </Suspense>
+              <InterviewPracticeView
+                roleName={userProfession}
+                userLevel={activeUserLevel}
+                onSelectLevel={handleGlobalSelectLevel}
+                onBackToWorkspace={handleBackToWorkspace}
+                isActive={activeTab === "interview"}
+              />
             </ErrorBoundary>
           </div>
         )}

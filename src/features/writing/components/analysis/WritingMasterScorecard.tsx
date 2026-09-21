@@ -16,37 +16,37 @@ export const WritingMasterScorecard: React.FC<WritingMasterScorecardProps> = ({
   getTierLabel,
 }) => {
   return (
-    <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+    <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 lg:p-7 shadow-xl">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-center">
         {/* Left Column: Overall Score Hero (lg:col-span-5) */}
-        <div className="lg:col-span-5 flex items-center gap-5 lg:pr-7 lg:border-r lg:border-white/[0.06]">
+        <div className="lg:col-span-5 flex items-center gap-3.5 sm:gap-5 lg:pr-7 lg:border-r lg:border-white/[0.06]">
           <ScoreGauge
             value={overallScore}
             id="wrt_gauge_overall_hero"
             from="#7048E8"
             to="#A27FF3"
             glowColor="rgba(162, 127, 243, 0.45)"
-            size={84}
+            size={78}
             stroke={6}
           />
-          <div className="flex-1 min-w-0 flex flex-col justify-center space-y-2">
+          <div className="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 sm:space-y-2">
             <div className="flex items-center gap-2">
-              <Trophy className="h-[18px] w-[18px] text-[#A27FF3] shrink-0" />
-              <h3 className="text-[16.5px] font-semibold text-white tracking-tight leading-none">
+              <Trophy className="h-[17px] w-[17px] sm:h-[18px] sm:w-[18px] text-[#A27FF3] shrink-0" />
+              <h3 className="text-[15px] sm:text-[16.5px] font-semibold text-white tracking-tight leading-none">
                 Overall Score
               </h3>
             </div>
-            <p className="text-[12px] font-medium text-[#c4b5fd] leading-none">
+            <p className="text-[11.5px] sm:text-[12px] font-medium text-[#c4b5fd] leading-none">
               {getTierLabel(overallScore)}
             </p>
-            <p className="text-[12px] text-[#8a8a9e] leading-relaxed">
+            <p className="text-[11.5px] sm:text-[12px] text-[#8a8a9e] leading-relaxed">
               General performance across clarity, style and grammar.
             </p>
           </div>
         </div>
 
         {/* Right Column: Detailed Competency Progress Bars (lg:col-span-7) */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 space-y-3 sm:space-y-4">
           {/* Clarity & Style */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[13px]">

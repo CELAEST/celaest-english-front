@@ -69,7 +69,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
       >
         <div
-          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-8 xs:-translate-y-10 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.26] xs:scale-[1.32] sm:scale-100 origin-center"
+          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-4 xs:-translate-y-6 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.38] xs:scale-[1.44] sm:scale-100 origin-center"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -80,7 +80,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
             muted
             playsInline
             preload="metadata"
-            className="w-auto h-auto max-w-[min(98vw,1440px)] max-h-[46vh] xs:max-h-[50vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
+            className="w-full sm:w-auto h-auto max-w-[min(95vw,520px)] sm:max-w-[min(98vw,1440px)] max-h-[56vh] xs:max-h-[60vh] sm:max-h-[68vh] lg:max-h-[74vh] xl:max-h-[80vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           >
             <source src="/assets/cards.webm" type="video/webm" />

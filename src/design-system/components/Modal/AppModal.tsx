@@ -61,8 +61,47 @@ export const AppModal: React.FC<AppModalProps> = ({
     onClose,
   });
 
+  const [dragY, setDragY] = React.useState<number>(0);
+  const [isDragging, setIsDragging] = React.useState<boolean>(false);
+  const [isClosing, setIsClosing] = React.useState<boolean>(false);
+  const touchStartYRef = React.useRef<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - touchStartYRef.current;
+    if (delta > 0) {
+      setDragY(delta);
+    } else {
+      setDragY(delta * 0.15);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (dragY > 65) {
+      setIsClosing(true);
+      setTimeout(() => {
+        onClose();
+        setIsClosing(false);
+        setDragY(0);
+      }, 200);
+    } else {
+      setDragY(0);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
+    setDragY(0);
+    setIsClosing(false);
+    setIsDragging(false);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -93,11 +132,37 @@ export const AppModal: React.FC<AppModalProps> = ({
           background: "linear-gradient(180deg, #0a0917 0%, #05060c 100%)",
           boxShadow:
             "0 32px 90px rgba(0,0,0,0.9), 0 0 60px rgba(112,72,232,0.07), inset 0 1px 0 rgba(255,255,255,0.06)",
+          transform: isClosing
+            ? "translateY(100%)"
+            : dragY > 0
+              ? `translateY(${dragY}px)`
+              : undefined,
+          transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        {/* Mobile grab handle */}
-        <div className="sm:hidden w-full flex items-center justify-center pt-2.5 pb-0.5 shrink-0 select-none">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+        {/* Mobile grab handle & touch drag zone */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="sm:hidden w-full flex items-center justify-center pt-3 pb-2 shrink-0 select-none cursor-grab active:cursor-grabbing touch-none"
+          title="Desliza hacia abajo para cerrar"
+          role="button"
+          tabIndex={0}
+          aria-label="Deslizar hacia abajo para cerrar"
+          onClick={() => {
+            setIsClosing(true);
+            setTimeout(() => {
+              onClose();
+              setIsClosing(false);
+            }, 200);
+          }}
+        >
+          <div
+            className={`w-10 h-1.5 rounded-full transition-all duration-150 ${
+              isDragging ? "bg-white/60 w-12" : "bg-white/20 hover:bg-white/35"
+            }`}
+          />
         </div>
 
         {/* Header */}

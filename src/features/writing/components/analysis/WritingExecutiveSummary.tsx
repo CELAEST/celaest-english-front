@@ -26,22 +26,22 @@ export const WritingExecutiveSummary: React.FC<WritingExecutiveSummaryProps> = (
     <>
       {/* Mentor Feedback */}
       {summary.trim().length > 0 && (
-        <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-between gap-3 mb-3.5">
+        <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between gap-3 mb-3 sm:mb-3.5">
             <div className="flex items-center gap-2">
-              <MessageSquareText className="h-5 w-5 text-[#A27FF3] shrink-0" />
-              <h3 className="text-[15px] font-semibold text-white tracking-tight">
+              <MessageSquareText className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-[#A27FF3] shrink-0" />
+              <h3 className="text-[14.5px] sm:text-[15px] font-semibold text-white tracking-tight">
                 Mentor Feedback
               </h3>
             </div>
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
+            <span className="text-[10px] sm:text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
               AI MENTOR
             </span>
           </div>
 
-          <div className="flex items-start gap-3.5 pl-1 pr-2">
-            <QuoteGlyph className="w-[18px] h-[15px] shrink-0 mt-1 text-[#674ee6]" />
-            <p className="text-[13.5px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
+          <div className="flex items-start gap-3 sm:gap-3.5 pl-0.5 sm:pl-1 pr-1 sm:pr-2">
+            <QuoteGlyph className="w-[16px] sm:w-[18px] h-[14px] sm:h-[15px] shrink-0 mt-1 text-[#674ee6]" />
+            <p className="text-[13px] sm:text-[14px] leading-[1.65] text-[#d4d4e0] font-normal">
               "{summary}"
             </p>
           </div>
@@ -49,20 +49,20 @@ export const WritingExecutiveSummary: React.FC<WritingExecutiveSummaryProps> = (
       )}
 
       {/* Performance Report: Strengths / Issues / Improvements */}
-      <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-6 sm:p-7 shadow-xl">
-        <div className="flex items-center justify-between gap-3 mb-5">
+      <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 lg:p-7 shadow-xl">
+        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-5">
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-[#A27FF3] shrink-0" />
-            <h3 className="text-[15px] font-semibold text-white tracking-tight">
+            <ClipboardCheck className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-[#A27FF3] shrink-0" />
+            <h3 className="text-[14.5px] sm:text-[15px] font-semibold text-white tracking-tight">
               Performance Report
             </h3>
           </div>
-          <span className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
+          <span className="text-[10px] sm:text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#8a8a9e]">
             FULL REVIEW
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-5">
           {/* Strengths */}
           <div>
             <div className="flex items-center gap-2 mb-3.5">

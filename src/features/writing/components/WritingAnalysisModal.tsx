@@ -107,19 +107,24 @@ export const WritingAnalysisModal: React.FC<WritingAnalysisModalProps> = ({
           </defs>
         </svg>
       }
-      bodyClassName="p-5 lg:p-7"
+      bodyClassName="px-3 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 lg:px-7 lg:pt-6 lg:pb-3"
       footer={
-        <button
-          type="button"
-          onClick={onContinuePracticing || onClose}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7048E8] to-[#A27FF3] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7048E8]/30 transition-opacity hover:opacity-90 cursor-pointer"
-        >
-          Continue Practicing
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-[#8a8a9e] hidden sm:block">
+            Revisa los detalles de tu análisis o continúa practicando.
+          </p>
+          <button
+            type="button"
+            onClick={onContinuePracticing || onClose}
+            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7048E8] to-[#A27FF3] px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-[#7048E8]/30 transition-opacity hover:opacity-90 cursor-pointer shrink-0"
+          >
+            <span>Continue Practicing</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
       }
     >
-      <div className="mx-auto max-w-4xl space-y-5 animate-[fadeSlideUp_0.35s_ease-out_both]">
+      <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-5 animate-[fadeSlideUp_0.35s_ease-out_both]">
         <WritingMasterScorecard
           overallScore={overallScore}
           scoreClarity={submission.scoreClarity || 0}

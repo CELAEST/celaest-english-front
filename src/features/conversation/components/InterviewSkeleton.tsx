@@ -30,32 +30,29 @@ export const InterviewSkeleton: React.FC = React.memo(() => {
       {/* 2. Main Workspace Arena */}
       <div className="flex-1 w-full max-w-7xl 2xl:max-w-[1800px] mx-auto flex flex-col xl:flex-row items-stretch justify-between px-2 sm:px-6 py-1 gap-4 lg:gap-6 z-10 overflow-hidden h-full min-h-0">
         {/* Center Arena */}
-        <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-6 py-2 sm:py-4">
-          {/* Upper Section: Clean Orb Hero + Prompt Card */}
-          <div className="w-full flex flex-col items-center justify-start gap-4 sm:gap-6 shrink-0 my-auto max-w-xl">
-            {/* Clean Central Orb Silhouette (Zero wireframes, pure tonal mass) */}
-            <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full bg-[#14141d]" />
+        <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-6 py-1 sm:py-2 lg:py-4">
+          {/* Upper Section: Orb Placeholder (Zero dark ball, 100% transparent to prevent jumps) + Prompt Card */}
+          <div className="w-full flex flex-col items-center justify-start gap-1.5 sm:gap-3 shrink-0">
+            {/* Transparent placeholder perfectly matching ConversationOrbHero dimensions */}
+            <div className="w-[clamp(160px,26vh,240px)] sm:w-[clamp(140px,28vh,340px)] h-[clamp(160px,26vh,240px)] sm:h-[clamp(140px,28vh,340px)] bg-transparent shrink-0 rounded-full" />
 
             {/* Status indicator line */}
-            <div className="w-24 h-3 rounded-full bg-[#1e1e2d]" />
+            <div className="w-28 h-4 rounded-full bg-[#1e1e2d]" />
 
             {/* Question Prompt Card */}
-            <div className="w-full rounded-2xl bg-[#14141d] p-5 sm:p-6 flex flex-col gap-3">
+            <div className="w-full rounded-2xl bg-[#14141d] p-4 sm:p-5 flex flex-col gap-2.5 max-w-2xl">
               <div className="flex items-center justify-between">
-                <div className="w-24 h-3 rounded-full bg-[#1e1e2d]" />
-                <div className="w-16 h-3 rounded-full bg-[#0e0e15]" />
+                <div className="w-20 h-3 rounded-full bg-[#1e1e2d]" />
+                <div className="w-14 h-3 rounded-full bg-[#0e0e15]" />
               </div>
               <div className="w-full h-4 rounded-full bg-[#1e1e2d]" />
-              <div className="w-4/5 h-4 rounded-full bg-[#1e1e2d]" />
+              <div className="w-3/4 h-4 rounded-full bg-[#1e1e2d]" />
             </div>
-
-            {/* Mic Pill Control */}
-            <div className="w-44 sm:w-52 h-12 sm:h-14 rounded-full bg-[#1e1e2d] mt-2" />
           </div>
 
-          {/* Bottom spacer status */}
-          <div className="w-full flex justify-center shrink-0 pb-16 sm:pb-20 lg:pb-2">
-            <div className="w-48 h-2 rounded-full bg-[#0e0e15]" />
+          {/* Bottom Section: Mic Pill Control */}
+          <div className="w-full flex flex-col items-center justify-center shrink-0 pb-16 sm:pb-20 lg:pb-1">
+            <div className="w-44 sm:w-52 h-12 sm:h-14 rounded-full bg-[#1e1e2d]" />
           </div>
         </div>
 

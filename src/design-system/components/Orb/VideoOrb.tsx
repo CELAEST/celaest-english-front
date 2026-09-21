@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 
 export interface VideoOrbProps {
   className?: string;
@@ -11,14 +11,14 @@ export interface VideoOrbProps {
 }
 
 /**
- * VideoOrb — Loop infinito de /assets/orve.mp4
+ * VideoOrb — Loop infinito de /assets/orve.mp4 / /assets/orve.webm
  * High-performance, low-power video component:
  * Auto-pauses when hidden (display: none / off-screen / tab inactive) via IntersectionObserver,
  * freeing GPU hardware decoders on mobile devices.
- * Zero-blue-box guarantee: wrapped in a circular skeleton mask that remains dark/tonal
- * until the first frame is fully ready to paint.
+ * Zero-jump guarantee: First frame is decoded immediately with transparent background
+ * and zero dark skeleton overlays or pulsating balls.
  */
-export const VideoOrb: React.FC<VideoOrbProps> = ({
+const VideoOrbInner: React.FC<VideoOrbProps> = ({
   className = "w-full h-full object-contain pointer-events-none",
   videoClassName,
   poster,
@@ -27,19 +27,6 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isIntersectingRef = useRef<boolean>(true);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-
-  const handleLoaded = useCallback(() => {
-    setIsLoaded(true);
-  }, []);
-
-  // Check if browser already has the decoded frame cached on mount
-  useEffect(() => {
-    const v = videoRef.current;
-    if (v && v.readyState >= 2) {
-      setIsLoaded(true);
-    }
-  }, []);
 
   const tryPlay = useCallback(() => {
     const v = videoRef.current;
@@ -120,7 +107,6 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
       }
     };
     const onCanPlay = () => {
-      setIsLoaded(true);
       if (isActive && isIntersectingRef.current) tryPlay();
     };
 
@@ -138,15 +124,7 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
   }, [tryPlay, pauseVideo, playbackRate, isActive]);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center rounded-full overflow-hidden select-none">
-      {/* Tonal Dark Circular Skeleton Orb while video is decoding */}
-      {!isLoaded && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 rounded-full bg-[#080814] border border-white/[0.04] shadow-[inset_0_0_20px_rgba(112,72,232,0.12)] animate-pulse pointer-events-none"
-        />
-      )}
-
+    <div className="relative w-full h-full flex items-center justify-center rounded-full overflow-hidden select-none bg-transparent">
       <video
         ref={videoRef}
         poster={poster}
@@ -159,12 +137,7 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
         // @ts-ignore
         disableRemotePlayback
         aria-hidden="true"
-        onLoadedData={handleLoaded}
-        onCanPlay={handleLoaded}
-        onPlaying={handleLoaded}
-        className={`${videoClassName ?? className} rounded-full transition-opacity duration-300 ${
-          isLoaded ? "opacity-100" : "opacity-0"
-        }`}
+        className={`${videoClassName ?? className} rounded-full opacity-100`}
         style={{
           objectFit: "contain",
           backgroundColor: "transparent",
@@ -190,4 +163,5 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
   );
 };
 
+export const VideoOrb = React.memo(VideoOrbInner);
 export default VideoOrb;

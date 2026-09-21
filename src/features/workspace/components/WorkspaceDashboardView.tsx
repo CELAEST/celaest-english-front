@@ -8,9 +8,8 @@ import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 
-// Dynamic code-splitting: Heavy feature modules are loaded on-demand, reducing initial JS execution by >60%
 const InterviewPracticeView = lazy(() =>
-  import("../../conversation").then((m) => ({ default: m.InterviewPracticeView })),
+  import("../../conversation/components/InterviewPracticeView").then((m) => ({ default: m.InterviewPracticeView })),
 );
 const WritingPracticeView = lazy(() =>
   import("../../writing").then((m) => ({ default: m.WritingPracticeView })),
@@ -73,13 +72,13 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   React.useEffect(() => {
     const prefetchTimer = setTimeout(() => {
       void Promise.allSettled([
-        import("../../conversation"),
+        import("../../conversation/components/InterviewPracticeView"),
         import("../../writing"),
         import("../../reading"),
         import("../../memory"),
         import("../../settings"),
       ]);
-    }, 1000);
+    }, 100);
     return () => clearTimeout(prefetchTimer);
   }, []);
 

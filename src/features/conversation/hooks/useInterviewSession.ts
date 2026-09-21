@@ -334,13 +334,9 @@ export const useInterviewSession = (
   const questionInRound = (currentQuestionIndex % 5) + 1;
   const totalQuestionsInRound = 5;
 
-  // Request mic permission and setup cleanup on mount
+  // Lifecycle and hardware cleanup
   useEffect(() => {
     isMountedRef.current = true;
-
-    AudioCaptureService.initMicrophone().then(() => {
-      // mic initialized
-    });
 
     return () => {
       isMountedRef.current = false;
@@ -432,51 +428,20 @@ export const useInterviewSession = (
           const feedbackExplanationLower = (feedback.strategicFeedback?.explanation || "").toLowerCase();
           const feedbackTitleLower = (feedback.strategicFeedback?.title || "").toLowerCase();
 
-          const isA1 = activeCefrLevel.toUpperCase().startsWith("A1");
-          const minWordThreshold = isA1 ? 3 : 5;
-
           const isSpanish =
             (feedback.overallScore === 0 && feedbackTitleLower.includes("español")) ||
             feedbackTitleLower.includes("español") ||
             feedbackTitleLower.includes("spanish");
 
-          // If the AI evaluated it as 0, or flagged Spanish/incomplete/insufficient input, suppress modal and show alert
-          const isSpanishOrZero =
-            feedback.overallScore === 0 ||
-            rawSpokenWords.length < minWordThreshold ||
-            isSpanish ||
-            (!isA1 && (
-              feedbackTitleLower.includes("sin contenido") ||
-              feedbackTitleLower.includes("muy breve") ||
-              feedbackTitleLower.includes("incompleta") ||
-              feedbackTitleLower.includes("demasiado corta") ||
-              feedbackExplanationLower.includes("demasiado corta") ||
-              feedbackExplanationLower.includes("demasiado breve") ||
-              feedbackExplanationLower.includes("no aborda la pregunta")
-            ));
-
-          if (isSpanishOrZero) {
-            const isSpanish =
-              feedback.overallScore === 0 && feedbackTitleLower.includes("español") ||
-              feedbackTitleLower.includes("español") ||
-              feedbackTitleLower.includes("spanish");
-
-            if (isSpanish) {
-              setUserTranscript("");
-              userTranscriptRef.current = "";
-              textBeforeSegmentRef.current = "";
-              setSpeakingSeconds(0);
-              appToast.spanishDetected(
-                feedback.strategicFeedback?.explanation ||
-                  "Detectamos que tu respuesta está formulada en español. Por favor responde en inglés para evaluar tu práctica.",
-              );
-            } else {
-              appToast.warning(
-                feedback.strategicFeedback?.title || "Respuesta incompleta",
-                feedback.strategicFeedback?.explanation ||
-                  "Tu respuesta es demasiado corta o no responde a la pregunta técnica. Por favor formula una respuesta estructurada en inglés.",
-              );
-            }
+          if (isSpanish) {
+            setUserTranscript("");
+            userTranscriptRef.current = "";
+            textBeforeSegmentRef.current = "";
+            setSpeakingSeconds(0);
+            appToast.spanishDetected(
+              feedback.strategicFeedback?.explanation ||
+                "Detectamos que tu respuesta está formulada en español. Por favor responde en inglés para evaluar tu práctica.",
+            );
             return;
           }
 

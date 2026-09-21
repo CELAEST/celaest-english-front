@@ -319,30 +319,36 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       )}
 
       {/* 5. Audio & Mic Settings Modal */}
-      <ConversationAudioSettingsModal
-        isOpen={showAudioSettings}
-        onClose={() => setShowAudioSettings(false)}
-        speechRate={speechRate}
-        onSetSpeechRate={setSpeechRate}
-      />
+      {showAudioSettings && (
+        <ConversationAudioSettingsModal
+          isOpen={showAudioSettings}
+          onClose={() => setShowAudioSettings(false)}
+          speechRate={speechRate}
+          onSetSpeechRate={setSpeechRate}
+        />
+      )}
 
       {/* 6. Luxury Hardware Resilience Mic Recovery Modal */}
-      <MicHardwareRecoveryModal
-        isOpen={isMicRecoveryModalOpen}
-        onClose={() => setIsMicRecoveryModalOpen(false)}
-        onResume={resumeFromMicRecovery}
-      />
+      {isMicRecoveryModalOpen && (
+        <MicHardwareRecoveryModal
+          isOpen={isMicRecoveryModalOpen}
+          onClose={() => setIsMicRecoveryModalOpen(false)}
+          onResume={resumeFromMicRecovery}
+        />
+      )}
 
       {/* 7. Luxury AI Infrastructure Recovery Modal */}
-      <AiInfrastructureRecoveryModal
-        isOpen={isRecoveryModalOpen}
-        scenario={infrastructureErrorScenario}
-        cooldown={recoveryCooldown}
-        contextType="speaking"
-        bufferDetail={{ durationSeconds: speakingSeconds }}
-        onClose={() => setIsRecoveryModalOpen(false)}
-        onImmediateResume={resumeFromRecoveryModal}
-      />
+      {isRecoveryModalOpen && (
+        <AiInfrastructureRecoveryModal
+          isOpen={isRecoveryModalOpen}
+          scenario={infrastructureErrorScenario}
+          cooldown={recoveryCooldown}
+          contextType="speaking"
+          bufferDetail={{ durationSeconds: speakingSeconds }}
+          onClose={() => setIsRecoveryModalOpen(false)}
+          onImmediateResume={resumeFromRecoveryModal}
+        />
+      )}
     </motion.div>
   );
 };

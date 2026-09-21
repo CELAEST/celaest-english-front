@@ -253,6 +253,33 @@ export const ENGLISH_VERB_MARKERS = new Set([
   "deploy", "deployed", "deploying", "deploys",
   "collaborate", "collaborated", "collaborating", "collaborates",
   "coordinate", "coordinated", "coordinating", "coordinates",
+  "care", "cared", "caring", "cares",
+  "treat", "treated", "treating", "treats",
+  "study", "studied", "studying", "studies",
+  "assist", "assisted", "assisting", "assists",
+  "support", "supported", "supporting", "supports",
+  "examine", "examined", "examining", "examines",
+  "diagnose", "diagnosed", "diagnosing", "diagnoses",
+  "prepare", "prepared", "preparing", "prepares",
+  "serve", "served", "serving", "serves",
+  "practice", "practiced", "practicing", "practices",
+  "check", "checked", "checking", "checks",
+  "talk", "talked", "talking", "talks",
+  "visit", "visited", "visiting", "visits",
+  "love", "loved", "loving", "loves",
+  "enjoy", "enjoyed", "enjoying", "enjoys",
+  "prefer", "preferred", "preferring", "prefers",
+  "hope", "hoped", "hoping", "hopes",
+  "believe", "believed", "believing", "believes",
+  "understand", "understood", "understanding", "understands",
+  "remember", "remembered", "remembering", "remembers",
+  "teach", "taught", "teaching", "teaches",
+  "operate", "operated", "operating", "operates",
+  "prescribe", "prescribed", "prescribing", "prescribes",
+  "monitor", "monitored", "monitoring", "monitors",
+  "consult", "consulted", "consulting", "consults",
+  "ask", "asked", "asking", "asks",
+  "answer", "answered", "answering", "answers",
   "optimize", "optimized", "optimizing", "optimizes",
   "implement", "implemented", "implementing", "implements",
   "analyze", "analyzed", "analyzing", "analyzes",
@@ -554,17 +581,18 @@ export function validateSpeechIntelligibility(
     }
   }
 
-  const isA1 = options?.targetLevel?.toUpperCase().startsWith("A1") ?? false;
-  const minRequiredWords = isA1 ? 3 : 4;
-  const minDistinctWords = isA1 ? 2 : 3;
+  const upperLevel = options?.targetLevel?.toUpperCase() || "";
+  const isBeginner = upperLevel.startsWith("A1") || upperLevel.startsWith("A2");
+  const minRequiredWords = isBeginner ? 3 : 4;
+  const minDistinctWords = isBeginner ? 2 : 3;
 
   // 4b. Word Count & Predicate Completeness Check (0 Token Shield)
-  // Require at least 3 words for A1, 4 words for A2+ interview answers
+  // Require at least 3 words for A1/A2, 4 words for B1+ interview answers
   if (rawWords.length < minRequiredWords) {
     return {
       isValid: false,
       reason: "INSUFFICIENT_WORDS",
-      message: isA1
+      message: isBeginner
         ? "Tu respuesta es muy breve. Por favor responde con al menos 3 palabras en inglés."
         : "Tu respuesta es muy breve. Por favor elabora una respuesta completa en inglés (mínimo una oración estructurada).",
       cleanTranscript: clean,

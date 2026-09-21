@@ -23,6 +23,8 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
   onClearText,
 }) => {
   const isSubmittingRef = React.useRef(false);
+  const lastMicToggleRef = React.useRef(0);
+
   const handleSubmit = (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
@@ -47,7 +49,9 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    if (isThinking) return;
+    const now = Date.now();
+    if (isThinking || now - lastMicToggleRef.current < 400) return;
+    lastMicToggleRef.current = now;
     MobileAudioUnlocker.unlock();
     if (onToggleListening) {
       onToggleListening();
@@ -55,7 +59,7 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center select-none z-10 shrink-0 pb-1 sm:pb-1.5 animate-[fadeSlideUp_0.35s_ease-out_both]">
+    <div className="flex flex-col items-center justify-center select-none z-10 shrink-0 pb-1 sm:pb-1.5 font-sans">
       <div className="flex items-center gap-3.5 sm:gap-4 shrink-0">
         {/* Discard / Clear Button (Visible when text exists and not currently listening) */}
         {hasText && !isListening && onClearText && (
@@ -86,7 +90,6 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
         <button
           type="button"
           onClick={handleMicClick}
-          onTouchEnd={handleMicClick}
           onKeyDown={(e) => {
             if (e.key === " " || e.key === "Enter") e.stopPropagation();
           }}
@@ -138,7 +141,6 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
           <button
             type="button"
             onClick={handleSubmit}
-            onTouchEnd={handleSubmit}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") e.stopPropagation();
             }}

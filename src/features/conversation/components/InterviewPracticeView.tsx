@@ -222,7 +222,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       initial={{ opacity: 1, y: 0 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 p-1 sm:p-2"
+      className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 py-1 sm:py-2"
     >
       {/* 1. Clean Responsive HUD (Screens < xl, completely backgroundless and balanced) */}
       <ResponsiveInterviewHUD
@@ -242,9 +242,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       />
 
       {/* 2. Main Workspace */}
-      <div className="flex-1 w-full max-w-7xl 2xl:max-w-[1800px] mx-auto flex flex-col xl:flex-row items-stretch justify-between px-2 sm:px-6 py-0.5 sm:py-1 gap-4 lg:gap-6 z-10 overflow-hidden h-full min-h-0">
+      <div className="flex-1 w-full max-w-7xl 2xl:max-w-[1800px] mx-auto flex flex-col xl:flex-row items-stretch justify-between px-4 sm:px-6 py-0.5 sm:py-1 gap-4 lg:gap-6 z-10 overflow-hidden h-full min-h-0">
         {/* Center Main Hero Arena: 100% Adaptive Viewport without scroll */}
-        <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-6 py-1 sm:py-2 lg:py-4">
+        <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-0 sm:px-4 py-1 sm:py-2 lg:py-4">
           {/* Upper Section: Orb + Status + Question + Live Transcript */}
           <div className="w-full flex flex-col items-center justify-start gap-1.5 sm:gap-3 shrink-0">
             {/* Glowing Orb & Status */}

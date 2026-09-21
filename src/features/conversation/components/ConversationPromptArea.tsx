@@ -31,7 +31,7 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
   }, [userTranscript]);
 
   return (
-    <div className="w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl flex flex-col justify-start gap-[clamp(6px,1.2vh,14px)] text-left px-3 sm:px-6 shrink-0 font-sans">
+    <div className="w-full max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl flex flex-col justify-start gap-[clamp(6px,1.2vh,14px)] text-left px-0 shrink-0 font-sans">
       {/* 1. Question Hero Section */}
       {currentQuestionText && (
         <div className="w-full flex flex-col gap-[clamp(4px,0.7vh,7px)] shrink-0 select-none">

@@ -46,7 +46,7 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
   return (
     <nav
       aria-label="Interview HUD"
-      className="w-full flex xl:hidden items-center justify-between px-3 sm:px-6 py-2.5 bg-transparent select-none z-30 shrink-0 font-sans"
+      className="w-full flex xl:hidden items-center justify-between px-4 sm:px-6 py-2.5 bg-transparent select-none z-30 shrink-0 font-sans"
     >
       {/* 1. TOP-LEFT: Clean Telemetry (High-End Inter Typography, Amethyst Accent, Balanced Proportions) */}
       <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs shrink-0">

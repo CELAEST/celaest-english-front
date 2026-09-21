@@ -30,17 +30,17 @@ export function getDefaultStarterPhrases(level: CefrLevelCode, _category?: strin
   switch (level) {
     case "A1":
       return [
+        "Hello! My name is...",
+        "I am a [role] and I work at...",
+        "Every day, I use...",
+        "I like my job because...",
+      ];
+    case "A2":
+      return [
         "Hi, I am writing to let you know that...",
         "Could you please help me with...",
         "Today I finished working on...",
         "Please let me know if this works.",
-      ];
-    case "A2":
-      return [
-        "Regarding the matter we discussed earlier, ...",
-        "I would like to confirm that...",
-        "We completed the review after verifying the details...",
-        "Feel free to reach out if you have questions.",
       ];
     case "B1":
       return [

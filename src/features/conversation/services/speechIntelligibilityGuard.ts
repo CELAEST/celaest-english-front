@@ -188,6 +188,7 @@ export interface SpeechValidationResult {
 export interface SpeechValidationOptions {
   avgLogprob?: number | undefined;
   noSpeechProb?: number | undefined;
+  targetLevel?: string | undefined;
 }
 
 // Core structural & high-frequency verbs required for complete English thoughts/sentences
@@ -197,6 +198,7 @@ export const ENGLISH_VERB_MARKERS = new Set([
   "do", "does", "did", "doing", "done",
   "can", "could", "will", "would", "shall", "should", "may", "might", "must",
   "work", "worked", "working", "works",
+  "live", "lived", "living", "lives",
   "use", "used", "using", "uses",
   "make", "made", "making", "makes",
   "take", "took", "taking", "takes",
@@ -552,13 +554,19 @@ export function validateSpeechIntelligibility(
     }
   }
 
+  const isA1 = options?.targetLevel?.toUpperCase().startsWith("A1") ?? false;
+  const minRequiredWords = isA1 ? 3 : 4;
+  const minDistinctWords = isA1 ? 2 : 3;
+
   // 4b. Word Count & Predicate Completeness Check (0 Token Shield)
-  // Require at least 4 words for an interview answer
-  if (rawWords.length < 4) {
+  // Require at least 3 words for A1, 4 words for A2+ interview answers
+  if (rawWords.length < minRequiredWords) {
     return {
       isValid: false,
       reason: "INSUFFICIENT_WORDS",
-      message: "Tu respuesta es muy breve. Por favor elabora una respuesta completa en inglés (mínimo una oración estructurada).",
+      message: isA1
+        ? "Tu respuesta es muy breve. Por favor responde con al menos 3 palabras en inglés."
+        : "Tu respuesta es muy breve. Por favor elabora una respuesta completa en inglés (mínimo una oración estructurada).",
       cleanTranscript: clean,
     };
   }
@@ -616,7 +624,7 @@ export function validateSpeechIntelligibility(
 
   // 9. Distinct word count check
   const distinctWords = new Set(rawWords);
-  if (distinctWords.size < 3) {
+  if (distinctWords.size < minDistinctWords) {
     return {
       isValid: false,
       reason: "INSUFFICIENT_WORDS",

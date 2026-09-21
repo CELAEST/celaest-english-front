@@ -432,19 +432,28 @@ export const useInterviewSession = (
           const feedbackExplanationLower = (feedback.strategicFeedback?.explanation || "").toLowerCase();
           const feedbackTitleLower = (feedback.strategicFeedback?.title || "").toLowerCase();
 
+          const isA1 = activeCefrLevel.toUpperCase().startsWith("A1");
+          const minWordThreshold = isA1 ? 3 : 5;
+
+          const isSpanish =
+            (feedback.overallScore === 0 && feedbackTitleLower.includes("español")) ||
+            feedbackTitleLower.includes("español") ||
+            feedbackTitleLower.includes("spanish");
+
           // If the AI evaluated it as 0, or flagged Spanish/incomplete/insufficient input, suppress modal and show alert
           const isSpanishOrZero =
             feedback.overallScore === 0 ||
-            rawSpokenWords.length < 5 ||
-            feedbackTitleLower.includes("español") ||
-            feedbackTitleLower.includes("spanish") ||
-            feedbackTitleLower.includes("sin contenido") ||
-            feedbackTitleLower.includes("muy breve") ||
-            feedbackTitleLower.includes("incompleta") ||
-            feedbackTitleLower.includes("demasiado corta") ||
-            feedbackExplanationLower.includes("demasiado corta") ||
-            feedbackExplanationLower.includes("demasiado breve") ||
-            feedbackExplanationLower.includes("no aborda la pregunta");
+            rawSpokenWords.length < minWordThreshold ||
+            isSpanish ||
+            (!isA1 && (
+              feedbackTitleLower.includes("sin contenido") ||
+              feedbackTitleLower.includes("muy breve") ||
+              feedbackTitleLower.includes("incompleta") ||
+              feedbackTitleLower.includes("demasiado corta") ||
+              feedbackExplanationLower.includes("demasiado corta") ||
+              feedbackExplanationLower.includes("demasiado breve") ||
+              feedbackExplanationLower.includes("no aborda la pregunta")
+            ));
 
           if (isSpanishOrZero) {
             const isSpanish =
@@ -612,6 +621,7 @@ export const useInterviewSession = (
               {
                 avgLogprob: whisperResult.avgLogprob,
                 noSpeechProb: whisperResult.noSpeechProb,
+                targetLevel: activeCefrLevel,
               },
             );
             // If Whisper hallucinated silence noise (e.g. "a lot of people", "okay, thank you"), do not pollute input
@@ -757,6 +767,7 @@ export const useInterviewSession = (
         {
           avgLogprob: lastCapturedAudioRef.current.avgLogprob,
           noSpeechProb: lastCapturedAudioRef.current.noSpeechProb,
+          targetLevel: activeCefrLevel,
         },
       );
       if (!validation.isValid) {

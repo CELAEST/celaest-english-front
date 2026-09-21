@@ -135,6 +135,17 @@ describe("validateSpeechIntelligibility", () => {
     );
     expect(beginnerCareFollowup.isValid).toBe(true);
   });
+
+  it("permits short structured answers for A1 level without rejecting as insufficient", () => {
+    const a1Doctor = validateSpeechIntelligibility("I am doctor", 2, "english", { targetLevel: "A1" });
+    expect(a1Doctor.isValid).toBe(true);
+
+    const a1Work = validateSpeechIntelligibility("I work here", 2, "english", { targetLevel: "A1" });
+    expect(a1Work.isValid).toBe(true);
+
+    const a1Yes = validateSpeechIntelligibility("Yes, I do", 2, "english", { targetLevel: "A1" });
+    expect(a1Yes.isValid).toBe(true);
+  });
 });
 
 describe("detectLiveSpanishOrFiller", () => {

@@ -269,7 +269,9 @@ RULES:
 7. NON-ENGLISH GUARD: If the candidate's answer is in Spanish, not in English, or unintelligible noise, do NOT invent fake corrections. Set overallScore: 0, grammarScore: 0, clarityScore: 0, vocabularyScore: 0, estimatedCefrLevel: "A1", unclearOrErrorWords: [], and in strategicFeedback explain in Spanish: title: "Respuesta en español", explanation: "Detectamos que respondiste en español.", recommendation: "Para evaluar tu pronunciación y gramática, por favor responde en inglés a esta pregunta."
 8. MODEL ANSWER IN ENGLISH: The "improvedFullAnswer" field MUST ALWAYS BE WRITTEN IN NATIVE EXECUTIVE ENGLISH (C2 level) demonstrating STAR methodology. NEVER write "improvedFullAnswer" in Spanish.
 9. NO FABRICATED METRICS (HONEST PLACEHOLDERS): In "improvedFullAnswer" and "strategicFeedback", NEVER invent arbitrary numerical metrics, percentages, or performance benchmarks that the candidate did not explicitly state (e.g. do NOT invent "2 GB of RAM", "99.9% uptime", "cut downtime by 100%", "40% latency drop"). When framing STAR quantifiable results, you MUST use clear bracketed placeholders that prompt the candidate to supply their own real numbers, e.g.: "...reducing database latency by [X]%...", "...preventing approximately [X] hours of downtime...", "...freeing up [insert amount] of memory...". This ensures the candidate practices with authentic data in real technical interviews.
-10. INSUFFICIENT / FRAGMENT ANSWER GUARD: If the candidate's answer is fewer than 5 words, an isolated sentence fragment without a predicate (e.g. "a lot of people", "in the office", "yes of course"), silence, or does NOT attempt to answer the technical interview question, NEVER give high scores (PROHIBITED to give 90-100%). Set overallScore: 0, grammarScore: 0, clarityScore: 0, vocabularyScore: 0, estimatedCefrLevel: "A1", unclearOrErrorWords: [], and in strategicFeedback: title: "Respuesta muy breve o incompleta", explanation: "Tu respuesta es demasiado corta o no constituye una oración completa para responder a la pregunta de la entrevista.", recommendation: "Por favor responde usando oraciones completas con contexto, acción y resultado (mínimo 2-3 frases)."
+10. INSUFFICIENT / FRAGMENT ANSWER GUARD & A1 BEGINNER CALIBRATION:
+   - FOR TARGET CEFR A1 CANDIDATES: Short, simple answers in English (3 to 10 words, e.g. "I am a doctor", "I work from home", "Yes, I do", "I use JavaScript every day") ARE 100% VALID. DO NOT penalize, reject, or give 0 score! If the answer is grammatically correct simple English, award realistic, encouraging scores (80-95%) with motivating feedback. DO NOT demand multi-sentence STAR methodology for A1 beginners.
+   - FOR A2+ CANDIDATES: If the candidate's answer is fewer than 4-5 words, an isolated sentence fragment without a predicate (e.g. "a lot of people", "in the office"), silence, or does NOT attempt to answer the question, NEVER give high scores (PROHIBITED to give 90-100%). Set overallScore: 0, grammarScore: 0, clarityScore: 0, vocabularyScore: 0, estimatedCefrLevel: "A1", unclearOrErrorWords: [], and in strategicFeedback: title: "Respuesta muy breve o incompleta", explanation: "Tu respuesta es demasiado corta o no constituye una oración completa para responder a la pregunta de la entrevista.", recommendation: "Por favor responde usando oraciones completas con contexto, acción y resultado (mínimo 2-3 frases)."
 
 JSON schema:
 {
@@ -304,6 +306,7 @@ CRITICAL: Return exactly ONE valid JSON object matching the schema above. Do NOT
 
     const userMessage = `Interview Question: "${currentQuestion.question}"
 Candidate Role: ${roleName}
+Target CEFR Level: ${effectiveLevel}
 Candidate Spoken Answer: "${cleanText}"`;
 
     try {

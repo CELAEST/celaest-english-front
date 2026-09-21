@@ -272,17 +272,17 @@ Output format: Return ONLY valid raw JSON with this exact structure:
     switch (level) {
       case "A1":
         return {
-          minWords: 20,
-          maxWords: 45,
-          timeLimit: "8 min",
-          levelDirectives: "- Short internal message or note (20-45 words). Simple present/past, straightforward vocabulary.",
+          minWords: 8,
+          maxWords: 25,
+          timeLimit: "5 min",
+          levelDirectives: "- Ultra-short elementary message or introduction (8-25 words). Strictly Simple Present (verb to be, do/does, like, work, use). Zero past tense, zero subordinate clauses. Simple, friendly scenarios (introduce yourself, state your role/tools, simple 2-sentence greeting).",
         };
       case "A2":
         return {
-          minWords: 30,
-          maxWords: 60,
-          timeLimit: "10 min",
-          levelDirectives: "- Routine update, brief client confirmation, or short scheduling email (30-60 words).",
+          minWords: 20,
+          maxWords: 45,
+          timeLimit: "8 min",
+          levelDirectives: "- Short routine message or note (20-45 words). Simple present/past, straightforward vocabulary, brief client or team update.",
         };
       case "B1":
         return {
@@ -546,7 +546,136 @@ Output format: Return ONLY valid raw JSON with this exact structure:
       },
     ];
 
-    const templates = category === "HEALTHCARE" ? healthcareTemplates : generalTemplates;
+    const healthcareA1Templates = [
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Introduce Yourself to Clinic`,
+        description: `Write 2 short sentences introducing your name and your role at the clinic.`,
+        starterPhrases: [
+          `Hello! My name is...`,
+          `I am a ${role} at this clinic.`,
+          `I am happy to work here with you.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Daily Work Routine Note`,
+        description: `Write 2 simple sentences about what you do every day at work.`,
+        starterPhrases: [
+          `Every day, I help patients at the clinic.`,
+          `I check appointments and prepare instruments.`,
+          `I like my daily work.`,
+        ],
+      },
+      {
+        category: "EMAIL" as const,
+        title: `${role}: Clinic Equipment Note`,
+        description: `Write 2 short sentences mentioning a computer or tool you use at work.`,
+        starterPhrases: [
+          `In my work, I use a computer and basic tools.`,
+          `Everything is clean and ready for patients.`,
+          `Please let me know if you need help.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Friendly Greeting to Patients`,
+        description: `Write a short 2-sentence greeting welcoming a patient to the clinic.`,
+        starterPhrases: [
+          `Welcome to our clinic!`,
+          `Please take a seat and relax.`,
+          `The doctor will see you in a moment.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Note to Your Team`,
+        description: `Write 2 simple sentences telling your team you are ready to work.`,
+        starterPhrases: [
+          `Good morning, team!`,
+          `I am at the office and ready to work today.`,
+          `Have a great day.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Favorite Part of Your Job`,
+        description: `Write 2 short sentences about what you enjoy in your work.`,
+        starterPhrases: [
+          `I like helping people feel better.`,
+          `My team is very friendly and kind.`,
+          `I enjoy my job every day.`,
+        ],
+      },
+    ];
+
+    const generalA1Templates = [
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Introduce Yourself to the Team`,
+        description: `Write 2 short sentences introducing your name and your job.`,
+        starterPhrases: [
+          `Hello everyone! My name is...`,
+          `I work as a ${role}.`,
+          `I am happy to collaborate with this team.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Daily Work Tools`,
+        description: `Write 2 simple sentences about one tool or computer you use at work.`,
+        starterPhrases: [
+          `Every day, I use my laptop and email.`,
+          `I also use simple software tools for my work.`,
+          `They help me complete my tasks.`,
+        ],
+      },
+      {
+        category: "EMAIL" as const,
+        title: `${role}: Short Status Greeting`,
+        description: `Write a short 2-sentence update saying you started your tasks today.`,
+        starterPhrases: [
+          `Good morning!`,
+          `I am working on my daily tasks today.`,
+          `Everything is going well.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Quick Question to a Teammate`,
+        description: `Write 2 short sentences asking a coworker for quick help.`,
+        starterPhrases: [
+          `Hi! Do you have two minutes?`,
+          `I have a quick question about this task.`,
+          `Thank you for your help!`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: What I Like About My Job`,
+        description: `Write 2 simple sentences about what you enjoy in your work.`,
+        starterPhrases: [
+          `I like learning new things every day.`,
+          `I enjoy working with my colleagues.`,
+          `My job is interesting and fun.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: End of Day Note`,
+        description: `Write 2 short sentences saying you finished your work for the day.`,
+        starterPhrases: [
+          `I finished my work for today.`,
+          `See you tomorrow morning!`,
+          `Have a wonderful evening.`,
+        ],
+      },
+    ];
+
+    let templates = category === "HEALTHCARE" ? healthcareTemplates : generalTemplates;
+    if (level === "A1") {
+      templates = category === "HEALTHCARE" ? healthcareA1Templates : generalA1Templates;
+    }
     const result: WritingTaskItem[] = [];
 
     for (let i = 0; i < count; i++) {

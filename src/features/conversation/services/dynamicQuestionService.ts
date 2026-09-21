@@ -325,7 +325,51 @@ function getHealthcareTopics(role: string, level: CefrLevelCode): DynamicQuestio
 }
 
 function getTechTopics(role: string, level: CefrLevelCode): DynamicQuestionTopic[] {
-  if (level === "A1" || level === "A2") {
+  if (level === "A1") {
+    return [
+      {
+        category: "WARMUP",
+        theme: "Introduction",
+        questionTemplate: `Hello! What is your name and what is your job in technology?`,
+        starHint: "Answer in 1 or 2 simple sentences: 'Hello, my name is... and I am a developer.'",
+        expectedKeywords: ["name", "am", "developer", "engineer", "work"],
+        targetLevel: "A1",
+      },
+      {
+        category: "TECHNICAL",
+        theme: "Tools",
+        questionTemplate: `What computer or programming language do you like to use?`,
+        starHint: "Name 1 tool or language: 'I like Python' or 'I use JavaScript and VS Code.'",
+        expectedKeywords: ["use", "like", "code", "computer", "language"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WARMUP",
+        theme: "Workplace",
+        questionTemplate: `Do you work at an office or do you work from home as a ${role}?`,
+        starHint: "Use simple present: 'I work from home' or 'I work at an office.'",
+        expectedKeywords: ["work", "home", "office", "remotely", "computer"],
+        targetLevel: "A1",
+      },
+      {
+        category: "SITUATIONAL",
+        theme: "Teamwork",
+        questionTemplate: `Do you work alone or do you work with a team?`,
+        starHint: "Answer simply: 'I work with a team of developers' or 'I work alone on tasks.'",
+        expectedKeywords: ["team", "alone", "work", "people", "tasks"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WRAPUP",
+        theme: "Learning",
+        questionTemplate: `What do you like to learn in technology right now?`,
+        starHint: "Say 1 simple thing: 'I want to learn English' or 'I want to learn React.'",
+        expectedKeywords: ["learn", "want", "like", "new", "technology"],
+        targetLevel: "A1",
+      },
+    ];
+  }
+  if (level === "A2") {
     return [
       {
         category: "WARMUP",
@@ -458,7 +502,51 @@ function getTechTopics(role: string, level: CefrLevelCode): DynamicQuestionTopic
 }
 
 function getProductTopics(role: string, level: CefrLevelCode): DynamicQuestionTopic[] {
-  if (level === "A1" || level === "A2") {
+  if (level === "A1") {
+    return [
+      {
+        category: "WARMUP",
+        theme: "Introduction",
+        questionTemplate: `Hello! What is your name and what do you do as a ${role}?`,
+        starHint: "Answer simply: 'Hello! My name is... and I work as a [role].'",
+        expectedKeywords: ["name", "work", "design", "product", "team"],
+        targetLevel: "A1",
+      },
+      {
+        category: "TECHNICAL",
+        theme: "Favorite App",
+        questionTemplate: `What is one mobile app or website that you like to use?`,
+        starHint: "Say an app you like: 'I like Spotify because it is easy and fast.'",
+        expectedKeywords: ["like", "app", "website", "use", "easy"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WARMUP",
+        theme: "Daily Tools",
+        questionTemplate: `What tools do you use every day, like Figma or a computer?`,
+        starHint: "Mention 1 or 2 tools: 'I use Figma and my computer every day.'",
+        expectedKeywords: ["use", "tools", "figma", "notes", "computer"],
+        targetLevel: "A1",
+      },
+      {
+        category: "SITUATIONAL",
+        theme: "Communication",
+        questionTemplate: `Do you talk with users or with your team every day?`,
+        starHint: "Answer in 1 sentence: 'Yes, I talk with my team every morning.'",
+        expectedKeywords: ["talk", "team", "users", "every day", "morning"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WRAPUP",
+        theme: "Goal",
+        questionTemplate: `What do you want to create next in your work as a ${role}?`,
+        starHint: "Say what you want: 'I want to create a clean mobile design.'",
+        expectedKeywords: ["want", "build", "create", "app", "new"],
+        targetLevel: "A1",
+      },
+    ];
+  }
+  if (level === "A2") {
     return [
       {
         category: "WARMUP",
@@ -591,7 +679,51 @@ function getProductTopics(role: string, level: CefrLevelCode): DynamicQuestionTo
 }
 
 function getGeneralTopics(role: string, level: CefrLevelCode): DynamicQuestionTopic[] {
-  if (level === "A1" || level === "A2") {
+  if (level === "A1") {
+    return [
+      {
+        category: "WARMUP",
+        theme: "Introduction",
+        questionTemplate: `Hello! What is your name and what is your job as a ${role}?`,
+        starHint: "Answer in 1 or 2 short sentences: 'Hello, my name is... and I am a [role].'",
+        expectedKeywords: ["name", "job", "work", "professional", "company"],
+        targetLevel: "A1",
+      },
+      {
+        category: "TECHNICAL",
+        theme: "Daily Tasks",
+        questionTemplate: `What do you do every morning at work?`,
+        starHint: "Say 1 or 2 simple tasks: 'I check my email and drink coffee.'",
+        expectedKeywords: ["morning", "email", "tasks", "work", "check"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WARMUP",
+        theme: "Workplace",
+        questionTemplate: `Where is your office or company located?`,
+        starHint: "Say the city or location: 'My company is in Bogota / Mexico / online.'",
+        expectedKeywords: ["office", "company", "city", "located", "work"],
+        targetLevel: "A1",
+      },
+      {
+        category: "SITUATIONAL",
+        theme: "Working with People",
+        questionTemplate: `Do you enjoy speaking with clients or coworkers every day?`,
+        starHint: "Answer simply: 'Yes, I enjoy speaking with people because it is interesting.'",
+        expectedKeywords: ["yes", "clients", "coworkers", "enjoy", "people"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WRAPUP",
+        theme: "Free Time",
+        questionTemplate: `What do you like to do after work to relax?`,
+        starHint: "Say 1 simple activity: 'I like to read books' or 'I spend time with my family.'",
+        expectedKeywords: ["like", "relax", "family", "read", "music"],
+        targetLevel: "A1",
+      },
+    ];
+  }
+  if (level === "A2") {
     return [
       {
         category: "WARMUP",

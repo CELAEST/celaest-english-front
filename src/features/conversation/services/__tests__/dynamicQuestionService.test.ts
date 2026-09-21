@@ -59,12 +59,20 @@ describe("DynamicQuestionService - Profession and CEFR Level Adaptation", () => 
   });
 
   describe("getQuestionForIndex - Adaptive Questions", () => {
-    it("returns accessible, beginner-friendly questions for A1/A2 software engineers", () => {
+    it("returns ultra-accessible, short beginner questions for A1 software engineers", () => {
       const q = DynamicQuestionService.getQuestionForIndex(0, "Software Engineer", "A1");
+      expect(q).toBeDefined();
+      expect(q.targetLevel).toBe("A1");
+      expect(q.question).toContain("Hello! What is your name");
+      expect(q.question.toLowerCase()).not.toContain("distributed system");
+      expect(q.question.toLowerCase()).not.toContain("microservice");
+    });
+
+    it("returns routine-focused elementary questions for A2 software engineers", () => {
+      const q = DynamicQuestionService.getQuestionForIndex(0, "Software Engineer", "A2");
       expect(q).toBeDefined();
       expect(q.targetLevel).toBe("A2");
       expect(q.question).toContain("What programming languages or development tools");
-      // Must NOT contain intimidating C2 jargon
       expect(q.question.toLowerCase()).not.toContain("distributed system");
       expect(q.question.toLowerCase()).not.toContain("microservice");
       expect(q.question.toLowerCase()).not.toContain("race condition");

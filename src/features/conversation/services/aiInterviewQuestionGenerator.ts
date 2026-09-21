@@ -220,8 +220,17 @@ Output format: Return ONLY valid raw JSON with the following structure:
   }
 
   private static getLevelPromptDirectives(level: string): string {
-    if (level.startsWith("A1") || level.startsWith("A2")) {
-      return `Pedagogical CEFR A1/A2 Guidance:
+    if (level.startsWith("A1")) {
+      return `Pedagogical CEFR A1 (Absolute Beginner) Guidance:
+- Questions MUST be ultra-short, friendly, and direct (max 8 to 12 words per question).
+- Grammar: Strictly SIMPLE PRESENT (verb to be, do/does, like, work, use, have). Absolutely NO past tense, NO present perfect, NO complex conditional or multi-clause structures.
+- Focus strictly on elementary basics: introducing themselves, where they work, what simple tools/computer they use, their daily morning routine, and what they like about their job.
+- StarHint: Extremely simple and accessible in English (e.g. "Answer in 1 or 2 short sentences: 'Hello, my name is... and I work as a [role].'").
+- ExpectedKeywords: 3-4 elementary high-frequency words (e.g. "name", "work", "like", "use").
+- The candidate is an absolute beginner; never intimidate them with multi-part questions or complex behavioral scenarios.`;
+    }
+    if (level.startsWith("A2")) {
+      return `Pedagogical CEFR A2 (Elementary) Guidance:
 - Keep question sentences concise, direct, and accessible (simple present, simple past).
 - Focus on daily workplace routine, basic tools/instruments, introducing themselves, and simple patient/client interactions.
 - Avoid multi-clause convoluted idioms or abstract corporate buzzwords.`;

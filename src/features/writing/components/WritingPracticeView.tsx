@@ -167,7 +167,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     if (wordCount < minWordsRequired) return;
 
     // 0-Token Linguistic & Gibberish Shield Guard
-    const validation = validateSpeechIntelligibility(editorText);
+    const validation = validateSpeechIntelligibility(editorText, 0, undefined, {
+      targetLevel: activeCefrLevel,
+    });
     if (!validation.isValid) {
       if (validation.reason === "SPANISH_DETECTED") {
         appToast.spanishDetected(validation.message);
@@ -203,7 +205,10 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
         // BYOK direct execution using user's private key
         const systemPrompt =
           "You are an empathetic English writing mentor and executive coach. Always use direct 2nd person (tú) in Spanish. Respond ONLY with valid raw JSON.";
-        const userPrompt = `Evaluate this ESL submission (${currentTask.category}) for a ${roleName}:
+        const a1Guidance = activeCefrLevel.startsWith("A1")
+          ? "CRITICAL PEDAGOGICAL MANDATE (CEFR A1 - Absolute Beginner): The candidate is writing 1 to 3 short elementary sentences (8-25 words) in Present Simple. Do NOT penalize brevity, elementary vocabulary, or lack of complex structures. Reward correct basic grammar (subject-verb agreement, to be) with 90-98%.\n"
+          : "";
+        const userPrompt = `${a1Guidance}Evaluate this ESL submission (${currentTask.category}) for a ${roleName}:
 Title: ${currentTask.title}
 Content: "${editorText}"
 Target CEFR Level: ${activeCefrLevel}

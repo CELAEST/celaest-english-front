@@ -145,6 +145,7 @@ export const VideoOrb: React.FC<VideoOrbProps> = ({
       className={videoClassName ?? className}
       style={{
         objectFit: "contain",
+        backgroundColor: "transparent",
         willChange: "transform",
         backfaceVisibility: "hidden",
         transform: "translateZ(0)",

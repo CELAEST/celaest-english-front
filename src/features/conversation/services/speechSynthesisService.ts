@@ -50,13 +50,14 @@ export class SpeechSynthesisService {
       ? cached.blobUrl
       : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
           voiceId,
-        )}&rate=%2B0%25`;
+        )}&rate=%2B0%25&volume=%2B100%25`;
 
     try {
       // Re-use pre-unlocked audio element on mobile devices to bypass iOS Safari autoplay quarantine
       const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
       audio.src = audioSource;
       audio.preload = "auto";
+      audio.volume = 1.0;
       if (options.rate) {
         audio.playbackRate = options.rate;
       }
@@ -275,6 +276,7 @@ export class SpeechSynthesisService {
 
     utterance.rate = options.rate ?? 0.95;
     utterance.pitch = options.pitch ?? 1.0;
+    utterance.volume = 1.0;
 
     const estimatedWords = text.split(/\s+/).filter(Boolean).length;
     const maxFallbackDurationMs = Math.max(3000, Math.ceil((estimatedWords / 1.8) * 1000) + 2500);
@@ -408,6 +410,7 @@ export class MobileAudioUnlocker {
         this.sharedAudio.setAttribute("webkit-playsinline", "true");
       } catch {}
     }
+    this.sharedAudio.volume = 1.0;
     return this.sharedAudio;
   }
 
@@ -439,7 +442,7 @@ export class MobileAudioUnlocker {
     try {
       if (!this.isUnlocked) {
         audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-        audio.volume = 0.01;
+        audio.volume = 1.0;
         const p = audio.play();
         if (p) {
           p.then(() => {
@@ -448,10 +451,17 @@ export class MobileAudioUnlocker {
               audio.pause();
               audio.currentTime = 0;
             } catch {}
-          }).catch(() => {});
+            audio.volume = 1.0;
+          }).catch(() => {
+            audio.volume = 1.0;
+          });
         }
+      } else {
+        audio.volume = 1.0;
       }
-    } catch {}
+    } catch {
+      audio.volume = 1.0;
+    }
 
     try {
       localStorage.setItem("celaest:interview:hasInteracted", "1");
@@ -524,7 +534,26 @@ export class MobileAudioUnlocker {
       source.playbackRate.value = options.rate;
     }
 
-    source.connect(ctx.destination);
+    // Dynamic boost & limiter: boost gain by 80% with compressor so mobile phone speakers deliver loud, crisp, and clear speech
+    let lastNode: AudioNode = source;
+    if (typeof ctx.createGain === "function") {
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = 1.8;
+      source.connect(gainNode);
+      lastNode = gainNode;
+
+      if (typeof ctx.createDynamicsCompressor === "function") {
+        const compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value = -12;
+        compressor.knee.value = 30;
+        compressor.ratio.value = 4;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+        gainNode.connect(compressor);
+        lastNode = compressor;
+      }
+    }
+    lastNode.connect(ctx.destination);
     this.activeSourceNode = source;
 
     let hasEnded = false;

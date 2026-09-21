@@ -219,9 +219,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 1, y: 0 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className="relative flex-1 w-full h-full max-h-screen overflow-hidden bg-[#000001] text-white flex flex-col justify-between select-none z-10 p-1 sm:p-2"
     >
       {/* 1. Clean Responsive HUD (Screens < xl, completely backgroundless and balanced) */}

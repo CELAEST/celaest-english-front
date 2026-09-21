@@ -26,7 +26,7 @@ const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
         {isListening && (
           <div
             aria-hidden="true"
-            className="absolute inset-4 rounded-full pointer-events-none bg-gradient-to-r from-[#6366F1]/25 via-[#A27FF3]/30 to-[#6366F1]/25 blur-2xl animate-[softPulse_1.5s_ease-in-out_infinite]"
+            className="absolute inset-4 rounded-full pointer-events-none bg-gradient-to-r from-[#8B5CF6]/25 via-[#A27FF3]/30 to-[#8B5CF6]/25 blur-2xl animate-[softPulse_1.5s_ease-in-out_infinite]"
           />
         )}
         {isAiSpeaking && (

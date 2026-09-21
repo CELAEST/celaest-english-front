@@ -223,6 +223,20 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
           sampleRate: 44100,
         } as unknown as AudioBuffer),
         createBuffer: vi.fn().mockReturnValue({} as AudioBuffer),
+        createGain: vi.fn().mockReturnValue({
+          gain: { value: 1.0 },
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        }),
+        createDynamicsCompressor: vi.fn().mockReturnValue({
+          threshold: { value: 0 },
+          knee: { value: 0 },
+          ratio: { value: 0 },
+          attack: { value: 0 },
+          release: { value: 0 },
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        }),
         createBufferSource: vi.fn().mockReturnValue({
           buffer: null,
           playbackRate: { value: 1.0 },

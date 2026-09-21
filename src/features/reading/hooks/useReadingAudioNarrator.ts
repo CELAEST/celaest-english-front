@@ -489,19 +489,18 @@ export function useReadingAudioNarrator(
           ? cached.blobUrl
           : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
               voiceToUse,
-            )}&rate=%2B0%25`;
+            )}&rate=%2B0%25&volume=%2B100%25`;
 
         const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
         audio.src = audioSource;
         audio.preload = "auto";
+        audio.volume = 1.0;
         audio.playbackRate = playbackRate;
         audioRef.current = audio;
 
         if (startFromSec > 0) {
           audio.currentTime = startFromSec;
         }
-
-        MobileAudioUnlocker.unlock();
 
         audio.onplay = () => {
           setIsPlaying(true);

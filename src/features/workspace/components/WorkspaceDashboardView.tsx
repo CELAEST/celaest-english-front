@@ -93,9 +93,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   React.useEffect(() => {
     if (defaultTab && defaultTab !== activeTab) {
+      setMountedTabs((prev) => (prev.has(defaultTab) ? prev : new Set(prev).add(defaultTab)));
       setActiveTab(defaultTab);
     }
-  }, [defaultTab]);
+  }, [defaultTab, activeTab]);
 
   const { settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
@@ -122,6 +123,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       if (route === "memory" && categoryHint) {
         setMemoryInitialCategory(categoryHint);
       }
+      // CRITICAL: Synchronously mark tab as mounted so React immediately renders its Suspense + Skeleton in the EXACT SAME FRAME without a blank gap!
+      setMountedTabs((prev) => (prev.has(route) ? prev : new Set(prev).add(route)));
       setActiveTab(route);
       if (onNavigate) onNavigate(route);
     },
@@ -165,8 +168,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       {/* 1. Full Bleed Background Video with keep-alive visibility and power-saving pause */}
       <div
         aria-hidden="true"
-        className={`absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208] transition-opacity duration-300 ${
-          activeTab === "workspace" ? "opacity-100" : "opacity-0"
+        className={`absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208] ${
+          activeTab === "workspace" ? "opacity-100 block" : "opacity-0 pointer-events-none hidden"
         }`}
       >
         <video
@@ -201,11 +204,11 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       />
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
-      <main className="flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden bg-transparent">
+      <main className={`flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden ${activeTab === "workspace" ? "bg-transparent" : "bg-[#000001]"}`}>
         {mountedTabs.has("interview") && (
           <div
             key="interview"
-            className={`w-full h-full ${activeTab === "interview" ? "block" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "interview" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "interview"}
           >
             <ErrorBoundary
@@ -243,7 +246,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("writing") && (
           <div
             key="writing"
-            className={`w-full h-full ${activeTab === "writing" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "writing" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "writing"}
           >
             <ErrorBoundary
@@ -274,7 +277,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("reading") && (
           <div
             key="reading"
-            className={`w-full h-full ${activeTab === "reading" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "reading" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "reading"}
           >
             <ErrorBoundary
@@ -303,7 +306,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("memory") && (
           <div
             key="memory"
-            className={`w-full h-full ${activeTab === "memory" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "memory" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "memory"}
           >
             <ErrorBoundary
@@ -333,7 +336,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {import.meta.env.DEV && mountedTabs.has("lab") && (
           <div
             key="lab"
-            className={`w-full h-full ${activeTab === "lab" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "lab" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "lab"}
           >
             <ErrorBoundary
@@ -395,7 +398,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("settings") && (
           <div
             key="settings"
-            className={`w-full h-full ${activeTab === "settings" ? "block animate-[fadeIn_0.4s_ease-out_both]" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] ${activeTab === "settings" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "settings"}
           >
             <ErrorBoundary

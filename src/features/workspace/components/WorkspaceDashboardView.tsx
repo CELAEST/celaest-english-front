@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 import { WorkspaceHeroSection } from "./WorkspaceHeroSection";
 import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
@@ -101,7 +101,21 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const { settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
-  const activeUserLevel = settings.cefrLevel || userLevel || "B1";
+  const [activeUserLevel, setActiveUserLevel] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("celaest:cefrLevel");
+      if (saved) return normalizeCefr(saved);
+    }
+    return normalizeCefr(settings.cefrLevel || userLevel || "B1");
+  });
+
+  useEffect(() => {
+    if (settings.cefrLevel) {
+      const norm = normalizeCefr(settings.cefrLevel);
+      setActiveUserLevel(norm);
+    }
+  }, [settings.cefrLevel]);
+
   const userProfession = settings.profession || settings.learningGoal || "Professional";
   const profile = {
     learningGoal: settings.learningGoal,
@@ -138,6 +152,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const handleGlobalSelectLevel = React.useCallback(
     (newLevel: CefrLevelCode) => {
       const norm = normalizeCefr(newLevel);
+      setActiveUserLevel(norm);
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("celaest:cefrLevel", norm);
@@ -156,12 +171,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     const handleLevelChanged = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
-        handleGlobalSelectLevel(customEvent.detail as CefrLevelCode);
+        setActiveUserLevel(normalizeCefr(customEvent.detail));
       }
     };
     window.addEventListener("celaest:level-changed", handleLevelChanged);
     return () => window.removeEventListener("celaest:level-changed", handleLevelChanged);
-  }, [handleGlobalSelectLevel]);
+  }, []);
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#030208] text-slate-100 font-sans flex overflow-hidden select-none">

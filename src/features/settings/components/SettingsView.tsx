@@ -153,11 +153,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           }
           if (onSelectLevel) {
             void onSelectLevel(norm);
-          }
-          try {
-            await updateSettings({ cefrLevel: newLevel });
-          } catch (err) {
-            logger.warn("[SettingsView] Failed to persist level to backend, local state updated:", err);
+          } else {
+            try {
+              await updateSettings({ cefrLevel: norm });
+            } catch (err) {
+              logger.warn("[SettingsView] Failed to persist level to backend, local state updated:", err);
+            }
           }
         }}
         onClose={() => setIsLevelModalOpen(false)}

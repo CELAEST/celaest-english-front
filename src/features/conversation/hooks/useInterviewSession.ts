@@ -198,10 +198,12 @@ export const useInterviewSession = (
   const setActiveCefrLevel = useCallback(
     (level: string) => {
       const norm = normalizeCefr(level);
+      prevInitialLevelRef.current = norm;
       setActiveCefrLevelState(norm);
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("celaest:interview:cefrLevel", norm);
+          localStorage.setItem("celaest:cefrLevel", norm);
         } catch {
           // ignore
         }
@@ -221,12 +223,14 @@ export const useInterviewSession = (
   );
 
   // Synchronize ONLY when initialLevel prop genuinely changes externally from parent (e.g. updated in Settings)
-  const prevInitialLevelRef = useRef<string | undefined>(initialLevel);
+  const prevInitialLevelRef = useRef<string | undefined>(initialLevel ? normalizeCefr(initialLevel) : undefined);
   useEffect(() => {
-    if (initialLevel && initialLevel !== prevInitialLevelRef.current) {
-      prevInitialLevelRef.current = initialLevel;
+    if (initialLevel) {
       const norm = normalizeCefr(initialLevel);
-      setActiveCefrLevel(norm);
+      if (norm !== prevInitialLevelRef.current) {
+        prevInitialLevelRef.current = norm;
+        setActiveCefrLevel(norm);
+      }
     }
   }, [initialLevel, setActiveCefrLevel]);
 

@@ -39,6 +39,25 @@ export const useSettingsProfile = (initialUserName?: string) => {
 
   const updateMutation = useMutation({
     mutationFn: (payload: UpdateSettingsPayload) => apiSettingsRepository.updateSettings(payload),
+    onMutate: async (newPayload: UpdateSettingsPayload) => {
+      await queryClient.cancelQueries({ queryKey: profileQueryKey });
+      const previousProfile = queryClient.getQueryData<UserProfile | null>(profileQueryKey);
+      if (previousProfile) {
+        queryClient.setQueryData<UserProfile>(profileQueryKey, {
+          ...previousProfile,
+          ...(newPayload.cefrLevel ? { cefrLevel: newPayload.cefrLevel } : {}),
+          ...(newPayload.dailyFocus ? { dailyFocus: newPayload.dailyFocus } : {}),
+          ...(newPayload.learningGoal ? { learningGoal: newPayload.learningGoal } : {}),
+          ...(newPayload.preferenceStyle ? { preferenceStyle: newPayload.preferenceStyle } : {}),
+        });
+      }
+      return { previousProfile };
+    },
+    onError: (_err, _newPayload, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(profileQueryKey, context.previousProfile);
+      }
+    },
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(profileQueryKey, updatedProfile);
       queryClient.invalidateQueries({ queryKey: ["reading"] });

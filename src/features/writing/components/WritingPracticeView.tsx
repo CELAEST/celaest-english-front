@@ -80,6 +80,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     const handleSelectLevel = React.useCallback(
       (newLevel: CefrLevelCode) => {
         const norm = normalizeCefr(newLevel);
+        prevUserLevelPropRef.current = norm;
         setActiveCefrLevel(norm);
         if (typeof window !== "undefined") {
           try {
@@ -107,12 +108,14 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     );
 
     // Synchronize ONLY when userLevel prop genuinely changes externally from parent (e.g. Settings)
-    const prevUserLevelPropRef = useRef<string | undefined>(userLevel);
+    const prevUserLevelPropRef = useRef<string | undefined>(userLevel ? normalizeCefr(userLevel) : undefined);
     useEffect(() => {
-      if (userLevel && userLevel !== prevUserLevelPropRef.current) {
-        prevUserLevelPropRef.current = userLevel;
+      if (userLevel) {
         const norm = normalizeCefr(userLevel);
-        handleSelectLevel(norm as CefrLevelCode);
+        if (norm !== prevUserLevelPropRef.current) {
+          prevUserLevelPropRef.current = norm;
+          handleSelectLevel(norm as CefrLevelCode);
+        }
       }
     }, [userLevel, handleSelectLevel]);
 

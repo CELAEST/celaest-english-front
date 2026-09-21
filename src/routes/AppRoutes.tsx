@@ -165,7 +165,7 @@ function WorkspaceWrapper() {
   };
 
   const displayName = settings.name || user?.name || "Learner";
-  const displayLevel = settings.cefrLevel || "B1 Level";
+  const displayLevel = settings.cefrLevel || "B1";
 
   return (
     <WorkspaceDashboardView

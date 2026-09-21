@@ -56,6 +56,10 @@ export const useCurrentUser = () => {
       typeof window !== "undefined"
         ? localStorage.getItem("celaest:active_profession") || ""
         : "";
+    const cachedLevel =
+      typeof window !== "undefined"
+        ? localStorage.getItem("celaest:cefrLevel") || ""
+        : "";
 
     if (profile) {
       const isCompleted = profile.onboardingCompleted === true || fallbackCompleted;
@@ -75,10 +79,18 @@ export const useCurrentUser = () => {
           // ignore
         }
       }
+      const effectiveLevel = profile.cefrLevel || cachedLevel || "B1";
+      if (typeof window !== "undefined" && profile.cefrLevel) {
+        try {
+          localStorage.setItem("celaest:cefrLevel", profile.cefrLevel);
+        } catch {
+          // ignore
+        }
+      }
       return {
         name: profile.name ?? user?.name ?? "",
         email: profile.email ?? user?.email ?? "",
-        cefrLevel: profile.cefrLevel ?? "",
+        cefrLevel: effectiveLevel,
         dailyFocus: profile.dailyFocus ?? "",
         learningGoal: profile.learningGoal ?? "",
         preferenceStyle: profile.preferenceStyle ?? "",
@@ -92,7 +104,7 @@ export const useCurrentUser = () => {
     return {
       name: user?.name ?? "",
       email: user?.email ?? "",
-      cefrLevel: "",
+      cefrLevel: cachedLevel || "B1",
       dailyFocus: "",
       learningGoal: "",
       preferenceStyle: "",
@@ -104,6 +116,16 @@ export const useCurrentUser = () => {
 
   const updateProfileSettings = useCallback(
     async (partial: Partial<UserSettings>) => {
+      if (partial.cefrLevel && typeof window !== "undefined") {
+        try {
+          localStorage.setItem("celaest:cefrLevel", partial.cefrLevel);
+          localStorage.setItem("celaest:writing:cefrLevel", partial.cefrLevel);
+          localStorage.setItem("celaest:interview:cefrLevel", partial.cefrLevel);
+          window.dispatchEvent(new CustomEvent("celaest:level-changed", { detail: partial.cefrLevel }));
+        } catch {
+          // ignore
+        }
+      }
       if (partial.onboardingCompleted && typeof window !== "undefined") {
         try {
           localStorage.setItem("lingua_onboarding_completed", "true");

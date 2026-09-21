@@ -41,6 +41,7 @@ export type ProcessingStage = "IDLE" | "TRANSCRIBING" | "ANALYZING" | "PREPARING
 export const useInterviewSession = (
   roleName: string = "Professional",
   initialLevel?: string,
+  isActive: boolean = true,
 ) => {
   // Restore the last interview turn from localStorage so a reload or an SPA
   // route change never loses the user's answer or the AI feedback.
@@ -118,6 +119,9 @@ export const useInterviewSession = (
 
   const selectedVoiceRef = useRef<FlagshipVoiceId>(selectedVoice);
   selectedVoiceRef.current = selectedVoice;
+
+  const isActiveRef = useRef<boolean>(isActive);
+  isActiveRef.current = isActive;
 
   const animFrameRef = useRef<number | null>(null);
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -792,6 +796,7 @@ export const useInterviewSession = (
    */
   const speakQuestion = useCallback(
     async (rate?: number) => {
+      if (!isActiveRef.current) return;
       SpeechSynthesisService.stop();
       AudioCaptureService.stop();
 
@@ -864,14 +869,39 @@ export const useInterviewSession = (
     }
   }, [currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
-  // Trigger question speech on question index change
+  // Stop audio/recording immediately when the tab/view becomes inactive
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      void speakQuestion().catch(() => {});
-    });
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-speak only when the question index advances
-  }, [currentQuestionIndex]);
+    if (!isActive) {
+      SpeechSynthesisService.stop();
+      AudioCaptureService.stop();
+      isAiSpeakingRef.current = false;
+      setStatus((prev) => (prev === "AI_SPEAKING" || prev === "RECORDING" ? "IDLE" : prev));
+    }
+  }, [isActive]);
+
+  // Trigger question speech only when view is active (on activation or on question change)
+  const prevActiveRef = useRef<boolean>(false);
+  const prevIndexRef = useRef<number>(currentQuestionIndex);
+
+  useEffect(() => {
+    const justActivated = !prevActiveRef.current && isActive;
+    const indexChanged = prevIndexRef.current !== currentQuestionIndex;
+    prevActiveRef.current = isActive;
+    prevIndexRef.current = currentQuestionIndex;
+
+    if (!isActive) return;
+
+    // Speak if we just activated the view or if the question advanced,
+    // provided the analysis modal or feedback isn't currently displayed.
+    if ((justActivated || indexChanged) && !showAnalysisModal && !turnFeedback) {
+      const raf = requestAnimationFrame(() => {
+        if (isActiveRef.current) {
+          void speakQuestion().catch(() => {});
+        }
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [currentQuestionIndex, isActive, showAnalysisModal, turnFeedback, speakQuestion]);
 
   /**
    * Action: Repeat the question (optional slowed down)

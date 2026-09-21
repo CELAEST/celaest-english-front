@@ -73,7 +73,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     resumeFromRecoveryModal,
     activeCefrLevel,
     setActiveCefrLevel,
-  } = useInterviewSession(roleName, userLevel);
+  } = useInterviewSession(roleName, userLevel, isActive);
 
   const [showAudioSettings, setShowAudioSettings] = useState<boolean>(false);
   const [showControlsDrawer, setShowControlsDrawer] = useState<boolean>(false);

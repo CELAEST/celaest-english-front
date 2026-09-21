@@ -633,11 +633,6 @@ export const useInterviewSession = (
               appToast.spanishDetected(validation.message);
               return;
             }
-            if (validation.reason === "INSUFFICIENT_WORDS" || validation.reason === "NONSENSE_OR_GIBBERISH") {
-              setSpeechNotice(validation.message || null);
-              appToast.warning("Respuesta incompleta", validation.message);
-              return;
-            }
 
             // Seamless merge: if user had prior text, append new segment
             const prefix = textBeforeSegmentRef.current.trim();
@@ -648,7 +643,9 @@ export const useInterviewSession = (
             setUserTranscript(merged);
             userTranscriptRef.current = merged;
 
-            if (!validation.isValid && validation.message) {
+            if (validation.reason === "INSUFFICIENT_WORDS") {
+              setSpeechNotice(validation.message || null);
+            } else if (!validation.isValid && validation.message) {
               setSpeechNotice(validation.message);
             } else {
               setSpeechNotice(null);
@@ -725,6 +722,30 @@ export const useInterviewSession = (
           } catch (err) {
             logger.warn("Whisper transcription fallback to web speech on submit:", err);
           }
+        }
+      } else if (!textToSubmit && lastCapturedAudioRef.current.audioBlob) {
+        // Fallback: If microphone was already paused but transcript was not populated, transcribe the captured audio
+        setStatus("THINKING");
+        setProcessingStage("TRANSCRIBING");
+        try {
+          const whisperResult = await AudioCaptureService.transcribeAudio(
+            lastCapturedAudioRef.current.audioBlob,
+            {
+              roleName: effectiveRoleName,
+              question: currentQuestion.question,
+            },
+          );
+          if (whisperResult && whisperResult.text.trim().length > 0) {
+            textToSubmit = whisperResult.text.trim();
+            detectedLang = whisperResult.language;
+            lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+            lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
+            lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
+            setUserTranscript(textToSubmit);
+            userTranscriptRef.current = textToSubmit;
+          }
+        } catch (err) {
+          logger.warn("Whisper transcription fallback on submit:", err);
         }
       }
 

@@ -91,7 +91,7 @@ describe("SettingsView — real flow, verified authentication & contracts", () =
     fireEvent.click(levelRow.closest("button")!);
     expect(await screen.findByText("Select your CEFR target")).toBeInTheDocument();
     fireEvent.click(screen.getByText("C1 — Advanced"));
-    await waitFor(() => expect(apiSettingsRepository.updateSettings).toHaveBeenCalledWith(expect.objectContaining({ cefrLevel: "C1 — Advanced" })));
+    await waitFor(() => expect(apiSettingsRepository.updateSettings).toHaveBeenCalledWith(expect.objectContaining({ cefrLevel: "C1" })));
   });
 
   it("opens Profile modal and saves name (real, not prompt)", async () => {

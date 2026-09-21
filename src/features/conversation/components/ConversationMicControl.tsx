@@ -22,8 +22,18 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
   onSubmitText,
   onClearText,
 }) => {
-  const handleSubmit = () => {
-    if (isThinking) return;
+  const isSubmittingRef = React.useRef(false);
+  const handleSubmit = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isThinking || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setTimeout(() => {
+      isSubmittingRef.current = false;
+    }, 800);
+
     MobileAudioUnlocker.unlock();
     if (onSubmitText) {
       onSubmitText();
@@ -32,7 +42,11 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
     }
   };
 
-  const handleMicClick = () => {
+  const handleMicClick = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (isThinking) return;
     MobileAudioUnlocker.unlock();
     if (onToggleListening) {
@@ -72,13 +86,14 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
         <button
           type="button"
           onClick={handleMicClick}
+          onTouchEnd={handleMicClick}
           onKeyDown={(e) => {
             if (e.key === " " || e.key === "Enter") e.stopPropagation();
           }}
           disabled={isThinking}
           aria-label={isListening ? "Stop microphone" : isAiSpeaking ? "Interrumpir y hablar" : "Start speaking"}
           title={isListening ? "Stop microphone (Space)" : isAiSpeaking ? "Interrumpir y hablar (Space)" : "Start speaking (Space)"}
-          className={`w-[clamp(58px,8.5vh,88px)] h-[clamp(58px,8.5vh,88px)] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer group shrink-0 ${
+          className={`w-[clamp(58px,8.5vh,88px)] h-[clamp(58px,8.5vh,88px)] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer group shrink-0 touch-manipulation ${
             isListening
               ? "bg-[#090A14] border-2 border-[#A27FF3] animate-[softPulse_2.5s_ease-in-out_infinite] shadow-[0_0_28px_rgba(162,127,243,0.5)] scale-105"
               : isAiSpeaking
@@ -123,13 +138,14 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
           <button
             type="button"
             onClick={handleSubmit}
+            onTouchEnd={handleSubmit}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") e.stopPropagation();
             }}
             disabled={isThinking}
             aria-label="Submit response for AI evaluation (OK)"
             title="Submit response for AI evaluation (OK / Enter)"
-            className="w-[clamp(48px,6.8vh,66px)] h-[clamp(48px,6.8vh,66px)] rounded-full bg-[#22c55e]/20 border-2 border-[#22c55e]/60 hover:bg-[#22c55e]/30 hover:border-[#22c55e] flex items-center justify-center text-[#4ade80] transition-all duration-200 cursor-pointer shadow-[0_0_24px_rgba(34,197,94,0.35)] hover:shadow-[0_0_32px_rgba(34,197,94,0.6)] hover:scale-105 active:scale-95 shrink-0 animate-[scaleIn_0.25s_ease-out_both]"
+            className="w-[clamp(48px,6.8vh,66px)] h-[clamp(48px,6.8vh,66px)] rounded-full bg-[#22c55e]/20 border-2 border-[#22c55e]/60 hover:bg-[#22c55e]/30 hover:border-[#22c55e] flex items-center justify-center text-[#4ade80] transition-all duration-200 cursor-pointer shadow-[0_0_24px_rgba(34,197,94,0.35)] hover:shadow-[0_0_32px_rgba(34,197,94,0.6)] hover:scale-105 active:scale-95 shrink-0 animate-[scaleIn_0.25s_ease-out_both] touch-manipulation"
           >
             {isThinking ? (
               <div className="w-5 h-5 border-2 border-[#4ade80] border-t-transparent rounded-full animate-spin" />

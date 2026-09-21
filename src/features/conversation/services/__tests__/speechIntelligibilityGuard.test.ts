@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateSpeechIntelligibility,
   detectLiveSpanishOrFiller,
+  deduplicateConsecutiveWords,
 } from "../speechIntelligibilityGuard";
 
 describe("validateSpeechIntelligibility", () => {
@@ -159,5 +160,24 @@ describe("detectLiveSpanishOrFiller", () => {
         "Also, is very important use Redis for cache the responses so the database don't crash. If the spike are sudden, we must to scale auto the pods in kubernetes. I always doing this in my past jobs and it work good for keep latency less of 100ms."
       ).isSpanishOrFiller
     ).toBe(false);
+  });
+
+  describe("deduplicateConsecutiveWords", () => {
+    it("deduplicates repeated words and clauses from speech recognition loops", () => {
+      const stutter = "Hi how are you doing doing doing I am going to speak about code quality";
+      const cleaned = deduplicateConsecutiveWords(stutter);
+      expect(cleaned).toBe("Hi how are you doing I am going to speak about code quality");
+
+      const phraseLoop = "how to ensure code quality how to ensure code quality in my project";
+      const cleanedPhrase = deduplicateConsecutiveWords(phraseLoop);
+      expect(cleanedPhrase).toBe("how to ensure code quality in my project");
+    });
+
+    it("allows valid sentence after deduplicating speech glitches", () => {
+      const input = "Hi, how are you doing doing doing... I am going to speak about how to ensure code quality test coverage.";
+      const res = validateSpeechIntelligibility(input, 6, "en");
+      expect(res.isValid).toBe(true);
+      expect(res.cleanTranscript).toContain("how to ensure code quality test coverage");
+    });
   });
 });

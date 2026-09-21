@@ -85,6 +85,7 @@ export class AudioCaptureService {
   private static lastAudioUrl: string | null = null;
   private static isListening: boolean = false;
   private static accumulatedTranscript: string = "";
+  private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Requests microphone permission and initializes live audio analyser
@@ -269,6 +270,7 @@ export class AudioCaptureService {
           } catch {
             // ignore
           }
+          this.recognizer = null;
         }
 
         const recognizer = new SpeechRecognitionAPI();
@@ -276,29 +278,34 @@ export class AudioCaptureService {
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";
 
-        let sessionFinalTranscript = "";
+        let currentSessionFinal = "";
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
-          let currentInterim = "";
+          let sessionFinal = "";
+          let sessionInterim = "";
 
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
+          // Web Speech API: Reconstruct session results fresh from 0 to length - 1.
+          // Never accumulate with += across events, as event.results already contains prior finalized results.
+          for (let i = 0; i < event.results.length; ++i) {
             const item = event.results[i];
             if (item && item[0]) {
               const text = item[0].transcript;
               if (item.isFinal) {
-                sessionFinalTranscript += " " + text;
+                sessionFinal += " " + text;
               } else {
-                currentInterim += " " + text;
+                sessionInterim += " " + text;
               }
             }
           }
 
+          currentSessionFinal = sessionFinal.trim();
+
           const prefix = this.accumulatedTranscript ? this.accumulatedTranscript + " " : "";
           const combined = (
             prefix +
-            sessionFinalTranscript +
+            currentSessionFinal +
             " " +
-            currentInterim
+            sessionInterim
           )
             .replace(/\s+/g, " ")
             .trim();
@@ -326,7 +333,7 @@ export class AudioCaptureService {
 
         recognizer.onerror = (e) => {
           const errCode = e?.error;
-          if (errCode === "no-speech") {
+          if (errCode === "no-speech" || errCode === "aborted") {
             return;
           }
           logger.warn("Speech recognition notice:", errCode || e);
@@ -334,27 +341,27 @@ export class AudioCaptureService {
         };
 
         recognizer.onend = () => {
-          this.accumulatedTranscript = (
-            (this.accumulatedTranscript ? this.accumulatedTranscript + " " : "") +
-            sessionFinalTranscript
-          )
-            .replace(/\s+/g, " ")
-            .trim();
-          sessionFinalTranscript = "";
+          if (currentSessionFinal) {
+            this.accumulatedTranscript = (
+              (this.accumulatedTranscript ? this.accumulatedTranscript + " " : "") +
+              currentSessionFinal
+            )
+              .replace(/\s+/g, " ")
+              .trim();
+            currentSessionFinal = "";
+          }
 
-          // If the user hasn't explicitly stopped, auto-restart to prevent silence disconnects
+          // Debounced auto-restart: prevents rapid Android chime ("chun") loops and InvalidStateError
           if (this.isListening) {
-            try {
-              recognizer.start();
-              return;
-            } catch {
-              setTimeout(() => {
-                if (this.isListening) {
-                  createAndStartRecognizer();
-                }
-              }, 120);
-              return;
+            if (this.restartTimeout) {
+              clearTimeout(this.restartTimeout);
             }
+            this.restartTimeout = setTimeout(() => {
+              if (this.isListening) {
+                createAndStartRecognizer();
+              }
+            }, 350);
+            return;
           }
           if (options.onEnd) options.onEnd();
         };
@@ -377,10 +384,14 @@ export class AudioCaptureService {
    */
   public static async stopAndGetAudio(): Promise<AudioCaptureResult> {
     this.isListening = false;
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
     this.accumulatedTranscript = "";
     if (this.recognizer) {
       try {
-        this.recognizer.stop();
+        this.recognizer.abort();
       } catch {
         // ignore
       }
@@ -595,18 +606,19 @@ export class AudioCaptureService {
         });
 
         if (response.ok) {
-          const data = (await response.json()) as {
-            text?: string;
-            transcript?: string;
-            language?: string;
-            duration?: number;
-          };
+          const raw = (await response.json()) as any;
+          const data =
+            raw && typeof raw === "object" && "data" in raw && raw.data
+              ? raw.data
+              : raw;
           const text = (data.transcript || data.text || "").trim();
           if (text) {
             return {
               text,
               language: (data.language || "").toLowerCase().trim(),
               duration: data.duration,
+              avgLogprob: data.avg_logprob ?? data.avgLogprob,
+              noSpeechProb: data.no_speech_prob ?? data.noSpeechProb,
             };
           }
         }
@@ -623,10 +635,14 @@ export class AudioCaptureService {
    */
   public static stop(): void {
     this.isListening = false;
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
     this.accumulatedTranscript = "";
     if (this.recognizer) {
       try {
-        this.recognizer.stop();
+        this.recognizer.abort();
       } catch {
         // ignore
       }

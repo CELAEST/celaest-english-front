@@ -75,6 +75,36 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
+  it("unwraps CELAEST backend API enveloped response correctly", async () => {
+    vi.spyOn(providerKeyVault, "getKeys").mockImplementation(async () => []);
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        message: "Audio transcribed successfully",
+        data: {
+          text: "I am going to talk about ensuring code quality and test coverage.",
+          transcript: "I am going to talk about ensuring code quality and test coverage.",
+          language: "en",
+          duration: 5.2,
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const dummyBlob = new Blob([new Uint8Array(500)], { type: "audio/webm" });
+    const result = await AudioCaptureService.transcribeAudio(dummyBlob, {
+      roleName: "Software Engineer",
+      question: "How do you ensure code quality?",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.text).toBe("I am going to talk about ensuring code quality and test coverage.");
+    expect(result?.language).toBe("en");
+    expect(result?.duration).toBe(5.2);
+  });
+
   it("returns null safely if audio blob is too small", async () => {
     const tinyBlob = new Blob([new Uint8Array(10)], { type: "audio/webm" });
     const result = await AudioCaptureService.transcribeAudio(tinyBlob);

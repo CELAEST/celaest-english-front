@@ -56,7 +56,18 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 }) => {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
+  const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  const handleHomeVideoLoaded = React.useCallback(() => {
+    setIsHomeVideoLoaded(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (videoRef.current && videoRef.current.readyState >= 2) {
+      setIsHomeVideoLoaded(true);
+    }
+  }, []);
 
   // Intelligent Idle Prefetcher: preload lazy tabs during browser idle time so clicking mounts in 0ms ("de una")
   React.useEffect(() => {
@@ -91,12 +102,13 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     }
   }, [activeTab]);
 
+  // Clean one-way sync with router defaultTab (prevents ping-pong double mounts on rapid clicks)
   React.useEffect(() => {
-    if (defaultTab && defaultTab !== activeTab) {
+    if (defaultTab) {
       setMountedTabs((prev) => (prev.has(defaultTab) ? prev : new Set(prev).add(defaultTab)));
-      setActiveTab(defaultTab);
+      setActiveTab((curr) => (curr !== defaultTab ? defaultTab : curr));
     }
-  }, [defaultTab, activeTab]);
+  }, [defaultTab]);
 
   const { settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
@@ -183,8 +195,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       {/* 1. Full Bleed Background Video with keep-alive visibility and power-saving pause */}
       <div
         aria-hidden="true"
-        className={`absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208] ${
-          activeTab === "workspace" ? "opacity-100 block" : "opacity-0 pointer-events-none hidden"
+        className={`absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208] transition-opacity duration-300 ${
+          activeTab === "workspace" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
         }`}
       >
         <video
@@ -195,7 +207,11 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           playsInline
           preload="auto"
           disablePictureInPicture
-          className="w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none transition-all duration-300"
+          onLoadedData={handleHomeVideoLoaded}
+          onCanPlay={handleHomeVideoLoaded}
+          className={`w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none transition-opacity duration-500 ${
+            isHomeVideoLoaded ? "opacity-100" : "opacity-0"
+          }`}
           style={{
             willChange: "transform",
             backfaceVisibility: "hidden",
@@ -283,6 +299,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                   userLevel={activeUserLevel}
                   onSelectLevel={handleGlobalSelectLevel}
                   onBackToWorkspace={handleBackToWorkspace}
+                  isActive={activeTab === "writing"}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -312,6 +329,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 <ReadingPracticeView
                   roleName={userProfession}
                   onBackToWorkspace={handleBackToWorkspace}
+                  isActive={activeTab === "reading"}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -342,6 +360,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                   onBackToWorkspace={handleBackToWorkspace}
                   onNavigate={handleSelectNav}
                   initialCategory={memoryInitialCategory}
+                  isActive={activeTab === "memory"}
                 />
               </Suspense>
             </ErrorBoundary>

@@ -561,3 +561,15 @@ textarea:-webkit-autofill:focus {
   -webkit-box-shadow: none !important;
   transition: background-color 9999999s ease-in-out 0s !important;
 }
+
+/* Universal Mobile Tap & Video Highlight Clean Reset: Zero Blue Rectangular Flash */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+video {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  border: none;
+  background-color: transparent;
+}

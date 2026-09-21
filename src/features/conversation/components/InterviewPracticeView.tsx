@@ -254,6 +254,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
               isAiSpeaking={isAiSpeaking}
               isThinking={isThinking}
               processingStage={processingStage}
+              isActive={isActive}
             />
 
             {/* Question & Live Transcript — blindado contra crash si currentQuestion aún no hidrata */}

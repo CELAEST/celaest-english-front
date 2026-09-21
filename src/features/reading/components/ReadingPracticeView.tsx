@@ -47,11 +47,13 @@ const FONT_SIZE_STORAGE_KEY = "celaest:reading:font_size";
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
   roleName?: string | undefined;
+  isActive?: boolean | undefined;
 }
 
 export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   onBackToWorkspace,
   roleName,
+  isActive = true,
 }) => {
   const [fontSizeIndex, setFontSizeIndex] = useState<number>(() => {
     if (typeof window !== "undefined") {
@@ -290,7 +292,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
           className="flex-1 w-full flex flex-col h-full min-h-0 overflow-hidden"
         >
           {/* Top Centered Cosmic Orb Hero */}
-          {!isSpecialView && <ReadingHeader hideCenterOrb={isSpecialView} />}
+          {!isSpecialView && <ReadingHeader hideCenterOrb={isSpecialView} isActive={isActive} />}
 
           {/* Content wrapper: centered in the viewport under the Orb, with internal text flush left */}
           <div

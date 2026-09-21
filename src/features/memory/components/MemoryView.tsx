@@ -15,6 +15,7 @@ export interface MemoryViewProps {
   onBackToWorkspace?: (() => void) | undefined;
   onNavigate?: ((route: string) => void) | undefined;
   initialCategory?: string | undefined;
+  isActive?: boolean | undefined;
 }
 
 const CATEGORIES = ["SPEAKING", "READING", "WRITING"] as const;
@@ -23,6 +24,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   onBackToWorkspace,
   onNavigate,
   initialCategory,
+  isActive = true,
 }) => {
   const getInitialTabIndex = (cat?: string): number => {
     if (!cat) return 0;
@@ -306,8 +308,8 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
 
       {/* Root Background Glowing Memory Sphere — Visible alongside video backdrop */}
       {!isSessionCompleted && (
-        <div className="pointer-events-none absolute right-4 sm:right-6 md:right-8 lg:right-12 xl:right-16 top-1 sm:top-2 w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] h-[120px] sm:h-[140px] md:h-[160px] lg:h-[180px] z-0 opacity-90 overflow-hidden hidden sm:block">
-          <VideoOrb className="h-full w-full object-contain scale-110 pointer-events-none mix-blend-screen" />
+        <div className="pointer-events-none absolute right-4 sm:right-6 md:right-8 lg:right-12 xl:right-16 top-1 sm:top-2 w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px] h-[120px] sm:h-[140px] md:h-[160px] lg:h-[180px] z-0 opacity-90 rounded-full overflow-hidden hidden sm:block">
+          <VideoOrb isActive={isActive} className="h-full w-full object-contain scale-110 pointer-events-none mix-blend-screen" />
         </div>
       )}
 

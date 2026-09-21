@@ -29,6 +29,7 @@ export interface WritingPracticeViewProps {
   roleName?: string;
   userLevel?: string;
   onSelectLevel?: (level: CefrLevelCode) => void;
+  isActive?: boolean;
 }
 
 export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.memo(
@@ -37,6 +38,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     roleName = "Professional",
     userLevel,
     onSelectLevel,
+    isActive = true,
   }) {
     const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
     const initialStored = DynamicWritingTaskService.loadActiveSubmission();
@@ -493,6 +495,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                 description={currentTask.description}
                 currentLevel={activeCefrLevel}
                 onSelectLevel={handleSelectLevel}
+                isActive={isActive}
               />
               <WritingEditor
                 key={currentTask.id}

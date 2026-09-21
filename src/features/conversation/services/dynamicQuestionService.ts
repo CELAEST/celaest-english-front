@@ -148,7 +148,51 @@ export function classifyProfession(roleName?: string): ProfessionCategory {
 // ==========================================
 
 function getHealthcareTopics(role: string, level: CefrLevelCode): DynamicQuestionTopic[] {
-  if (level === "A1" || level === "A2") {
+  if (level === "A1") {
+    return [
+      {
+        category: "WARMUP",
+        theme: "Introduction",
+        questionTemplate: `Hello! What is your name and what is your job in healthcare?`,
+        starHint: `Answer in 1 or 2 short sentences: 'Hello, my name is... and I am a ${role}.'`,
+        expectedKeywords: ["name", "am", "job", "work", "clinic"],
+        targetLevel: "A1",
+      },
+      {
+        category: "TECHNICAL",
+        theme: "Workplace",
+        questionTemplate: `Where do you work every day as a ${role}?`,
+        starHint: `Say where you work: 'I work in a clinic / hospital / office.'`,
+        expectedKeywords: ["work", "hospital", "clinic", "office", "patients"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WARMUP",
+        theme: "Daily Tools",
+        questionTemplate: `What simple tools or computer do you use at work as a ${role}?`,
+        starHint: `Mention 1 or 2 basic things: 'I use a computer', 'I use basic clinical instruments.'`,
+        expectedKeywords: ["use", "computer", "tools", "work", "instruments"],
+        targetLevel: "A1",
+      },
+      {
+        category: "SITUATIONAL",
+        theme: "Helping People",
+        questionTemplate: `Do you like helping patients at work?`,
+        starHint: `Answer simply: 'Yes, I do. I like helping patients every day.'`,
+        expectedKeywords: ["yes", "like", "helping", "patients", "people"],
+        targetLevel: "A1",
+      },
+      {
+        category: "WRAPUP",
+        theme: "Favorite Part",
+        questionTemplate: `What is your favorite thing about your work as a ${role}?`,
+        starHint: `Give a short answer: 'I like my team' or 'I like to help people.'`,
+        expectedKeywords: ["like", "team", "help", "work", "people"],
+        targetLevel: "A1",
+      },
+    ];
+  }
+  if (level === "A2") {
     return [
       {
         category: "WARMUP",

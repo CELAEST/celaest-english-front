@@ -10,6 +10,7 @@ export interface ConversationOrbHeroProps {
   processingStage?: "IDLE" | "RECORDING" | "TRANSCRIBING" | "ANALYZING" | "PREPARING" | "SPEAKING";
   currentQuestionIndex?: number;
   totalQuestions?: number;
+  isActive?: boolean;
 }
 
 const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
@@ -17,11 +18,12 @@ const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
   isListening = false,
   isAiSpeaking = false,
   isThinking = false,
+  isActive = true,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center select-none w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto shrink-0 -mt-2 sm:-mt-3 lg:-mt-4 animate-[fadeIn_0.35s_ease-out_both] font-sans">
       {/* Video Orb with dynamic ambient glow aura */}
-      <div className="relative w-[clamp(160px,26vh,240px)] sm:w-[clamp(140px,28vh,340px)] h-[clamp(160px,26vh,240px)] sm:h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300 overflow-hidden">
+      <div className="relative w-[clamp(160px,26vh,240px)] sm:w-[clamp(140px,28vh,340px)] h-[clamp(160px,26vh,240px)] sm:h-[clamp(140px,28vh,340px)] flex items-center justify-center shrink-0 pointer-events-none transition-all duration-300 rounded-full overflow-hidden">
         {/* Ambient reactive aura layers */}
         {isListening && (
           <div
@@ -41,7 +43,7 @@ const ConversationOrbHeroInner: React.FC<ConversationOrbHeroProps> = ({
             className="absolute inset-6 rounded-full pointer-events-none bg-[#A78BFA]/20 blur-xl animate-[pulse_2s_infinite]"
           />
         )}
-        <VideoOrb className="w-full h-full object-contain pointer-events-none relative z-10" />
+        <VideoOrb isActive={isActive} className="w-full h-full object-contain pointer-events-none relative z-10" />
       </div>
 
       {/* Status Indicator - Siguiente-Style Radiant Amethyst/Lavender Cosmic Gradient */}

@@ -9,6 +9,7 @@ export interface WritingTaskHeaderProps {
   description?: string;
   currentLevel?: string;
   onSelectLevel?: (level: CefrLevelCode) => void;
+  isActive?: boolean;
 }
 
 export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(
@@ -17,6 +18,7 @@ export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(
     description = "Use a professional tone and explain a project update.",
     currentLevel,
     onSelectLevel,
+    isActive = true,
   }) {
     return (
       <div className="relative w-full flex items-start justify-between gap-4 select-none pt-1 sm:pt-2 pb-3 sm:pb-4.5 shrink-0">
@@ -46,8 +48,8 @@ export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(
         </div>
 
         {/* Video Orb — hidden on mobile for clean editorial breathing room, visible on desktop */}
-        <div className="pointer-events-none hidden sm:flex sm:w-20 sm:h-20 md:w-28 md:h-28 items-center justify-center shrink-0 z-10 opacity-95 animate-[fadeIn_0.7s_ease-out_both] overflow-hidden self-center">
-          <VideoOrb className="w-full h-full object-contain pointer-events-none" />
+        <div className="pointer-events-none hidden sm:flex sm:w-20 sm:h-20 md:w-28 md:h-28 items-center justify-center shrink-0 z-10 opacity-95 animate-[fadeIn_0.7s_ease-out_both] rounded-full overflow-hidden self-center">
+          <VideoOrb isActive={isActive} className="w-full h-full object-contain pointer-events-none" />
         </div>
       </div>
     );

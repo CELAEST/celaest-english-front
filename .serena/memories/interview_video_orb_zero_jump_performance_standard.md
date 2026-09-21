@@ -23,3 +23,8 @@
    - `mountedTabs` initializes with `new Set([defaultTab, "interview"])`.
    - When the user clicks "INTERVIEW", the tab switches from `hidden` to `block` in 0ms without waiting for chunks to download, without Suspense fallbacks, and without layout jumps.
    - Dual-format video pre-warming in `index.html` for both `/assets/orve.webm` (Android/Chrome) and `/assets/orve.mp4` (iOS/Safari).
+5. **Speech Synthesis Activation Synchronization (Zero Background Leakage)**:
+   - `useInterviewSession` receives `isActive: boolean` from `InterviewPracticeView`.
+   - While `isActive === false` (user in Workspace), audio playback is strictly prevented (`if (!isActiveRef.current) return;`), ensuring 100% silence on the home dashboard.
+   - When the user taps/navigates into Interview (`isActive` transitions to `true`), the question speech starts immediately upon entering the view.
+   - When the user leaves Interview (`isActive` becomes `false`), active TTS playback and recording are instantly cancelled.

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AudioCaptureService, mergePhrasesCleanly } from "../audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly, isMobileDevice } from "../audioCaptureService";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 
 describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
@@ -144,8 +144,8 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
 
       expect(capturedRecognizerInstance).not.toBeNull();
-      // On mobile Safari/iPhone, continuous must be false
-      expect(capturedRecognizerInstance.continuous).toBe(false);
+      // Uninterrupted continuous recognition on all devices
+      expect(capturedRecognizerInstance.continuous).toBe(true);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {
@@ -156,7 +156,7 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     }
   });
 
-  it("suppresses non-fatal audio-capture and not-allowed errors on mobile without halting the turn", () => {
+  it("releases micStream tracks on mobile when SpeechRecognition is supported to guarantee exclusive hardware access", () => {
     const originalUserAgent = navigator.userAgent;
     try {
       Object.defineProperty(navigator, "userAgent", {
@@ -164,7 +164,15 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         configurable: true,
       });
 
-      let capturedRecognizerInstance: any = null;
+      const stopTrackMock = vi.fn();
+      const mockStream = {
+        active: true,
+        getAudioTracks: () => [{ readyState: "live", stop: stopTrackMock }],
+        getTracks: () => [{ readyState: "live", stop: stopTrackMock }],
+      } as unknown as MediaStream;
+
+      (AudioCaptureService as any).micStream = mockStream;
+
       class MockSpeechRecognition {
         continuous = true;
         interimResults = true;
@@ -173,30 +181,18 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         stop = vi.fn();
         abort = vi.fn();
         onresult = null;
-        onerror: ((e: any) => void) | null = null;
+        onerror = null;
         onend = null;
-        constructor() {
-          capturedRecognizerInstance = this;
-        }
       }
-
       (window as any).SpeechRecognition = MockSpeechRecognition;
 
-      const onError = vi.fn();
       AudioCaptureService.startRecognition({
         lang: "en-US",
         onTranscript: vi.fn(),
-        onError,
       });
 
-      expect(capturedRecognizerInstance).not.toBeNull();
-      // Trigger non-fatal mobile speech collision
-      capturedRecognizerInstance.onerror({ error: "audio-capture" });
-      capturedRecognizerInstance.onerror({ error: "not-allowed" });
-
-      // onError callback must NOT be called for these non-fatal collisions
-      expect(onError).not.toHaveBeenCalled();
-
+      expect(stopTrackMock).toHaveBeenCalled();
+      expect(AudioCaptureService.hasActiveMic()).toBe(false);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {
@@ -204,6 +200,32 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         configurable: true,
       });
       delete (window as any).SpeechRecognition;
+    }
+  });
+
+  it("detects whether device is mobile accurately", () => {
+    const originalUserAgent = navigator.userAgent;
+    try {
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+        configurable: true,
+      });
+      expect(isMobileDevice()).toBe(true);
+
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "maxTouchPoints", {
+        value: 0,
+        configurable: true,
+      });
+      expect(isMobileDevice()).toBe(false);
+    } finally {
+      Object.defineProperty(navigator, "userAgent", {
+        value: originalUserAgent,
+        configurable: true,
+      });
     }
   });
 
@@ -221,6 +243,20 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     it("eliminates multi-word boundary overlap seamlessly", () => {
       const result = mergePhrasesCleanly("We built a cloud platform", "cloud platform using Go");
       expect(result).toBe("We built a cloud platform using Go");
+    });
+
+    it("handles full-sentence expansion when new phrase begins with history as prefix", () => {
+      const history = "I am a software engineer with ten years of experience";
+      const expanded = "I am a software engineer with ten years of experience and specialized in distributed systems";
+      const result = mergePhrasesCleanly(history, expanded);
+      expect(result).toBe(expanded);
+    });
+
+    it("preserves history when history already contains the new phrase", () => {
+      const history = "I am a software engineer with ten years of experience";
+      const subPhrase = "ten years of experience";
+      const result = mergePhrasesCleanly(history, subPhrase);
+      expect(result).toBe(history);
     });
 
     it("handles punctuation and capitalization differences during overlap check", () => {

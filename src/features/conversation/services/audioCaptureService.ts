@@ -73,6 +73,17 @@ export interface AudioTranscriptionResult {
 }
 
 /**
+ * Detects whether the current device is a mobile phone or tablet
+ */
+export function isMobileDevice(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && !("MSStream" in (window as unknown as Record<string, unknown>)))
+  );
+}
+
+/**
  * Merges history and a newly recognized phrase ensuring zero duplicate or overlapping boundary words
  */
 export function mergePhrasesCleanly(history: string, newPhrase: string): string {
@@ -81,13 +92,26 @@ export function mergePhrasesCleanly(history: string, newPhrase: string): string 
   if (!h) return n;
   if (!n) return h;
 
+  const hLower = h.toLowerCase();
+  const nLower = n.toLowerCase();
+
+  // 1. If new phrase already contains the complete history as prefix, return the fuller new phrase
+  if (nLower.startsWith(hLower)) {
+    return n;
+  }
+
+  // 2. If history already ends with or includes the new phrase, preserve history
+  if (hLower.endsWith(nLower) || hLower.includes(nLower)) {
+    return h;
+  }
+
   const hWords = h.split(/\s+/);
   const nWords = n.split(/\s+/);
 
   const cleanWord = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  // Check up to 8 overlapping boundary words
-  const maxCheck = Math.min(8, hWords.length, nWords.length);
+  // 3. Check up to 12 overlapping boundary words
+  const maxCheck = Math.min(12, hWords.length, nWords.length);
   for (let k = maxCheck; k >= 1; k--) {
     const hSlice = hWords.slice(-k).map(cleanWord).join(" ");
     const nSlice = nWords.slice(0, k).map(cleanWord).join(" ");
@@ -115,6 +139,17 @@ export class AudioCaptureService {
   private static confirmedHistory: string = "";
   private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Returns whether native Web Speech Recognition API is supported in current browser
+   */
+  public static isSpeechRecognitionSupported(): boolean {
+    if (typeof window === "undefined") return false;
+    return !!(
+      (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
+    );
+  }
 
   /**
    * Returns the latest recognized live transcript
@@ -223,7 +258,14 @@ export class AudioCaptureService {
    * Returns current live microphone amplitude (0 to 1)
    */
   public static getMicVolume(): number {
-    if (!this.analyser) return 0;
+    if (!this.analyser) {
+      if (this.isListening) {
+        // Organic gentle pulse while listening on mobile
+        const t = Date.now() / 300;
+        return 0.18 + 0.10 * Math.sin(t);
+      }
+      return 0;
+    }
     const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
     this.analyser.getByteFrequencyData(dataArray);
 
@@ -251,13 +293,14 @@ export class AudioCaptureService {
   }): SpeechRecognitionInstance | null {
     if (typeof window === "undefined") return null;
 
-    const isMobile =
-      typeof window !== "undefined" &&
-      typeof navigator !== "undefined" &&
-      (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (navigator.maxTouchPoints > 1 && !("MSStream" in (window as unknown as Record<string, unknown>))));
+    const isMobile = isMobileDevice();
+    const SpeechRecognitionAPI =
+      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance })
+        .webkitSpeechRecognition;
 
-    // 1. Prepare MediaRecorder capture (smooth, local, 0 network overhead)
+    // Reset recording timer and object URLs
     if (this.lastAudioUrl) {
       try {
         URL.revokeObjectURL(this.lastAudioUrl);
@@ -269,27 +312,46 @@ export class AudioCaptureService {
     this.recordedChunks = [];
     this.recordingStartTime = Date.now();
 
-    if (this.micStream) {
-      try {
-        const mimeType = getBestAudioMimeType();
-        let recorder: MediaRecorder;
+    // 1. Mobile Exclusive Microphone Access Protocol:
+    // On Android (Chrome) and iOS (Safari), hardware microphone access is strictly exclusive.
+    // If getUserMedia or MediaRecorder holds an active audio track, SpeechRecognition fails
+    // immediately with 'audio-capture' or silent death.
+    // When SpeechRecognition is supported on mobile, release any getUserMedia tracks and
+    // do NOT run MediaRecorder in parallel so native SpeechRecognition has 100% exclusive mic access.
+    if (isMobile && SpeechRecognitionAPI) {
+      if (this.micStream) {
         try {
-          recorder = mimeType
-            ? new MediaRecorder(this.micStream, { mimeType })
-            : new MediaRecorder(this.micStream);
+          this.micStream.getTracks().forEach((track) => track.stop());
         } catch {
-          recorder = new MediaRecorder(this.micStream);
+          // ignore
         }
-        this.mediaRecorder = recorder;
-        recorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            this.recordedChunks.push(event.data);
+        this.micStream = null;
+      }
+      this.mediaRecorder = null;
+    } else {
+      // On desktop (or mobile browsers without Web Speech API), capture audio via MediaRecorder
+      if (this.micStream) {
+        try {
+          const mimeType = getBestAudioMimeType();
+          let recorder: MediaRecorder;
+          try {
+            recorder = mimeType
+              ? new MediaRecorder(this.micStream, { mimeType })
+              : new MediaRecorder(this.micStream);
+          } catch {
+            recorder = new MediaRecorder(this.micStream);
           }
-        };
-        // Collect chunks smoothly without hammering CPU
-        recorder.start(100);
-      } catch (recErr) {
-        logger.warn("MediaRecorder start notice:", recErr);
+          this.mediaRecorder = recorder;
+          recorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+              this.recordedChunks.push(event.data);
+            }
+          };
+          // Collect chunks smoothly without hammering CPU
+          recorder.start(100);
+        } catch (recErr) {
+          logger.warn("MediaRecorder start notice:", recErr);
+        }
       }
     }
 
@@ -298,12 +360,6 @@ export class AudioCaptureService {
     this.latestTranscript = this.confirmedHistory;
 
     // 2. Prepare Web Speech Recognition (Instant 60fps streaming preview)
-    const SpeechRecognitionAPI =
-      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
-        .SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance })
-        .webkitSpeechRecognition;
-
     if (!SpeechRecognitionAPI) {
       logger.info("[AudioCaptureService] Web Speech API not present; audio will transcribe on turn finish via Whisper.");
       return null;
@@ -325,8 +381,11 @@ export class AudioCaptureService {
         }
 
         const recognizer = new SpeechRecognitionAPI();
-        // On mobile, continuous: false with automatic restart on onend ensures continuous recognition
-        recognizer.continuous = !isMobile;
+        try {
+          recognizer.continuous = true;
+        } catch {
+          recognizer.continuous = false;
+        }
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";
 
@@ -387,16 +446,24 @@ export class AudioCaptureService {
           }
           logger.warn("Speech recognition notice:", errCode || e);
 
-          // Suppress non-fatal errors on mobile or when hardware mic is actively capturing
-          if (isMobile || AudioCaptureService.hasActiveMic()) {
-            if (
-              errCode === "audio-capture" ||
-              errCode === "not-allowed" ||
-              errCode === "service-not-allowed"
-            ) {
-              logger.info("[AudioCaptureService] Web Speech error suppressed on mobile; audio capture active:", errCode);
+          // If user explicitly revoked or denied microphone permission
+          if (errCode === "not-allowed" || errCode === "service-not-allowed") {
+            if (!isMobile && AudioCaptureService.hasActiveMic()) {
               return;
             }
+            if (options.onError) options.onError(e);
+            return;
+          }
+
+          // Mobile audio-capture collision recovery
+          if (errCode === "audio-capture" && this.isListening) {
+            if (this.restartTimeout) clearTimeout(this.restartTimeout);
+            this.restartTimeout = setTimeout(() => {
+              if (this.isListening) {
+                createAndStartRecognizer();
+              }
+            }, 300);
+            return;
           }
 
           if (options.onError) options.onError(e);
@@ -409,8 +476,7 @@ export class AudioCaptureService {
             currentSessionFinal = "";
           }
 
-          // Auto-restart: on mobile, each utterance triggers onend naturally when continuous: false.
-          // Debounced auto-restart maintains uninterrupted live dictation without crashing WebKit/Android.
+          // Auto-restart: maintain uninterrupted live dictation across natural pauses
           if (this.isListening) {
             if (this.restartTimeout) {
               clearTimeout(this.restartTimeout);
@@ -419,13 +485,26 @@ export class AudioCaptureService {
               if (this.isListening) {
                 createAndStartRecognizer();
               }
-            }, isMobile ? 120 : 250);
+            }, isMobile ? 100 : 200);
             return;
           }
           if (options.onEnd) options.onEnd();
         };
 
-        recognizer.start();
+        try {
+          recognizer.start();
+        } catch (startErr) {
+          if (recognizer.continuous) {
+            try {
+              recognizer.continuous = false;
+              recognizer.start();
+            } catch (retryErr) {
+              throw retryErr;
+            }
+          } else {
+            throw startErr;
+          }
+        }
         this.recognizer = recognizer;
         return recognizer;
       } catch (err) {
@@ -479,7 +558,7 @@ export class AudioCaptureService {
         this.lastAudioUrl = url;
         return { audioBlob: blob, audioUrl: url, durationSeconds };
       }
-      return { audioBlob: null, audioUrl: null, durationSeconds: 0 };
+      return { audioBlob: null, audioUrl: null, durationSeconds };
     }
 
     return new Promise<AudioCaptureResult>((resolve) => {

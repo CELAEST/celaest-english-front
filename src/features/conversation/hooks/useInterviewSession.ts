@@ -9,7 +9,7 @@ import { DynamicQuestionService, normalizeCefr } from "../services/dynamicQuesti
 import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
-import { AudioCaptureService } from "../services/audioCaptureService";
+import { AudioCaptureService, isMobileDevice } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
@@ -485,20 +485,28 @@ export const useInterviewSession = (
     try {
       if (typeof window !== "undefined") localStorage.setItem("celaest:interview:hasInteracted", "1");
     } catch {}
-    // Check if mic permission is granted, otherwise open luxury recovery modal
-    if (!AudioCaptureService.hasActiveMic()) {
-      let granted = false;
-      try {
-        granted = await AudioCaptureService.initMicrophone();
-      } catch {
-        granted = false;
-      }
-      if (!granted) {
-        if (isMountedRef.current) {
-          setStatus("IDLE");
-          setIsMicRecoveryModalOpen(true);
+    const isMobile = isMobileDevice();
+    const hasSpeechRec = AudioCaptureService.isSpeechRecognitionSupported();
+
+    // On desktop, or mobile browsers without native Web Speech API (e.g. Firefox Mobile),
+    // ensure hardware microphone stream is initialized for MediaRecorder + Whisper.
+    // On mobile with SpeechRecognition (Chrome Android / Safari iOS), skip getUserMedia
+    // so native SpeechRecognition has 100% uncontested, exclusive access to the microphone.
+    if (!isMobile || !hasSpeechRec) {
+      if (!AudioCaptureService.hasActiveMic()) {
+        let granted = false;
+        try {
+          granted = await AudioCaptureService.initMicrophone();
+        } catch {
+          granted = false;
         }
-        return;
+        if (!granted) {
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setIsMicRecoveryModalOpen(true);
+          }
+          return;
+        }
       }
     }
 
@@ -539,9 +547,7 @@ export const useInterviewSession = (
           errCode.includes("not-allowed") ||
           errCode.includes("NotAllowedError")
         ) {
-          // If mic hardware is already active and capturing audio, this was merely a Web Speech collision/error,
-          // NOT a hardware microphone permission rejection. Do not kill user recording!
-          if (AudioCaptureService.hasActiveMic()) {
+          if (!isMobile && AudioCaptureService.hasActiveMic()) {
             logger.warn("[useInterviewSession] SpeechRecognition not-allowed ignored because mic hardware is active:", errCode);
             return;
           }
@@ -685,7 +691,7 @@ export const useInterviewSession = (
         const audioResult = await AudioCaptureService.stopAndGetAudio();
         lastCapturedAudioRef.current = audioResult;
         audioUrl = audioResult.audioUrl;
-        durationSeconds = audioResult.durationSeconds;
+        durationSeconds = audioResult.durationSeconds || speakingSeconds;
 
         if (audioResult.audioBlob) {
           try {

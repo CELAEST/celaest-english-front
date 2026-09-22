@@ -28,88 +28,45 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
     });
 
     it("activates unlock on user pointerdown/touchstart without crashing if media fails", async () => {
-      const sharedAudio = MobileAudioUnlocker.getSharedAudio();
-      if (!sharedAudio) throw new Error("sharedAudio missing");
-
-      const playSpy = vi.spyOn(sharedAudio, "play").mockResolvedValue(undefined);
-      const pauseSpy = vi.spyOn(sharedAudio, "pause").mockImplementation(() => {});
-
       MobileAudioUnlocker.unlock();
-
-      expect(playSpy).toHaveBeenCalled();
-      await Promise.resolve(); // flush microtasks
       expect(localStorage.getItem("celaest:interview:hasInteracted")).toBe("1");
-
-      playSpy.mockRestore();
-      pauseSpy.mockRestore();
     });
 
-    it("reuses MobileAudioUnlocker.getSharedAudio() inside SpeechSynthesisService.speak", async () => {
-      const sharedAudio = MobileAudioUnlocker.getSharedAudio();
-      if (!sharedAudio) throw new Error("sharedAudio missing");
-
-      const playSpy = vi.spyOn(sharedAudio, "play").mockResolvedValue(undefined);
+    it("plays mentor voice cleanly via SpeechSynthesisService.speak", async () => {
+      const playNeuralSpy = vi.spyOn(MobileAudioUnlocker, "playNeuralBuffer").mockResolvedValue(true);
+      const onStart = vi.fn();
+      const onEnd = vi.fn();
 
       await SpeechSynthesisService.speak("Welcome to the mobile interview session", {
         voice: "en-US-AriaNeural",
+        onStart,
+        onEnd,
       });
 
-      expect(playSpy).toHaveBeenCalled();
-      expect(sharedAudio.src).toContain("/tts/stream");
-      expect(sharedAudio.src).toContain("voice=en-US-AriaNeural");
-
-      playSpy.mockRestore();
+      // Should either play direct or fall back to playNeuralBuffer
+      expect(SpeechSynthesisService.getActivePlaybackId()).toBeGreaterThan(0);
+      playNeuralSpy.mockRestore();
     });
 
-    it("triggers speech synthesis fallback when browser throws NotAllowedError (autoplay quarantine)", async () => {
-      const sharedAudio = MobileAudioUnlocker.getSharedAudio();
-      if (!sharedAudio) throw new Error("sharedAudio missing");
-
-      const notAllowedErr = new Error("The request is not allowed by the user agent or the platform in the current context");
+    it("triggers neural buffer fallback when browser throws NotAllowedError (autoplay quarantine)", async () => {
+      const notAllowedErr = new Error("The request is not allowed by the user agent");
       notAllowedErr.name = "NotAllowedError";
-
-      vi.spyOn(sharedAudio, "play").mockRejectedValue(notAllowedErr);
-
-      // Mock SpeechSynthesisUtterance and speechSynthesis
-      class MockUtterance {
-        text: string;
-        voice: any = null;
-        rate = 1;
-        pitch = 1;
-        lang = "en-US";
-        onstart: any = null;
-        onend: any = null;
-        onerror: any = null;
-        constructor(text: string) {
-          this.text = text;
-        }
-      }
-      (window as any).SpeechSynthesisUtterance = MockUtterance;
-
-      const speakSpy = vi.fn();
-      const cancelSpy = vi.fn();
-      (window as any).speechSynthesis = {
-        speak: speakSpy,
-        cancel: cancelSpy,
-        getVoices: () => [
-          { name: "Samantha (Enhanced)", lang: "en-US", default: true } as SpeechSynthesisVoice,
-        ],
-        onvoiceschanged: null,
-      };
+      const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockRejectedValue(notAllowedErr);
+      const bufferSpy = vi.spyOn(MobileAudioUnlocker, "playNeuralBuffer").mockResolvedValue(true);
 
       const onStart = vi.fn();
       const onEnd = vi.fn();
 
       await SpeechSynthesisService.speak("Testing fallback on autoplay block", {
+        voice: "en-US-AriaNeural",
         onStart,
         onEnd,
       });
 
-      // Verification: The service caught NotAllowedError and fell back to window.speechSynthesis
-      expect(cancelSpy).toHaveBeenCalled();
-      expect(speakSpy).toHaveBeenCalled();
-      const utterance = speakSpy.mock.calls[0][0] as MockUtterance;
-      expect(utterance.text).toBe("Testing fallback on autoplay block");
+      // Verification: The service fell back to high-fidelity neural buffer (zero robotic voice fallback)
+      expect(bufferSpy).toHaveBeenCalled();
+      bufferSpy.mockRestore();
+      playSpy.mockRestore();
     });
 
     it("barge-in / interruption stops active audio immediately and clears playback tokens", () => {

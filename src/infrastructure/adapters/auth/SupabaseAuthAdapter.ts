@@ -193,7 +193,6 @@ export class SupabaseAuthAdapter implements IAuthService {
     HttpClient.setAuthToken("");
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
-      window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
     }
   }
 

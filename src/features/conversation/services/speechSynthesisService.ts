@@ -53,7 +53,13 @@ export class SpeechSynthesisService {
         )}&rate=%2B0%25&volume=%2B100%25`;
 
     try {
-      const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+      const audio = new Audio();
+      // @ts-ignore
+      audio.playsInline = true;
+      try {
+        audio.setAttribute("playsinline", "true");
+        audio.setAttribute("webkit-playsinline", "true");
+      } catch {}
       audio.src = audioSource;
       audio.preload = "auto";
       audio.volume = 1.0;
@@ -80,12 +86,12 @@ export class SpeechSynthesisService {
 
       audio.onerror = async (e) => {
         if (this.activePlaybackId !== playbackId) return;
-        logger.warn("[SpeechSynthesisService] Direct audio stream error, attempting Web Audio buffer playback:", e);
+        logger.warn("[SpeechSynthesisService] Direct audio stream error, falling back to Web Audio buffer playback:", e);
         try {
           const played = await MobileAudioUnlocker.playNeuralBuffer(
             cached ? cached.blob : audioSource,
             options,
-            playbackId,
+            () => this.activePlaybackId === playbackId,
             () => {
               if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
             },
@@ -103,23 +109,14 @@ export class SpeechSynthesisService {
       await audio.play();
     } catch (err: any) {
       if (this.activePlaybackId !== playbackId) return;
-      if (err?.name === "AbortError") {
-        return;
-      }
-      if (err?.name === "NotAllowedError") {
-        logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked by autoplay policy, attempting speech synthesis fallback:", err);
-        this.currentAudio = null;
-        await this.speakFallback(trimmed, options, playbackId);
-        return;
-      }
-      logger.warn("[SpeechSynthesisService] HTMLAudioElement play failed or blocked, attempting Web Audio buffer playback:", err);
+      logger.warn("[SpeechSynthesisService] HTMLAudioElement play interrupted or blocked, falling back to Web Audio buffer playback:", err);
       this.currentAudio = null;
 
       try {
         const played = await MobileAudioUnlocker.playNeuralBuffer(
           cached ? cached.blob : audioSource,
           options,
-          playbackId,
+          () => this.activePlaybackId === playbackId,
           () => {
             if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
           },
@@ -348,7 +345,6 @@ export class SpeechSynthesisService {
       try {
         audio.pause();
         audio.currentTime = 0;
-        audio.src = "";
       } catch {
         // ignore
       }
@@ -441,27 +437,6 @@ export class MobileAudioUnlocker {
       }
     } catch {}
 
-    const audio = this.getSharedAudio();
-    if (audio) {
-      try {
-        if (!audio.src || audio.src === "" || audio.src.startsWith("data:")) {
-          audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-          audio.volume = 1.0;
-          const p = audio.play();
-          if (p && typeof p.then === "function") {
-            p.then(() => {
-              if (audio.src.startsWith("data:")) {
-                try {
-                  audio.pause();
-                  audio.currentTime = 0;
-                } catch {}
-              }
-            }).catch(() => {});
-          }
-        }
-      } catch {}
-    }
-
     this.isUnlocked = true;
 
     try {
@@ -476,10 +451,20 @@ export class MobileAudioUnlocker {
   public static async playNeuralBuffer(
     audioUrlOrBlob: string | Blob,
     options: SpeakOptions = {},
-    playbackId: number,
+    isStillActiveOrPlaybackId?: number | (() => boolean),
     onStart?: () => void,
     onEnd?: () => void,
   ): Promise<boolean> {
+    const isCancelled = () => {
+      if (typeof isStillActiveOrPlaybackId === "function") {
+        return !isStillActiveOrPlaybackId();
+      }
+      if (typeof isStillActiveOrPlaybackId === "number" && isStillActiveOrPlaybackId > 0) {
+        return SpeechSynthesisService.getActivePlaybackId() !== isStillActiveOrPlaybackId;
+      }
+      return false;
+    };
+
     const ctx = this.getAudioContext();
     if (!ctx) return false;
 
@@ -509,7 +494,7 @@ export class MobileAudioUnlocker {
         arrayBuffer = await audioUrlOrBlob.arrayBuffer();
       }
 
-      if (SpeechSynthesisService.getActivePlaybackId() !== playbackId) {
+      if (isCancelled()) {
         return false;
       }
 
@@ -523,7 +508,7 @@ export class MobileAudioUnlocker {
       }
     }
 
-    if (!audioBuffer || SpeechSynthesisService.getActivePlaybackId() !== playbackId) {
+    if (!audioBuffer || isCancelled()) {
       return false;
     }
 
@@ -564,7 +549,7 @@ export class MobileAudioUnlocker {
       if (this.activeSourceNode === source) {
         this.activeSourceNode = null;
       }
-      if (SpeechSynthesisService.getActivePlaybackId() === playbackId && onEnd) {
+      if (!isCancelled() && onEnd) {
         onEnd();
       }
     };

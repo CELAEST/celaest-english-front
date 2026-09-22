@@ -72,6 +72,34 @@ export interface AudioTranscriptionResult {
   noSpeechProb?: number | undefined;
 }
 
+/**
+ * Merges history and a newly recognized phrase ensuring zero duplicate or overlapping boundary words
+ */
+export function mergePhrasesCleanly(history: string, newPhrase: string): string {
+  const h = (history || "").trim();
+  const n = (newPhrase || "").trim();
+  if (!h) return n;
+  if (!n) return h;
+
+  const hWords = h.split(/\s+/);
+  const nWords = n.split(/\s+/);
+
+  const cleanWord = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Check up to 8 overlapping boundary words
+  const maxCheck = Math.min(8, hWords.length, nWords.length);
+  for (let k = maxCheck; k >= 1; k--) {
+    const hSlice = hWords.slice(-k).map(cleanWord).join(" ");
+    const nSlice = nWords.slice(0, k).map(cleanWord).join(" ");
+    if (hSlice && hSlice === nSlice) {
+      const remaining = nWords.slice(k).join(" ");
+      return remaining ? `${h} ${remaining}` : h;
+    }
+  }
+
+  return `${h} ${n}`;
+}
+
 export class AudioCaptureService {
   private static audioContext: AudioContext | null = null;
   private static analyser: AnalyserNode | null = null;
@@ -84,12 +112,16 @@ export class AudioCaptureService {
   private static recordingStartTime: number = 0;
   private static lastAudioUrl: string | null = null;
   private static isListening: boolean = false;
-  private static accumulatedTranscript: string = "";
+  private static confirmedHistory: string = "";
   private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
-  private static rollingTranscribeInterval: ReturnType<typeof setInterval> | null = null;
-  private static isTranscribingRolling: boolean = false;
-  private static lastWebSpeechTime: number = 0;
+
+  /**
+   * Returns the latest recognized live transcript
+   */
+  public static getLatestTranscript(): string {
+    return this.latestTranscript;
+  }
 
   /**
    * Requests microphone permission and initializes live audio analyser
@@ -205,9 +237,7 @@ export class AudioCaptureService {
 
   /**
    * Starts Speech Recognition with continuous live interim results AND records raw audio via MediaRecorder.
-   * Dual-Stream Architecture:
-   * 1. Web Speech API (interim preview on desktop, non-continuous with instant restart on mobile)
-   * 2. Rolling Whisper Transcriber (~2.2s ticker on mobile or when Web Speech is silent/unsupported)
+   * Zero-lag, zero-overlap architecture with instant local streaming dictation.
    */
   public static startRecognition(options: {
     lang?: string | undefined;
@@ -227,7 +257,7 @@ export class AudioCaptureService {
       (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
         (navigator.maxTouchPoints > 1 && !("MSStream" in (window as unknown as Record<string, unknown>))));
 
-    // 1. Prepare MediaRecorder capture
+    // 1. Prepare MediaRecorder capture (smooth, local, 0 network overhead)
     if (this.lastAudioUrl) {
       try {
         URL.revokeObjectURL(this.lastAudioUrl);
@@ -238,13 +268,6 @@ export class AudioCaptureService {
     }
     this.recordedChunks = [];
     this.recordingStartTime = Date.now();
-    this.lastWebSpeechTime = 0;
-    this.isTranscribingRolling = false;
-
-    if (this.rollingTranscribeInterval) {
-      clearInterval(this.rollingTranscribeInterval);
-      this.rollingTranscribeInterval = null;
-    }
 
     if (this.micStream) {
       try {
@@ -263,98 +286,18 @@ export class AudioCaptureService {
             this.recordedChunks.push(event.data);
           }
         };
-        // Slice chunks every 250ms for low-latency live buffer access
-        recorder.start(250);
+        // Collect chunks smoothly without hammering CPU
+        recorder.start(100);
       } catch (recErr) {
         logger.warn("MediaRecorder start notice:", recErr);
       }
     }
 
     this.isListening = true;
-    this.accumulatedTranscript = (options.initialTranscript || "").trim();
+    this.confirmedHistory = (options.initialTranscript || "").trim();
+    this.latestTranscript = this.confirmedHistory;
 
-    // 2. Rolling Live Whisper Transcriber (Zero-failure mobile & fallback engine)
-    const startRollingTranscriber = () => {
-      if (this.rollingTranscribeInterval) {
-        clearInterval(this.rollingTranscribeInterval);
-      }
-
-      this.rollingTranscribeInterval = setInterval(async () => {
-        if (!this.isListening) return;
-
-        // If Web Speech API has actively emitted a transcript within the last 2.2 seconds,
-        // do not duplicate with Whisper (desktop Chrome Web Speech is already streaming real-time)
-        if (this.lastWebSpeechTime > 0 && Date.now() - this.lastWebSpeechTime < 2200) {
-          return;
-        }
-
-        if (this.isTranscribingRolling) return;
-        if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") return;
-
-        // Flush latest audio chunk into recordedChunks
-        try {
-          if (this.mediaRecorder.state === "recording") {
-            this.mediaRecorder.requestData();
-          }
-        } catch {
-          // ignore
-        }
-
-        if (this.recordedChunks.length === 0) return;
-
-        const mime = this.mediaRecorder?.mimeType || getBestAudioMimeType() || "audio/webm";
-        const currentBlob = new Blob(this.recordedChunks, { type: mime });
-
-        // Skip if buffer is under 1200 bytes (too small to contain actual speech)
-        if (currentBlob.size < 1200) return;
-
-        this.isTranscribingRolling = true;
-        try {
-          const whisperResult = await AudioCaptureService.transcribeAudio(currentBlob, {
-            ...(options.roleName ? { roleName: options.roleName } : {}),
-            ...(options.question ? { question: options.question } : {}),
-          });
-
-          if (!this.isListening || !whisperResult) return;
-
-          const rawText = whisperResult.text.trim();
-          if (rawText.length > 0) {
-            // If Web Speech produced text in the meantime, preserve Web Speech
-            if (this.lastWebSpeechTime > 0 && Date.now() - this.lastWebSpeechTime < 1500) {
-              return;
-            }
-
-            const prefix = this.accumulatedTranscript ? this.accumulatedTranscript + " " : "";
-            const combined = (prefix + rawText).replace(/\s+/g, " ").trim();
-            this.latestTranscript = combined;
-
-            const liveCheck = detectLiveSpanishOrFiller(combined);
-            if (liveCheck.isSpanishOrFiller) {
-              logger.info("[AudioCaptureService] Rolling transcript detected Spanish/filler:", combined);
-              this.isListening = false;
-              AudioCaptureService.stop();
-              if (options.onSpanishDetected) {
-                options.onSpanishDetected(
-                  liveCheck.message ||
-                    "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista."
-                );
-              }
-              return;
-            }
-
-            options.onTranscript(combined, false);
-          }
-        } catch (err) {
-          logger.warn("[AudioCaptureService] Rolling live transcribe notice:", err);
-        } finally {
-          this.isTranscribingRolling = false;
-        }
-      }, 2200);
-    };
-
-    startRollingTranscriber();
-
-    // 3. Prepare Web Speech Recognition (for instant streaming preview when supported)
+    // 2. Prepare Web Speech Recognition (Instant 60fps streaming preview)
     const SpeechRecognitionAPI =
       (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
         .SpeechRecognition ||
@@ -362,7 +305,7 @@ export class AudioCaptureService {
         .webkitSpeechRecognition;
 
     if (!SpeechRecognitionAPI) {
-      logger.info("[AudioCaptureService] Web Speech API not present; relying on rolling Whisper transcriber.");
+      logger.info("[AudioCaptureService] Web Speech API not present; audio will transcribe on turn finish via Whisper.");
       return null;
     }
 
@@ -382,9 +325,7 @@ export class AudioCaptureService {
         }
 
         const recognizer = new SpeechRecognitionAPI();
-        // Crucial for mobile (iOS Safari / Android Chrome):
-        // continuous: true causes WebKit / Safari to abort immediately with 0 results.
-        // On mobile, continuous: false with automatic restart on onend ensures continuous recognition.
+        // On mobile, continuous: false with automatic restart on onend ensures continuous recognition
         recognizer.continuous = !isMobile;
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";
@@ -392,7 +333,6 @@ export class AudioCaptureService {
         let currentSessionFinal = "";
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
-          this.lastWebSpeechTime = Date.now();
           let sessionFinal = "";
           let sessionInterim = "";
 
@@ -411,16 +351,11 @@ export class AudioCaptureService {
           }
 
           currentSessionFinal = sessionFinal.trim();
+          const interimTrim = sessionInterim.trim();
 
-          const prefix = this.accumulatedTranscript ? this.accumulatedTranscript + " " : "";
-          const combined = (
-            prefix +
-            currentSessionFinal +
-            " " +
-            sessionInterim
-          )
-            .replace(/\s+/g, " ")
-            .trim();
+          // Merge without any overlapping or duplicate words
+          const withFinal = mergePhrasesCleanly(this.confirmedHistory, currentSessionFinal);
+          const combined = interimTrim ? `${withFinal} ${interimTrim}`.trim() : withFinal;
 
           this.latestTranscript = combined;
 
@@ -459,7 +394,7 @@ export class AudioCaptureService {
               errCode === "not-allowed" ||
               errCode === "service-not-allowed"
             ) {
-              logger.info("[AudioCaptureService] Web Speech error suppressed on mobile; rolling transcriber active:", errCode);
+              logger.info("[AudioCaptureService] Web Speech error suppressed on mobile; audio capture active:", errCode);
               return;
             }
           }
@@ -468,17 +403,11 @@ export class AudioCaptureService {
         };
 
         recognizer.onend = () => {
-          if (this.latestTranscript) {
-            this.accumulatedTranscript = this.latestTranscript;
-          } else if (currentSessionFinal) {
-            this.accumulatedTranscript = (
-              (this.accumulatedTranscript ? this.accumulatedTranscript + " " : "") +
-              currentSessionFinal
-            )
-              .replace(/\s+/g, " ")
-              .trim();
+          // Commit current session final cleanly into confirmedHistory without repetition
+          if (currentSessionFinal) {
+            this.confirmedHistory = mergePhrasesCleanly(this.confirmedHistory, currentSessionFinal);
+            currentSessionFinal = "";
           }
-          currentSessionFinal = "";
 
           // Auto-restart: on mobile, each utterance triggers onend naturally when continuous: false.
           // Debounced auto-restart maintains uninterrupted live dictation without crashing WebKit/Android.
@@ -490,7 +419,7 @@ export class AudioCaptureService {
               if (this.isListening) {
                 createAndStartRecognizer();
               }
-            }, isMobile ? 150 : 350);
+            }, isMobile ? 120 : 250);
             return;
           }
           if (options.onEnd) options.onEnd();
@@ -521,21 +450,19 @@ export class AudioCaptureService {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
-    if (this.rollingTranscribeInterval) {
-      clearInterval(this.rollingTranscribeInterval);
-      this.rollingTranscribeInterval = null;
-    }
-    this.isTranscribingRolling = false;
-    this.lastWebSpeechTime = 0;
+    this.confirmedHistory = "";
     this.latestTranscript = "";
-    this.accumulatedTranscript = "";
     if (this.recognizer) {
+      const old = this.recognizer;
+      this.recognizer = null;
+      old.onresult = null;
+      old.onerror = null;
+      old.onend = null;
       try {
-        this.recognizer.abort();
+        old.abort();
       } catch {
         // ignore
       }
-      this.recognizer = null;
     }
 
     const durationSeconds =
@@ -779,14 +706,8 @@ export class AudioCaptureService {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
-    if (this.rollingTranscribeInterval) {
-      clearInterval(this.rollingTranscribeInterval);
-      this.rollingTranscribeInterval = null;
-    }
-    this.isTranscribingRolling = false;
-    this.lastWebSpeechTime = 0;
+    this.confirmedHistory = "";
     this.latestTranscript = "";
-    this.accumulatedTranscript = "";
     if (this.recognizer) {
       const old = this.recognizer;
       this.recognizer = null;

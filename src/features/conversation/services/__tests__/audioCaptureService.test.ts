@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AudioCaptureService } from "../audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly } from "../audioCaptureService";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 
 describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
@@ -205,6 +205,34 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
       delete (window as any).SpeechRecognition;
     }
+  });
+
+  describe("mergePhrasesCleanly — Zero-Overlap Guarantee", () => {
+    it("appends new phrase cleanly when there is no boundary overlap", () => {
+      const result = mergePhrasesCleanly("Hello my name is Alex", "and I am an engineer");
+      expect(result).toBe("Hello my name is Alex and I am an engineer");
+    });
+
+    it("eliminates 1-word boundary overlap when mobile speech engine repeats last word", () => {
+      const result = mergePhrasesCleanly("I worked on many projects", "projects with distributed systems");
+      expect(result).toBe("I worked on many projects with distributed systems");
+    });
+
+    it("eliminates multi-word boundary overlap seamlessly", () => {
+      const result = mergePhrasesCleanly("We built a cloud platform", "cloud platform using Go");
+      expect(result).toBe("We built a cloud platform using Go");
+    });
+
+    it("handles punctuation and capitalization differences during overlap check", () => {
+      const result = mergePhrasesCleanly("I led the frontend team.", "team and increased performance");
+      expect(result).toBe("I led the frontend team. and increased performance");
+    });
+
+    it("handles empty or blank inputs gracefully", () => {
+      expect(mergePhrasesCleanly("", "Hello world")).toBe("Hello world");
+      expect(mergePhrasesCleanly("Hello world", "")).toBe("Hello world");
+      expect(mergePhrasesCleanly("", "")).toBe("");
+    });
   });
 });
 

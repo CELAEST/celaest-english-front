@@ -85,6 +85,7 @@ export class AudioCaptureService {
   private static lastAudioUrl: string | null = null;
   private static isListening: boolean = false;
   private static accumulatedTranscript: string = "";
+  private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
@@ -265,12 +266,16 @@ export class AudioCaptureService {
     const createAndStartRecognizer = (): SpeechRecognitionInstance | null => {
       try {
         if (this.recognizer) {
+          const old = this.recognizer;
+          this.recognizer = null;
+          old.onresult = null;
+          old.onerror = null;
+          old.onend = null;
           try {
-            this.recognizer.abort();
+            old.abort();
           } catch {
             // ignore
           }
-          this.recognizer = null;
         }
 
         const recognizer = new SpeechRecognitionAPI();
@@ -310,6 +315,8 @@ export class AudioCaptureService {
             .replace(/\s+/g, " ")
             .trim();
 
+          this.latestTranscript = combined;
+
           const liveCheck = detectLiveSpanishOrFiller(combined);
           if (liveCheck.isSpanishOrFiller) {
             logger.info("[AudioCaptureService] Live Spanish or non-interview filler detected:", combined);
@@ -341,15 +348,17 @@ export class AudioCaptureService {
         };
 
         recognizer.onend = () => {
-          if (currentSessionFinal) {
+          if (this.latestTranscript) {
+            this.accumulatedTranscript = this.latestTranscript;
+          } else if (currentSessionFinal) {
             this.accumulatedTranscript = (
               (this.accumulatedTranscript ? this.accumulatedTranscript + " " : "") +
               currentSessionFinal
             )
               .replace(/\s+/g, " ")
               .trim();
-            currentSessionFinal = "";
           }
+          currentSessionFinal = "";
 
           // Debounced auto-restart: prevents rapid Android chime ("chun") loops and InvalidStateError
           if (this.isListening) {
@@ -388,6 +397,7 @@ export class AudioCaptureService {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
+    this.latestTranscript = "";
     this.accumulatedTranscript = "";
     if (this.recognizer) {
       try {
@@ -639,14 +649,19 @@ export class AudioCaptureService {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
+    this.latestTranscript = "";
     this.accumulatedTranscript = "";
     if (this.recognizer) {
+      const old = this.recognizer;
+      this.recognizer = null;
+      old.onresult = null;
+      old.onerror = null;
+      old.onend = null;
       try {
-        this.recognizer.abort();
+        old.abort();
       } catch {
         // ignore
       }
-      this.recognizer = null;
     }
     if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
       try {

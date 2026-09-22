@@ -103,11 +103,7 @@ export class SpeechSynthesisService {
       await audio.play();
     } catch (err: any) {
       if (this.activePlaybackId !== playbackId) return;
-      if (err?.name === "AbortError") {
-        // Deliberate user navigation or audio interruption — do not trigger fallback voice
-        return;
-      }
-      logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked or failed, attempting Web Audio buffer playback:", err);
+      logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked or play failed, attempting Web Audio buffer playback:", err);
       this.currentAudio = null;
 
       try {
@@ -342,7 +338,6 @@ export class SpeechSynthesisService {
       try {
         audio.pause();
         audio.currentTime = 0;
-        audio.src = "";
       } catch {
         // ignore
       }

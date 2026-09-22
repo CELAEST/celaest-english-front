@@ -133,7 +133,6 @@ export const useInterviewSession = (
   // re-render the entire conversation tree on every frame.
   const lastVolUpdateRef = useRef<number>(0);
   const lastVolRef = useRef<number>(0);
-  const lastTranscriptUpdateRef = useRef<number>(0);
   const lastCapturedAudioRef = useRef<{
     audioBlob: Blob | null;
     audioUrl: string | null;
@@ -512,13 +511,9 @@ export const useInterviewSession = (
       lang: "en-US",
       initialTranscript: existingText,
       onTranscript: (liveTranscript: string) => {
-        if (!isMountedRef.current || isAiSpeakingRef.current) return;
+        if (!isMountedRef.current) return;
         userTranscriptRef.current = liveTranscript;
-        const now = Date.now();
-        if (now - lastTranscriptUpdateRef.current > 180) {
-          lastTranscriptUpdateRef.current = now;
-          setUserTranscript(liveTranscript);
-        }
+        setUserTranscript(liveTranscript);
       },
       onSpanishDetected: (noticeMessage: string) => {
         if (!isMountedRef.current) return;
@@ -540,8 +535,7 @@ export const useInterviewSession = (
         if (
           errCode === "not-allowed" ||
           errCode.includes("not-allowed") ||
-          errCode.includes("NotAllowedError") ||
-          errCode.includes("audio-capture")
+          errCode.includes("NotAllowedError")
         ) {
           if (isMountedRef.current) {
             setStatus("IDLE");
@@ -816,21 +810,50 @@ export const useInterviewSession = (
         }
       }, (estimatedSec + 4) * 1000);
 
-      await SpeechSynthesisService.speak(activeQuestion.question, {
-        voice: selectedVoiceRef.current,
-        rate: rate ?? speechRate,
-        onEnd: () => {
-          if (safetyTimeoutRef.current) {
-            clearTimeout(safetyTimeoutRef.current);
-            safetyTimeoutRef.current = null;
-          }
-          if (!isMountedRef.current) return;
+      try {
+        await SpeechSynthesisService.speak(activeQuestion.question, {
+          voice: selectedVoiceRef.current,
+          rate: rate ?? speechRate,
+          onStart: () => {
+            if (!isMountedRef.current) return;
+            isAiSpeakingRef.current = true;
+            setStatus("AI_SPEAKING");
+          },
+          onEnd: () => {
+            if (safetyTimeoutRef.current) {
+              clearTimeout(safetyTimeoutRef.current);
+              safetyTimeoutRef.current = null;
+            }
+            if (!isMountedRef.current) return;
 
+            isAiSpeakingRef.current = false;
+            setStatus("IDLE");
+            setSpeakingSeconds(0);
+          },
+          onError: (err) => {
+            logger.warn("[useInterviewSession] Speech synthesis error:", err);
+            if (safetyTimeoutRef.current) {
+              clearTimeout(safetyTimeoutRef.current);
+              safetyTimeoutRef.current = null;
+            }
+            if (!isMountedRef.current) return;
+            isAiSpeakingRef.current = false;
+            setStatus("IDLE");
+            setSpeakingSeconds(0);
+          },
+        });
+      } catch (err) {
+        logger.warn("[useInterviewSession] speakQuestion caught:", err);
+        if (safetyTimeoutRef.current) {
+          clearTimeout(safetyTimeoutRef.current);
+          safetyTimeoutRef.current = null;
+        }
+        if (isMountedRef.current) {
           isAiSpeakingRef.current = false;
           setStatus("IDLE");
           setSpeakingSeconds(0);
-        },
-      });
+        }
+      }
     },
     [currentQuestion, speechRate],
   );

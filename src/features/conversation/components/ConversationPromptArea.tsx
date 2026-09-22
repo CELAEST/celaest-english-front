@@ -45,21 +45,21 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
 
             {/* Dual Mentor Switcher (Pure Typography & Clean Micro Dot) */}
             {onSelectVoice && (
-              <div className="inline-flex items-center gap-1.5 leading-none select-none">
+              <div className="inline-flex items-center gap-1 sm:gap-1.5 leading-none select-none">
                 {/* Aria */}
                 <button
                   type="button"
                   onClick={() => onSelectVoice("en-US-AriaNeural")}
                   title="Interviewer: Aria (Femenino)"
                   aria-label="Select Aria interviewer voice"
-                  className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
+                  className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 py-2 px-2 -my-2 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 touch-manipulation ${
                     selectedVoice === "en-US-AriaNeural"
                       ? "text-white font-semibold"
                       : "text-white/40 hover:text-white/70 font-normal"
                   }`}
                 >
                   {selectedVoice === "en-US-AriaNeural" && (
-                    <span className="w-1 h-1 rounded-full bg-white shrink-0" aria-hidden="true" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" aria-hidden="true" />
                   )}
                   <span>Aria</span>
                 </button>
@@ -72,14 +72,14 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
                   onClick={() => onSelectVoice("en-US-ChristopherNeural")}
                   title="Interviewer: Christopher (Ejecutivo)"
                   aria-label="Select Christopher interviewer voice"
-                  className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 p-0 outline-none leading-none ${
+                  className={`inline-flex items-center gap-1 text-[11px] font-sans transition-all duration-200 cursor-pointer bg-transparent border-0 py-2 px-2 -my-2 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 touch-manipulation ${
                     selectedVoice === "en-US-ChristopherNeural"
                       ? "text-white font-semibold"
                       : "text-white/40 hover:text-white/70 font-normal"
                   }`}
                 >
                   {selectedVoice === "en-US-ChristopherNeural" && (
-                    <span className="w-1 h-1 rounded-full bg-white shrink-0" aria-hidden="true" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" aria-hidden="true" />
                   )}
                   <span>Chris</span>
                 </button>
@@ -92,7 +92,7 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
                       onClick={onRepeatQuestion}
                       title="Repetir pregunta en voz alta"
                       aria-label="Repeat interviewer question"
-                      className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0 outline-none leading-none active:scale-95 ml-0.5"
+                      className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border-0 py-2 px-2 -my-2 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 touch-manipulation ml-0.5"
                     >
                       <svg
                         className="w-3 h-3 text-white/60 hover:text-white transition-colors"

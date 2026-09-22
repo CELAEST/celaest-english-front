@@ -510,6 +510,8 @@ export const useInterviewSession = (
     AudioCaptureService.startRecognition({
       lang: "en-US",
       initialTranscript: existingText,
+      roleName: effectiveRoleName,
+      question: currentQuestionRef.current?.question || currentQuestion?.question,
       onTranscript: (liveTranscript: string) => {
         if (!isMountedRef.current) return;
         userTranscriptRef.current = liveTranscript;
@@ -537,6 +539,12 @@ export const useInterviewSession = (
           errCode.includes("not-allowed") ||
           errCode.includes("NotAllowedError")
         ) {
+          // If mic hardware is already active and capturing audio, this was merely a Web Speech collision/error,
+          // NOT a hardware microphone permission rejection. Do not kill user recording!
+          if (AudioCaptureService.hasActiveMic()) {
+            logger.warn("[useInterviewSession] SpeechRecognition not-allowed ignored because mic hardware is active:", errCode);
+            return;
+          }
           if (isMountedRef.current) {
             setStatus("IDLE");
             setIsMicRecoveryModalOpen(true);
@@ -544,7 +552,7 @@ export const useInterviewSession = (
         }
       },
     });
-  }, [userTranscript, setUserTranscript]);
+  }, [userTranscript, setUserTranscript, effectiveRoleName, currentQuestion]);
 
   const resumeFromMicRecovery = useCallback(() => {
     setIsMicRecoveryModalOpen(false);

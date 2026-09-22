@@ -110,4 +110,101 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     const result = await AudioCaptureService.transcribeAudio(tinyBlob);
     expect(result).toBeNull();
   });
+
+  it("configures continuous=false on mobile devices to prevent WebKit speech aborts", () => {
+    const originalUserAgent = navigator.userAgent;
+    try {
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+        configurable: true,
+      });
+
+      let capturedRecognizerInstance: any = null;
+      class MockSpeechRecognition {
+        continuous = true;
+        interimResults = true;
+        lang = "en-US";
+        start = vi.fn();
+        stop = vi.fn();
+        abort = vi.fn();
+        onresult = null;
+        onerror = null;
+        onend = null;
+        constructor() {
+          capturedRecognizerInstance = this;
+        }
+      }
+
+      (window as any).SpeechRecognition = MockSpeechRecognition;
+
+      const onTranscript = vi.fn();
+      AudioCaptureService.startRecognition({
+        lang: "en-US",
+        onTranscript,
+      });
+
+      expect(capturedRecognizerInstance).not.toBeNull();
+      // On mobile Safari/iPhone, continuous must be false
+      expect(capturedRecognizerInstance.continuous).toBe(false);
+      AudioCaptureService.stop();
+    } finally {
+      Object.defineProperty(navigator, "userAgent", {
+        value: originalUserAgent,
+        configurable: true,
+      });
+      delete (window as any).SpeechRecognition;
+    }
+  });
+
+  it("suppresses non-fatal audio-capture and not-allowed errors on mobile without halting the turn", () => {
+    const originalUserAgent = navigator.userAgent;
+    try {
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36",
+        configurable: true,
+      });
+
+      let capturedRecognizerInstance: any = null;
+      class MockSpeechRecognition {
+        continuous = true;
+        interimResults = true;
+        lang = "en-US";
+        start = vi.fn();
+        stop = vi.fn();
+        abort = vi.fn();
+        onresult = null;
+        onerror: ((e: any) => void) | null = null;
+        onend = null;
+        constructor() {
+          capturedRecognizerInstance = this;
+        }
+      }
+
+      (window as any).SpeechRecognition = MockSpeechRecognition;
+
+      const onError = vi.fn();
+      AudioCaptureService.startRecognition({
+        lang: "en-US",
+        onTranscript: vi.fn(),
+        onError,
+      });
+
+      expect(capturedRecognizerInstance).not.toBeNull();
+      // Trigger non-fatal mobile speech collision
+      capturedRecognizerInstance.onerror({ error: "audio-capture" });
+      capturedRecognizerInstance.onerror({ error: "not-allowed" });
+
+      // onError callback must NOT be called for these non-fatal collisions
+      expect(onError).not.toHaveBeenCalled();
+
+      AudioCaptureService.stop();
+    } finally {
+      Object.defineProperty(navigator, "userAgent", {
+        value: originalUserAgent,
+        configurable: true,
+      });
+      delete (window as any).SpeechRecognition;
+    }
+  });
 });
+

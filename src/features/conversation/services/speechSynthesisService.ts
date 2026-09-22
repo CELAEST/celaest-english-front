@@ -84,7 +84,7 @@ export class SpeechSynthesisService {
         logger.warn("[SpeechSynthesisService] Direct audio stream error, attempting Web Audio buffer playback:", e);
         try {
           const played = await MobileAudioUnlocker.playNeuralBuffer(
-            audioSource,
+            cached ? cached.blob : audioSource,
             options,
             playbackId,
             () => {
@@ -97,18 +97,28 @@ export class SpeechSynthesisService {
           if (played) return;
         } catch {}
         this.currentAudio = null;
-        await this.speakFallback(trimmed, options, playbackId);
+        if (options.onEnd) options.onEnd();
       };
 
       await audio.play();
     } catch (err: any) {
       if (this.activePlaybackId !== playbackId) return;
+      if (err?.name === "AbortError") {
+        // Deliberate user interruption or new playback — do not trigger fallback voice
+        return;
+      }
+      if (err?.name === "NotAllowedError") {
+        logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked by autoplay policy, attempting speech synthesis fallback:", err);
+        this.currentAudio = null;
+        await this.speakFallback(trimmed, options, playbackId);
+        return;
+      }
       logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked or play failed, attempting Web Audio buffer playback:", err);
       this.currentAudio = null;
 
       try {
         const played = await MobileAudioUnlocker.playNeuralBuffer(
-          audioSource,
+          cached ? cached.blob : audioSource,
           options,
           playbackId,
           () => {
@@ -123,7 +133,7 @@ export class SpeechSynthesisService {
         logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
       }
 
-      await this.speakFallback(trimmed, options, playbackId);
+      if (options.onEnd) options.onEnd();
     }
   }
 
@@ -240,10 +250,10 @@ export class SpeechSynthesisService {
   /**
    * Browser Speech Synthesis Fallback if backend TTS is unreachable
    */
-  private static async speakFallback(
+  public static async speakFallback(
     text: string,
-    options: SpeakOptions,
-    playbackId: number,
+    options: SpeakOptions = {},
+    playbackId: number = this.activePlaybackId,
   ): Promise<void> {
     if (this.activePlaybackId !== playbackId) return;
     if (
@@ -338,6 +348,7 @@ export class SpeechSynthesisService {
       try {
         audio.pause();
         audio.currentTime = 0;
+        audio.src = "";
       } catch {
         // ignore
       }
@@ -431,6 +442,7 @@ export class MobileAudioUnlocker {
     } catch {}
 
     // 2. Prime persistent HTMLAudioElement
+    if (this.isUnlocked) return;
     const audio = this.getSharedAudio();
     if (!audio) return;
 

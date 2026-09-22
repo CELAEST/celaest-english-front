@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { SpeechSynthesisService, MobileAudioUnlocker } from "../services/speechSynthesisService";
+import { SpeechSynthesisService } from "../services/speechSynthesisService";
 import {
   FlagshipVoiceId,
 } from "../../reading/services/readingAudioPrefetcher";
@@ -810,50 +810,21 @@ export const useInterviewSession = (
         }
       }, (estimatedSec + 4) * 1000);
 
-      try {
-        await SpeechSynthesisService.speak(activeQuestion.question, {
-          voice: selectedVoiceRef.current,
-          rate: rate ?? speechRate,
-          onStart: () => {
-            if (!isMountedRef.current) return;
-            isAiSpeakingRef.current = true;
-            setStatus("AI_SPEAKING");
-          },
-          onEnd: () => {
-            if (safetyTimeoutRef.current) {
-              clearTimeout(safetyTimeoutRef.current);
-              safetyTimeoutRef.current = null;
-            }
-            if (!isMountedRef.current) return;
+      await SpeechSynthesisService.speak(activeQuestion.question, {
+        voice: selectedVoiceRef.current,
+        rate: rate ?? speechRate,
+        onEnd: () => {
+          if (safetyTimeoutRef.current) {
+            clearTimeout(safetyTimeoutRef.current);
+            safetyTimeoutRef.current = null;
+          }
+          if (!isMountedRef.current) return;
 
-            isAiSpeakingRef.current = false;
-            setStatus("IDLE");
-            setSpeakingSeconds(0);
-          },
-          onError: (err) => {
-            logger.warn("[useInterviewSession] Speech synthesis error:", err);
-            if (safetyTimeoutRef.current) {
-              clearTimeout(safetyTimeoutRef.current);
-              safetyTimeoutRef.current = null;
-            }
-            if (!isMountedRef.current) return;
-            isAiSpeakingRef.current = false;
-            setStatus("IDLE");
-            setSpeakingSeconds(0);
-          },
-        });
-      } catch (err) {
-        logger.warn("[useInterviewSession] speakQuestion caught:", err);
-        if (safetyTimeoutRef.current) {
-          clearTimeout(safetyTimeoutRef.current);
-          safetyTimeoutRef.current = null;
-        }
-        if (isMountedRef.current) {
           isAiSpeakingRef.current = false;
           setStatus("IDLE");
           setSpeakingSeconds(0);
-        }
-      }
+        },
+      });
     },
     [currentQuestion, speechRate],
   );
@@ -870,8 +841,6 @@ export const useInterviewSession = (
           // Safe storage write
         }
       }
-      // Synchronously unlock mobile audio hardware on user gesture
-      MobileAudioUnlocker.unlock();
       if (currentQuestionRef.current) {
         SpeechSynthesisService.prefetch(currentQuestionRef.current.question, voice);
       }
@@ -931,7 +900,6 @@ export const useInterviewSession = (
    */
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
-      MobileAudioUnlocker.unlock();
       const targetRate = slow ? Math.max(0.7, speechRate - 0.2) : speechRate;
       speakQuestion(targetRate);
     },

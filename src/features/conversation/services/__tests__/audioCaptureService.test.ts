@@ -144,14 +144,61 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
 
       expect(capturedRecognizerInstance).not.toBeNull();
-      // Uninterrupted continuous recognition on all devices
-      expect(capturedRecognizerInstance.continuous).toBe(true);
+      // On mobile devices, continuous is set to false to prevent multi-item result pileup
+      expect(capturedRecognizerInstance.continuous).toBe(false);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {
         value: originalUserAgent,
         configurable: true,
       });
+      delete (window as any).SpeechRecognition;
+    }
+  });
+
+  it("deduplicates Android cumulative result arrays in onresult to prevent 7-fold sentence repetition", () => {
+    let capturedRecognizerInstance: any = null;
+    class MockSpeechRecognition {
+      continuous = false;
+      interimResults = true;
+      lang = "en-US";
+      start = vi.fn();
+      stop = vi.fn();
+      abort = vi.fn();
+      onresult: ((e: any) => void) | null = null;
+      onerror = null;
+      onend = null;
+      constructor() {
+        capturedRecognizerInstance = this;
+      }
+    }
+    (window as any).SpeechRecognition = MockSpeechRecognition;
+
+    try {
+      const onTranscript = vi.fn();
+      AudioCaptureService.startRecognition({
+        lang: "en-US",
+        onTranscript,
+      });
+
+      // Simulate Android Chrome cumulative results bug: 7 items each containing cumulative text
+      capturedRecognizerInstance.onresult({
+        resultIndex: 0,
+        results: [
+          { isFinal: true, 0: { transcript: "Hello" } },
+          { isFinal: true, 0: { transcript: "Hello how" } },
+          { isFinal: true, 0: { transcript: "Hello how are" } },
+          { isFinal: true, 0: { transcript: "Hello how are you" } },
+          { isFinal: true, 0: { transcript: "Hello how are you today" } },
+          { isFinal: true, 0: { transcript: "Hello how are you today I" } },
+          { isFinal: true, 0: { transcript: "Hello how are you today I am" } },
+        ],
+      });
+
+      // Must NOT be repeated 7 times, but merged into the single clean sentence
+      expect(onTranscript).toHaveBeenLastCalledWith("Hello how are you today I am", false);
+      AudioCaptureService.stop();
+    } finally {
       delete (window as any).SpeechRecognition;
     }
   });

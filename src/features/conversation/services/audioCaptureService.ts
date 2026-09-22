@@ -95,13 +95,17 @@ export function mergePhrasesCleanly(history: string, newPhrase: string): string 
   const hLower = h.toLowerCase();
   const nLower = n.toLowerCase();
 
+  // Strip punctuation and normalize whitespace for robust prefix/inclusion matching
+  const hClean = hLower.replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  const nClean = nLower.replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+
   // 1. If new phrase already contains the complete history as prefix, return the fuller new phrase
-  if (nLower.startsWith(hLower)) {
+  if (nClean.startsWith(hClean) || nLower.startsWith(hLower)) {
     return n;
   }
 
   // 2. If history already ends with or includes the new phrase, preserve history
-  if (hLower.endsWith(nLower) || hLower.includes(nLower)) {
+  if (hClean.endsWith(nClean) || hClean.includes(nClean) || hLower.endsWith(nLower) || hLower.includes(nLower)) {
     return h;
   }
 
@@ -382,7 +386,8 @@ export class AudioCaptureService {
 
         const recognizer = new SpeechRecognitionAPI();
         try {
-          recognizer.continuous = true;
+          // On mobile, continuous: false prevents Android Chrome from accumulating multi-item arrays in event.results
+          recognizer.continuous = !isMobile;
         } catch {
           recognizer.continuous = false;
         }
@@ -395,16 +400,19 @@ export class AudioCaptureService {
           let sessionFinal = "";
           let sessionInterim = "";
 
-          // Web Speech API: Reconstruct session results fresh from 0 to length - 1.
-          // Never accumulate with += across events, as event.results already contains prior finalized results.
+          // Web Speech API: Reconstruct session results fresh using deduplication.
+          // On Android Chrome, event.results may contain multiple cumulative or repeated items.
+          // Merging with mergePhrasesCleanly guarantees zero-multiplication across items.
           for (let i = 0; i < event.results.length; ++i) {
             const item = event.results[i];
             if (item && item[0]) {
-              const text = item[0].transcript;
+              const text = (item[0].transcript || "").trim();
+              if (!text) continue;
+
               if (item.isFinal) {
-                sessionFinal += " " + text;
+                sessionFinal = sessionFinal ? mergePhrasesCleanly(sessionFinal, text) : text;
               } else {
-                sessionInterim += " " + text;
+                sessionInterim = sessionInterim ? mergePhrasesCleanly(sessionInterim, text) : text;
               }
             }
           }
@@ -412,9 +420,9 @@ export class AudioCaptureService {
           currentSessionFinal = sessionFinal.trim();
           const interimTrim = sessionInterim.trim();
 
-          // Merge without any overlapping or duplicate words
+          // Merge confirmed history with current session final and interim results cleanly
           const withFinal = mergePhrasesCleanly(this.confirmedHistory, currentSessionFinal);
-          const combined = interimTrim ? `${withFinal} ${interimTrim}`.trim() : withFinal;
+          const combined = interimTrim ? mergePhrasesCleanly(withFinal, interimTrim) : withFinal;
 
           this.latestTranscript = combined;
 

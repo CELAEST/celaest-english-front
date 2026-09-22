@@ -491,7 +491,13 @@ export function useReadingAudioNarrator(
               voiceToUse,
             )}&rate=%2B0%25&volume=%2B100%25`;
 
-        const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
+        const audio = new Audio();
+        // @ts-ignore
+        audio.playsInline = true;
+        try {
+          audio.setAttribute("playsinline", "true");
+          audio.setAttribute("webkit-playsinline", "true");
+        } catch {}
         audio.src = audioSource;
         audio.preload = "auto";
         audio.volume = 1.0;

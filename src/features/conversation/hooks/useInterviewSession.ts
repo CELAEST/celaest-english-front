@@ -813,7 +813,23 @@ export const useInterviewSession = (
       await SpeechSynthesisService.speak(activeQuestion.question, {
         voice: selectedVoiceRef.current,
         rate: rate ?? speechRate,
+        onStart: () => {
+          if (!isMountedRef.current) return;
+          isAiSpeakingRef.current = true;
+          setStatus("AI_SPEAKING");
+        },
         onEnd: () => {
+          if (safetyTimeoutRef.current) {
+            clearTimeout(safetyTimeoutRef.current);
+            safetyTimeoutRef.current = null;
+          }
+          if (!isMountedRef.current) return;
+
+          isAiSpeakingRef.current = false;
+          setStatus("IDLE");
+          setSpeakingSeconds(0);
+        },
+        onError: () => {
           if (safetyTimeoutRef.current) {
             clearTimeout(safetyTimeoutRef.current);
             safetyTimeoutRef.current = null;
@@ -845,6 +861,7 @@ export const useInterviewSession = (
         SpeechSynthesisService.prefetch(currentQuestionRef.current.question, voice);
       }
       // Direct user gesture: immediately speak the question with the newly selected mentor voice
+      lastSpokenQuestionRef.current = "";
       void speakQuestion();
     },
     [speakQuestion],
@@ -873,27 +890,27 @@ export const useInterviewSession = (
 
   // Trigger question speech only when view is active (on activation or on question change)
   const prevActiveRef = useRef<boolean>(false);
-  const prevIndexRef = useRef<number>(currentQuestionIndex);
+  const lastSpokenQuestionRef = useRef<string>("");
 
   useEffect(() => {
-    const justActivated = !prevActiveRef.current && isActive;
-    const indexChanged = prevIndexRef.current !== currentQuestionIndex;
-    prevActiveRef.current = isActive;
-    prevIndexRef.current = currentQuestionIndex;
-
-    if (!isActive) return;
-
-    // Speak if we just activated the view or if the question advanced,
-    // provided the analysis modal or feedback isn't currently displayed.
-    if ((justActivated || indexChanged) && !showAnalysisModal && !turnFeedback) {
-      const raf = requestAnimationFrame(() => {
-        if (isActiveRef.current) {
-          void speakQuestion().catch(() => {});
-        }
-      });
-      return () => cancelAnimationFrame(raf);
+    if (!isActive) {
+      prevActiveRef.current = false;
+      return;
     }
-  }, [currentQuestionIndex, isActive, showAnalysisModal, turnFeedback, speakQuestion]);
+
+    const justActivated = !prevActiveRef.current && isActive;
+    prevActiveRef.current = true;
+
+    const questionText = currentQuestion?.question;
+    if (!questionText || showAnalysisModal || turnFeedback) {
+      return;
+    }
+
+    if (justActivated || lastSpokenQuestionRef.current !== questionText) {
+      lastSpokenQuestionRef.current = questionText;
+      void speakQuestion().catch(() => {});
+    }
+  }, [currentQuestion?.question, isActive, showAnalysisModal, turnFeedback, speakQuestion]);
 
   /**
    * Action: Repeat the question (optional slowed down)
@@ -901,6 +918,7 @@ export const useInterviewSession = (
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
       const targetRate = slow ? Math.max(0.7, speechRate - 0.2) : speechRate;
+      lastSpokenQuestionRef.current = "";
       speakQuestion(targetRate);
     },
     [speechRate, speakQuestion],

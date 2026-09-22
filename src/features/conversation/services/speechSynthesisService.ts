@@ -53,7 +53,6 @@ export class SpeechSynthesisService {
         )}&rate=%2B0%25&volume=%2B100%25`;
 
     try {
-      // Re-use pre-unlocked audio element on mobile devices to bypass iOS Safari autoplay quarantine
       const audio = MobileAudioUnlocker.getSharedAudio() || new Audio();
       audio.src = audioSource;
       audio.preload = "auto";
@@ -97,6 +96,7 @@ export class SpeechSynthesisService {
           if (played) return;
         } catch {}
         this.currentAudio = null;
+        if (options.onError) options.onError(e);
         if (options.onEnd) options.onEnd();
       };
 
@@ -104,7 +104,6 @@ export class SpeechSynthesisService {
     } catch (err: any) {
       if (this.activePlaybackId !== playbackId) return;
       if (err?.name === "AbortError") {
-        // Deliberate user interruption or new playback — do not trigger fallback voice
         return;
       }
       if (err?.name === "NotAllowedError") {
@@ -113,7 +112,7 @@ export class SpeechSynthesisService {
         await this.speakFallback(trimmed, options, playbackId);
         return;
       }
-      logger.warn("[SpeechSynthesisService] HTMLAudioElement blocked or play failed, attempting Web Audio buffer playback:", err);
+      logger.warn("[SpeechSynthesisService] HTMLAudioElement play failed or blocked, attempting Web Audio buffer playback:", err);
       this.currentAudio = null;
 
       try {
@@ -133,6 +132,7 @@ export class SpeechSynthesisService {
         logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
       }
 
+      if (options.onError) options.onError(err);
       if (options.onEnd) options.onEnd();
     }
   }
@@ -441,34 +441,28 @@ export class MobileAudioUnlocker {
       }
     } catch {}
 
-    // 2. Prime persistent HTMLAudioElement
-    if (this.isUnlocked) return;
     const audio = this.getSharedAudio();
-    if (!audio) return;
-
-    try {
-      if (!this.isUnlocked) {
-        audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-        audio.volume = 1.0;
-        const p = audio.play();
-        if (p) {
-          p.then(() => {
-            this.isUnlocked = true;
-            try {
-              audio.pause();
-              audio.currentTime = 0;
-            } catch {}
-            audio.volume = 1.0;
-          }).catch(() => {
-            audio.volume = 1.0;
-          });
+    if (audio) {
+      try {
+        if (!audio.src || audio.src === "" || audio.src.startsWith("data:")) {
+          audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+          audio.volume = 1.0;
+          const p = audio.play();
+          if (p && typeof p.then === "function") {
+            p.then(() => {
+              if (audio.src.startsWith("data:")) {
+                try {
+                  audio.pause();
+                  audio.currentTime = 0;
+                } catch {}
+              }
+            }).catch(() => {});
+          }
         }
-      } else {
-        audio.volume = 1.0;
-      }
-    } catch {
-      audio.volume = 1.0;
+      } catch {}
     }
+
+    this.isUnlocked = true;
 
     try {
       localStorage.setItem("celaest:interview:hasInteracted", "1");

@@ -16,7 +16,7 @@ function QuoteGlyph({ className }: { className?: string }) {
   );
 }
 
-export const WritingExecutiveSummary: React.FC<WritingExecutiveSummaryProps> = ({
+const WritingExecutiveSummaryInner: React.FC<WritingExecutiveSummaryProps> = ({
   summary = "",
   strengths,
   issues,
@@ -130,3 +130,5 @@ export const WritingExecutiveSummary: React.FC<WritingExecutiveSummaryProps> = (
     </>
   );
 };
+
+export const WritingExecutiveSummary = React.memo(WritingExecutiveSummaryInner);

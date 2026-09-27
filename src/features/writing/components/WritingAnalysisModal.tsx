@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ArrowRight } from "lucide-react";
 import { WritingSubmission } from "../../../domain/entities/WritingSubmission";
 import { AppModal } from "../../../design-system/components/Modal/AppModal";
@@ -46,7 +46,7 @@ function getFallbackIssues(errors: WritingErrorItem[]): string[] {
   return errors.slice(0, 2).map((e) => `Recurring issue with "${e.errorWord || e.correctWord}".`);
 }
 
-export const WritingAnalysisModal: React.FC<WritingAnalysisModalProps> = ({
+const WritingAnalysisModalInner: React.FC<WritingAnalysisModalProps> = ({
   submission,
   savedErrorIds,
   onClose,
@@ -56,10 +56,14 @@ export const WritingAnalysisModal: React.FC<WritingAnalysisModalProps> = ({
   onNavigateToMemory,
 }) => {
   const feedbackData = submission.feedback;
-  const errors: WritingErrorItem[] = (feedbackData.extractedErrors || []).map((e, i) => ({
-    ...e,
-    id: getWritingErrorId(submission.id, i),
-  }));
+  const errors: WritingErrorItem[] = useMemo(
+    () =>
+      (feedbackData.extractedErrors || []).map((e, i) => ({
+        ...e,
+        id: getWritingErrorId(submission.id, i),
+      })),
+    [feedbackData.extractedErrors, submission.id],
+  );
 
   const rawStrengths = feedbackData.strengths || [];
   const rawIssues = feedbackData.issues || [];
@@ -157,3 +161,5 @@ export const WritingAnalysisModal: React.FC<WritingAnalysisModalProps> = ({
     </AppModal>
   );
 };
+
+export const WritingAnalysisModal = React.memo(WritingAnalysisModalInner);

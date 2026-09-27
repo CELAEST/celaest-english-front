@@ -10,13 +10,35 @@ export interface ConversationAudioSettingsModalProps {
   onSetSpeechRate: (rate: number) => void;
 }
 
-export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsModalProps> = ({
+const LiveMicVolumeIndicator: React.FC = React.memo(() => {
+  const micVolume = useMicVolume();
+  return (
+    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="flex items-center gap-2 text-[#999a9b]">
+          <Mic className="w-3.5 h-3.5 text-[#4ade80]" />
+          <span>Microphone Input Level</span>
+        </span>
+        <span className="text-[10px] text-[#4ade80] font-mono">
+          {micVolume > 5 ? "Receiving audio" : "Ready"}
+        </span>
+      </div>
+      <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden border border-white/[0.05]">
+        <div
+          className="h-full bg-gradient-to-r from-emerald-500 via-violet-500 to-indigo-500 transition-all duration-100 rounded-full"
+          style={{ width: `${Math.min(100, micVolume * 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+});
+
+const ConversationAudioSettingsModalInner: React.FC<ConversationAudioSettingsModalProps> = ({
   isOpen,
   onClose,
   speechRate,
   onSetSpeechRate,
 }) => {
-  const micVolume = useMicVolume();
   const speedOptions = [
     { label: "0.75x Slow", value: 0.75, desc: "Easy to follow, high clarity" },
     { label: "0.90x Relaxed", value: 0.9, desc: "Slightly relaxed, natural" },
@@ -78,25 +100,11 @@ export const ConversationAudioSettingsModal: React.FC<ConversationAudioSettingsM
           </div>
         </div>
 
-        {/* Section 2: Live Mic Volume Indicator */}
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-2 text-[#999a9b]">
-              <Mic className="w-3.5 h-3.5 text-[#4ade80]" />
-              <span>Microphone Input Level</span>
-            </span>
-            <span className="text-[10px] text-[#4ade80] font-mono">
-              {micVolume > 5 ? "Receiving audio" : "Ready"}
-            </span>
-          </div>
-          <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden border border-white/[0.05]">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 via-violet-500 to-indigo-500 transition-all duration-100 rounded-full"
-              style={{ width: `${Math.min(100, micVolume * 100)}%` }}
-            />
-          </div>
-        </div>
+        {/* Section 2: Live Mic Volume Indicator (Isolated 60fps subscriber) */}
+        <LiveMicVolumeIndicator />
       </div>
     </AppModal>
   );
 };
+
+export const ConversationAudioSettingsModal = React.memo(ConversationAudioSettingsModalInner);

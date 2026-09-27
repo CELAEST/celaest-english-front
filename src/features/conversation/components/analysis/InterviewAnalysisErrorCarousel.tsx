@@ -21,7 +21,7 @@ export interface InterviewAnalysisErrorCarouselProps {
   onNavigateToMemory?: (() => void) | undefined;
 }
 
-export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCarouselProps> = ({
+const InterviewAnalysisErrorCarouselInner: React.FC<InterviewAnalysisErrorCarouselProps> = ({
   errors,
   userSpokenText = "",
   savedErrorIds,
@@ -252,3 +252,5 @@ export const InterviewAnalysisErrorCarousel: React.FC<InterviewAnalysisErrorCaro
     </div>
   );
 };
+ 
+export const InterviewAnalysisErrorCarousel = React.memo(InterviewAnalysisErrorCarouselInner);

@@ -9,7 +9,7 @@ export interface WritingMasterScorecardProps {
   getTierLabel: (score: number) => string;
 }
 
-export const WritingMasterScorecard: React.FC<WritingMasterScorecardProps> = ({
+const WritingMasterScorecardInner: React.FC<WritingMasterScorecardProps> = ({
   overallScore,
   scoreClarity,
   scoreGrammar,
@@ -31,33 +31,31 @@ export const WritingMasterScorecard: React.FC<WritingMasterScorecardProps> = ({
           />
           <div className="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 sm:space-y-2">
             <div className="flex items-center gap-2">
-              <Trophy className="h-[17px] w-[17px] sm:h-[18px] sm:w-[18px] text-[#A27FF3] shrink-0" />
-              <h3 className="text-[15px] sm:text-[16.5px] font-semibold text-white tracking-tight leading-none">
-                Overall Score
+              <Trophy className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-[#A27FF3] shrink-0" />
+              <h3 className="text-[15.5px] sm:text-[16.5px] font-semibold text-white tracking-tight leading-none">
+                Overall Band
               </h3>
             </div>
             <p className="text-[11.5px] sm:text-[12px] font-medium text-[#c4b5fd] leading-none">
               {getTierLabel(overallScore)}
             </p>
             <p className="text-[11.5px] sm:text-[12px] text-[#8a8a9e] leading-relaxed">
-              General performance across clarity, style and grammar.
+              Holistic structural and grammatical accuracy evaluation.
             </p>
           </div>
         </div>
 
-        {/* Right Column: Detailed Competency Progress Bars (lg:col-span-7) */}
-        <div className="lg:col-span-7 space-y-3 sm:space-y-4">
+        {/* Right Column: 2 Detailed Competency Progress Bars (lg:col-span-7) */}
+        <div className="lg:col-span-7 flex flex-col justify-center space-y-4 sm:space-y-5">
           {/* Clarity & Style */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-[12.5px] sm:text-[13px]">
+              <span className="flex items-center gap-2 font-medium text-[#d4d4e0]">
+                <PenLine className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#A27FF3]" />
+                <span>Clarity &amp; Style</span>
+              </span>
               <div className="flex items-center gap-2">
-                <PenLine className="h-4 w-4 text-[#c084fc] shrink-0" />
-                <span className="font-medium text-white">Clarity &amp; Style</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-[11px] text-[#8a8a9e]">
-                  {getTierLabel(scoreClarity)}
-                </span>
+                <span className="text-[11px] text-[#8a8a9e]">{getTierLabel(scoreClarity)}</span>
                 <span className="font-semibold text-white tabular-nums">
                   {Math.round(scoreClarity)}%
                 </span>
@@ -65,26 +63,24 @@ export const WritingMasterScorecard: React.FC<WritingMasterScorecardProps> = ({
             </div>
             <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(192,132,252,0.4)]"
+                className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(162,127,243,0.4)]"
                 style={{
                   width: `${Math.min(100, Math.max(0, scoreClarity))}%`,
-                  background: "linear-gradient(90deg, #8f71ee, #c084fc)",
+                  background: "linear-gradient(90deg, #7048E8, #A27FF3)",
                 }}
               />
             </div>
           </div>
 
-          {/* Grammar Accuracy */}
+          {/* Grammar & Mechanics */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-[12.5px] sm:text-[13px]">
+              <span className="flex items-center gap-2 font-medium text-[#d4d4e0]">
+                <BookOpenCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
+                <span>Grammar &amp; Mechanics</span>
+              </span>
               <div className="flex items-center gap-2">
-                <BookOpenCheck className="h-4 w-4 text-[#34d399] shrink-0" />
-                <span className="font-medium text-white">Grammar Accuracy</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-[11px] text-[#8a8a9e]">
-                  {getTierLabel(scoreGrammar)}
-                </span>
+                <span className="text-[11px] text-[#8a8a9e]">{getTierLabel(scoreGrammar)}</span>
                 <span className="font-semibold text-white tabular-nums">
                   {Math.round(scoreGrammar)}%
                 </span>
@@ -105,3 +101,5 @@ export const WritingMasterScorecard: React.FC<WritingMasterScorecardProps> = ({
     </section>
   );
 };
+
+export const WritingMasterScorecard = React.memo(WritingMasterScorecardInner);

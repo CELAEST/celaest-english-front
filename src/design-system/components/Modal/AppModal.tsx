@@ -43,7 +43,7 @@ export interface AppModalProps {
   bodyClassName?: string;
 }
 
-export const AppModal: React.FC<AppModalProps> = ({
+const AppModalInner: React.FC<AppModalProps> = ({
   isOpen = true,
   onClose,
   icon,
@@ -61,54 +61,76 @@ export const AppModal: React.FC<AppModalProps> = ({
     onClose,
   });
 
-  const [dragY, setDragY] = React.useState<number>(0);
-  const [isDragging, setIsDragging] = React.useState<boolean>(false);
-  const [isClosing, setIsClosing] = React.useState<boolean>(false);
   const touchStartYRef = React.useRef<number>(0);
+  const touchDeltaRef = React.useRef<number>(0);
+  const isDraggingRef = React.useRef<boolean>(false);
+  const handlePillRef = React.useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartYRef.current = e.touches[0].clientY;
-    setIsDragging(true);
+    touchDeltaRef.current = 0;
+    isDraggingRef.current = true;
+    if (handlePillRef.current) {
+      handlePillRef.current.style.width = "48px";
+      handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current || !trapRef.current) return;
     const currentY = e.touches[0].clientY;
     const delta = currentY - touchStartYRef.current;
+    touchDeltaRef.current = delta;
+
+    trapRef.current.style.transition = "none";
     if (delta > 0) {
-      setDragY(delta);
+      trapRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
     } else {
-      setDragY(delta * 0.15);
+      trapRef.current.style.transform = `translate3d(0, ${delta * 0.15}px, 0)`;
     }
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (dragY > 65) {
-      setIsClosing(true);
-      setTimeout(() => {
-        onClose();
-        setIsClosing(false);
-        setDragY(0);
-      }, 200);
-    } else {
-      setDragY(0);
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    if (handlePillRef.current) {
+      handlePillRef.current.style.width = "40px";
+      handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
     }
+
+    const delta = touchDeltaRef.current;
+    if (trapRef.current) {
+      if (delta > 65) {
+        trapRef.current.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)";
+        trapRef.current.style.transform = "translate3d(0, 100%, 0)";
+        setTimeout(() => {
+          onClose();
+          if (trapRef.current) {
+            trapRef.current.style.transform = "";
+            trapRef.current.style.transition = "";
+          }
+        }, 200);
+      } else {
+        trapRef.current.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)";
+        trapRef.current.style.transform = "translate3d(0, 0, 0)";
+      }
+    }
+    touchDeltaRef.current = 0;
   };
 
   useEffect(() => {
     if (!isOpen) return;
-    setDragY(0);
-    setIsClosing(false);
-    setIsDragging(false);
+    if (trapRef.current) {
+      trapRef.current.style.transform = "";
+      trapRef.current.style.transition = "";
+    }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen]);
+  }, [isOpen, trapRef]);
 
   if (!isOpen) return null;
 
@@ -121,7 +143,7 @@ export const AppModal: React.FC<AppModalProps> = ({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : ariaLabel}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5 bg-black/85 backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-5 bg-black/85 backdrop-blur-md sm:backdrop-blur-xl animate-[fadeIn_0.25s_ease-out]"
     >
       <div
         ref={trapRef}
@@ -132,12 +154,9 @@ export const AppModal: React.FC<AppModalProps> = ({
           background: "linear-gradient(180deg, #0a0917 0%, #05060c 100%)",
           boxShadow:
             "0 32px 90px rgba(0,0,0,0.9), 0 0 60px rgba(112,72,232,0.07), inset 0 1px 0 rgba(255,255,255,0.06)",
-          transform: isClosing
-            ? "translateY(100%)"
-            : dragY > 0
-              ? `translateY(${dragY}px)`
-              : undefined,
-          transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
         }}
       >
         {/* Mobile grab handle & touch drag zone */}
@@ -151,17 +170,22 @@ export const AppModal: React.FC<AppModalProps> = ({
           tabIndex={0}
           aria-label="Deslizar hacia abajo para cerrar"
           onClick={() => {
-            setIsClosing(true);
+            if (trapRef.current) {
+              trapRef.current.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
+              trapRef.current.style.transform = "translate3d(0, 100%, 0)";
+            }
             setTimeout(() => {
               onClose();
-              setIsClosing(false);
+              if (trapRef.current) {
+                trapRef.current.style.transform = "";
+                trapRef.current.style.transition = "";
+              }
             }, 200);
           }}
         >
           <div
-            className={`w-10 h-1.5 rounded-full transition-all duration-150 ${
-              isDragging ? "bg-white/60 w-12" : "bg-white/20 hover:bg-white/35"
-            }`}
+            ref={handlePillRef}
+            className="w-10 h-1.5 rounded-full bg-white/20 hover:bg-white/35 transition-all duration-150"
           />
         </div>
 
@@ -221,3 +245,5 @@ export const AppModal: React.FC<AppModalProps> = ({
   if (typeof document === "undefined") return null;
   return createPortal(modalNode, document.body);
 };
+
+export const AppModal = React.memo(AppModalInner);

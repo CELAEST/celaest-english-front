@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 import { OnboardingAuthDirectForm } from "./OnboardingAuthDirectForm";
 import { GoogleAuthGlyph } from "./OnboardingAuthIcons";
 import { AuthUser } from "../../../application/ports/IAuthService";
@@ -9,7 +10,7 @@ export interface OnboardingAuthStepProps {
   onBackToWelcome?: () => void;
 }
 
-export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
+const OnboardingAuthStepInner: React.FC<OnboardingAuthStepProps> = ({
   onSuccess,
 }) => {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -39,18 +40,10 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto select-none overflow-hidden bg-[#000003]">
       {/* High-Definition Hero Video Background — begin1 — fluido */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
+      <OptimizedVideo
+        src="/assets/begin1"
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
-        style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-      >
-        <source src="/assets/begin1.webm" type="video/webm" />
-        <source src="/assets/begin1.mp4" type="video/mp4" />
-      </video>
+      />
       <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
 
       {/* 100% Centered Floating Content Overlay with Dynamic Top Offset */}
@@ -128,3 +121,6 @@ export const OnboardingAuthStep: React.FC<OnboardingAuthStepProps> = ({
     </div>
   );
 };
+
+export const OnboardingAuthStep = React.memo(OnboardingAuthStepInner);
+

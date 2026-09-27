@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useId } from "react";
+import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 import {
   StepCompletedCheckIcon,
   StepTopicTargetIcon,
@@ -44,18 +45,7 @@ export const ReadingPreparingView: React.FC = React.memo(() => {
       {/* 1. Top Orb & Hero Title — orve video — fluido sin salto */}
       <div className="flex flex-col items-center text-center space-y-2.5 shrink-0">
         <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center pointer-events-none shrink-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="w-44 h-44 sm:w-52 sm:h-52 object-contain max-w-none -mt-8 pointer-events-none mix-blend-screen"
-            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-          >
-            <source src="/assets/orve.webm" type="video/webm" />
-            <source src="/assets/orve.mp4" type="video/mp4" />
-          </video>
+          <VideoOrb className="w-44 h-44 sm:w-52 sm:h-52 object-contain max-w-none -mt-8 pointer-events-none mix-blend-screen" />
         </div>
 
         <h2 className="text-2xl sm:text-[26px] font-light text-[#f8f8f8] tracking-tight leading-snug relative z-10">

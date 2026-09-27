@@ -1,5 +1,5 @@
 import React from "react";
-import { Trophy, BookOpenCheck, Languages, AudioLines } from "lucide-react";
+import { Trophy, BookOpenCheck, AudioLines } from "lucide-react";
 import { ComprehensiveTurnFeedback } from "../../services/masterAiFeedbackEngine";
 import { ScoreGauge, getTierLabel } from "./analysisHelpers";
 
@@ -7,7 +7,7 @@ export interface InterviewAnalysisScorecardProps {
   feedback: ComprehensiveTurnFeedback;
 }
 
-export const InterviewAnalysisScorecard: React.FC<InterviewAnalysisScorecardProps> = ({ feedback }) => {
+const InterviewAnalysisScorecardInner: React.FC<InterviewAnalysisScorecardProps> = ({ feedback }) => {
   return (
     <section className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 lg:p-7 shadow-xl">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
@@ -38,25 +38,25 @@ export const InterviewAnalysisScorecard: React.FC<InterviewAnalysisScorecardProp
         </div>
 
         {/* Right Column: 3 Detailed Competency Progress Bars */}
-        <div className="lg:col-span-7 space-y-3 sm:space-y-4">
+        <div className="lg:col-span-7 flex flex-col justify-center space-y-3 sm:space-y-4">
           {/* Grammar */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[13px]">
-              <div className="flex items-center gap-2">
-                <BookOpenCheck className="h-4 w-4 text-[#9d7cf0] shrink-0" />
-                <span className="font-medium text-white">Gramática</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-[11px] text-[#8a8a9e]">{getTierLabel(feedback.grammarScore)}</span>
-                <span className="font-semibold text-white tabular-nums">{Math.round(feedback.grammarScore)}%</span>
-              </div>
+            <div className="flex items-center justify-between text-[12.5px] sm:text-[13px]">
+              <span className="flex items-center gap-2 font-medium text-[#d4d4e0]">
+                <BookOpenCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#A27FF3]" />
+                <span>Estructura Gramatical</span>
+              </span>
+              <span className="font-semibold text-white">
+                {Math.round(feedback.grammarScore)}
+                <span className="text-[#8a8a9e] font-normal text-[11px]"> / 100</span>
+              </span>
             </div>
             <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(157,124,240,0.4)]"
+                className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(162,127,243,0.4)]"
                 style={{
                   width: `${Math.min(100, Math.max(0, feedback.grammarScore))}%`,
-                  background: "linear-gradient(90deg, #674ee6, #9d7cf0)",
+                  background: "linear-gradient(90deg, #7048E8, #A27FF3)",
                 }}
               />
             </div>
@@ -64,16 +64,6 @@ export const InterviewAnalysisScorecard: React.FC<InterviewAnalysisScorecardProp
 
           {/* Vocabulary */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[13px]">
-              <div className="flex items-center gap-2">
-                <Languages className="h-4 w-4 text-[#c084fc] shrink-0" />
-                <span className="font-medium text-white">Vocabulario</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-[11px] text-[#8a8a9e]">{getTierLabel(feedback.vocabularyScore)}</span>
-                <span className="font-semibold text-white tabular-nums">{Math.round(feedback.vocabularyScore)}%</span>
-              </div>
-            </div>
             <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden p-[1px]">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(192,132,252,0.4)]"
@@ -112,3 +102,5 @@ export const InterviewAnalysisScorecard: React.FC<InterviewAnalysisScorecardProp
     </section>
   );
 };
+
+export const InterviewAnalysisScorecard = React.memo(InterviewAnalysisScorecardInner);

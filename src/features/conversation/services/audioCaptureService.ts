@@ -386,10 +386,10 @@ export class AudioCaptureService {
 
         const recognizer = new SpeechRecognitionAPI();
         try {
-          // On mobile, continuous: false prevents Android Chrome from accumulating multi-item arrays in event.results
-          recognizer.continuous = !isMobile;
+          // continuous: true maintains uninterrupted recognition across natural pauses on mobile and desktop
+          recognizer.continuous = true;
         } catch {
-          recognizer.continuous = false;
+          recognizer.continuous = true;
         }
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";
@@ -456,7 +456,7 @@ export class AudioCaptureService {
 
           // If user explicitly revoked or denied microphone permission
           if (errCode === "not-allowed" || errCode === "service-not-allowed") {
-            if (!isMobile && AudioCaptureService.hasActiveMic()) {
+            if (AudioCaptureService.hasActiveMic()) {
               return;
             }
             if (options.onError) options.onError(e);

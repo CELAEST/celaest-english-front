@@ -1,4 +1,5 @@
 import React from "react";
+import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 
 export const WritingHeader: React.FC = React.memo(function WritingHeader() {
   return (
@@ -6,18 +7,7 @@ export const WritingHeader: React.FC = React.memo(function WritingHeader() {
       {/* Center Hero — orve video — fluido */}
       <div className="flex flex-col items-center justify-center relative mt-4 sm:mt-5 -mb-4 sm:-mb-6 pt-2 animate-[fadeSlideUp_0.5s_ease-out_0.1s_both]">
         <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center transition-all duration-300 pointer-events-none overflow-hidden">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-contain scale-110 pointer-events-none mix-blend-screen"
-            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-          >
-            <source src="/assets/orve.webm" type="video/webm" />
-            <source src="/assets/orve.mp4" type="video/mp4" />
-          </video>
+          <VideoOrb className="w-full h-full object-contain scale-110 pointer-events-none mix-blend-screen" />
         </div>
         <span className="text-xs sm:text-sm text-[#f8f8f8] font-light tracking-wide -mt-2 sm:-mt-3 opacity-95 relative z-10">
           Writing with you

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 import {
   StudioProfile,
   PureAmbientBorderlessVariant,
@@ -396,20 +397,10 @@ export const WorkspaceHeroEvolutionShowcase: React.FC = () => {
       <div className="relative w-full rounded-3xl overflow-hidden bg-[#030208] border border-white/[0.08] shadow-[0_32px_90px_rgba(0,0,0,0.95)] min-h-[660px] p-6 sm:p-8 lg:p-10 flex flex-col justify-between select-none">
         {/* Real 3D Ambient Background Video with Master Seamless Loop */}
         <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208]">
-          <video
-            src="/assets/home.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster="/assets/workspace_room_bg.png"
+          <OptimizedVideo
+            src="/assets/home"
+            poster="/assets/workspace_room_bg.webp"
             className="w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none opacity-100 transition-all duration-300"
-            style={{
-              willChange: "transform",
-              backfaceVisibility: "hidden",
-              transform: "translateZ(0)",
-            }}
           />
           {/* Subtle Vignettes for Pure Legibility */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#030208]/95 via-[#030208]/30 to-[#030208]/20 pointer-events-none" />

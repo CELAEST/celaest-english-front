@@ -171,8 +171,33 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         // Clamp so the modal never pushes under the floating mobile dock or off top edge
         const maxTop = Math.max(topSafetyPadding, window.innerHeight - bottomSafetyPadding - estimatedHeight);
         top = Math.max(topSafetyPadding, Math.min(top, maxTop));
+
+        // Intelligent Sidebar Clearance: detect fixed desktop navigation rail so modal never collides or hides behind it
+        let minLeft = isMobile ? 16 : 24;
+        try {
+          const sidebarEl =
+            document.querySelector("aside") ||
+            document.querySelector('[role="complementary"]') ||
+            document.querySelector("nav");
+          if (sidebarEl) {
+            const sbRect = sidebarEl.getBoundingClientRect();
+            // If sidebar is docked along the left edge of the viewport
+            if (sbRect.left < 120 && sbRect.right > 40 && sbRect.width > 50) {
+              // 28px buffer clears the sidebar + the modal's left speaker squircle button (-left-[18px]) with breathing room
+              minLeft = Math.max(minLeft, sbRect.right + 28);
+            }
+          }
+        } catch {
+          // Fallback
+        }
+        if (!isMobile && minLeft < 144) {
+          // Baseline desktop safety buffer: sidebar width (72px) + ml-12 (48px) = 120px + 24px = 144px
+          minLeft = 144;
+        }
+
+        const maxLeft = Math.max(minLeft, window.innerWidth - popoverWidth - 16);
         let left = rect.left + rect.width / 2 - popoverWidth / 2;
-        left = Math.max(20, Math.min(left, window.innerWidth - popoverWidth - 14));
+        left = Math.max(minLeft, Math.min(left, maxLeft));
 
         setPopoverCoords({ top, left });
         setShowTooltip(true);

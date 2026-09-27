@@ -22,7 +22,7 @@ export interface InterviewAnalysisModalProps {
   onNavigateToMemory?: (() => void) | undefined;
 }
 
-export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
+const InterviewAnalysisModalInner: React.FC<InterviewAnalysisModalProps> = ({
   feedback,
   savedErrorIds,
   onClose,
@@ -36,7 +36,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
   // Real user audio recording player states
   const userAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlayingUserAudio, setIsPlayingUserAudio] = useState<boolean>(false);
-  const [userAudioCurrentTime, setUserAudioCurrentTime] = useState<number>(0);
   const [userAudioDuration, setUserAudioDuration] = useState<number>(() => {
     const raw = feedback.recordingDurationSeconds;
     return raw && Number.isFinite(raw) && raw > 0 ? raw : 0;
@@ -100,7 +99,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
     const duration = effectiveDuration || userAudioRef.current.duration || 1;
     const targetTime = Math.max(0, Math.min(duration, fraction * duration));
     userAudioRef.current.currentTime = targetTime;
-    setUserAudioCurrentTime(targetTime);
   };
 
   const handleSkipUserAudio = (deltaSeconds: number) => {
@@ -109,7 +107,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
     const current = userAudioRef.current.currentTime || 0;
     const targetTime = Math.max(0, Math.min(duration > 0 ? duration : current + deltaSeconds, current + deltaSeconds));
     userAudioRef.current.currentTime = targetTime;
-    setUserAudioCurrentTime(targetTime);
   };
 
   const handlePlayRecommendationExample = (exampleText: string) => {
@@ -234,17 +231,11 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
           <InterviewAnalysisTranscriptCard
             feedback={feedback}
             isPlayingUserAudio={isPlayingUserAudio}
-            userAudioCurrentTime={userAudioCurrentTime}
             effectiveDuration={effectiveDuration}
             userAudioRef={userAudioRef}
             onToggleUserAudio={handleToggleUserAudio}
             onSeekUserAudio={handleSeekUserAudio}
             onSkipUserAudio={handleSkipUserAudio}
-            onAudioTimeUpdate={() => {
-              if (userAudioRef.current) {
-                setUserAudioCurrentTime(userAudioRef.current.currentTime);
-              }
-            }}
             onAudioLoadedMetadata={() => {
               const audio = userAudioRef.current;
               if (!audio) return;
@@ -264,7 +255,6 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
             }}
             onAudioEnded={() => {
               setIsPlayingUserAudio(false);
-              setUserAudioCurrentTime(0);
             }}
           />
 
@@ -287,3 +277,5 @@ export const InterviewAnalysisModal: React.FC<InterviewAnalysisModalProps> = ({
     </AppModal>
   );
 };
+
+export const InterviewAnalysisModal = React.memo(InterviewAnalysisModalInner);

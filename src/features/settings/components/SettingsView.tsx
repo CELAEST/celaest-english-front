@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 import { SettingsLearningSection } from "./SettingsLearningSection";
 import { SettingsPersonalSection } from "./SettingsPersonalSection";
 import { SettingsAiProvidersSection } from "./SettingsAiProvidersSection";
@@ -25,7 +26,7 @@ export interface SettingsViewProps {
   onSelectLevel?: ((level: CefrLevelCode) => Promise<void> | void) | undefined;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({
+const SettingsViewInner: React.FC<SettingsViewProps> = ({
   userName,
   onBackToWorkspace,
   onSelectLevel,
@@ -80,18 +81,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         {/* 3D Orb Hero — orve video — fluido (visible on sm+ screens) */}
         <div className="hidden sm:flex absolute left-[62%] -translate-x-1/2 -top-6 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 pointer-events-none items-center justify-center z-0 overflow-hidden">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-contain pointer-events-none mix-blend-screen"
-            style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-          >
-            <source src="/assets/orve.webm" type="video/webm" />
-            <source src="/assets/orve.mp4" type="video/mp4" />
-          </video>
+          <VideoOrb className="w-full h-full object-contain pointer-events-none mix-blend-screen" />
         </div>
       </div>
 
@@ -210,3 +200,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
+
+export const SettingsView = React.memo(SettingsViewInner);
+

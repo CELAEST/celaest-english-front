@@ -89,13 +89,28 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   }, [activeTab]);
 
   React.useEffect(() => {
-    if (videoRef.current) {
-      if (activeTab === "workspace") {
-        void videoRef.current.play().catch(() => {});
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncPlayback = () => {
+      if (document.visibilityState === "hidden") {
+        try {
+          video.pause();
+        } catch {}
+      } else if (activeTab === "workspace") {
+        void video.play().catch(() => {});
       } else {
-        videoRef.current.pause();
+        try {
+          video.pause();
+        } catch {}
       }
-    }
+    };
+
+    syncPlayback();
+    document.addEventListener("visibilitychange", syncPlayback);
+    return () => {
+      document.removeEventListener("visibilitychange", syncPlayback);
+    };
   }, [activeTab]);
 
   // Clean one-way sync with router defaultTab (prevents ping-pong double mounts on rapid clicks)
@@ -201,8 +216,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           disablePictureInPicture
+          // @ts-ignore
+          disableRemotePlayback
           onLoadedData={handleHomeVideoLoaded}
           onCanPlay={handleHomeVideoLoaded}
           className={`w-full h-full object-cover object-[55%_88%] sm:object-[56%_92%] lg:object-[58%_97%] pointer-events-none select-none transition-opacity duration-500 ${

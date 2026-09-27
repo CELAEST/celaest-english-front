@@ -1,4 +1,5 @@
 import React from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export interface OnboardingWelcomeStepProps {
@@ -6,24 +7,16 @@ export interface OnboardingWelcomeStepProps {
   onOpenLogin?: () => void;
 }
 
-export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ onBegin, onOpenLogin }) => {
+const OnboardingWelcomeStepInner: React.FC<OnboardingWelcomeStepProps> = ({ onBegin, onOpenLogin }) => {
   const isAuth = SupabaseAuthAdapter.getInstance().isAuthenticated();
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center mx-auto">
       {/* High-Definition Hero Video Background — begin1 — fluido */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
+      <OptimizedVideo
+        src="/assets/begin1"
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
-        style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-      >
-        <source src="/assets/begin1.webm" type="video/webm" />
-        <source src="/assets/begin1.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* Bottom Vignette Softener */}
       <div className="absolute bottom-0 inset-x-0 h-6 sm:h-8 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
@@ -107,3 +100,6 @@ export const OnboardingWelcomeStep: React.FC<OnboardingWelcomeStepProps> = ({ on
     </div>
   );
 };
+
+export const OnboardingWelcomeStep = React.memo(OnboardingWelcomeStepInner);
+

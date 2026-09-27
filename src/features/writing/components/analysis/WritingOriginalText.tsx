@@ -15,7 +15,7 @@ function QuoteGlyph({ className }: { className?: string }) {
   );
 }
 
-export const WritingOriginalText: React.FC<WritingOriginalTextProps> = ({
+const WritingOriginalTextInner: React.FC<WritingOriginalTextProps> = ({
   content,
   errorCount,
   onNavigateToMemory,
@@ -104,3 +104,5 @@ export const WritingOriginalText: React.FC<WritingOriginalTextProps> = ({
     </>
   );
 };
+
+export const WritingOriginalText = React.memo(WritingOriginalTextInner);

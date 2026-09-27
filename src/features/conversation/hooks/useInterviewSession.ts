@@ -9,7 +9,7 @@ import { DynamicQuestionService, normalizeCefr } from "../services/dynamicQuesti
 import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
-import { AudioCaptureService, isMobileDevice } from "../services/audioCaptureService";
+import { AudioCaptureService, isMobileDevice, mergePhrasesCleanly } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
@@ -430,14 +430,12 @@ export const useInterviewSession = (
           const feedbackTitleLower = (feedback.strategicFeedback?.title || "").toLowerCase();
 
           const isSpanish =
-            (feedback.overallScore === 0 && feedbackTitleLower.includes("español")) ||
-            feedbackTitleLower.includes("español") ||
-            feedbackTitleLower.includes("spanish");
+            feedback.overallScore === 0 &&
+            (feedbackTitleLower.includes("respuesta en español") ||
+              feedbackTitleLower === "respuesta en español" ||
+              feedbackTitleLower.includes("non-english"));
 
           if (isSpanish) {
-            setUserTranscript("");
-            userTranscriptRef.current = "";
-            textBeforeSegmentRef.current = "";
             setSpeakingSeconds(0);
             appToast.spanishDetected(
               feedback.strategicFeedback?.explanation ||
@@ -531,10 +529,6 @@ export const useInterviewSession = (
           if (!isMountedRef.current) return;
           setStatus("IDLE");
           setProcessingStage("IDLE");
-          setUserTranscript("");
-          userTranscriptRef.current = "";
-          textBeforeSegmentRef.current = "";
-          setSpeakingSeconds(0);
           setSpeechNotice(noticeMessage);
           appToast.spanishDetected(noticeMessage);
         });
@@ -547,7 +541,7 @@ export const useInterviewSession = (
           errCode.includes("not-allowed") ||
           errCode.includes("NotAllowedError")
         ) {
-          if (!isMobile && AudioCaptureService.hasActiveMic()) {
+          if (AudioCaptureService.hasActiveMic()) {
             logger.warn("[useInterviewSession] SpeechRecognition not-allowed ignored because mic hardware is active:", errCode);
             return;
           }
@@ -572,13 +566,17 @@ export const useInterviewSession = (
   const stopRecording = useCallback(async () => {
     if (status !== "RECORDING") return;
     setStatus("IDLE");
-    setProcessingStage("TRANSCRIBING");
 
     try {
       const audioResult = await AudioCaptureService.stopAndGetAudio();
       lastCapturedAudioRef.current = audioResult;
 
-      if (audioResult.audioBlob) {
+      // Only invoke Whisper if the user transcript is empty or has fewer than 3 words (e.g. browser without Web Speech API)
+      const currentText = (userTranscriptRef.current || userTranscript).trim();
+      const currentWords = currentText.split(/\s+/).filter(Boolean).length;
+
+      if (currentWords < 3 && audioResult.audioBlob) {
+        setProcessingStage("TRANSCRIBING");
         try {
           const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
             roleName: effectiveRoleName,
@@ -619,18 +617,11 @@ export const useInterviewSession = (
               return;
             }
 
-            // Seamless merge: if user had prior text, append new segment
+            // Seamless clean merge without duplicate prefix concatenation
             const prefix = textBeforeSegmentRef.current.trim();
-            const segmentText = trimmed;
-            const merged = prefix ? `${prefix} ${segmentText}` : segmentText;
-
-            // Only overwrite if Whisper produced equal or more words or current was empty
-            const currentLiveWords = (userTranscriptRef.current || "").split(/\s+/).filter(Boolean).length;
-            const whisperWords = merged.split(/\s+/).filter(Boolean).length;
-            if (whisperWords >= currentLiveWords || currentLiveWords < 3) {
-              setUserTranscript(merged);
-              userTranscriptRef.current = merged;
-            }
+            const merged = prefix ? mergePhrasesCleanly(prefix, trimmed) : trimmed;
+            setUserTranscript(merged);
+            userTranscriptRef.current = merged;
 
             if (validation.reason === "INSUFFICIENT_WORDS") {
               setSpeechNotice(validation.message || null);
@@ -652,7 +643,7 @@ export const useInterviewSession = (
         setStatus("IDLE");
       }
     }
-  }, [status, setUserTranscript]);
+  }, [status, userTranscript, setUserTranscript, effectiveRoleName, currentQuestion, activeCefrLevel]);
 
   /**
    * Toggles Recording state (Microphone switch only)
@@ -686,32 +677,37 @@ export const useInterviewSession = (
 
       // If user clicks submit while microphone is still actively recording, stop and capture first
       if (status === "RECORDING") {
-        setStatus("THINKING");
-        setProcessingStage("TRANSCRIBING");
         const audioResult = await AudioCaptureService.stopAndGetAudio();
         lastCapturedAudioRef.current = audioResult;
         audioUrl = audioResult.audioUrl;
         durationSeconds = audioResult.durationSeconds || speakingSeconds;
 
-        if (audioResult.audioBlob) {
+        if (typeof customText !== "string") {
+          const latestLive = (userTranscriptRef.current || userTranscript).trim();
+          if (latestLive.length > textToSubmit.length) {
+            textToSubmit = latestLive;
+          }
+        }
+
+        // If Web Speech API or manual typing already captured >= 3 words, DO NOT call Whisper!
+        // Instant pass-through to evaluation eliminates 5-10s of blocking latency and avoids overwriting.
+        const liveWords = textToSubmit.split(/\s+/).filter(Boolean).length;
+        if (liveWords < 3 && audioResult.audioBlob) {
+          setStatus("THINKING");
+          setProcessingStage("TRANSCRIBING");
           try {
             const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
               roleName: effectiveRoleName,
               question: currentQuestion.question,
             });
             if (whisperResult && whisperResult.text.trim().length > 0) {
-              const whisperText = whisperResult.text.trim();
-              const whisperWords = whisperText.split(/\s+/).filter(Boolean).length;
-              const currentWords = textToSubmit.split(/\s+/).filter(Boolean).length;
-              if (whisperWords >= currentWords || currentWords < 3) {
-                textToSubmit = whisperText;
-                detectedLang = whisperResult.language;
-                lastCapturedAudioRef.current.detectedLanguage = detectedLang;
-                lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
-                lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
-                setUserTranscript(textToSubmit);
-                userTranscriptRef.current = textToSubmit;
-              }
+              textToSubmit = whisperResult.text.trim();
+              detectedLang = whisperResult.language;
+              lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+              lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
+              lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
+              setUserTranscript(textToSubmit);
+              userTranscriptRef.current = textToSubmit;
             }
           } catch (err) {
             logger.warn("Whisper transcription fallback to web speech on submit:", err);
@@ -762,10 +758,7 @@ export const useInterviewSession = (
           setStatus("IDLE");
 
           if (validation.reason === "SPANISH_DETECTED") {
-            setUserTranscript("");
-            userTranscriptRef.current = "";
-            textBeforeSegmentRef.current = "";
-            setSpeakingSeconds(0);
+            setSpeechNotice(validation.message || "Por favor responde en inglés para evaluar tu práctica.");
             appToast.spanishDetected(validation.message);
           } else if (validation.reason === "NONSENSE_OR_GIBBERISH") {
             appToast.gibberishDetected(validation.message);

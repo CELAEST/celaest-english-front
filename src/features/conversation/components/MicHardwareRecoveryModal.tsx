@@ -10,7 +10,117 @@ export interface MicHardwareRecoveryModalProps {
   onResume: () => void;
 }
 
-export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> = ({
+interface MicSpectrumFrequencyMeterProps {
+  analyser: AnalyserNode | null;
+  permissionState: "denied" | "requesting" | "granted";
+  browserBrand: string;
+  onRecalibrate: () => void;
+}
+
+const MicSpectrumFrequencyMeter: React.FC<MicSpectrumFrequencyMeterProps> = React.memo(({
+  analyser,
+  permissionState,
+  browserBrand,
+  onRecalibrate,
+}) => {
+  const [audioLevel, setAudioLevel] = useState<number>(0);
+  const [frequencyBars, setFrequencyBars] = useState<number[]>(() => new Array(16).fill(0));
+  const animFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!analyser || permissionState !== "granted") {
+      setAudioLevel(0);
+      setFrequencyBars(new Array(16).fill(0));
+      return;
+    }
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const updateRealAudioMeter = () => {
+      analyser.getByteFrequencyData(dataArray);
+
+      const bars: number[] = [];
+      let totalSum = 0;
+      const step = Math.max(1, Math.floor(bufferLength / 16));
+      for (let i = 0; i < 16; i++) {
+        const val = dataArray[i * step] || 0;
+        bars.push(val);
+        totalSum += val;
+      }
+
+      const avg = Math.round((totalSum / 16 / 255) * 100);
+      setAudioLevel(avg);
+      setFrequencyBars(bars);
+
+      animFrameRef.current = requestAnimationFrame(updateRealAudioMeter);
+    };
+
+    updateRealAudioMeter();
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
+  }, [analyser, permissionState]);
+
+  return (
+    <>
+      {/* 16 Barras FFT Conectadas a la Voz Real */}
+      <div className="flex items-center gap-1 h-6">
+        {frequencyBars.map((val, idx) => {
+          const barHeight =
+            permissionState === "granted"
+              ? Math.max(4, Math.round((val / 255) * 20) + 4)
+              : 4;
+          const isLighting = permissionState === "granted" && val > 12;
+          return (
+            <div
+              key={idx}
+              className={`w-1 rounded-full transition-all duration-75 ${
+                isLighting
+                  ? "bg-gradient-to-t from-[#7048E8] to-[#C4B5FD] shadow-[0_0_6px_rgba(196,181,253,0.6)]"
+                  : "bg-white/10"
+              }`}
+              style={{ height: `${barHeight}px` }}
+            />
+          );
+        })}
+      </div>
+
+      {/* ── 6. SEAMLESS DIRECT ACTION STRIP ── */}
+      <div className="border-t border-b border-white/[0.06] py-4 flex items-center justify-between text-xs text-[#8E8EA8]">
+        <div className="flex items-center space-x-2">
+          <Volume2
+            className={`w-3.5 h-3.5 shrink-0 ${permissionState === "granted" ? "text-emerald-400" : "text-rose-400"}`}
+          />
+          <span className="text-white/70 text-xs">
+            {permissionState === "granted"
+              ? "Nivel de voz real:"
+              : `Permiso en ${browserBrand}:`}
+          </span>
+          <span className="text-white/40 font-mono text-[11px] ml-1">
+            {permissionState === "granted" ? `${audioLevel}% en vivo` : "Bloqueado"}
+          </span>
+        </div>
+
+        <button
+          onClick={onRecalibrate}
+          className="text-[#C4B5FD] hover:text-white text-[11px] font-mono transition-colors cursor-pointer bg-transparent border-0 p-0 hover:underline flex items-center gap-1"
+        >
+          <span>
+            {permissionState === "granted" ? "Recalibrar hardware" : "Reintentar conexión"}
+          </span>
+          <span className="text-white/40">↗</span>
+        </button>
+      </div>
+    </>
+  );
+});
+
+const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = ({
   isOpen,
   onClose,
   onResume,
@@ -19,20 +129,15 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
     "denied",
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [audioLevel, setAudioLevel] = useState<number>(0);
-  const [frequencyBars, setFrequencyBars] = useState<number[]>(() => new Array(16).fill(0));
+  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
   const [browserBrand, setBrowserBrand] = useState<string>("Google Chrome");
   const [deviceName, setDeviceName] = useState<string>("Buscando hardware...");
 
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const animFrameRef = useRef<number | null>(null);
 
   const stopAudio = useCallback(() => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
+    setAnalyserNode(null);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -88,31 +193,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
       const source = audioCtx.createMediaStreamSource(stream);
       source.connect(analyser);
 
-      const bufferLength = analyser.frequencyBinCount; // 32 bins de frecuencias reales
-      const dataArray = new Uint8Array(bufferLength);
-
-      const updateRealAudioMeter = () => {
-        if (!stream.active) return;
-        analyser.getByteFrequencyData(dataArray);
-
-        // Mapear los 32 bins de frecuencias reales del micrófono a las 16 barras visuales
-        const bars: number[] = [];
-        let totalSum = 0;
-        const step = Math.max(1, Math.floor(bufferLength / 16));
-        for (let i = 0; i < 16; i++) {
-          const val = dataArray[i * step] || 0;
-          bars.push(val);
-          totalSum += val;
-        }
-
-        const avg = Math.round((totalSum / 16 / 255) * 100);
-        setAudioLevel(avg);
-        setFrequencyBars(bars);
-
-        animFrameRef.current = requestAnimationFrame(updateRealAudioMeter);
-      };
-
-      updateRealAudioMeter();
+      setAnalyserNode(analyser);
       setPermissionState("granted");
       setErrorMessage(null);
 
@@ -121,8 +202,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
     } catch (err) {
       stopAudio();
       setPermissionState("denied");
-      setAudioLevel(0);
-      setFrequencyBars(new Array(16).fill(0));
+      setAnalyserNode(null);
 
       const errString = String(err);
       if (
@@ -202,10 +282,6 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
     if (streamRef.current) {
       AudioCaptureService.setMicStream(streamRef.current);
     }
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
     onResume();
   };
 
@@ -221,7 +297,7 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/85 backdrop-blur-md sm:backdrop-blur-2xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
         ref={trapRef}
@@ -444,56 +520,14 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
               </div>
             </div>
 
-            {/* 16 Barras FFT Conectadas a la Voz Real */}
-            <div className="flex items-center gap-1 h-6">
-              {frequencyBars.map((val, idx) => {
-                // val es 0-255 del AnalyserNode real
-                const barHeight =
-                  permissionState === "granted"
-                    ? Math.max(4, Math.round((val / 255) * 20) + 4)
-                    : 4;
-                const isLighting = permissionState === "granted" && val > 12;
-                return (
-                  <div
-                    key={idx}
-                    className={`w-1 rounded-full transition-all duration-75 ${
-                      isLighting
-                        ? "bg-gradient-to-t from-[#7048E8] to-[#C4B5FD] shadow-[0_0_6px_rgba(196,181,253,0.6)]"
-                        : "bg-white/10"
-                    }`}
-                    style={{ height: `${barHeight}px` }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── 6. SEAMLESS DIRECT ACTION STRIP ── */}
-        <div className="border-t border-b border-white/[0.06] py-4 flex items-center justify-between text-xs text-[#8E8EA8]">
-          <div className="flex items-center space-x-2">
-            <Volume2
-              className={`w-3.5 h-3.5 shrink-0 ${permissionState === "granted" ? "text-emerald-400" : "text-rose-400"}`}
+            {/* 16 Barras FFT Conectadas a la Voz Real & Action Strip (Isolated 60fps subscriber) */}
+            <MicSpectrumFrequencyMeter
+              analyser={analyserNode}
+              permissionState={permissionState}
+              browserBrand={browserBrand}
+              onRecalibrate={() => void activateRealMicrophone()}
             />
-            <span className="text-white/70 text-xs">
-              {permissionState === "granted"
-                ? "Nivel de voz real:"
-                : `Permiso en ${browserBrand}:`}
-            </span>
-            <span className="text-white/40 font-mono text-[11px] ml-1">
-              {permissionState === "granted" ? `${audioLevel}% en vivo` : "Bloqueado"}
-            </span>
           </div>
-
-          <button
-            onClick={() => void activateRealMicrophone()}
-            className="text-[#C4B5FD] hover:text-white text-[11px] font-mono transition-colors cursor-pointer bg-transparent border-0 p-0 hover:underline flex items-center gap-1"
-          >
-            <span>
-              {permissionState === "granted" ? "Recalibrar hardware" : "Reintentar conexión"}
-            </span>
-            <span className="text-white/40">↗</span>
-          </button>
         </div>
 
         {/* ── 7. FOOTER ACTION ── */}
@@ -530,3 +564,5 @@ export const MicHardwareRecoveryModal: React.FC<MicHardwareRecoveryModalProps> =
   if (typeof document === "undefined") return null;
   return createPortal(modalNode, document.body);
 };
+
+export const MicHardwareRecoveryModal = React.memo(MicHardwareRecoveryModalInner);

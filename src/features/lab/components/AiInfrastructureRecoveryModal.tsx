@@ -85,7 +85,7 @@ export interface AiInfrastructureRecoveryModalProps {
   };
 }
 
-export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryModalProps> = ({
+const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModalProps> = ({
   isOpen,
   scenario,
   cooldown: _cooldown,
@@ -247,7 +247,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-3xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md sm:backdrop-blur-2xl overflow-y-auto no-scrollbar animate-[fadeIn_0.25s_ease-out]"
     >
       <div
         ref={dialogRef}
@@ -256,6 +256,7 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
         aria-labelledby="recovery-modal-headline"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        style={{ willChange: "transform" }}
         className="relative w-full max-w-xl h-[94dvh] sm:h-auto max-h-[94dvh] sm:max-h-[min(92dvh,760px)] rounded-t-[26px] sm:rounded-3xl bg-[#04040A] border-t border-white/[0.12] sm:border sm:border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none flex flex-col text-left animate-[slideUp_0.3s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scaleUp_0.25s_ease-out] outline-none"
       >
         {/* Mobile Grab Handle */}
@@ -591,3 +592,6 @@ export const AiInfrastructureRecoveryModal: React.FC<AiInfrastructureRecoveryMod
   if (typeof document === "undefined") return null;
   return createPortal(modalNode, document.body);
 };
+
+export const AiInfrastructureRecoveryModal = React.memo(AiInfrastructureRecoveryModalInner);
+

@@ -6,18 +6,18 @@ import { WAVEFORM_BARS, formatPlaybackTime } from "./analysisHelpers";
 export interface InterviewAnalysisTranscriptCardProps {
   feedback: ComprehensiveTurnFeedback;
   isPlayingUserAudio: boolean;
-  userAudioCurrentTime: number;
+  userAudioCurrentTime?: number;
   effectiveDuration: number;
   userAudioRef: React.Ref<HTMLAudioElement>;
   onToggleUserAudio: () => void;
   onSeekUserAudio: (fraction: number) => void;
   onSkipUserAudio: (deltaSeconds: number) => void;
-  onAudioTimeUpdate: () => void;
+  onAudioTimeUpdate?: () => void;
   onAudioLoadedMetadata: () => void;
   onAudioEnded: () => void;
 }
 
-export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscriptCardProps> = ({
+const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscriptCardProps> = ({
   feedback,
   isPlayingUserAudio,
   userAudioCurrentTime,
@@ -30,6 +30,14 @@ export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscri
   onAudioLoadedMetadata,
   onAudioEnded,
 }) => {
+  const [localTime, setLocalTime] = React.useState<number>(0);
+  const currentTime = userAudioCurrentTime !== undefined ? userAudioCurrentTime : localTime;
+
+  const handleAudioTimeUpdate = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    setLocalTime(e.currentTarget.currentTime);
+    if (onAudioTimeUpdate) onAudioTimeUpdate();
+  };
+
   return (
     <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 lg:p-7 shadow-xl transition-all">
       {feedback.userAudioUrl && (
@@ -37,9 +45,12 @@ export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscri
           ref={userAudioRef}
           src={feedback.userAudioUrl}
           preload="metadata"
-          onTimeUpdate={onAudioTimeUpdate}
+          onTimeUpdate={handleAudioTimeUpdate}
           onLoadedMetadata={onAudioLoadedMetadata}
-          onEnded={onAudioEnded}
+          onEnded={() => {
+            setLocalTime(0);
+            onAudioEnded();
+          }}
         />
       )}
 
@@ -126,7 +137,7 @@ export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscri
           >
             {WAVEFORM_BARS.map((h, i) => {
               const dur = effectiveDuration > 0 ? effectiveDuration : 1;
-              const progress = userAudioCurrentTime / dur;
+              const progress = currentTime / dur;
               const barProgress = i / WAVEFORM_BARS.length;
               const isPassed = barProgress <= progress;
 
@@ -143,7 +154,7 @@ export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscri
           </div>
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] font-mono text-xs text-white/90 shrink-0 self-end sm:self-auto">
-            <span className="text-white font-medium">{formatPlaybackTime(userAudioCurrentTime)}</span>
+            <span className="text-white font-medium">{formatPlaybackTime(currentTime)}</span>
             <span className="text-white/30">/</span>
             <span className="text-white/60">{formatPlaybackTime(effectiveDuration)}</span>
           </div>
@@ -157,3 +168,5 @@ export const InterviewAnalysisTranscriptCard: React.FC<InterviewAnalysisTranscri
     </article>
   );
 };
+
+export const InterviewAnalysisTranscriptCard = React.memo(InterviewAnalysisTranscriptCardInner);

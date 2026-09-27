@@ -29,7 +29,7 @@ function TopHighlight() {
   );
 }
 
-export const WritingErrorCarousel: React.FC<WritingErrorCarouselProps> = ({
+const WritingErrorCarouselInner: React.FC<WritingErrorCarouselProps> = ({
   errors,
   savedErrorIds,
   wordCount,
@@ -285,3 +285,5 @@ export const WritingErrorCarousel: React.FC<WritingErrorCarouselProps> = ({
     </div>
   );
 };
+
+export const WritingErrorCarousel = React.memo(WritingErrorCarouselInner);

@@ -1,11 +1,12 @@
 import React from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 
 export interface OnboardingGenericStepProps {
   onNext: () => void;
   onPrev: () => void;
 }
 
-export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ onNext, onPrev }) => {
+const OnboardingGenericStepInner: React.FC<OnboardingGenericStepProps> = ({ onNext, onPrev }) => {
   return (
     <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-center z-10 my-auto px-4">
       {/* Left Question Flow */}
@@ -72,19 +73,14 @@ export const OnboardingGenericStep: React.FC<OnboardingGenericStepProps> = ({ on
 
       {/* Right Side Step Visualization — begin1 video — fluido */}
       <div className="flex justify-center">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
+        <OptimizedVideo
+          src="/assets/begin1"
           className="w-56 h-56 sm:w-72 sm:h-72 object-contain drop-shadow-[0_0_40px_rgba(124,58,237,0.5)] pointer-events-none mix-blend-screen"
-          style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-        >
-          <source src="/assets/begin1.webm" type="video/webm" />
-          <source src="/assets/begin1.mp4" type="video/mp4" />
-        </video>
+        />
       </div>
     </div>
   );
 };
+
+export const OnboardingGenericStep = React.memo(OnboardingGenericStepInner);
+

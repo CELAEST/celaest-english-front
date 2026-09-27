@@ -89,25 +89,25 @@ const WHISPER_SILENCE_HALLUCINATIONS = new Set([
 // Distinctive Spanish stopwords and vocabulary markers for real-time ESL pre-flight screening
 export const SPANISH_MARKERS = new Set([
   "de", "la", "que", "el", "en", "y", "los", "se", "del", "las", "por", "un", "para", "con", "una",
-  "su", "al", "lo", "como", "más", "mas", "pero", "sus", "le", "ya", "o", "fue", "este", "ha", "sí", "si", "porque",
-  "esta", "son", "entre", "está", "cuando", "muy", "sin", "sobre", "ser", "tiene", "también", "tambien",
+  "su", "al", "lo", "como", "más", "mas", "pero", "sus", "le", "ya", "o", "fue", "este", "sí", "si", "porque",
+  "esta", "entre", "está", "cuando", "muy", "sobre", "ser", "tiene", "también", "tambien",
   "hasta", "hay", "donde", "quien", "desde", "todo", "nos", "durante", "todos", "uno", "les", "ni", "contra",
   "otros", "ese", "eso", "ante", "ellos", "e", "esto", "mí", "mi", "antes", "algunos", "qué", "unos", "yo",
   "otro", "otras", "otra", "él", "tanto", "esa", "estos", "mucho", "quienes", "nada", "muchos", "mucha", "muchas",
-  "cual", "sea", "poco", "pocos", "ella", "estar", "haber", "estas", "estaba", "estamos", "están", "estan", "estuvo",
+  "cual", "poco", "pocos", "ella", "estar", "haber", "estas", "estaba", "estamos", "están", "estan", "estuvo",
   "diciendo", "decir", "hablar", "hablando", "cosas", "bobas", "bobo", "trabajo", "trabajar", "hacer", "haciendo",
   "hecho", "bueno", "entonces", "ahorita", "ahora", "luego", "después", "despues", "aquí", "aqui", "allí", "alli",
   "allá", "alla", "hola", "gracias", "adiós", "adios", "tengo", "tenemos", "tienen", "tenía", "tenia", "tuve",
-  "fuimos", "fueron", "era", "éramos", "eramos", "eran", "seamos", "sean", "sido", "había", "habia", "hubo", "haya",
+  "fuimos", "fueron", "éramos", "eramos", "eran", "seamos", "sean", "sido", "había", "habia", "hubo", "haya",
   "sabes", "sé", "sabe", "sabemos", "saben", "sabía", "sabia", "supe", "quiero", "quiere", "queremos", "quieren",
   "quería", "queria", "quise", "puedo", "puede", "podemos", "pueden", "podía", "podia", "pude", "vamos", "voy",
-  "va", "van", "iba", "íbamos", "ibamos", "iban", "mira", "mire", "oye", "oiga", "mano", "gente", "persona",
+  "va", "iba", "íbamos", "ibamos", "iban", "mira", "mire", "oye", "oiga", "mano", "gente", "persona",
   "personas", "problema", "problemas", "solución", "solucion", "sistema", "proyecto", "desarrollo", "experiencia",
-  "empresa", "equipo", "entrevista", "respuesta", "pregunta", "apreté", "aprete", "botón", "boton", "cosito", "verde",
-  "estoy", "espanol", "español", "solo", "sola", "nadie", "nunca", "siempre", "veces", "bien", "mal", "mejor", "peor",
+  "empresa", "equipo", "entrevista", "respuesta", "pregunta",
+  "estoy", "espanol", "español", "sola", "nadie", "nunca", "siempre", "veces", "mal", "mejor", "peor",
   "aca", "aquel", "aquella", "aquellos", "aquellas", "aquello", "mis", "tus", "nuestro", "nuestra", "nuestros", "nuestras",
   "mio", "mia", "tuyo", "tuya", "suyo", "suya", "nosotros", "nosotras", "vosotros", "vosotras", "usted", "ustedes",
-  "he", "has", "hemos", "habeis", "han", "habias", "habiamos", "habiais", "habian", "hube", "hubiste", "hubimos",
+  "hemos", "habeis", "han", "habias", "habiamos", "habiais", "habian", "hube", "hubiste", "hubimos",
   "hubisteis", "hubieron", "habre", "habras", "habra", "habremos", "habreis", "habran", "habria", "habrias", "habriamos",
   "habriais", "habrian", "hayas", "hayamos", "hayais", "hayan", "hubiera", "hubieras", "hubieramos", "hubierais",
   "hubieran", "hubiese", "hubieses", "hubiesemos", "hubieseis", "hubiesen", "teniendo", "tenido", "tenida", "tenidos",
@@ -116,8 +116,8 @@ export const SPANISH_MARKERS = new Set([
   "tuviesemos", "tuvieseis", "tuviesen", "tenias", "teniamos", "teniais", "tenian", "sabiendo", "sabido", "sabeis",
   "sepa", "sepas", "sepamos", "sepais", "sepan", "supiste", "supo", "supimos", "supisteis", "supieron", "supiera",
   "supieras", "supieramos", "supierais", "supieran", "supiese", "supieses", "supiesemos", "supieseis", "supiesen",
-  "sabias", "sabiamos", "sabiais", "sabian", "viendo", "visto", "veo", "ves", "ve", "vemos", "veis", "ven", "vea",
-  "veas", "veamos", "veais", "vean", "vi", "viste", "vio", "vimos", "visteis", "vieron", "viera", "vieras", "vieramos",
+  "sabias", "sabiamos", "sabiais", "sabian", "viendo", "visto", "veo", "ves", "vemos", "veis", "ven", "vea",
+  "veas", "veamos", "veais", "vean", "viste", "vio", "vimos", "visteis", "vieron", "viera", "vieras", "vieramos",
   "vierais", "vieran", "viese", "vieses", "viesemos", "vieseis", "viesen", "veia", "veias", "veiamos", "veiais", "veian",
   "dicho", "digo", "dices", "dice", "decimos", "decis", "dicen", "diga", "digas", "digamos", "digais", "digan", "dije",
   "dijiste", "dijo", "dijimos", "dijisteis", "dijeron", "dijera", "dijeras", "dijeramos", "dijerais", "dijeran",
@@ -514,8 +514,8 @@ export function validateSpeechIntelligibility(
 
   const spanishRatio = rawWords.length > 0 ? spanishWordCount / rawWords.length : 0;
   if (
-    (rawWords.length <= 3 && spanishWordCount >= 1) ||
-    (rawWords.length > 3 && ((spanishRatio >= 0.20 && spanishWordCount >= 2) || spanishWordCount >= 4)) ||
+    (rawWords.length <= 3 && spanishWordCount === rawWords.length && spanishWordCount > 0) ||
+    (rawWords.length > 3 && ((spanishRatio >= 0.35 && spanishWordCount >= 2) || spanishWordCount >= 4)) ||
     (hasSpanishDiacritics && spanishWordCount >= 1) ||
     (hasSpanishDiacritics && rawWords.length <= 3)
   ) {
@@ -727,10 +727,15 @@ export function detectLiveSpanishOrFiller(text: string | null | undefined): Live
     }
   }
 
-  // If live phrase has genuine Spanish markers (e.g. "hola", "yo quiero decir")
+  const UNAMBIGUOUS_SPANISH_STARTERS = new Set([
+    "hola", "bueno", "gracias", "adios", "adiós", "amigo", "amiga", "profe", "buenas", "oigan", "oye", "disculpa", "perdon", "perdón"
+  ]);
+
+  // If live phrase has genuine Spanish markers (e.g. "hola", "bueno entonces", "yo quiero decir")
   if (
-    (rawWords.length <= 2 && spanishCount >= 1) ||
-    (rawWords.length > 2 && spanishCount >= 2 && spanishCount / rawWords.length >= 0.25)
+    (rawWords.length === 1 && UNAMBIGUOUS_SPANISH_STARTERS.has(rawWords[0])) ||
+    (rawWords.length === 2 && (UNAMBIGUOUS_SPANISH_STARTERS.has(rawWords[0]) || (SPANISH_MARKERS.has(rawWords[0]) && SPANISH_MARKERS.has(rawWords[1])))) ||
+    (rawWords.length > 2 && spanishCount >= 2 && spanishCount / rawWords.length >= 0.40)
   ) {
     return {
       isSpanishOrFiller: true,

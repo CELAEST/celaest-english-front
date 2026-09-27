@@ -8,11 +8,7 @@ interface SilenceShieldLuxuryModalProps {
   onResume: () => void;
 }
 
-export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> = ({
-  isOpen,
-  onClose,
-  onResume,
-}) => {
+const SilenceShieldVoiceMeter: React.FC = React.memo(() => {
   const [isVoiceActive, setIsVoiceActive] = useState<boolean>(false);
   const [audioLevel, setAudioLevel] = useState<number>(15);
   const animFrameRef = useRef<number | null>(null);
@@ -62,6 +58,46 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
     };
   }, []);
 
+  return (
+    <div className="py-3 px-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-between">
+      <div className="flex items-center space-x-2.5">
+        <Volume2 className={`w-4 h-4 ${isVoiceActive ? "text-emerald-400" : "text-[#C4B5FD]"}`} />
+        <span className="text-xs text-white/80 font-light">
+          {isVoiceActive ? "Voz detectada:" : "Prueba de sonido:"}
+        </span>
+        <span className="text-[11px] font-mono text-white/40">
+          {isVoiceActive ? `${audioLevel}%` : "Listo"}
+        </span>
+      </div>
+
+      {/* Harmonic frequency bars */}
+      <div
+        onClick={handleTestVoice}
+        className="flex items-center gap-1 h-5 cursor-pointer"
+        title="Haz clic para probar tu voz"
+      >
+        {[15, 35, 75, 95, 60, 85, 40, 20].map((baseH, idx) => {
+          const activeH = isVoiceActive ? Math.max(12, (baseH * audioLevel) / 100) : 8;
+          return (
+            <div
+              key={idx}
+              className={`w-1 rounded-full transition-all duration-150 ${
+                isVoiceActive ? "bg-gradient-to-t from-[#7048E8] to-[#C4B5FD]" : "bg-white/15"
+              }`}
+              style={{ height: `${activeH * 0.18 + 4}px` }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const SilenceShieldLuxuryModalInner: React.FC<SilenceShieldLuxuryModalProps> = ({
+  isOpen,
+  onClose,
+  onResume,
+}) => {
   const trapRef = useFocusTrap<HTMLDivElement>({
     isActive: isOpen,
     onClose,
@@ -74,7 +110,7 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-3xl animate-[fadeIn_0.2s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md sm:backdrop-blur-xl animate-[fadeIn_0.2s_ease-out]"
     >
       <div
         ref={trapRef}
@@ -82,6 +118,7 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
         aria-modal="true"
         aria-labelledby="silence-modal-title"
         onClick={(e) => e.stopPropagation()}
+        style={{ willChange: "transform, opacity" }}
         className="relative w-full max-w-md rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_24px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden select-none p-7 sm:p-8 flex flex-col space-y-6 text-left animate-[scaleUp_0.25s_ease-out]"
       >
         {/* Top Specular Hairline */}
@@ -134,37 +171,7 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
         </p>
 
         {/* ── LIVE AUDIO SENSITIVITY STRIP (Direct feedback with zero box-in-box) ── */}
-        <div className="py-3 px-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <Volume2 className={`w-4 h-4 ${isVoiceActive ? "text-emerald-400" : "text-[#C4B5FD]"}`} />
-            <span className="text-xs text-white/80 font-light">
-              {isVoiceActive ? "Voz detectada:" : "Prueba de sonido:"}
-            </span>
-            <span className="text-[11px] font-mono text-white/40">
-              {isVoiceActive ? `${audioLevel}%` : "Listo"}
-            </span>
-          </div>
-
-          {/* Harmonic frequency bars */}
-          <div
-            onClick={handleTestVoice}
-            className="flex items-center gap-1 h-5 cursor-pointer"
-            title="Haz clic para probar tu voz"
-          >
-            {[15, 35, 75, 95, 60, 85, 40, 20].map((baseH, idx) => {
-              const activeH = isVoiceActive ? Math.max(12, (baseH * audioLevel) / 100) : 8;
-              return (
-                <div
-                  key={idx}
-                  className={`w-1 rounded-full transition-all duration-150 ${
-                    isVoiceActive ? "bg-gradient-to-t from-[#7048E8] to-[#C4B5FD]" : "bg-white/15"
-                  }`}
-                  style={{ height: `${activeH * 0.18 + 4}px` }}
-                />
-              );
-            })}
-          </div>
-        </div>
+        <SilenceShieldVoiceMeter />
 
         {/* ── SINGLE ACTION FOOTER (Completely clear & fast) ── */}
         <div className="pt-2 flex items-center justify-between">
@@ -184,4 +191,7 @@ export const SilenceShieldLuxuryModal: React.FC<SilenceShieldLuxuryModalProps> =
     </div>
   );
 };
+
+export const SilenceShieldLuxuryModal = React.memo(SilenceShieldLuxuryModalInner);
+
 

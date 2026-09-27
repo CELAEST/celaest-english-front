@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { logger } from "../../../shared/utils/logger";
 import { VocabloTranslateIcon, MemoryBankSaveIcon } from "./ReadingBespokeIcons";
@@ -195,7 +196,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       [wordData, onDirectTranslate, onOpenRecoveryModal],
     );
 
-    return (
+    const modalContent = (
       <>
         {/* Backdrop click dismiss — cursor-pointer and touch handler required for iOS Safari tap dispatch */}
         <div
@@ -221,6 +222,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           style={{
             top: `${coords.top}px`,
             left: `${coords.left}px`,
+            willChange: "transform",
           }}
           className="fixed z-[9999] w-[275px] sm:w-[295px] pl-5 pr-4 pt-4 pb-4 sm:pl-6 sm:pr-5 sm:pt-5 sm:pb-5 rounded-3xl bg-[#04040A] border border-white/[0.07] hover:border-white/[0.12] shadow-[0_32px_80px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group max-h-[calc(100dvh-95px)] sm:max-h-[calc(100dvh-40px)]"
           onClick={(e) => e.stopPropagation()}
@@ -414,6 +416,12 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         </div>
       </>
     );
+
+    if (typeof document === "undefined") {
+      return modalContent;
+    }
+
+    return createPortal(modalContent, document.body);
   },
 );
 

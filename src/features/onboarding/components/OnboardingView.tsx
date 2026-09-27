@@ -1,4 +1,5 @@
 import React from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { OnboardingWelcomeStep } from "./OnboardingWelcomeStep";
 import { OnboardingAuthStep } from "./OnboardingAuthStep";
@@ -19,7 +20,7 @@ export interface OnboardingViewProps {
   onFinish?: () => void;
 }
 
-export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
+const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
   const {
     step,
     nextStep,
@@ -79,39 +80,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
       {/* 🌟 Right-Side Video — ask — super fluido, sin salto, mix-blend para negro */}
       {!isCenteredHeroLayout && (
         <>
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="absolute top-1/2 right-0 sm:right-[1%] lg:right-[2%] xl:right-[3%] w-[96%] sm:w-[85%] lg:w-[58%] xl:w-[54%] 2xl:w-[50%] h-[75vh] sm:h-[85vh] lg:h-[94vh] max-w-[1100px] object-contain pointer-events-none z-0 opacity-90 hidden sm:block mix-blend-screen"
-            style={{
-              transform: "translateY(-50%) scale(1.4) translateZ(0)",
-              willChange: "transform",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            <source src="/assets/ask.webm" type="video/webm" />
-            <source src="/assets/ask.mp4" type="video/mp4" />
-          </video>
-          {/* Mobile: video proporcional arriba — fluido */}
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="absolute top-[4%] left-1/2 w-[94%] h-[32vh] object-contain pointer-events-none z-0 opacity-30 sm:hidden rounded-2xl overflow-hidden mix-blend-screen"
-            style={{
-              transform: "translateX(-50%) translateZ(0)",
-              willChange: "transform",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            <source src="/assets/ask.webm" type="video/webm" />
-            <source src="/assets/ask.mp4" type="video/mp4" />
-          </video>
+          <OptimizedVideo
+            src="/assets/ask"
+            className="absolute top-[4%] left-1/2 -translate-x-1/2 w-[94%] h-[32vh] opacity-30 rounded-2xl sm:rounded-none sm:top-1/2 sm:left-auto sm:right-0 sm:right-[1%] lg:right-[2%] xl:right-[3%] sm:translate-x-0 sm:-translate-y-1/2 sm:scale-[1.4] sm:w-[85%] lg:w-[58%] xl:w-[54%] 2xl:w-[50%] sm:h-[85vh] lg:h-[94vh] sm:max-w-[1100px] sm:opacity-90 object-contain pointer-events-none z-0 mix-blend-screen"
+          />
           {/* Gradiente protector legibilidad */}
           <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#000003] via-[#000003]/95 to-transparent" style={{ width: "54%" }} />
         </>
@@ -291,3 +263,6 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onFinish }) => {
     </div>
   );
 };
+
+export const OnboardingView = React.memo(OnboardingViewInner);
+

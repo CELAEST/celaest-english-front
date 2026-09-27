@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { OptimizedVideo } from "../../../design-system/components/Media/OptimizedVideo";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../infrastructure/adapters/auth/supabaseClient";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
@@ -58,7 +59,7 @@ function formatOAuthErrorMessage(rawError: string): { title: string; description
   };
 }
 
-export const AuthCallbackView: React.FC = () => {
+const AuthCallbackViewInner: React.FC = () => {
   const navigate = useNavigate();
   const [stage, setStage] = useState<AuthStageIndex>(1);
   const [errorDetails, setErrorDetails] = useState<{ title: string; description: string } | null>(null);
@@ -345,18 +346,10 @@ export const AuthCallbackView: React.FC = () => {
   return (
     <div className="relative min-h-[100dvh] w-full bg-[#000003] text-slate-100 flex flex-col items-center justify-center select-none overflow-hidden font-sans">
       {/* Ambient Cosmic Hero Video Background — begin1 — fluido sin salto */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
+      <OptimizedVideo
+        src="/assets/begin1"
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 opacity-95 mix-blend-screen"
-        style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
-      >
-        <source src="/assets/begin1.webm" type="video/webm" />
-        <source src="/assets/begin1.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* Atmospheric Vignette & Micro Bottom Edge Softener */}
       <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#000003] to-transparent pointer-events-none z-10" />
@@ -381,3 +374,6 @@ export const AuthCallbackView: React.FC = () => {
     </div>
   );
 };
+
+export const AuthCallbackView = React.memo(AuthCallbackViewInner);
+

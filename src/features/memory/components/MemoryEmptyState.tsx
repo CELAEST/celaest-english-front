@@ -56,9 +56,23 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
       }
     };
 
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        try {
+          video.pause();
+        } catch {}
+      } else {
+        syncPlayback();
+      }
+    };
+
     syncPlayback();
     window.addEventListener("resize", syncPlayback);
-    return () => window.removeEventListener("resize", syncPlayback);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("resize", syncPlayback);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   return (
@@ -80,6 +94,9 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
             muted
             playsInline
             preload="metadata"
+            disablePictureInPicture
+            // @ts-ignore
+            disableRemotePlayback
             className="w-full sm:w-auto h-auto max-w-[min(95vw,520px)] sm:max-w-[min(98vw,1440px)] max-h-[56vh] xs:max-h-[60vh] sm:max-h-[68vh] lg:max-h-[74vh] xl:max-h-[80vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           >

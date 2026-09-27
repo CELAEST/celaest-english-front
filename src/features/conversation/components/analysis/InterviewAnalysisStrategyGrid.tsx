@@ -14,7 +14,7 @@ export interface InterviewAnalysisStrategyGridProps {
   onPlayRecommendationExample: (exampleText: string) => void;
 }
 
-export const InterviewAnalysisStrategyGrid: React.FC<InterviewAnalysisStrategyGridProps> = ({
+const InterviewAnalysisStrategyGridInner: React.FC<InterviewAnalysisStrategyGridProps> = ({
   feedback,
   isPlayingRecommendationAudio,
   onPlayRecommendationExample,
@@ -123,3 +123,5 @@ export const InterviewAnalysisStrategyGrid: React.FC<InterviewAnalysisStrategyGr
     </div>
   );
 };
+
+export const InterviewAnalysisStrategyGrid = React.memo(InterviewAnalysisStrategyGridInner);

@@ -111,17 +111,17 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     expect(result).toBeNull();
   });
 
-  it("configures continuous=false on mobile devices to prevent WebKit speech aborts", () => {
+  it("configures continuous=true on mobile devices for uninterrupted dictation", () => {
     const originalUserAgent = navigator.userAgent;
     try {
       Object.defineProperty(navigator, "userAgent", {
-        value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+        value: "Mozilla/5.0 (Linux; Android 10; SM-G980F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36",
         configurable: true,
       });
 
       let capturedRecognizerInstance: any = null;
       class MockSpeechRecognition {
-        continuous = true;
+        continuous = false;
         interimResults = true;
         lang = "en-US";
         start = vi.fn();
@@ -144,8 +144,8 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
 
       expect(capturedRecognizerInstance).not.toBeNull();
-      // On mobile devices, continuous is set to false to prevent multi-item result pileup
-      expect(capturedRecognizerInstance.continuous).toBe(false);
+      // Uninterrupted dictation across pauses on mobile and desktop
+      expect(capturedRecognizerInstance.continuous).toBe(true);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {

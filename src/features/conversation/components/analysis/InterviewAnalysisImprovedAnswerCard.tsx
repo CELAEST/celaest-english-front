@@ -7,7 +7,7 @@ export interface InterviewAnalysisImprovedAnswerCardProps {
   onPlayModelAnswer: () => void;
 }
 
-export const InterviewAnalysisImprovedAnswerCard: React.FC<InterviewAnalysisImprovedAnswerCardProps> = ({
+const InterviewAnalysisImprovedAnswerCardInner: React.FC<InterviewAnalysisImprovedAnswerCardProps> = ({
   improvedFullAnswer,
   isPlayingModelAudio,
   onPlayModelAnswer,
@@ -33,14 +33,14 @@ export const InterviewAnalysisImprovedAnswerCard: React.FC<InterviewAnalysisImpr
           className="flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
         >
           <Volume2 className={`h-4 w-4 ${isPlayingModelAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`} />
-          <span>{isPlayingModelAudio ? "Detener" : "Escuchar respuesta"}</span>
+          <span>{isPlayingModelAudio ? "Pausar audio" : "Escuchar audio"}</span>
         </button>
       </div>
 
       {/* Quote */}
-      <div className="flex items-start gap-3 sm:gap-4 pl-1 sm:pl-5 pr-2 sm:pr-28 mb-3 sm:mb-4">
-        <svg className="w-[20px] sm:w-[25px] h-[16px] sm:h-[20px] shrink-0 mt-0.5 text-[#674ee6]" viewBox="0 0 28 22" fill="currentColor">
-          <path d="M2.5 14.5c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7zm13 0c0-4.8 3-8.5 7.5-10.2l1.2 2.2c-3.2 1.1-4.8 3.2-5.1 5.3.5-.2 1.2-.3 1.9-.3 2.8 0 5 2.2 5 5s-2.2 5-5 5c-3.2 0-5.5-2.8-5.5-7z" />
+      <div className="flex items-start gap-3 sm:gap-4 pl-1 sm:pl-5 pr-2 sm:pr-28 mb-4 sm:mb-6">
+        <svg className="w-[20px] sm:w-[25px] h-[16px] sm:h-[20px] shrink-0 mt-0.5 text-[#674ee6]" viewBox="0 0 25 20" fill="currentColor">
+          <path d="M7.5 0C3.36 0 0 3.36 0 7.5C0 11.64 3.36 15 7.5 15C8.16 15 8.8 14.91 9.4 14.75C8.44 17.72 5.56 19.86 2.14 20H4.29C8.95 20 12.86 16.09 12.86 11.43V7.5C12.86 3.36 9.5 0 7.5 0ZM19.64 0C15.5 0 12.14 3.36 12.14 7.5C12.14 11.64 15.5 15 19.64 15C20.3 15 20.94 14.91 21.54 14.75C20.58 17.72 17.7 19.86 14.28 20H16.43C21.09 20 25 16.09 25 11.43V7.5C25 3.36 21.64 0 19.64 0Z" />
         </svg>
         <p className="text-[13.5px] sm:text-[14.5px] leading-[1.7] text-[#d4d4e0] font-normal">
           "{improvedFullAnswer}"
@@ -62,3 +62,5 @@ export const InterviewAnalysisImprovedAnswerCard: React.FC<InterviewAnalysisImpr
     </article>
   );
 };
+
+export const InterviewAnalysisImprovedAnswerCard = React.memo(InterviewAnalysisImprovedAnswerCardInner);

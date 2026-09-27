@@ -48,7 +48,7 @@ const CEFR_LEVELS = [
   },
 ];
 
-export const SettingsLevelModal: React.FC<SettingsLevelModalProps> = ({
+const SettingsLevelModalInner: React.FC<SettingsLevelModalProps> = ({
   isOpen,
   currentLevel,
   onSelectLevel,
@@ -61,11 +61,12 @@ export const SettingsLevelModal: React.FC<SettingsLevelModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="level-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md sm:backdrop-blur-xl animate-[fadeIn_0.18s_ease-out]"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-5 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-2xl flex flex-col max-h-[88dvh] sm:max-h-[80vh] animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]"
+        style={{ willChange: "transform, opacity" }}
+        className="w-full max-w-md rounded-2xl sm:rounded-[28px] border border-white/10 bg-[#0c0c14]/90 p-5 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md sm:backdrop-blur-xl flex flex-col max-h-[88dvh] sm:max-h-[80vh] animate-[scaleUp_0.22s_cubic-bezier(0.16,1,0.3,1)_both]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — clean, premium, no card */}
@@ -129,3 +130,6 @@ export const SettingsLevelModal: React.FC<SettingsLevelModalProps> = ({
     </div>
   );
 };
+
+export const SettingsLevelModal = React.memo(SettingsLevelModalInner);
+

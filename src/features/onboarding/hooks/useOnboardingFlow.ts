@@ -16,7 +16,7 @@ export const useOnboardingFlow = () => {
 
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (!isAuth) return "auth";
-    if (isCompleted) return "ready";
+    if (isCompleted || isAuth) return "ready";
     return "welcome";
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);

@@ -110,37 +110,17 @@ const AuthCallbackViewInner: React.FC = () => {
         })
         .catch((e) => logger.warn("[AuthCallback] supabase.auth.setSession background notice", e));
 
-      const isUserCompletedLocal =
-        (authUser.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
-        (authUser.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
-        localStorage.getItem("lingua_onboarding_completed") === "true";
-
-      if (isUserCompletedLocal) {
-        localStorage.setItem("lingua_onboarding_completed", "true");
-        if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
-        if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
-        if (isMounted) navigate(ROUTES.HOME, { replace: true });
-        return;
-      }
+      localStorage.setItem("lingua_onboarding_completed", "true");
+      if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+      if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
 
       try {
-        const profile = await Promise.race([
-          apiSettingsRepository.getProfile(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
-        ]);
-
-        if (profile && profile.onboardingCompleted) {
-          localStorage.setItem("lingua_onboarding_completed", "true");
-          if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
-          if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
-          if (isMounted) navigate(ROUTES.HOME, { replace: true });
-          return;
-        }
-      } catch (err) {
-        logger.warn("[AuthCallback] Profile fetch check bypassed for new user", err);
+        apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
+      } catch {
+        // ignore
       }
 
-      if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
+      if (isMounted) navigate(ROUTES.HOME, { replace: true });
     };
 
     // 1. Listen for Supabase auto-auth events (fired by detectSessionInUrl)

@@ -58,6 +58,13 @@ export class ApiMemoryRepository implements IMemoryRepository {
       const serverIds = new Set(serverCards.map((c) => c.id));
       const unSyncedLocal = localCards.filter((c) => !serverIds.has(c.id));
 
+      // Sync any un-synced local cards to server in background if authenticated
+      if (unSyncedLocal.length > 0 && getActiveUserId() !== "anon") {
+        for (const card of unSyncedLocal) {
+          HttpClient.post("/memory/cards", card).catch(() => {});
+        }
+      }
+
       const merged = [...serverCards, ...unSyncedLocal];
       saveLocalCards(merged);
 

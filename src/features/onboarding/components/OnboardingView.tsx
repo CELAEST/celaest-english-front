@@ -141,6 +141,11 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                     localStorage.setItem("lingua_onboarding_completed", "true");
                     if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
                     if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+                    try {
+                      apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
+                    } catch {
+                      // ignore
+                    }
                     if (onFinish) {
                       onFinish();
                       return;
@@ -153,6 +158,11 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                     localStorage.setItem("lingua_onboarding_completed", "true");
                     if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
                     if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+                    try {
+                      apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
+                    } catch {
+                      // ignore
+                    }
                     if (onFinish) {
                       onFinish();
                       return;

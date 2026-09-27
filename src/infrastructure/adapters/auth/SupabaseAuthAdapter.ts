@@ -233,7 +233,18 @@ export class SupabaseAuthAdapter implements IAuthService {
         email: data.user?.email || email,
         name: data.user?.user_metadata?.display_name || data.user?.email?.split("@")[0] || "Learner",
         role: data.user?.role || "member",
+        onboardingCompleted: true,
       };
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("lingua_onboarding_completed", "true");
+          if (user.id) localStorage.setItem(`lingua_onboarding_completed_${user.id}`, "true");
+          if (user.email) localStorage.setItem(`lingua_onboarding_completed_${user.email}`, "true");
+        } catch {
+          // ignore
+        }
+      }
 
       this.persistSession(accessToken, refreshToken, user);
       return { success: true, accessToken, refreshToken, user };

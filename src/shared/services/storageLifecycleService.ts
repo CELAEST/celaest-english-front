@@ -111,13 +111,20 @@ export class StorageLifecycleService {
     const keysToRemove = [
       "lingua_access_token",
       "lingua_refresh_token",
+      "lingua_auth_user",
       "lingua_user",
+      "lingua_onboarding_completed",
+      "celaest:active_profession",
+      "celaest:cefrLevel",
+      "celaest:writing:cefrLevel",
+      "celaest:interview:cefrLevel",
       "celaest:interview-progress:v2",
       "celaest:interview-progress:v1",
       "celaest:interview:hasInteracted",
       "celaest:writing:draft",
       "celaest:writing:activeTask",
       "lingua:writing_active_submission",
+      "lingua_reading_articles_v2",
       "lingua_reading_active_id_v2",
       "celaest:active-provider",
       "celaest:session:active-provider",
@@ -129,12 +136,19 @@ export class StorageLifecycleService {
       } catch {}
     });
 
-    // Remove any session-scoped or legacy un-scoped provider keys
+    // Remove any session-scoped, user-scoped progress/drafts, or legacy keys
     try {
       const sessionKeys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith("celaest:session:provider-") || k.startsWith("celaest:provider-key:"))) {
+        if (
+          k &&
+          (k.startsWith("celaest:session:provider-") ||
+            k.startsWith("celaest:provider-key:") ||
+            k.startsWith("lingua_onboarding_completed_") ||
+            k.startsWith("lingua_memory_cards_cache_") ||
+            (k.startsWith("celaest:user:") && (k.includes(":interview-progress:") || k.includes(":writing:draft:"))))
+        ) {
           sessionKeys.push(k);
         }
       }

@@ -65,9 +65,16 @@ describe("StorageLifecycleService - Safe LocalStorage Hygiene", () => {
 
   it("purges user session data on logout", () => {
     localStorage.setItem("lingua_access_token", "jwt-token");
+    localStorage.setItem("lingua_auth_user", JSON.stringify({ id: "user-123", email: "test@celaest.com" }));
     localStorage.setItem("lingua_user", JSON.stringify({ email: "test@celaest.com" }));
+    localStorage.setItem("lingua_onboarding_completed", "true");
+    localStorage.setItem("lingua_onboarding_completed_user-123", "true");
+    localStorage.setItem("celaest:active_profession", "Dentist");
+    localStorage.setItem("celaest:cefrLevel", "B2");
     localStorage.setItem("celaest:writing:draft", JSON.stringify({ content: "draft" }));
+    localStorage.setItem("celaest:user:user-123:writing:draft:task-1", JSON.stringify({ content: "draft" }));
     localStorage.setItem("celaest:interview-progress:v2", JSON.stringify({ index: 1 }));
+    localStorage.setItem("celaest:user:user-123:interview-progress:v2", JSON.stringify({ index: 1 }));
 
     // Non-transient device preferences that must be preserved
     localStorage.setItem("celaest:mentor_voice", "en-US-AriaNeural");
@@ -75,9 +82,16 @@ describe("StorageLifecycleService - Safe LocalStorage Hygiene", () => {
     StorageLifecycleService.purgeOnLogout();
 
     expect(localStorage.getItem("lingua_access_token")).toBeNull();
+    expect(localStorage.getItem("lingua_auth_user")).toBeNull();
     expect(localStorage.getItem("lingua_user")).toBeNull();
+    expect(localStorage.getItem("lingua_onboarding_completed")).toBeNull();
+    expect(localStorage.getItem("lingua_onboarding_completed_user-123")).toBeNull();
+    expect(localStorage.getItem("celaest:active_profession")).toBeNull();
+    expect(localStorage.getItem("celaest:cefrLevel")).toBeNull();
     expect(localStorage.getItem("celaest:writing:draft")).toBeNull();
+    expect(localStorage.getItem("celaest:user:user-123:writing:draft:task-1")).toBeNull();
     expect(localStorage.getItem("celaest:interview-progress:v2")).toBeNull();
+    expect(localStorage.getItem("celaest:user:user-123:interview-progress:v2")).toBeNull();
     expect(localStorage.getItem("celaest:mentor_voice")).toBe("en-US-AriaNeural");
   });
 

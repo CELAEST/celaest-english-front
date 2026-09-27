@@ -7,6 +7,7 @@ import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
+import { clearPersistedInterview } from "../../conversation/services/interviewPersistence";
 
 import { InterviewPracticeView } from "../../conversation/components/InterviewPracticeView";
 
@@ -121,7 +122,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     }
   }, [defaultTab]);
 
-  const { settings, updateProfileSettings } = useCurrentUser();
+  const { user, settings, updateProfileSettings } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
   const [activeUserLevel, setActiveUserLevel] = useState<string>(() => {
@@ -262,7 +263,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                   <button
                     onClick={() => {
                       try {
-                        localStorage.removeItem("celaest:interview-progress:v2");
+                        clearPersistedInterview(user?.id);
                         localStorage.removeItem("celaest:interview:ai_questions:v2:" + activeUserLevel);
                       } catch {}
                       window.location.reload();

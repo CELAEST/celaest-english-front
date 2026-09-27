@@ -13,6 +13,7 @@ import { AudioCaptureService, isMobileDevice, mergePhrasesCleanly } from "../ser
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { logger } from "../../../shared/utils/logger";
 import {
   loadPersistedInterview,
@@ -43,9 +44,10 @@ export const useInterviewSession = (
   initialLevel?: string,
   isActive: boolean = true,
 ) => {
+  const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   // Restore the last interview turn from localStorage so a reload or an SPA
   // route change never loses the user's answer or the AI feedback.
-  const restoredRef = useRef<PersistedInterviewState | null>(loadPersistedInterview());
+  const restoredRef = useRef<PersistedInterviewState | null>(loadPersistedInterview(currentUserId));
 
   const [activeCefrLevel, setActiveCefrLevelState] = useState<string>(() => {
     if (initialLevel) return normalizeCefr(initialLevel);
@@ -1093,10 +1095,10 @@ export const useInterviewSession = (
 
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(
-        () => savePersistedInterview(snapshot),
+        () => savePersistedInterview(snapshot, currentUserId),
       );
     } else {
-      savePersistedInterview(snapshot);
+      savePersistedInterview(snapshot, currentUserId);
     }
 
     const debounceMs = 500;

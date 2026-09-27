@@ -66,4 +66,24 @@ describe("interviewPersistence", () => {
     expect(() => savePersistedInterview(sample)).not.toThrow();
     spy.mockRestore();
   });
+
+  it("isolates persisted state across different user IDs", () => {
+    const userSample: PersistedInterviewState = {
+      ...sample,
+      currentQuestionIndex: 2,
+    };
+    savePersistedInterview(userSample, "user-alpha");
+
+    // user-beta should not see user-alpha's interview progress
+    expect(loadPersistedInterview("user-beta")).toBeNull();
+
+    // user-alpha sees their own progress
+    const alphaLoaded = loadPersistedInterview("user-alpha");
+    expect(alphaLoaded).not.toBeNull();
+    expect(alphaLoaded?.currentQuestionIndex).toBe(2);
+
+    // clear user-alpha
+    clearPersistedInterview("user-alpha");
+    expect(loadPersistedInterview("user-alpha")).toBeNull();
+  });
 });

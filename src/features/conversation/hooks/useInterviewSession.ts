@@ -129,6 +129,7 @@ export const useInterviewSession = (
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const isEvaluatingRef = useRef<boolean>(false);
+  const savingItemIdsRef = useRef<Set<string>>(new Set());
   const isAiSpeakingRef = useRef<boolean>(false);
   const userTranscriptRef = useRef<string>("");
   const textBeforeSegmentRef = useRef<string>("");
@@ -203,6 +204,12 @@ export const useInterviewSession = (
 
   const setActiveCefrLevel = useCallback(
     (level: string) => {
+      if (isEvaluatingRef.current) return;
+      SpeechSynthesisService.stop();
+      AudioCaptureService.stop();
+      isAiSpeakingRef.current = false;
+      setStatus("IDLE");
+      setSpeakingSeconds(0);
       const norm = normalizeCefr(level);
       prevInitialLevelRef.current = norm;
       setActiveCefrLevelState(norm);
@@ -896,15 +903,36 @@ export const useInterviewSession = (
     }
   }, [currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
-  // Stop audio/recording immediately when the tab/view becomes inactive
+  // Stop audio/recording immediately and release hardware tracks when the tab/view becomes inactive
   useEffect(() => {
     if (!isActive) {
       SpeechSynthesisService.stop();
       AudioCaptureService.stop();
+      AudioCaptureService.releaseMicStream();
       isAiSpeakingRef.current = false;
       setStatus((prev) => (prev === "AI_SPEAKING" || prev === "RECORDING" ? "IDLE" : prev));
     }
   }, [isActive]);
+
+  // Handle browser tab backgrounding and mobile screen lock cleanly
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (typeof document === "undefined") return;
+      if (document.visibilityState === "hidden") {
+        if (status === "RECORDING") {
+          void AudioCaptureService.stopAndGetAudio();
+          setStatus("IDLE");
+        } else if (isAiSpeakingRef.current) {
+          SpeechSynthesisService.stop();
+          isAiSpeakingRef.current = false;
+          setStatus("IDLE");
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [status]);
 
   // Trigger question speech only when view is active (on activation or on question change)
   const prevActiveRef = useRef<boolean>(false);
@@ -935,6 +963,7 @@ export const useInterviewSession = (
    */
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
+      if (isEvaluatingRef.current) return;
       const targetRate = slow ? Math.max(0.7, speechRate - 0.2) : speechRate;
       lastSpokenQuestionRef.current = "";
       speakQuestion(targetRate);
@@ -946,6 +975,7 @@ export const useInterviewSession = (
    * Action: Skip to next question / next round (Continuous infinite questions)
    */
   const skipQuestion = useCallback(() => {
+    if (isEvaluatingRef.current) return;
     SpeechSynthesisService.stop();
     AudioCaptureService.stop();
     isAiSpeakingRef.current = false;
@@ -980,6 +1010,10 @@ export const useInterviewSession = (
    */
   const saveSpecificErrorToMemory = useCallback(
     async (errorItem: SpecificErrorItem): Promise<boolean> => {
+      if (savedErrorIds.has(errorItem.id) || savingItemIdsRef.current.has(errorItem.id)) {
+        return true;
+      }
+      savingItemIdsRef.current.add(errorItem.id);
       try {
         await apiMemoryRepository.createCard({
           category: "SPEAKING",
@@ -997,9 +1031,11 @@ export const useInterviewSession = (
       } catch (err) {
         logger.warn("Failed to add interview correction to Memory Bank", err);
         return false;
+      } finally {
+        savingItemIdsRef.current.delete(errorItem.id);
       }
     },
-    [setSavedErrorIds],
+    [savedErrorIds, setSavedErrorIds],
   );
 
   /**
@@ -1010,7 +1046,7 @@ export const useInterviewSession = (
     let savedCount = 0;
 
     for (const item of turnFeedback.unclearOrErrorWords) {
-      if (!savedErrorIds.has(item.id)) {
+      if (!savedErrorIds.has(item.id) && !savingItemIdsRef.current.has(item.id)) {
         const success = await saveSpecificErrorToMemory(item);
         if (success) savedCount++;
       }

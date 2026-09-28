@@ -17,6 +17,7 @@ export interface InterviewAnalysisModalProps {
   feedback: ComprehensiveTurnFeedback;
   savedErrorIds: Set<string>;
   onClose: () => void;
+  onContinue?: () => void;
   onSaveSpecificError: (errorItem: SpecificErrorItem) => Promise<boolean>;
   onSaveAllErrors: () => Promise<number>;
   onNavigateToMemory?: (() => void) | undefined;
@@ -26,6 +27,7 @@ const InterviewAnalysisModalInner: React.FC<InterviewAnalysisModalProps> = ({
   feedback,
   savedErrorIds,
   onClose,
+  onContinue,
   onSaveSpecificError,
   onSaveAllErrors,
   onNavigateToMemory,
@@ -201,7 +203,7 @@ const InterviewAnalysisModalInner: React.FC<InterviewAnalysisModalProps> = ({
           </p>
           <button
             type="button"
-            onClick={onClose}
+            onClick={onContinue || onClose}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7048E8] to-[#A27FF3] text-white text-xs font-semibold transition-all shadow-lg shadow-[#7048E8]/30 hover:opacity-90 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
           >
             <span>Continuar con la siguiente pregunta</span>

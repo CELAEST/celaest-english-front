@@ -818,6 +818,20 @@ export class AudioCaptureService {
   }
 
   /**
+   * Releases hardware microphone MediaStream tracks so browser/OS recording indicators turn off
+   */
+  public static releaseMicStream(): void {
+    if (this.micStream) {
+      try {
+        this.micStream.getTracks().forEach((track) => track.stop());
+      } catch {
+        // ignore
+      }
+      this.micStream = null;
+    }
+  }
+
+  /**
    * Completely cleans up audio stream and object URLs on unmount
    */
   public static cleanup(): void {
@@ -830,10 +844,7 @@ export class AudioCaptureService {
       }
       this.lastAudioUrl = null;
     }
-    if (this.micStream) {
-      this.micStream.getTracks().forEach((track) => track.stop());
-      this.micStream = null;
-    }
+    this.releaseMicStream();
     if (this.audioContext && this.audioContext.state !== "closed") {
       try {
         this.audioContext.close();

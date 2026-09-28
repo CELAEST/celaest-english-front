@@ -129,6 +129,10 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     setShowAnalysisModal(false);
     setUserTranscript("");
   }, [setUserTranscript]);
+  const handleContinueNextQuestion = useCallback(() => {
+    setShowAnalysisModal(false);
+    skipQuestion();
+  }, [skipQuestion]);
   const handleOpenControlsDrawer = useCallback(() => setShowControlsDrawer(true), []);
   const handleCloseControlsDrawer = useCallback(() => setShowControlsDrawer(false), []);
   const handleRepeatQuestion = useCallback(() => repeatQuestion(), [repeatQuestion]);
@@ -178,6 +182,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       speechRate,
       isListening,
       isPaused,
+      isThinking,
       turnFeedback,
       savedErrorIds,
       onSetSpeechRate: setSpeechRate,
@@ -202,6 +207,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
       speechRate,
       isListening,
       isPaused,
+      isThinking,
       turnFeedback,
       savedErrorIds,
       setSpeechRate,
@@ -232,6 +238,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         roleName={roleName}
         userLevel={activeCefrLevel}
         speechRate={speechRate}
+        isThinking={isThinking}
         onSetSpeechRate={setSpeechRate}
         onSetLevel={handleSetLevel}
         onRepeatQuestion={handleRepeatQuestion}
@@ -312,6 +319,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
           feedback={turnFeedback}
           savedErrorIds={savedErrorIds}
           onClose={handleCloseAnalysisModal}
+          onContinue={handleContinueNextQuestion}
           onSaveSpecificError={saveSpecificErrorToMemory}
           onSaveAllErrors={saveAllErrorsToMemory}
           onNavigateToMemory={onNavigateToMemory}

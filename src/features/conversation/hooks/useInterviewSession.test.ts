@@ -14,6 +14,7 @@ vi.mock("../services/audioCaptureService", () => ({
     getMicVolume: vi.fn(() => 0),
     startRecognition: vi.fn(),
     stop: vi.fn(),
+    releaseMicStream: vi.fn(),
     stopAndGetAudio: vi.fn(() =>
       Promise.resolve({ audioBlob: null, audioUrl: null, durationSeconds: 0 }),
     ),
@@ -39,6 +40,12 @@ vi.mock("../../../infrastructure/repositories/ApiInterviewRepository", () => ({
   },
 }));
 
+vi.mock("../../../infrastructure/repositories/ApiMemoryRepository", () => ({
+  apiMemoryRepository: {
+    createCard: vi.fn(() => Promise.resolve({ id: "card-1" })),
+  },
+}));
+
 // jsdom may not implement rAF; stub it so the speak-on-mount effect is harmless.
 globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) =>
   setTimeout(() => cb(0), 0)) as unknown as typeof requestAnimationFrame;
@@ -47,6 +54,8 @@ globalThis.cancelAnimationFrame = ((id: number) =>
 
 import { useInterviewSession } from "./useInterviewSession";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
+import { AudioCaptureService } from "../services/audioCaptureService";
+import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 
 const STORAGE_KEY = "celaest:interview-progress:v1";
 
@@ -229,5 +238,76 @@ describe("useInterviewSession persistence", () => {
     // Give the async hydration a chance to (wrongly) override; it must NOT.
     await new Promise((r) => setTimeout(r, 50));
     expect(result.current.overallQuestionIndex).toBe(5);
+  });
+});
+
+describe("useInterviewSession edge cases & hardware resilience", () => {
+  it("releases microphone tracks when view becomes inactive", () => {
+    const { rerender } = renderHook(
+      ({ active }: { active: boolean }) => useInterviewSession("Product Manager", "B1", active),
+      { initialProps: { active: true } },
+    );
+
+    act(() => {
+      rerender({ active: false });
+    });
+
+    expect(AudioCaptureService.releaseMicStream).toHaveBeenCalled();
+  });
+
+  it("deduplicates card creation in saveSpecificErrorToMemory when called concurrently", async () => {
+    vi.mocked(apiMemoryRepository.createCard).mockClear();
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager"));
+
+    const fakeError = {
+      id: "err-101",
+      userSaidContext: "I did go yesterday",
+      betterWay: "I went yesterday",
+      translationSpanish: "Fui ayer",
+      errorWord: "did go",
+      correctWord: "went",
+      explanation: "Use simple past directly",
+      cefrLevel: "B1",
+    };
+
+    let p1: Promise<boolean>;
+    let p2: Promise<boolean>;
+
+    act(() => {
+      p1 = result.current.saveSpecificErrorToMemory(fakeError as any);
+      p2 = result.current.saveSpecificErrorToMemory(fakeError as any);
+    });
+
+    const [r1, r2] = await Promise.all([p1!, p2!]);
+
+    expect(r1).toBe(true);
+    expect(r2).toBe(true);
+    // Even if called twice in the same tick, only 1 HTTP request should be sent
+    expect(apiMemoryRepository.createCard).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(result.current.savedErrorIds.has("err-101")).toBe(true);
+    });
+  });
+
+  it("resets current question index and stops active audio when CEFR level is changed", () => {
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    // Advance to question 3
+    act(() => {
+      result.current.skipQuestion();
+      result.current.skipQuestion();
+    });
+
+    expect(result.current.currentQuestionIndex).toBeGreaterThan(1);
+
+    // Switch CEFR level to B2
+    act(() => {
+      result.current.setActiveCefrLevel("B2");
+    });
+
+    expect(result.current.activeCefrLevel).toBe("B2");
+    expect(result.current.currentQuestionIndex).toBe(1); // 1-based questionInRound
+    expect(result.current.overallQuestionIndex).toBe(1);
   });
 });

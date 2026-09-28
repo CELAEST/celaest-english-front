@@ -22,6 +22,7 @@ export interface ConversationRightPanelProps {
   speechRate?: number;
   isListening?: boolean;
   isPaused?: boolean;
+  isThinking?: boolean;
   turnFeedback?: ComprehensiveTurnFeedback | null;
   savedErrorIds?: Set<string>;
   onClose?: () => void;
@@ -49,6 +50,7 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
   speechRate = 0.95,
   isListening = false,
   isPaused = false,
+  isThinking = false,
   turnFeedback,
   savedErrorIds = DEFAULT_SAVED_ERROR_IDS,
   onClose,
@@ -342,9 +344,14 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         <button
           type="button"
           onClick={() => onRepeatQuestion && onRepeatQuestion(true)}
+          disabled={isThinking}
           aria-label="Repeat current interview question at a slower pace (0.7x)"
           title="Repeat slowly (0.7x pace)"
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+          className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all text-left z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 ${
+            isThinking
+              ? "opacity-35 cursor-not-allowed border-transparent pointer-events-none"
+              : "border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] cursor-pointer group"
+          }`}
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
             <span className="font-normal text-white">Repeat</span> slowly
@@ -358,9 +365,14 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         <button
           type="button"
           onClick={onTakeTime}
+          disabled={isThinking}
           aria-label="Add 15 seconds of thinking time to your response window"
           title="Add 15 seconds (+15s)"
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+          className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all text-left z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 ${
+            isThinking
+              ? "opacity-35 cursor-not-allowed border-transparent pointer-events-none"
+              : "border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] cursor-pointer group"
+          }`}
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
             <span className="font-normal text-white">Add</span> thinking time
@@ -374,9 +386,14 @@ const ConversationRightPanelInner: React.FC<ConversationRightPanelProps> = ({
         <button
           type="button"
           onClick={onSkipQuestion}
+          disabled={isThinking}
           aria-label="Skip or advance to the next interview question"
           title="Next question (Skip turn)"
-          className="flex items-center justify-between px-3 py-2 rounded-xl border border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] text-xs transition-all text-left cursor-pointer group z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+          className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all text-left z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 ${
+            isThinking
+              ? "opacity-35 cursor-not-allowed border-transparent pointer-events-none"
+              : "border-transparent hover:border-white/[0.08] hover:bg-white/[0.02] cursor-pointer group"
+          }`}
         >
           <span className="text-white/80 group-hover:text-white font-light tracking-wide">
             <span className="font-normal text-white">Next</span> question

@@ -31,6 +31,7 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
   onAudioEnded,
 }) => {
   const [localTime, setLocalTime] = React.useState<number>(0);
+  const [hasAudioLoadError, setHasAudioLoadError] = React.useState<boolean>(false);
   const currentTime = userAudioCurrentTime !== undefined ? userAudioCurrentTime : localTime;
 
   const handleAudioTimeUpdate = (e: React.SyntheticEvent<HTMLAudioElement>) => {
@@ -40,13 +41,16 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
 
   return (
     <article className="relative rounded-2xl bg-[#090A14] border border-white/[0.08] p-4 sm:p-6 lg:p-7 shadow-xl transition-all">
-      {feedback.userAudioUrl && (
+      {feedback.userAudioUrl && !hasAudioLoadError && (
         <audio
           ref={userAudioRef}
           src={feedback.userAudioUrl}
           preload="metadata"
           onTimeUpdate={handleAudioTimeUpdate}
           onLoadedMetadata={onAudioLoadedMetadata}
+          onError={() => {
+            setHasAudioLoadError(true);
+          }}
           onEnded={() => {
             setLocalTime(0);
             onAudioEnded();
@@ -66,7 +70,7 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
           </div>
         </div>
 
-        {feedback.userAudioUrl && (
+        {feedback.userAudioUrl && !hasAudioLoadError && (
           <button
             onClick={onToggleUserAudio}
             className="flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
@@ -88,7 +92,7 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
       </div>
 
       {/* Audio Player Controls & Interactive Waveform */}
-      {feedback.userAudioUrl ? (
+      {feedback.userAudioUrl && !hasAudioLoadError ? (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 pl-1 sm:pl-5 pr-1 sm:pr-8 max-w-[760px] pt-1">
           <div className="flex items-center gap-2 shrink-0">
             <button

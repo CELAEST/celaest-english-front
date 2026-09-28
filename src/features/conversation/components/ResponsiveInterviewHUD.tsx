@@ -17,6 +17,7 @@ export interface ResponsiveInterviewHUDProps {
   roleName?: string;
   userLevel?: string;
   speechRate?: number;
+  isThinking?: boolean;
   onSetSpeechRate?: (rate: number) => void;
   onSetLevel?: (level: CefrLevelCode) => void;
   onRepeatQuestion?: () => void;
@@ -33,6 +34,7 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
   roleName = "Professional",
   userLevel,
   speechRate = 0.95,
+  isThinking = false,
   onSetSpeechRate,
   onSetLevel,
   onRepeatQuestion,
@@ -63,10 +65,12 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
         </span>
         <span className="text-white/20 font-sans sm:hidden">·</span>
         {onSetLevel ? (
-          <LevelSelectorPill
-            currentLevel={userLevel || "B1"}
-            onSelectLevel={onSetLevel}
-          />
+          <div className={isThinking ? "opacity-50 pointer-events-none" : ""}>
+            <LevelSelectorPill
+              currentLevel={userLevel || "B1"}
+              onSelectLevel={isThinking ? () => {} : onSetLevel}
+            />
+          </div>
         ) : userLevel ? (
           <>
             <span className="text-white/20 font-sans hidden sm:inline">·</span>
@@ -84,7 +88,12 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
           <button
             type="button"
             onClick={onRepeatQuestion}
-            className="hidden sm:inline-flex h-6 items-center space-x-1.5 text-white/70 hover:text-white transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+            disabled={isThinking}
+            className={`hidden sm:inline-flex h-6 items-center space-x-1.5 transition-all duration-200 leading-none ${
+              isThinking
+                ? "opacity-35 cursor-not-allowed pointer-events-none"
+                : "text-white/70 hover:text-white cursor-pointer group hover:scale-105 active:scale-95"
+            }`}
             title="Repetir pregunta en voz alta"
           >
             <svg
@@ -222,7 +231,12 @@ const ResponsiveInterviewHUDInner: React.FC<ResponsiveInterviewHUDProps> = ({
           <button
             type="button"
             onClick={onNextQuestion}
-            className="h-6 inline-flex items-center space-x-1.5 transition-all duration-200 cursor-pointer group leading-none hover:scale-105 active:scale-95"
+            disabled={isThinking}
+            className={`h-6 inline-flex items-center space-x-1.5 transition-all duration-200 leading-none ${
+              isThinking
+                ? "opacity-35 cursor-not-allowed pointer-events-none"
+                : "cursor-pointer group hover:scale-105 active:scale-95"
+            }`}
             title="Pasar a la siguiente pregunta"
           >
             <span className="text-xs font-medium font-sans tracking-tight text-white/80 group-hover:text-white transition-colors hidden sm:inline">

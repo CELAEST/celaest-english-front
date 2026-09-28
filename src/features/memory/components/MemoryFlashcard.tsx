@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import {
   MemorySpeakingFront,
@@ -40,6 +40,21 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
     // 3D Mathematical Tilt & Specular Glare Physics via CSS variables (Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
     const rafIdRef = useRef<number | null>(null);
+    const isMountedRef = useRef<boolean>(true);
+
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        SpeechSynthesisService.stop();
+      };
+    }, []);
+
+    useEffect(() => {
+      setIsPlayingAudio(false);
+      SpeechSynthesisService.stop();
+    }, [card.id]);
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
       if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return;
@@ -105,9 +120,15 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
       void SpeechSynthesisService.speak(textToSpeak, {
         voice: "en-US-AriaNeural",
         rate: 0.9,
-        onStart: () => setIsPlayingAudio(true),
-        onEnd: () => setIsPlayingAudio(false),
-        onError: () => setIsPlayingAudio(false),
+        onStart: () => {
+          if (isMountedRef.current) setIsPlayingAudio(true);
+        },
+        onEnd: () => {
+          if (isMountedRef.current) setIsPlayingAudio(false);
+        },
+        onError: () => {
+          if (isMountedRef.current) setIsPlayingAudio(false);
+        },
       });
     };
 

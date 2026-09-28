@@ -43,6 +43,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
     const initialStored = DynamicWritingTaskService.loadActiveSubmission();
 
+    const [isLocalEvaluating, setIsLocalEvaluating] = useState<boolean>(false);
+    const isEvaluatingActive = isEvaluating || isLocalEvaluating;
+
     const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
     const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
       ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
@@ -163,7 +166,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
   const minWordsRequired = Math.min(8, currentTask.minWords || 8);
 
   const handleSubmit = async () => {
-    if (isEvaluating) return;
+    if (isEvaluatingActive) return;
     if (wordCount < minWordsRequired) return;
 
     // 0-Token Linguistic & Gibberish Shield Guard
@@ -199,6 +202,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       return;
     }
 
+    setIsLocalEvaluating(true);
     try {
       let result: WritingSubmission;
       if (!isCore) {
@@ -300,6 +304,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       setRecoveryScenario(scenario);
       setRecoveryCooldown(cooldownSeconds);
       setIsRecoveryModalOpen(true);
+    } finally {
+      setIsLocalEvaluating(false);
     }
   };
 
@@ -372,7 +378,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   };
 
   const handleNewTask = async () => {
-    if (isEvaluating || isGeneratingTask) return;
+    if (isEvaluatingActive || isGeneratingTask) return;
 
     try {
       const isCore = await providerKeyVault.isCentralCoreEnabled();
@@ -540,7 +546,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
             hasContent={wordCount >= minWordsRequired}
             wordCount={wordCount}
             minWords={minWordsRequired}
-            isEvaluating={isEvaluating}
+            isEvaluating={isEvaluatingActive}
             hasAnalysis={Boolean(activeSubmission)}
             onSubmit={handleSubmit}
             onViewAnalysis={handleOpenModal}
@@ -552,7 +558,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
           <WritingAIMentorCard
             userLevel={activeCefrLevel}
             statusText={
-              isEvaluating
+              isEvaluatingActive
                 ? "Analyzing your grammar, vocabulary, and register with AI..."
                 : activeSubmission
                   ? `Evaluation complete! Analyzed ${activeSubmission.wordCount} words and saved ${activeSubmission.extractedCardsCount || 0} cards to Memory Bank.`
@@ -560,7 +566,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                     ? `Nivel ${activeCefrLevel}: Mantén oraciones claras y directas. Usa las pistas recomendadas para empezar tu redacción con seguridad.`
                     : `Current task: ${currentTask.title.toLowerCase()}. ${currentTask.toneHint} tone. I'll review your writing when you submit.`
             }
-            animated={isEvaluating}
+            animated={isEvaluatingActive}
           />
           <WritingProgressCard
             progressPercentage={Math.min(100, Math.round((wordCount / currentTask.maxWords) * 100))}

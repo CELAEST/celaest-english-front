@@ -10,7 +10,7 @@ export interface WritingEditorProps {
 }
 
 const FONT_SIZES = [
-  { label: "Small", className: "text-[15px] sm:text-base" },
+  { label: "Small", className: "text-base sm:text-base" },
   { label: "Medium", className: "text-base sm:text-lg" },
   { label: "Large", className: "text-lg sm:text-xl" },
 ] as const;

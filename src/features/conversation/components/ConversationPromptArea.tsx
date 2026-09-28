@@ -175,7 +175,7 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
           }}
           placeholder="Start speaking with the mic or type your answer here (Click green OK or press Enter to submit)..."
           style={{ outline: "none", boxShadow: "none" }}
-          className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(72px,12vh,125px)] sm:h-[clamp(85px,14vh,180px)] bg-transparent font-sans text-[clamp(15px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
+          className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(72px,12vh,125px)] sm:h-[clamp(85px,14vh,180px)] bg-transparent font-sans text-[clamp(16px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
         />
       </div>
     </div>

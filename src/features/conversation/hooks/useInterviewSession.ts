@@ -128,6 +128,7 @@ export const useInterviewSession = (
   const animFrameRef = useRef<number | null>(null);
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const isEvaluatingRef = useRef<boolean>(false);
   const isAiSpeakingRef = useRef<boolean>(false);
   const userTranscriptRef = useRef<string>("");
   const textBeforeSegmentRef = useRef<string>("");
@@ -399,7 +400,8 @@ export const useInterviewSession = (
    */
   const processTurn = useCallback(
     async (spokenText: string, audioUrl?: string | null, durationSeconds?: number) => {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || isEvaluatingRef.current) return;
+      isEvaluatingRef.current = true;
 
       const activeQuestion = currentQuestionRef.current || currentQuestion;
 
@@ -463,6 +465,7 @@ export const useInterviewSession = (
         setRecoveryCooldown(cooldownSeconds);
         setIsRecoveryModalOpen(true);
       } finally {
+        isEvaluatingRef.current = false;
         if (isMountedRef.current) {
           setProcessingStage("IDLE");
           setStatus("IDLE");
@@ -670,6 +673,11 @@ export const useInterviewSession = (
    */
   const submitCurrentTurn = useCallback(
     async (customText?: string) => {
+      if (status === "THINKING" || isEvaluatingRef.current) {
+        return;
+      }
+      isEvaluatingRef.current = true;
+
       let textToSubmit = (
         typeof customText === "string" ? customText : userTranscriptRef.current || userTranscript
       ).trim();
@@ -753,6 +761,7 @@ export const useInterviewSession = (
         },
       );
       if (!validation.isValid) {
+        isEvaluatingRef.current = false;
         logger.info("[useInterviewSession] Suppressed turn submission:", validation.reason);
         if (isMountedRef.current) {
           setSpeechNotice(validation.message || "Por favor responde en inglés para evaluar tu práctica.");

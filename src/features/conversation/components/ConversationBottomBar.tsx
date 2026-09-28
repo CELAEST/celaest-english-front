@@ -51,9 +51,16 @@ export const ConversationBottomBar: React.FC<ConversationBottomBarProps> = ({
                   STAR Interview Strategy
                 </span>
                 <button
+                  type="button"
                   onClick={() => setShowTipsModal(false)}
-                  className="text-neutral-400 hover:text-white text-xs p-1 cursor-pointer"
-                ></button>
+                  aria-label="Cerrar tips"
+                  className="text-neutral-400 hover:text-white text-xs p-1 rounded hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
               </div>
               <p className="text-xs text-white/90 font-light leading-relaxed mb-3">{starHint}</p>
               <div className="space-y-1.5 text-[11px] text-neutral-400">

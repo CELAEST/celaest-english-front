@@ -96,4 +96,35 @@ describe("useReadingAudioNarrator", () => {
     expect(result.current.isPlaying).toBe(false);
     expect(result.current.currentWordIndex).toBe(null);
   });
+
+  it("pauses speech without resetting playback rate", () => {
+    const { result } = renderHook(() => useReadingAudioNarrator("Elena resolved the bug"));
+
+    act(() => {
+      result.current.togglePlay();
+      result.current.pause();
+    });
+
+    expect(result.current.isPlaying).toBe(false);
+    expect(result.current.isPaused).toBe(false);
+  });
+
+  it("stops playback when isActive transitions to false", () => {
+    const { result, rerender } = renderHook(
+      ({ active }) => useReadingAudioNarrator("Elena resolved the bug", undefined, 0, active),
+      { initialProps: { active: true } },
+    );
+
+    act(() => {
+      result.current.togglePlay();
+    });
+    expect(mockSpeak).toHaveBeenCalled();
+
+    // User navigates away / switches tab
+    rerender({ active: false });
+
+    expect(mockCancel).toHaveBeenCalled();
+    expect(result.current.isPlaying).toBe(false);
+  });
 });
+

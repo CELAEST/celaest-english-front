@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { ReadingWordModal } from "./ReadingWordModal";
 import { VocabloTranslateIcon } from "./ReadingBespokeIcons";
@@ -20,6 +20,7 @@ export interface ReadingArticleReaderProps {
   activeKaraokeWordIndex?: number | null | undefined;
   isWordSaved?: ((word: string) => boolean) | undefined;
   fontSizeClassName?: string | undefined;
+  onPauseAudio?: (() => void) | undefined;
 }
 
 interface WordRange {
@@ -39,6 +40,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     activeKaraokeWordIndex,
     isWordSaved,
     fontSizeClassName,
+    onPauseAudio,
   }) => {
     const [hoveredRange, setHoveredRange] = useState<WordRange | null>(null);
     const [activeRange, setActiveRange] = useState<WordRange | null>(null);
@@ -51,6 +53,8 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     const [showTooltip, setShowTooltip] = useState<boolean>(false);
 
     const buttonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+    const articleContainerRef = useRef<HTMLElement | null>(null);
+    const prevSentenceIdxRef = useRef<number | null>(null);
 
     // Merge AI extracted story phrasal verbs with Universal Master Corpus
     const activePhrasalSet = useMemo(() => {
@@ -151,6 +155,9 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
 
     const performLookup = useCallback(
       async (phrase: string, rect: DOMRect) => {
+        // Immediately pause background narrator so it doesn't speak over the user
+        onPauseAudio?.();
+
         const isMobile = window.innerWidth < 640;
         const popoverWidth = Math.min(isMobile ? 275 : 295, window.innerWidth - 24);
         const bottomSafetyPadding = isMobile ? 86 : 24; // 86px clears the mobile floating navigation dock cleanly
@@ -172,8 +179,8 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         const maxTop = Math.max(topSafetyPadding, window.innerHeight - bottomSafetyPadding - estimatedHeight);
         top = Math.max(topSafetyPadding, Math.min(top, maxTop));
 
-        // Intelligent Sidebar Clearance: detect fixed desktop navigation rail so modal never collides or hides behind it
-        let minLeft = isMobile ? 16 : 24;
+        // Intelligent Sidebar & Screen Clearance: 26px clears the modal's left speaker squircle (-left-[18px]) with 8px margin
+        let minLeft = isMobile ? 26 : 24;
         try {
           const sidebarEl =
             document.querySelector("aside") ||
@@ -253,7 +260,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           }
         }
       },
-      [onLookupWord, onDirectTranslate, content],
+      [onLookupWord, onDirectTranslate, content, onPauseAudio],
     );
 
     const handleWordClick = useCallback(
@@ -337,8 +344,40 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     const activeSentenceIdx =
       isListening && activeKaraokeWordIndex !== null ? wordSentenceIndices[activeKaraokeWordIndex] : null;
 
+    // Auto-scroll to keep active karaoke word/sentence in the viewport on mobile & desktop
+    useEffect(() => {
+      if (!isListening || activeKaraokeWordIndex === null) {
+        prevSentenceIdxRef.current = null;
+        return;
+      }
+
+      // Smooth scroll when entering a new sentence, or if word is out of comfortable reading bounds
+      const sentenceChanged = activeSentenceIdx !== prevSentenceIdxRef.current;
+      if (sentenceChanged) {
+        prevSentenceIdxRef.current = activeSentenceIdx;
+        const targetEl = buttonRefs.current.get(activeKaraokeWordIndex);
+        const container = articleContainerRef.current;
+        if (targetEl && container) {
+          const containerRect = container.getBoundingClientRect();
+          const targetRect = targetEl.getBoundingClientRect();
+
+          const isOutOfView =
+            targetRect.top < containerRect.top + 20 ||
+            targetRect.bottom > containerRect.bottom - 60;
+
+          if (isOutOfView) {
+            targetEl.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }
+      }
+    }, [isListening, activeKaraokeWordIndex, activeSentenceIdx]);
+
     return (
       <article
+        ref={articleContainerRef}
         role="article"
         aria-label="Reading content"
         onMouseUp={handleTextSelection}

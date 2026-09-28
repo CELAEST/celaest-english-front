@@ -136,8 +136,9 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     setSelectedVoice,
     togglePlay: toggleAudioPlay,
     restart: restartAudioPlay,
+    pause: pauseAudioPlay,
     cyclePlaybackRate: cycleAudioRate,
-  } = useReadingAudioNarrator(currentPageContent, allPages, currentPageIndex);
+  } = useReadingAudioNarrator(currentPageContent, allPages, currentPageIndex, isActive);
 
   const handleToggleVoice = useCallback(() => {
     setSelectedVoice(
@@ -378,6 +379,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                   activeKaraokeWordIndex={activeKaraokeWordIndex}
                   isWordSaved={isWordSaved}
                   fontSizeClassName={activeFontSize.className}
+                  onPauseAudio={pauseAudioPlay}
                 />
               )}
             </div>

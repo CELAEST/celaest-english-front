@@ -32,6 +32,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     const [isAdding, setIsAdding] = useState(false);
     const [addedSuccess, setAddedSuccess] = useState(false);
     const [isTranslatingDirect, setIsTranslatingDirect] = useState(false);
+    const isSavingRef = useRef(false);
 
     // 3D Spatial Tilt Physics & Dynamic Specular Sheen (Direct RAF DOM updates — Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
@@ -93,6 +94,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     useEffect(() => {
       setAddedSuccess(false);
       setIsAdding(false);
+      isSavingRef.current = false;
       setIsTranslatingDirect(false);
       setIsPlayingAudio(false);
       SpeechSynthesisService.stop();
@@ -149,7 +151,8 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
     const handleSaveToMemory = async (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!wordData || addedSuccess || isAlreadyInMemory) return;
+      if (!wordData || addedSuccess || isAlreadyInMemory || isSavingRef.current) return;
+      isSavingRef.current = true;
       setIsAdding(true);
       try {
         if (onAddToMemory) {
@@ -160,6 +163,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         logger.warn("Failed to save word to Memory Bank", err);
       } finally {
         setIsAdding(false);
+        isSavingRef.current = false;
       }
     };
 
@@ -198,16 +202,12 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
 
     const modalContent = (
       <>
-        {/* Backdrop click dismiss — cursor-pointer and touch handler required for iOS Safari tap dispatch */}
+        {/* Backdrop click dismiss — cursor-pointer allows natural tap dispatch */}
         <div
           role="button"
           tabIndex={-1}
           className="fixed inset-0 z-[9998] bg-transparent cursor-pointer select-none"
           onClick={onClose}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            onClose();
-          }}
           aria-label="Cerrar modal"
         />
 

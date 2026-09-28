@@ -374,6 +374,8 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         setLocalArticles((prev) => [newArticle, ...prev.filter((a) => a.id !== newArticle.id)]);
         setActiveArticleId(newArticle.id);
         setCurrentPageIndex(0);
+        setHasFinishedArticle(false);
+        setSessionSeconds(0);
         return newArticle;
       } catch (err) {
         logger.warn("[useReadingArticles] Failed to generate AI article:", err);

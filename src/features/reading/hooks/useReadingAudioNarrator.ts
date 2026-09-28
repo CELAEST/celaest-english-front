@@ -43,6 +43,7 @@ export interface UseReadingAudioNarratorReturn {
   togglePlay: () => void;
   restart: () => void;
   stop: () => void;
+  pause: () => void;
   cyclePlaybackRate: () => void;
 }
 
@@ -252,6 +253,7 @@ export function useReadingAudioNarrator(
   text: string,
   allPages?: string[],
   currentPageIndex?: number,
+  isActive: boolean = true,
 ): UseReadingAudioNarratorReturn {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -344,6 +346,26 @@ export function useReadingAudioNarrator(
       stop();
     };
   }, [text, stop]);
+
+  // Clean shutdown when tab is not active or user navigates away
+  useEffect(() => {
+    if (!isActive) {
+      stop();
+    }
+  }, [isActive, stop]);
+
+  const pause = useCallback(() => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPaused(true);
+      stopTracker();
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
+  }, [stopTracker]);
 
   const cyclePlaybackRate = useCallback(() => {
     setPlaybackRate((prev) => {
@@ -681,6 +703,7 @@ export function useReadingAudioNarrator(
     togglePlay,
     restart,
     stop,
+    pause,
     cyclePlaybackRate,
   };
 }

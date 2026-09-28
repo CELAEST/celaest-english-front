@@ -151,12 +151,17 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     const handleCloseModal = useCallback(() => {
       setShowTooltip(false);
       setActiveRange(null);
+      setActiveWordData(null);
+      setIsLoadingLookup(false);
     }, []);
 
     const performLookup = useCallback(
       async (phrase: string, rect: DOMRect) => {
         // Immediately pause background narrator so it doesn't speak over the user
         onPauseAudio?.();
+
+        // Clear previous word data so stale memory states never bleed through
+        setActiveWordData(null);
 
         const isMobile = window.innerWidth < 640;
         const popoverWidth = Math.min(isMobile ? 275 : 295, window.innerWidth - 24);
@@ -501,7 +506,6 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         {/* Extracted Bespoke Vocabulary Modal */}
         {showTooltip && (
           <ReadingWordModal
-            key={activeWordData?.word || "reading-modal"}
             wordData={activeWordData}
             isLoading={isLoadingLookup}
             coords={popoverCoords}

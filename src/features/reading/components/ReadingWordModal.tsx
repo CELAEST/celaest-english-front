@@ -153,14 +153,15 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       e.stopPropagation();
       if (!wordData || addedSuccess || isAlreadyInMemory || isSavingRef.current) return;
       isSavingRef.current = true;
-      setIsAdding(true);
+      // Instant optimistic UI response (0ms) — immediately show "In Memory" with green checkmark
+      setAddedSuccess(true);
       try {
         if (onAddToMemory) {
           await onAddToMemory(wordData);
         }
-        setAddedSuccess(true);
       } catch (err) {
-        logger.warn("Failed to save word to Memory Bank", err);
+        logger.warn("Failed to save word to Memory Bank, reverting", err);
+        setAddedSuccess(false);
       } finally {
         setIsAdding(false);
         isSavingRef.current = false;
@@ -378,15 +379,15 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                 </p>
               )}
 
-              {/* Bottom Action: + Add to Memory / ✓ In Memory (Pure Floating Typography — Zero Pill, Zero Border) */}
-              <div className="flex items-center justify-start pt-0.5 pl-2">
+              {/* Bottom Action: + Add to Memory / ✓ In Memory (Generous Mobile Touch Target + Instantaneous Feedback) */}
+              <div className="flex items-center justify-start pt-1 pl-1">
                 {addedSuccess || isAlreadyInMemory ? (
                   <span
                     aria-label="Word already in Memory"
-                    className="text-[12px] font-medium tracking-wide flex items-center space-x-1.5 text-[#4ade80] select-none"
+                    className="min-h-[38px] px-3 py-1.5 rounded-xl text-[12px] font-medium tracking-wide flex items-center space-x-1.5 text-[#4ade80] select-none animate-[fadeIn_0.2s_ease-out]"
                   >
                     <svg
-                      className="w-3.5 h-3.5 text-[#4ade80]"
+                      className="w-4 h-4 text-[#4ade80]"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -404,7 +405,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                     onClick={handleSaveToMemory}
                     disabled={isAdding}
                     aria-label="Add word to Memory"
-                    className="text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group text-[#A27FF3] hover:text-white cursor-pointer"
+                    className="min-h-[38px] px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] border border-white/[0.06] hover:border-white/[0.12] text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group text-[#C4B5FD] hover:text-white cursor-pointer touch-manipulation select-none active:scale-[0.98]"
                   >
                     <MemoryBankSaveIcon className="w-3.5 h-3.5 text-[#A27FF3] group-hover:scale-110 transition-transform" />
                     <span>{isAdding ? "Saving..." : "Add to Memory"}</span>

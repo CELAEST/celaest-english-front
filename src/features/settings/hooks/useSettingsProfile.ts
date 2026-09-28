@@ -15,7 +15,7 @@ export const useSettingsProfile = (initialUserName?: string) => {
   const fallbackName: string | undefined =
     initialUserName ?? storedUser?.name ?? undefined;
 
-  const profileQueryKey = QUERY_KEYS.settings.profile;
+  const profileQueryKey = QUERY_KEYS.settings.profile(storedUser?.id);
 
   const {
     data: profile = null,

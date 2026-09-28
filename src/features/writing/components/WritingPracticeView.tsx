@@ -489,10 +489,10 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   return (
     <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none z-10 overflow-hidden animate-[fadeIn_0.5s_ease-out_both]">
       {/* Main Workspace Content Canvas */}
-      <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3 gap-2 sm:gap-5 lg:gap-6 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3 gap-2 sm:gap-5 lg:gap-6 z-10 overflow-y-auto lg:overflow-hidden no-scrollbar">
         {/* Left Column: Task Header, Editor & Submit Bar */}
-        <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full overflow-hidden">
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full overflow-y-auto lg:overflow-hidden no-scrollbar pb-3 lg:pb-0">
+          <div className="flex flex-col flex-1 min-h-0 overflow-visible lg:overflow-hidden">
             <React.Fragment key={currentTask.id}>
               <WritingTaskHeader
                 category={`WRITING TASK · ${currentTask.category}`}

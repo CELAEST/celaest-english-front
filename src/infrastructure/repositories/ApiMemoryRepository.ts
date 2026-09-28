@@ -30,8 +30,32 @@ function getStorageKey(): string {
 function getLocalCards(): MemoryCard[] {
   if (typeof window === "undefined" || !window.localStorage) return [];
   try {
+    const currentUserId = getActiveUserId();
     const raw = localStorage.getItem(getStorageKey());
-    return raw ? JSON.parse(raw) : [];
+    let cards: MemoryCard[] = raw ? JSON.parse(raw) : [];
+
+    // If user is now authenticated, auto-migrate cards created during anonymous onboarding
+    if (currentUserId !== "anon") {
+      const anonRaw = localStorage.getItem("lingua_memory_cards_cache_anon");
+      if (anonRaw) {
+        try {
+          const anonCards: MemoryCard[] = JSON.parse(anonRaw);
+          if (Array.isArray(anonCards) && anonCards.length > 0) {
+            const existingIds = new Set(cards.map((c) => c.id));
+            const newOrphans = anonCards.filter((c) => !existingIds.has(c.id));
+            if (newOrphans.length > 0) {
+              cards = [...cards, ...newOrphans];
+              localStorage.setItem(getStorageKey(), JSON.stringify(cards));
+            }
+            localStorage.removeItem("lingua_memory_cards_cache_anon");
+          }
+        } catch {
+          // ignore parse error
+        }
+      }
+    }
+
+    return Array.isArray(cards) ? cards : [];
   } catch {
     return [];
   }

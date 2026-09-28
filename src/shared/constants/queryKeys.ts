@@ -12,7 +12,10 @@ export const QUERY_KEYS = {
   },
   memory: {
     all: ["memory"] as const,
-    cards: (category?: string) => ["memory", "cards", category || "all"] as const,
+    cards: (category?: string, userId?: string) =>
+      userId
+        ? (["memory", "cards", userId, category || "all"] as const)
+        : (["memory", "cards", category || "all"] as const),
   },
   conversation: {
     all: ["conversation"] as const,
@@ -23,7 +26,10 @@ export const QUERY_KEYS = {
     submissions: ["writing", "submissions"] as const,
   },
   settings: {
-    profile: ["settings", "profile"] as const,
+    profile: (userId?: string) =>
+      userId
+        ? (["settings", "profile", userId] as const)
+        : (["settings", "profile"] as const),
     providers: ["settings", "ai-providers"] as const,
   },
 };

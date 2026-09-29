@@ -169,6 +169,11 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     if (isEvaluatingActive) return;
     if (wordCount < minWordsRequired) return;
 
+    // Immediately dismiss mobile soft keyboard to prevent viewport distortion
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     // 0-Token Linguistic & Gibberish Shield Guard
     const validation = validateSpeechIntelligibility(editorText, 0, undefined, {
       targetLevel: activeCefrLevel,
@@ -296,8 +301,14 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
 
       setPersistedSubmission(result);
       setShowResultModal(true);
-      setSavedErrorIds(new Set());
-      DynamicWritingTaskService.saveActiveSubmission(result, true, []);
+      const initialSaved = new Set<string>();
+      const feedbackCards = (result.feedback as any)?.createdCardIDs;
+      if (Array.isArray(feedbackCards) && feedbackCards.length > 0) {
+        const errs = result.feedback?.extractedErrors || [];
+        errs.forEach((_, idx) => initialSaved.add(getWritingErrorId(result.id, idx)));
+      }
+      setSavedErrorIds(initialSaved);
+      DynamicWritingTaskService.saveActiveSubmission(result, true, Array.from(initialSaved));
     } catch (err: any) {
       logger.warn("Writing evaluation failed", err);
       const { scenario, cooldownSeconds } = classifyAiError(err);

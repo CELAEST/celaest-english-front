@@ -156,8 +156,8 @@ const VideoOrbInner: React.FC<VideoOrbProps> = ({
           if (isActive && isIntersectingRef.current) tryPlay();
         }}
       >
-        <source src="/assets/orve.webm" type="video/webm" />
         <source src="/assets/orve.mp4" type="video/mp4" />
+        <source src="/assets/orve.webm" type="video/webm" />
       </video>
     </div>
   );

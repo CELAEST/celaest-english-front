@@ -260,6 +260,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     async (cardId: string) => {
       try {
         await deleteCard(cardId);
+        setIsFlipped(false);
         if (selectedIdx >= totalCards - 1 && selectedIdx > 0) {
           setSelectedIdx((prev) => prev - 1);
         }
@@ -386,6 +387,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
                   onSwitchCategory={handleSwitchToAvailableCategory}
                   onStartPractice={handleStartPractice}
                   hideHeader={true}
+                  isActive={isActive}
                 />
               </motion.div>
             ) : (

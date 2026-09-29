@@ -31,8 +31,9 @@ export const useMemoryCards = (category?: string) => {
   const deleteMutation = useMutation({
     mutationFn: (cardId: string) => apiMemoryRepository.deleteCard(cardId),
     onSuccess: (_, deletedCardId) => {
-      queryClient.setQueryData<MemoryCard[]>(cardsKey, (prev) =>
-        prev ? prev.filter((c) => c.id !== deletedCardId) : [],
+      queryClient.setQueriesData<MemoryCard[]>(
+        { queryKey: QUERY_KEYS.memory.all },
+        (prev) => (prev ? prev.filter((c) => c.id !== deletedCardId) : []),
       );
     },
   });

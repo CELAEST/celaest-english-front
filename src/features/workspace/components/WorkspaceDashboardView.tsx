@@ -140,7 +140,25 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     }
   }, [settings.cefrLevel]);
 
-  const userProfession = settings.profession || settings.learningGoal || "Professional";
+  const userProfession = React.useMemo(() => {
+    const raw = (settings.profession || "").trim();
+    const lower = raw.toLowerCase();
+    if (
+      !raw ||
+      lower.includes("conversation") ||
+      lower.includes("speaking") ||
+      lower.includes("reading") ||
+      lower.includes("writing") ||
+      lower.includes("interview") ||
+      lower.includes("fluency") ||
+      lower.includes("daily") ||
+      lower.includes("general")
+    ) {
+      return "Professional";
+    }
+    return raw;
+  }, [settings.profession]);
+
   const profile = {
     learningGoal: settings.learningGoal,
     preferenceStyle: settings.preferenceStyle,

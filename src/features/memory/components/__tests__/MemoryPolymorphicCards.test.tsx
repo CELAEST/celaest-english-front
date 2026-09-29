@@ -154,7 +154,7 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
     expect(screen.getByText(/Categoría & Contexto de Uso/i)).toBeDefined();
   });
 
-  it("handles delete action trigger", () => {
+  it("handles delete action with 2-step safe confirmation", () => {
     const onDelete = vi.fn();
 
     render(
@@ -171,7 +171,16 @@ describe("MemoryFlashcard Polymorphic Deck (Speaking, Writing, Reading)", () => 
     const deleteButtons = screen.getAllByLabelText("Delete card");
     expect(deleteButtons.length).toBeGreaterThan(0);
 
+    // Step 1: First click activates confirmation mode (does not immediately delete)
     fireEvent.click(deleteButtons[0]);
+    expect(onDelete).not.toHaveBeenCalled();
+
+    // Step 2: Confirming delete button is now active
+    const confirmButtons = screen.getAllByLabelText("Confirm delete card");
+    expect(confirmButtons.length).toBeGreaterThan(0);
+
+    // Step 3: Second click executes the deletion
+    fireEvent.click(confirmButtons[0]);
     expect(onDelete).toHaveBeenCalledWith(baseCard.id);
   });
 });

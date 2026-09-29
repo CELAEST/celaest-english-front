@@ -216,7 +216,14 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     setIsRecoveryModalOpen(false);
     if (recoveryAction?.type === "word_lookup") {
       try {
-        await translateWordDirect(recoveryAction.word, recoveryAction.context);
+        const tr = await translateWordDirect(recoveryAction.word, recoveryAction.context);
+        if (tr && typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("celaest:word-translated", {
+              detail: { word: recoveryAction.word, translation: tr },
+            }),
+          );
+        }
       } catch (err) {
         logger.warn("Failed direct translation after recovery resume:", err);
       }

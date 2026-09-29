@@ -64,15 +64,15 @@ export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React
     const dots = getPaginationDots(totalCards, activeIndex);
 
     return (
-      <div className="sm:hidden flex items-center justify-center w-full pt-7 pb-0 select-none z-20 gap-2.5">
+      <div className="sm:hidden flex items-center justify-center w-full pt-6 pb-0 select-none z-20 gap-3">
         {onPrev && (
           <button
             type="button"
             onClick={onPrev}
             aria-label="Previous card"
-            className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 active:text-white active:bg-white/[0.1] transition-all cursor-pointer"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full text-white/50 active:text-white bg-white/[0.04] active:bg-white/[0.12] transition-all cursor-pointer"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
         )}
 
@@ -87,7 +87,7 @@ export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React
               type="button"
               onClick={() => onSelectIndex?.(idx)}
               aria-label={`Go to card ${idx + 1}`}
-              className="relative flex items-center justify-center focus:outline-none cursor-pointer p-0.5"
+              className="relative flex items-center justify-center focus:outline-none cursor-pointer p-1.5 min-w-[20px] min-h-[30px]"
             >
               <motion.div
                 layout
@@ -114,9 +114,9 @@ export const MemoryMobileSwipeHint: React.FC<MemoryMobileSwipeHintProps> = React
             type="button"
             onClick={onNext}
             aria-label="Next card"
-            className="w-7 h-7 flex items-center justify-center rounded-full text-white/40 active:text-white active:bg-white/[0.1] transition-all cursor-pointer"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full text-white/50 active:text-white bg-white/[0.04] active:bg-white/[0.12] transition-all cursor-pointer"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         )}
       </div>

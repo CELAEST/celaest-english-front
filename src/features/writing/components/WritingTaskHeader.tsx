@@ -31,7 +31,7 @@ export const WritingTaskHeader: React.FC<WritingTaskHeaderProps> = React.memo(
             </h1>
 
             {currentLevel && onSelectLevel && (
-              <div className="shrink-0 pt-0.5 hidden sm:block">
+              <div className="shrink-0 pt-0.5">
                 <LevelSelectorPill
                   currentLevel={currentLevel}
                   onSelectLevel={onSelectLevel}

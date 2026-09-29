@@ -40,11 +40,31 @@ const WritingErrorCarouselInner: React.FC<WritingErrorCarouselProps> = ({
   const [index, setIndex] = useState<number>(0);
   const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
 
+  const touchStartXRef = React.useRef<number>(0);
+  const touchStartYRef = React.useRef<number>(0);
+
   const currentError = errors[index] || errors[0];
 
   const goNav = (dir: number) => {
     if (errors.length === 0) return;
     setIndex((prev) => (prev + dir + errors.length) % errors.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        goNav(1);
+      } else {
+        goNav(-1);
+      }
+    }
   };
 
   const handleSaveAll = async () => {
@@ -69,7 +89,7 @@ const WritingErrorCarouselInner: React.FC<WritingErrorCarouselProps> = ({
   }
 
   return (
-    <div className="mt-5 sm:mt-6">
+    <div className="mt-5 sm:mt-6" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* Header */}
       <div className="mb-3.5 sm:mb-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5">
@@ -243,7 +263,7 @@ const WritingErrorCarouselInner: React.FC<WritingErrorCarouselProps> = ({
         <button
           onClick={() => goNav(-1)}
           disabled={errors.length <= 1}
-          className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
+          className="group inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:px-3 sm:py-2 min-h-[38px] sm:min-h-0 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
           aria-label="Go to previous correction"
         >
           <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -275,7 +295,7 @@ const WritingErrorCarouselInner: React.FC<WritingErrorCarouselProps> = ({
         <button
           onClick={() => goNav(1)}
           disabled={errors.length <= 1}
-          className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
+          className="group inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:px-3 sm:py-2 min-h-[38px] sm:min-h-0 rounded-xl bg-white/[0.04] sm:bg-transparent border border-white/[0.08] sm:border-transparent text-xs font-medium text-[#8a8a9e] transition-all hover:text-white hover:bg-white/[0.08] disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
           aria-label="Go to next correction"
         >
           <span>Next</span>

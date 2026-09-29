@@ -52,6 +52,33 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
     }>({ top: 0, left: 0 });
     const [showTooltip, setShowTooltip] = useState<boolean>(false);
 
+    // Listen for translation completion after recovery resume
+    useEffect(() => {
+      const handleWordTranslated = (e: Event) => {
+        const custom = e as CustomEvent<{ word: string; translation: string }>;
+        if (custom.detail?.word && custom.detail?.translation) {
+          setActiveWordData((prev) => {
+            if (prev && prev.word.toLowerCase() === custom.detail.word.toLowerCase()) {
+              return {
+                ...prev,
+                spanishTranslation: custom.detail.translation,
+                metadata: {
+                  lexicalSource: prev.metadata?.lexicalSource || "client_byok",
+                  translationSource: "client_byok",
+                  cacheHit: false,
+                  resolutionTimeMs: prev.metadata?.resolutionTimeMs || 50,
+                },
+              };
+            }
+            return prev;
+          });
+        }
+      };
+
+      window.addEventListener("celaest:word-translated", handleWordTranslated);
+      return () => window.removeEventListener("celaest:word-translated", handleWordTranslated);
+    }, []);
+
     const buttonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
     const articleContainerRef = useRef<HTMLElement | null>(null);
     const prevSentenceIdxRef = useRef<number | null>(null);
@@ -517,7 +544,20 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
               if (!onDirectTranslate) return null;
               const tr = await onDirectTranslate(word, context);
               if (tr) {
-                setActiveWordData((prev) => (prev ? { ...prev, spanishTranslation: tr } : null));
+                setActiveWordData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        spanishTranslation: tr,
+                        metadata: {
+                          lexicalSource: prev.metadata?.lexicalSource || "client_byok",
+                          translationSource: "client_byok",
+                          cacheHit: false,
+                          resolutionTimeMs: prev.metadata?.resolutionTimeMs || 50,
+                        },
+                      }
+                    : null,
+                );
               }
               return tr;
             }}

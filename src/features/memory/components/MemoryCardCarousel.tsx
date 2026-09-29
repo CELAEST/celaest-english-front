@@ -225,8 +225,9 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     );
 
     const handleClickCapture = React.useCallback((e: React.MouseEvent) => {
-      // Only suppress click if the gesture was an actual horizontal swipe (> 8px)
-      if (dragDistanceRef.current > 8) {
+      // Only suppress click if the gesture was an actual horizontal swipe (> 22px).
+      // Normal mobile finger taps naturally displace 5-15px; threshold > 8px falsely blocked card flips.
+      if (dragDistanceRef.current > 22) {
         e.stopPropagation();
         e.preventDefault();
       }

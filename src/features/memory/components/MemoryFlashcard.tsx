@@ -37,6 +37,9 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const [selectedScore, setSelectedScore] = useState<number | null>(null);
 
+    const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
+    const deleteTimerRef = useRef<number | null>(null);
+
     // 3D Mathematical Tilt & Specular Glare Physics via CSS variables (Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
     const rafIdRef = useRef<number | null>(null);
@@ -47,6 +50,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
       return () => {
         isMountedRef.current = false;
         if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current);
         SpeechSynthesisService.stop();
       };
     }, []);
@@ -97,6 +101,15 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
       el.style.setProperty("--glare-op", "0");
     }, []);
 
+    const handleCardClick = () => {
+      // If user selected text (to copy a word or phrase), do not flip the card
+      const selection = typeof window !== "undefined" ? window.getSelection() : null;
+      if (selection && selection.toString().trim().length > 0) {
+        return;
+      }
+      onFlip();
+    };
+
     const handleBookmarkToggle = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsBookmarked((prev: boolean) => !prev);
@@ -105,14 +118,34 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
 
     const handleDeleteClick = (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!confirmingDelete) {
+        setConfirmingDelete(true);
+        deleteTimerRef.current = window.setTimeout(() => {
+          if (isMountedRef.current) setConfirmingDelete(false);
+        }, 2500);
+        return;
+      }
+      if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current);
+      setConfirmingDelete(false);
       if (onDelete) {
         onDelete(card.id);
       }
     };
 
+    const rawCategory = (card.category || "").toUpperCase().trim();
+    const normalizedCategory: "SPEAKING" | "WRITING" | "READING" =
+      rawCategory === "WRITING"
+        ? "WRITING"
+        : rawCategory === "READING"
+        ? "READING"
+        : "SPEAKING";
+
     const handlePlayVoice = (e: React.MouseEvent) => {
       e.stopPropagation();
-      const textToSpeak = card.betterWay || card.correctWord || card.userSaid;
+      let textToSpeak = card.betterWay || card.correctWord || card.userSaid;
+      if (normalizedCategory === "READING") {
+        textToSpeak = card.errorWord || card.betterWay || card.correctWord || card.userSaid;
+      }
       if (!textToSpeak) return;
 
       MobileAudioUnlocker.unlock();
@@ -140,14 +173,6 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
       }
     };
 
-    const rawCategory = (card.category || "").toUpperCase().trim();
-    const normalizedCategory: "SPEAKING" | "WRITING" | "READING" =
-      rawCategory === "WRITING"
-        ? "WRITING"
-        : rawCategory === "READING"
-        ? "READING"
-        : "SPEAKING";
-
     const formattedIndex = cardIndex < 10 ? `0${cardIndex}` : `${cardIndex}`;
     const formattedTotal = totalCards < 10 ? `0${totalCards}` : `${totalCards}`;
 
@@ -161,7 +186,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
     return (
       <div
         ref={cardRef}
-        onClick={onFlip}
+        onClick={handleCardClick}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         className="relative w-full max-w-[640px] lg:max-w-[690px] h-[415px] xs:h-[435px] sm:h-[460px] lg:h-[490px] max-h-[calc(100dvh-180px)] min-h-[380px] cursor-pointer select-none [perspective:1400px] group mx-auto"
@@ -203,14 +228,14 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
             {/* Top 1px Specular Hairline */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-400/30 to-transparent pointer-events-none" />
 
-            {/* Top Bar: Clean Category + Counter + Bookmark */}
+            {/* Top Bar: Clean Category + Counter + Bookmark + Delete */}
             <div className="flex items-center justify-between z-10 shrink-0 text-[11px] font-mono text-white/40 pb-1">
               <span className="tracking-widest uppercase">
                 {normalizedCategory}
               </span>
 
-              <div className="flex items-center gap-3">
-                <span className="tracking-widest shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
+                <span className="tracking-widest shrink-0 pr-1">
                   Card {formattedIndex}/{formattedTotal}
                 </span>
 
@@ -218,8 +243,8 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   type="button"
                   onClick={handleBookmarkToggle}
                   aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                  className={`p-1.5 sm:p-1 rounded transition-colors cursor-pointer ${
-                    isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
+                  className={`min-w-[36px] min-h-[36px] p-1.5 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                    isBookmarked ? "text-[#F59E0B] bg-[#F59E0B]/10" : "text-white/40 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
                   <Bookmark className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} />
@@ -229,11 +254,20 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   <button
                     type="button"
                     onClick={handleDeleteClick}
-                    aria-label="Delete card"
-                    title="Eliminar tarjeta"
-                    className="p-1.5 sm:p-1 rounded text-white/40 hover:text-[#F87171] transition-colors cursor-pointer"
+                    aria-label={confirmingDelete ? "Confirm delete card" : "Delete card"}
+                    title={confirmingDelete ? "Toca de nuevo para confirmar" : "Eliminar tarjeta"}
+                    className={`min-h-[36px] min-w-[36px] px-2 py-1 rounded-lg flex items-center justify-center gap-1 text-xs font-mono transition-all cursor-pointer ${
+                      confirmingDelete
+                        ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
+                        : "text-white/40 hover:text-[#F87171] hover:bg-white/[0.05]"
+                    }`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                    {confirmingDelete && (
+                      <span className="text-[10px] whitespace-nowrap font-sans font-medium text-red-300">
+                        ¿Eliminar?
+                      </span>
+                    )}
                   </button>
                 )}
               </div>
@@ -273,7 +307,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               role="button"
               tabIndex={0}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onFlip()}
-              className="pt-2 sm:pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0 mt-auto cursor-pointer"
+              className="pt-2 sm:pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/40 z-10 shrink-0 mt-auto cursor-pointer min-h-[38px]"
             >
               <span className="flex items-center gap-2 hover:text-white transition-colors">
                 <RotateCw className="w-3.5 h-3.5 text-[#A27FF3] shrink-0" />
@@ -308,12 +342,12 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   : "Grammar Rule"}
               </span>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
                 <button
                   type="button"
                   onClick={handlePlayVoice}
                   aria-label="Listen to pronunciation"
-                  className="p-1.5 sm:p-1 rounded text-white/40 hover:text-white transition-colors cursor-pointer"
+                  className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
                 >
                   <Volume2 className={`w-3.5 h-3.5 ${isPlayingAudio ? "animate-pulse text-[#34D399]" : ""}`} />
                 </button>
@@ -322,12 +356,33 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                   type="button"
                   onClick={handleBookmarkToggle}
                   aria-label={isBookmarked ? "Remove bookmark" : "Bookmark card"}
-                  className={`p-1.5 sm:p-1 rounded transition-colors cursor-pointer ${
-                    isBookmarked ? "text-[#F59E0B]" : "text-white/40 hover:text-white"
+                  className={`min-w-[36px] min-h-[36px] p-1.5 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                    isBookmarked ? "text-[#F59E0B] bg-[#F59E0B]/10" : "text-white/40 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
                   <Bookmark className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} />
                 </button>
+
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    aria-label={confirmingDelete ? "Confirm delete card" : "Delete card"}
+                    title={confirmingDelete ? "Toca de nuevo para confirmar" : "Eliminar tarjeta"}
+                    className={`min-h-[36px] min-w-[36px] px-2 py-1 rounded-lg flex items-center justify-center gap-1 text-xs font-mono transition-all cursor-pointer ${
+                      confirmingDelete
+                        ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
+                        : "text-white/40 hover:text-[#F87171] hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                    {confirmingDelete && (
+                      <span className="text-[10px] whitespace-nowrap font-sans font-medium text-red-300">
+                        ¿Eliminar?
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -338,9 +393,9 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
               {normalizedCategory === "READING" && <MemoryReadingBack card={card} />}
             </div>
 
-            {/* 4 Integrated SM-2 Rating Chips */}
+            {/* 4 Integrated SM-2 Rating Chips (WCAG compliant 44px min-h touch target) */}
             <div className="pt-2 sm:pt-2.5 border-t border-white/[0.06] flex flex-col space-y-1.5 sm:space-y-2 z-20 shrink-0 mt-auto">
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                 {ratingChips.map((chip) => {
                   const isSelected = selectedScore === chip.score;
                   return (
@@ -348,14 +403,14 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
                       key={chip.label}
                       type="button"
                       onClick={(e) => handleScoreClick(e, chip.score)}
-                      className={`py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer min-h-[36px] sm:min-h-0 flex flex-col justify-center ${
+                      className={`py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer min-h-[44px] flex flex-col justify-center ${
                         isSelected
                           ? "bg-white text-black font-semibold shadow-[0_0_12px_rgba(255,255,255,0.3)]"
-                          : "bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:text-white"
+                          : "bg-white/[0.03] text-white/50 hover:bg-white/[0.08] hover:text-white active:scale-95"
                       }`}
                     >
-                      <span className="block text-[10px] font-mono uppercase">{chip.label}</span>
-                      <span className="block text-[9px] opacity-50">{chip.interval}</span>
+                      <span className="block text-[11px] sm:text-xs font-mono uppercase leading-tight">{chip.label}</span>
+                      <span className="block text-[9.5px] sm:text-[10px] opacity-60 leading-tight">{chip.interval}</span>
                     </button>
                   );
                 })}

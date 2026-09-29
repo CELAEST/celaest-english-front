@@ -6,6 +6,7 @@ export interface MemoryEmptyStateProps {
   onSwitchCategory?: (() => void) | undefined;
   onStartPractice?: (() => void) | undefined;
   hideHeader?: boolean | undefined;
+  isActive?: boolean | undefined;
 }
 
 export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
@@ -14,23 +15,34 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
   onSwitchCategory,
   onStartPractice,
   hideHeader = false,
+  isActive = true,
 }) => {
   const isCategoryCatchUp = hasOtherCards;
   const showHeader = !hideHeader;
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Desktop hover triggers loop, unhover pauses to static image
+  // Desktop fine-pointer hover triggers loop, unhover pauses to static frame
   const handleMouseEnter = useCallback(() => {
-    if (videoRef.current && typeof videoRef.current.play === "function") {
-      videoRef.current.play().catch(() => {});
+    const isFinePointer =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (isFinePointer && videoRef.current && typeof videoRef.current.play === "function") {
+      const p = videoRef.current.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {});
+      }
     }
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    // Only pause on desktop unhover, never stop on mobile
-    if (
+    // Only pause on desktop unhover with a fine pointer (mouse), never stop on mobile touch screens
+    const isFinePointer =
       typeof window !== "undefined" &&
-      window.innerWidth >= 768 &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (
+      isFinePointer &&
       videoRef.current &&
       typeof videoRef.current.pause === "function"
     ) {
@@ -38,70 +50,74 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
     }
   }, []);
 
-  // Automatic playback on mobile; interactive hover on desktop
+  // Automatic stutter-free playback on mobile; interactive on desktop; pause when backgrounded or inactive
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const syncPlayback = () => {
-      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-      if (isMobile) {
-        if (typeof video.play === "function") {
-          video.play().catch(() => {});
-        }
-      } else {
-        if (typeof video.pause === "function") {
-          video.pause();
-        }
-      }
-    };
+    const isFinePointer =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-    const handleVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        try {
-          video.pause();
-        } catch {}
-      } else {
-        syncPlayback();
+    const syncPlayback = () => {
+      if (!isActive || document.visibilityState === "hidden") {
+        if (typeof video.pause === "function") {
+          try {
+            video.pause();
+          } catch {}
+        }
+        return;
+      }
+
+      // On touch / mobile screens, always play automatically with hardware decoding
+      if (!isFinePointer) {
+        if (typeof video.play === "function") {
+          const p = video.play();
+          if (p && typeof p.catch === "function") {
+            p.catch(() => {});
+          }
+        }
       }
     };
 
     syncPlayback();
-    window.addEventListener("resize", syncPlayback);
-    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("visibilitychange", syncPlayback);
+    window.addEventListener("focus", syncPlayback);
     return () => {
-      window.removeEventListener("resize", syncPlayback);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("visibilitychange", syncPlayback);
+      window.removeEventListener("focus", syncPlayback);
     };
-  }, []);
+  }, [isActive]);
 
   return (
     <div className="relative flex flex-col flex-1 h-full w-full justify-between items-center select-none min-h-0">
-      {/* ── Background Video Backdrop — Detrás de todo (z-0) con hover interactivo ── */}
+      {/* ── Background Video Backdrop — Detrás de todo (z-0) ── */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
       >
         <div
-          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-4 xs:-translate-y-6 sm:-translate-y-12 lg:-translate-y-14 xl:-translate-y-16 transition-all duration-500 ease-out hover:scale-[1.02] scale-[1.38] xs:scale-[1.44] sm:scale-100 origin-center"
+          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-4 xs:-translate-y-6 sm:-translate-y-10 lg:-translate-y-12 origin-center"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
           <video
             ref={videoRef}
             poster="/assets/cards_poster.webp"
+            autoPlay
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
             disablePictureInPicture
             // @ts-ignore
             disableRemotePlayback
-            className="w-full sm:w-auto h-auto max-w-[min(95vw,520px)] sm:max-w-[min(98vw,1440px)] max-h-[56vh] xs:max-h-[60vh] sm:max-h-[68vh] lg:max-h-[74vh] xl:max-h-[80vh] object-contain select-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)] filter brightness-105 contrast-105"
+            className="w-full sm:w-auto h-auto max-w-[min(92vw,460px)] sm:max-w-[min(96vw,1200px)] max-h-[54vh] xs:max-h-[58vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           >
-            <source src="/assets/cards.webm" type="video/webm" />
             <source src="/assets/cards.mp4" type="video/mp4" />
+            <source src="/assets/cards.webm" type="video/webm" />
           </video>
         </div>
       </div>

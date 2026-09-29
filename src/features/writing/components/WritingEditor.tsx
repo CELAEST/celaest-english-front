@@ -51,10 +51,20 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
   useEffect(() => {
     if (initialContent !== content) {
       setContent(initialContent);
-      historyRef.current = [initialContent];
-      historyIndexRef.current = 0;
-      setCanUndo(false);
-      setCanRedo(false);
+      if (!content || !initialContent) {
+        historyRef.current = [initialContent];
+        historyIndexRef.current = 0;
+        setCanUndo(false);
+        setCanRedo(false);
+      } else {
+        const history = historyRef.current;
+        history.splice(historyIndexRef.current + 1);
+        history.push(initialContent);
+        if (history.length > 100) history.shift();
+        historyIndexRef.current = history.length - 1;
+        setCanUndo(historyIndexRef.current > 0);
+        setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+      }
     }
   }, [initialContent]);
 
@@ -193,7 +203,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             type="button"
             onClick={cycleFontSize}
             aria-label={`Text size: ${FONT_SIZES[fontSizeIndex].label}. Activate to change`}
-            className={`px-1.5 py-0.5 rounded text-xs font-mono text-white/60 hover:text-white transition-colors ${FOCUS_RING}`}
+            className={`px-2 py-1 sm:px-1.5 sm:py-0.5 rounded text-xs font-mono text-white/60 hover:text-white transition-colors ${FOCUS_RING}`}
           >
             Aa
           </button>
@@ -224,7 +234,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             type="button"
             onClick={handleClear}
             aria-label={confirmingClear ? "Confirm: clear all text" : "Clear all text"}
-            className={`text-xs font-mono transition-colors px-2 py-1 rounded-lg ${
+            className={`text-xs font-mono transition-colors px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-lg ${
               confirmingClear ? "text-rose-400 bg-rose-500/10" : "hover:text-white hover:bg-white/[0.03]"
             } ${FOCUS_RING}`}
           >
@@ -237,7 +247,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             disabled={!canUndo}
             aria-label="Undo"
             aria-keyshortcuts="Control+Z"
-            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1 sm:p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
+            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
           >
             <svg
               className="w-3.5 h-3.5"
@@ -260,7 +270,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
             disabled={!canRedo}
             aria-label="Redo"
             aria-keyshortcuts="Control+Shift+Z"
-            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1 sm:p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
+            className={`hover:text-white hover:bg-white/[0.03] transition-colors p-1.5 rounded-lg disabled:opacity-20 disabled:pointer-events-none ${FOCUS_RING}`}
           >
             <svg
               className="w-3.5 h-3.5"
@@ -280,16 +290,16 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
       </div>
 
       {/* Editor Body */}
-      <div className="flex-1 w-full relative z-10">
+      <div className="flex-1 w-full relative z-10 select-text">
         <textarea
           value={content}
           onChange={handleTextChange}
-          autoFocus
+          autoFocus={typeof window !== "undefined" && window.innerWidth >= 1024}
           aria-label="Writing editor"
           aria-describedby="writing-word-goal"
           lang="en"
           spellCheck={false}
-          className={`w-full h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[340px] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 ${FONT_SIZES[fontSizeIndex].className}`}
+          className={`w-full h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[340px] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 select-text cursor-text ${FONT_SIZES[fontSizeIndex].className}`}
           placeholder="Start writing here..."
         />
       </div>

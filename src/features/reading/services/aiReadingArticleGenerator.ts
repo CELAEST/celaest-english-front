@@ -73,15 +73,21 @@ export class AiReadingArticleGenerator {
     const entropySeed = Date.now() + Math.floor(Math.random() * 10000);
     const systemPrompt = "You are an expert Cambridge/Oxford ESL author and executive language mentor. Respond ONLY with valid raw JSON.";
 
+    const isSpecificRole = profession && profession.toLowerCase() !== "professional" && profession.toLowerCase() !== "general";
+    const roleMandate = isSpecificRole
+      ? `- Role Fidelity: The protagonist MUST explicitly be a practicing ${profession}. The workplace environment, tasks, and dilemma MUST be authentic to the daily responsibilities of a ${profession}. Under NO circumstances generate a software engineer, programmer, or developer story when the profession is '${profession}'.`
+      : "- Protagonist: An authentic workplace professional navigating realistic cross-functional responsibilities.";
+
     const userPrompt = `Generate an inspiring, immersive, and completely UNIQUE ESL reading story for CEFR level ${normLevel} in ${roleContext}.
 Category: ${normCategory}.
 ${topic ? `Topic/Theme: ${topic}.` : `Topic/Theme: A pivotal professional decision, operational breakthrough, or cross-functional achievement in ${roleContext}.`}
 Entropy Seed: ${entropySeed}.
 
 Strict Pedagogical Rules:
+${roleMandate}
 - Original protagonist, realistic industry setting in ${roleContext}, engaging hurdle, inspiring resolution.
 - Linguistic Purity: Regardless of user's native language, the story must be 100% natural, idiomatic English. Zero non-English occupational nouns.
-- Domain Invariance: Never leak unrelated software engineering jargon into non-tech professions (e.g. medicine, law, dentistry, education).
+- Domain Invariance: Never leak unrelated software engineering jargon into non-tech professions (e.g. medicine, law, dentistry, education, accounting/comptroller).
 ${phrasalVerbInstruction}
 - Sentence structures calibrated precisely for CEFR ${normLevel}.
 - Return raw JSON with keys:

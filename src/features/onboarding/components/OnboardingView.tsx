@@ -66,6 +66,9 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
     } catch (e) {
       logger.warn("[OnboardingView] Error saving profile settings on finish", e);
     }
+    if (learnerProfile.profession) {
+      localStorage.setItem("celaest:active_profession", learnerProfile.profession);
+    }
     localStorage.setItem("lingua_onboarding_completed", "true");
     if (storedUser?.id) localStorage.setItem(`lingua_onboarding_completed_${storedUser.id}`, "true");
     if (storedUser?.email) localStorage.setItem(`lingua_onboarding_completed_${storedUser.email}`, "true");

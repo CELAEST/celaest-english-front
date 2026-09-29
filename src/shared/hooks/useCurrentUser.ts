@@ -53,10 +53,25 @@ export const useCurrentUser = () => {
         : false;
     const fallbackCompleted = userScopedCompleted || globalCompleted;
 
-    const cachedProf =
+    let cachedProf =
       typeof window !== "undefined"
         ? localStorage.getItem("celaest:active_profession") || ""
         : "";
+    if (!cachedProf && typeof window !== "undefined") {
+      try {
+        const rawTask = localStorage.getItem("celaest:writing:activeTask");
+        if (rawTask) {
+          const parsedTask = JSON.parse(rawTask);
+          if (parsedTask?.title && parsedTask.title.includes(":")) {
+            const roleCandidate = parsedTask.title.split(":")[0].trim();
+            if (roleCandidate && roleCandidate.toLowerCase() !== "professional") {
+              cachedProf = roleCandidate;
+              localStorage.setItem("celaest:active_profession", roleCandidate);
+            }
+          }
+        }
+      } catch {}
+    }
     const cachedLevel =
       typeof window !== "undefined"
         ? localStorage.getItem("celaest:cefrLevel") || ""
@@ -126,6 +141,14 @@ export const useCurrentUser = () => {
           localStorage.setItem("celaest:writing:cefrLevel", partial.cefrLevel);
           localStorage.setItem("celaest:interview:cefrLevel", partial.cefrLevel);
           window.dispatchEvent(new CustomEvent("celaest:level-changed", { detail: partial.cefrLevel }));
+        } catch {
+          // ignore
+        }
+      }
+      if (partial.profession && typeof window !== "undefined") {
+        try {
+          localStorage.setItem("celaest:active_profession", partial.profession);
+          window.dispatchEvent(new CustomEvent("celaest:profession-changed", { detail: partial.profession }));
         } catch {
           // ignore
         }

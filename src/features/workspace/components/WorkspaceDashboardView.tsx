@@ -141,7 +141,24 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   }, [settings.cefrLevel]);
 
   const userProfession = React.useMemo(() => {
-    const raw = (settings.profession || "").trim();
+    let raw = (settings.profession || "").trim();
+    if (!raw && typeof window !== "undefined") {
+      raw = (localStorage.getItem("celaest:active_profession") || "").trim();
+    }
+    if (!raw && typeof window !== "undefined") {
+      try {
+        const rawTask = localStorage.getItem("celaest:writing:activeTask");
+        if (rawTask) {
+          const parsedTask = JSON.parse(rawTask);
+          if (parsedTask?.title && parsedTask.title.includes(":")) {
+            const candidate = parsedTask.title.split(":")[0].trim();
+            if (candidate && candidate.toLowerCase() !== "professional") {
+              raw = candidate;
+            }
+          }
+        }
+      } catch {}
+    }
     const lower = raw.toLowerCase();
     if (
       !raw ||

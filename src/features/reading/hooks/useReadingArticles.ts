@@ -409,26 +409,6 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     [level, profession],
   );
 
-  // Auto-generate article for specific non-tech profession if no matching story exists yet
-  const hasTriggeredInitialGeneration = useRef(false);
-  useEffect(() => {
-    if (
-      !isQueryLoading &&
-      !isGenerating &&
-      profession &&
-      profession.toLowerCase() !== "professional" &&
-      profession.toLowerCase() !== "general" &&
-      !hasTriggeredInitialGeneration.current
-    ) {
-      const hasMatch = articles.some(matchesProfession);
-      if (!hasMatch) {
-        hasTriggeredInitialGeneration.current = true;
-        generateNextArticle("CAREER").catch((err) => {
-          logger.warn("[useReadingArticles] Initial auto-generation for profession failed:", err);
-        });
-      }
-    }
-  }, [isQueryLoading, isGenerating, profession, articles, matchesProfession, generateNextArticle]);
 
   const translateWordDirect = useCallback(
     async (word: string, context?: string): Promise<string> => {

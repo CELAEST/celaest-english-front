@@ -96,7 +96,33 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   >(null);
 
   const { profile, isLoading: isProfileLoading } = useSettingsProfile();
-  const effectiveProfession = roleName || profile?.profession;
+  const effectiveProfession = useMemo(() => {
+    if (roleName && roleName.trim() && roleName.toLowerCase() !== "professional") {
+      return roleName.trim();
+    }
+    if (profile?.profession && profile.profession.trim() && profile.profession.toLowerCase() !== "professional") {
+      return profile.profession.trim();
+    }
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("celaest:active_profession");
+      if (stored && stored.trim() && stored.toLowerCase() !== "professional") {
+        return stored.trim();
+      }
+      try {
+        const rawTask = localStorage.getItem("celaest:writing:activeTask");
+        if (rawTask) {
+          const parsed = JSON.parse(rawTask);
+          if (parsed?.title && parsed.title.includes(":")) {
+            const candidate = parsed.title.split(":")[0].trim();
+            if (candidate && candidate.toLowerCase() !== "professional") {
+              return candidate;
+            }
+          }
+        }
+      } catch {}
+    }
+    return roleName || profile?.profession || "Professional";
+  }, [roleName, profile?.profession]);
   const userLevel = React.useMemo(() => {
     if (!profile?.cefrLevel) return isProfileLoading ? undefined : "B1";
     return String(profile.cefrLevel).split(" ")[0].trim().toUpperCase();

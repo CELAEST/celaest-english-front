@@ -25,6 +25,7 @@ export interface GenerateReadingOptions {
 interface AiStoryRawResponse {
   title: string;
   category: string;
+  profession?: string;
   readTimeMin: number;
   excerpt: string;
   pages: string[];
@@ -93,6 +94,7 @@ ${phrasalVerbInstruction}
 - Return raw JSON with keys:
 "title": string (creative, inspiring title),
 "category": "${normCategory}",
+"profession": "${profession || "Professional"}",
 "readTimeMin": integer (3 to 5),
 "excerpt": string (1 concise summary sentence),
 "pages": array of 3 to 4 short paragraph strings (each paragraph ~40-60 words),
@@ -127,6 +129,7 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
           id: `ai-reading-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           title: parsed.title || "Professional Excellence in Practice",
           category: (parsed.category || options.category || "BUSINESS").toUpperCase(),
+          profession: parsed.profession || options.profession || "Professional",
           cefrLevel: (options.level || "B1").toUpperCase(),
           readTimeMin: parsed.readTimeMin || 3,
           excerpt: parsed.excerpt || "Strategic insights and practical mastery in everyday professional scenarios.",

@@ -4,6 +4,7 @@ export interface ReadingArticle {
   id: string;
   title: string;
   category: string;
+  profession?: string;
   cefrLevel: string;
   readTimeMin: number;
   excerpt: string;

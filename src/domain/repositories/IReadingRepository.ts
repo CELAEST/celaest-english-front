@@ -36,8 +36,8 @@ export interface GenerateQuizResponse {
 }
 
 export interface IReadingRepository {
-  getArticles(level?: string): Promise<ReadingArticle[]>;
-  generateArticle(category?: string, level?: string, topic?: string): Promise<ReadingArticle>;
+  getArticles(level?: string, profession?: string): Promise<ReadingArticle[]>;
+  generateArticle(category?: string, level?: string, topic?: string, profession?: string): Promise<ReadingArticle>;
   lookupWord(word: string, context?: string): Promise<WordLookup>;
   generateQuiz(
     articleId: string,

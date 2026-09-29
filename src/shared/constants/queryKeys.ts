@@ -6,7 +6,10 @@
 export const QUERY_KEYS = {
   reading: {
     all: ["reading"] as const,
-    articles: (level: string) => ["reading", "articles", level] as const,
+    articles: (level: string, profession?: string) =>
+      profession && profession.toLowerCase() !== "professional" && profession.toLowerCase() !== "general"
+        ? (["reading", "articles", level, profession.toLowerCase()] as const)
+        : (["reading", "articles", level] as const),
     article: (id: string) => ["reading", "article", id] as const,
     wordLookup: (word: string) => ["reading", "word", word] as const,
   },

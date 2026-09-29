@@ -74,11 +74,17 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
   };
 
   const isCenteredHeroLayout = step === "welcome" || step === "auth";
+  const showRightVideo =
+    step === "questions" ||
+    step === "dna-analysis" ||
+    step === "placement-quiz" ||
+    step === "first-conversation" ||
+    step === "beginner-check";
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#000003] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
-      {/* 🌟 Right-Side Video — ask — super fluido, sin salto, mix-blend para negro */}
-      {!isCenteredHeroLayout && (
+      {/* 🌟 Right-Side Video — ask — only on questionnaire & assessment steps */}
+      {showRightVideo && (
         <>
           <OptimizedVideo
             src="/assets/ask"

@@ -7,8 +7,12 @@ import { ReadingArticle } from "../../domain/entities/ReadingArticle";
 import { HttpClient } from "../http/HttpClient";
 
 export class ApiReadingRepository implements IReadingRepository {
-  async getArticles(level: string = "B1"): Promise<ReadingArticle[]> {
-    return HttpClient.get<ReadingArticle[]>(`/reading/articles?level=${level}`);
+  async getArticles(level: string = "B1", profession?: string): Promise<ReadingArticle[]> {
+    const params = new URLSearchParams({ level });
+    if (profession && profession.trim() !== "") {
+      params.set("profession", profession.trim());
+    }
+    return HttpClient.get<ReadingArticle[]>(`/reading/articles?${params.toString()}`);
   }
 
   async generateArticle(

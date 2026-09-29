@@ -145,13 +145,28 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
 
   // TanStack Query: Fetch articles with 10 minutes stale time (waits for level to be resolved)
   const { data: fetchedArticles, isLoading: isQueryLoading } = useQuery({
-    queryKey: QUERY_KEYS.reading.articles(level ?? "B1"),
-    queryFn: () => apiReadingRepository.getArticles(level!),
+    queryKey: QUERY_KEYS.reading.articles(level ?? "B1", profession),
+    queryFn: () => apiReadingRepository.getArticles(level!, profession),
     enabled: Boolean(level),
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+
+  const matchesProfession = useCallback(
+    (art?: ReadingArticle | null) => {
+      if (!art || !profession || profession.toLowerCase() === "professional" || profession.toLowerCase() === "general") {
+        return true;
+      }
+      const p = profession.toLowerCase();
+      const content = (art.content || "").toLowerCase();
+      const title = (art.title || "").toLowerCase();
+      const excerpt = (art.excerpt || "").toLowerCase();
+      const category = (art.category || "").toLowerCase();
+      return content.includes(p) || title.includes(p) || excerpt.includes(p) || category.includes(p);
+    },
+    [profession],
+  );
 
   /** Server list merged with local session articles (fresh server articles take priority). */
   const articles = useMemo(() => {
@@ -171,20 +186,22 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
   }, [fetchedArticles, localArticles]);
 
   const matchingLevelArticles = useMemo(() => {
-    return articles.filter(
+    const byLevel = articles.filter(
       (a) => Boolean(a) && (!level || a.cefrLevel?.toUpperCase() === level.toUpperCase()),
     );
-  }, [articles, level]);
+    const byProfession = byLevel.filter(matchesProfession);
+    return byProfession.length > 0 ? byProfession : byLevel;
+  }, [articles, level, matchesProfession]);
 
   const currentArticle = useMemo(
     () => {
       const active = articles.find((a) => Boolean(a) && a.id === activeArticleId);
-      if (active && (!level || active.cefrLevel?.toUpperCase() === level.toUpperCase())) {
+      if (active && (!level || active.cefrLevel?.toUpperCase() === level.toUpperCase()) && matchesProfession(active)) {
         return active;
       }
       return matchingLevelArticles[0] ?? articles[0] ?? null;
     },
-    [articles, activeArticleId, level, matchingLevelArticles],
+    [articles, activeArticleId, level, matchingLevelArticles, matchesProfession],
   );
 
   // Restore a stored-active article that only exists server-side cleanly via effect
@@ -193,16 +210,17 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     if (!hasInitializedServerSelection.current && Array.isArray(fetchedArticles) && fetchedArticles.length > 0) {
       hasInitializedServerSelection.current = true;
       const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
+      const storedArt = storedActiveId ? articles.find((a) => a && a.id === storedActiveId) : null;
       const restored =
-        (storedActiveId && matchingLevelArticles.find((a) => a && a.id === storedActiveId)) ||
+        (storedArt && matchesProfession(storedArt) ? storedArt : null) ||
         matchingLevelArticles[0] ||
-        currentArticle ||
+        fetchedArticles.find(matchesProfession) ||
         fetchedArticles[0];
       if (restored && restored.id && restored.id !== activeArticleId) {
         setActiveArticleId(restored.id);
       }
     }
-  }, [fetchedArticles, matchingLevelArticles, currentArticle, activeArticleId]);
+  }, [fetchedArticles, matchingLevelArticles, articles, activeArticleId, matchesProfession]);
 
   const prevLevelRef = useRef(level);
   useEffect(() => {
@@ -362,11 +380,15 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
   }, [hasFinishedArticle]);
 
   const generateNextArticle = useCallback(
-    async (category: string = "BUSINESS") => {
+    async (category: string = "CAREER") => {
       setIsGenerating(true);
       try {
+        const effectiveCategory =
+          category === "BUSINESS" && profession && profession.toLowerCase() !== "professional" && profession.toLowerCase() !== "general"
+            ? "CAREER"
+            : category;
         const newArticle = await AiReadingArticleGenerator.generateArticle({
-          category,
+          category: effectiveCategory,
           level,
           profession,
         });
@@ -386,6 +408,27 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     },
     [level, profession],
   );
+
+  // Auto-generate article for specific non-tech profession if no matching story exists yet
+  const hasTriggeredInitialGeneration = useRef(false);
+  useEffect(() => {
+    if (
+      !isQueryLoading &&
+      !isGenerating &&
+      profession &&
+      profession.toLowerCase() !== "professional" &&
+      profession.toLowerCase() !== "general" &&
+      !hasTriggeredInitialGeneration.current
+    ) {
+      const hasMatch = articles.some(matchesProfession);
+      if (!hasMatch) {
+        hasTriggeredInitialGeneration.current = true;
+        generateNextArticle("CAREER").catch((err) => {
+          logger.warn("[useReadingArticles] Initial auto-generation for profession failed:", err);
+        });
+      }
+    }
+  }, [isQueryLoading, isGenerating, profession, articles, matchesProfession, generateNextArticle]);
 
   const translateWordDirect = useCallback(
     async (word: string, context?: string): Promise<string> => {

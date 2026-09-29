@@ -42,15 +42,15 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
   // If already completed onboarding, auto-finish immediately (zero amnesia, zero restart)
   React.useEffect(() => {
     const isCompleted =
-      localStorage.getItem("lingua_onboarding_completed") === "true" ||
       (storedUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.id}`) === "true" : false) ||
       (storedUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.email}`) === "true" : false) ||
-      settings?.onboardingCompleted;
+      storedUser?.onboardingCompleted === true ||
+      settings?.onboardingCompleted === true;
 
     if (isAuth && isCompleted && onFinish) {
       onFinish();
     }
-  }, [isAuth, settings?.onboardingCompleted, storedUser?.id, storedUser?.email, onFinish]);
+  }, [isAuth, settings?.onboardingCompleted, storedUser?.id, storedUser?.email, storedUser?.onboardingCompleted, onFinish]);
 
   const handleStartLearning = async () => {
     try {
@@ -126,9 +126,9 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   const isUserCompletedLocal =
                     (authUser?.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
                     (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
-                    localStorage.getItem("lingua_onboarding_completed") === "true";
+                    authUser?.onboardingCompleted === true;
 
-                  if (profile && (profile.onboardingCompleted || mode === "login" || isUserCompletedLocal)) {
+                  if (profile && (profile.onboardingCompleted || (mode === "login" && isUserCompletedLocal))) {
                     updateLearnerProfile({
                       name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
                       email: (profile.email || authUser?.email || learnerProfile.email || "") as string,

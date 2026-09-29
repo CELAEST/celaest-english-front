@@ -28,11 +28,9 @@ const resolvedApiUrl = trimTrailingSlash(
   apiUrl ||
     (isTest
       ? "http://localhost:8080/api/v1"
-      : isProd
-        ? defaultProdApiUrl
-        : isBrowser
-          ? `${window.location.origin}/api/v1`
-          : "http://localhost:8080/api/v1"),
+      : isBrowser
+        ? `${window.location.origin}/api/v1`
+        : defaultProdApiUrl),
 );
 
 export const ENV = {
@@ -43,25 +41,22 @@ export const ENV = {
     celaestBackUrl ||
       (isTest
         ? "http://localhost:3101/api/v1"
-        : isProd
-          ? defaultProdCelaestBackUrl
-          : isBrowser
-            ? `${window.location.origin}/celaest-back`
-            : "http://localhost:3101/api/v1"),
+        : isBrowser
+          ? `${window.location.origin}/celaest-back`
+          : defaultProdCelaestBackUrl),
   ),
   /** CELAEST-CORE IA-Mesh base URL for AI chat/transcription (no trailing slash). */
   coreAiUrl: trimTrailingSlash(
     coreAiUrl ||
       (isTest
         ? "http://127.0.0.1:8085/api/v1"
-        : isProd
-          ? defaultProdCoreAiUrl
-          : isBrowser
-            ? `${window.location.origin}/core-ai`
-            : "http://127.0.0.1:8085/api/v1"),
+        : isBrowser
+          ? `${window.location.origin}/core-ai`
+          : defaultProdCoreAiUrl),
   ),
   /** Supabase Project URL for Direct OAuth & Storage */
   supabaseUrl: trimTrailingSlash(supabaseUrl),
   /** Supabase Public Anon Key */
   supabaseAnonKey,
+  isProd,
 } as const;

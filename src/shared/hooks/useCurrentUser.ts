@@ -43,13 +43,14 @@ export const useCurrentUser = () => {
 
   const settings: UserSettings = useMemo(() => {
     const userScopedCompleted =
-      typeof window !== "undefined" && user?.id
-        ? localStorage.getItem(`lingua_onboarding_completed_${user.id}`) === "true" ||
+      typeof window !== "undefined" && (user?.id || user?.email)
+        ? (user.id ? localStorage.getItem(`lingua_onboarding_completed_${user.id}`) === "true" : false) ||
           (user.email ? localStorage.getItem(`lingua_onboarding_completed_${user.email}`) === "true" : false)
         : false;
     const globalCompleted =
-      typeof window !== "undefined" &&
-      localStorage.getItem("lingua_onboarding_completed") === "true";
+      typeof window !== "undefined" && !user?.id && !user?.email
+        ? localStorage.getItem("lingua_onboarding_completed") === "true"
+        : false;
     const fallbackCompleted = userScopedCompleted || globalCompleted;
 
     const cachedProf =
@@ -62,7 +63,10 @@ export const useCurrentUser = () => {
         : "";
 
     if (profile) {
-      const isCompleted = profile.onboardingCompleted === true || fallbackCompleted;
+      const isCompleted =
+        profile.onboardingCompleted !== undefined
+          ? profile.onboardingCompleted === true
+          : fallbackCompleted;
       if (typeof window !== "undefined" && isCompleted) {
         try {
           localStorage.setItem("lingua_onboarding_completed", "true");

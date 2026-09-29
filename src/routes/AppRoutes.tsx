@@ -51,7 +51,7 @@ function OnboardingRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const authAdapter = SupabaseAuthAdapter.getInstance();
-  const { user } = useCurrentUser();
+  const { user, settings } = useCurrentUser();
   const isReset = searchParams.get("reset") === "true";
 
   useEffect(() => {
@@ -63,33 +63,34 @@ function OnboardingRoute() {
   }, [isReset, user?.id, user?.email]);
 
   const hasToken = authAdapter.isAuthenticated();
+  const storedUser = authAdapter.getStoredUser();
+  const uid = user?.id || storedUser?.id;
+  const uemail = user?.email || storedUser?.email;
 
-  // If user is authenticated, navigate immediately to Workspace
+  const isUserCompleted = Boolean(
+    (uid && localStorage.getItem(`lingua_onboarding_completed_${uid}`) === "true") ||
+    (uemail && localStorage.getItem(`lingua_onboarding_completed_${uemail}`) === "true") ||
+    settings.onboardingCompleted === true ||
+    storedUser?.onboardingCompleted === true
+  );
+
+  // If user is authenticated AND has completed onboarding, navigate immediately to Workspace
   useEffect(() => {
-    if (!isReset && hasToken) {
-      const stored = authAdapter.getStoredUser();
-      const uid = user?.id || stored?.id;
-      const uemail = user?.email || stored?.email;
-      localStorage.setItem("lingua_onboarding_completed", "true");
-      if (uid) localStorage.setItem(`lingua_onboarding_completed_${uid}`, "true");
-      if (uemail) localStorage.setItem(`lingua_onboarding_completed_${uemail}`, "true");
+    if (!isReset && hasToken && isUserCompleted) {
       navigate(ROUTES.HOME, { replace: true });
     }
-  }, [isReset, hasToken, user?.id, user?.email, authAdapter, navigate]);
+  }, [isReset, hasToken, isUserCompleted, navigate]);
 
-  if (!isReset && hasToken) {
+  if (!isReset && hasToken && isUserCompleted) {
     return <Navigate to={ROUTES.HOME} replace />;
   }
 
   return (
     <OnboardingView
       onFinish={() => {
-        const stored = authAdapter.getStoredUser();
-        const uid = user?.id || stored?.id;
-        const uemail = user?.email || stored?.email;
-        localStorage.setItem("lingua_onboarding_completed", "true");
         if (uid) localStorage.setItem(`lingua_onboarding_completed_${uid}`, "true");
         if (uemail) localStorage.setItem(`lingua_onboarding_completed_${uemail}`, "true");
+        localStorage.setItem("lingua_onboarding_completed", "true");
         navigate(ROUTES.HOME, { replace: true });
       }}
     />
@@ -98,7 +99,7 @@ function OnboardingRoute() {
 
 /**
  * WorkspaceWrapper (Protected Application Shell):
- * Demarcates private routes with Default Deny. If unauthenticated,
+ * Demarcates private routes with Default Deny. If unauthenticated or onboarding not finished,
  * redirects cleanly to onboarding.
  */
 function WorkspaceWrapper() {
@@ -107,6 +108,16 @@ function WorkspaceWrapper() {
   const { user, settings } = useCurrentUser();
   const authAdapter = SupabaseAuthAdapter.getInstance();
   const hasToken = authAdapter.isAuthenticated();
+  const storedUser = authAdapter.getStoredUser();
+  const uid = user?.id || storedUser?.id;
+  const uemail = user?.email || storedUser?.email;
+
+  const isUserCompleted = Boolean(
+    (uid && localStorage.getItem(`lingua_onboarding_completed_${uid}`) === "true") ||
+    (uemail && localStorage.getItem(`lingua_onboarding_completed_${uemail}`) === "true") ||
+    settings.onboardingCompleted === true ||
+    storedUser?.onboardingCompleted === true
+  );
 
   // Global Unauthorized Event Listener (from HttpClient 401s)
   useEffect(() => {
@@ -121,14 +132,14 @@ function WorkspaceWrapper() {
     };
   }, [authAdapter, navigate]);
 
-  // Auth Guard: Unauthenticated users redirected to onboarding
+  // Auth & Onboarding Guard: Unauthenticated or incomplete users redirected to onboarding
   useEffect(() => {
-    if (!hasToken) {
+    if (!hasToken || !isUserCompleted) {
       navigate(ROUTES.ONBOARDING, { replace: true });
     }
-  }, [hasToken, navigate]);
+  }, [hasToken, isUserCompleted, navigate]);
 
-  if (!hasToken) {
+  if (!hasToken || !isUserCompleted) {
     return <Navigate to={ROUTES.ONBOARDING} replace />;
   }
 

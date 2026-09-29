@@ -10,14 +10,14 @@ export const useOnboardingFlow = () => {
   // If not authenticated, always auth. If authenticated and already completed, skip straight to ready
   const isCompleted =
     typeof window !== "undefined" &&
-    (localStorage.getItem("lingua_onboarding_completed") === "true" ||
-      (storedUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.id}`) === "true" : false) ||
-      (storedUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.email}`) === "true" : false));
+    ((storedUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.id}`) === "true" : false) ||
+      (storedUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${storedUser.email}`) === "true" : false) ||
+      storedUser?.onboardingCompleted === true);
 
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (!isAuth) return "auth";
-    if (isCompleted || isAuth) return "ready";
-    return "welcome";
+    if (isCompleted) return "ready";
+    return "beginner-check";
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

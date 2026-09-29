@@ -283,6 +283,18 @@ export class SupabaseAuthAdapter implements IAuthService {
         onboardingCompleted: false,
       };
 
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("lingua_onboarding_completed");
+          if (user.id) localStorage.removeItem(`lingua_onboarding_completed_${user.id}`);
+          if (user.email) localStorage.removeItem(`lingua_onboarding_completed_${user.email}`);
+          localStorage.removeItem("celaest:active_profession");
+          localStorage.removeItem("celaest:cefrLevel");
+        } catch {
+          // ignore
+        }
+      }
+
       this.persistSession(accessToken, refreshToken, user);
       return { success: true, accessToken, refreshToken, user };
     } catch (err) {

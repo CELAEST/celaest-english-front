@@ -23,6 +23,7 @@ import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
+import { normalizeCefr } from "../../conversation/services/dynamicQuestionService";
 
 export const READING_FONT_SIZES = [
   {
@@ -47,12 +48,14 @@ const FONT_SIZE_STORAGE_KEY = "celaest:reading:font_size";
 export interface ReadingPracticeViewProps {
   onBackToWorkspace?: (() => void) | undefined;
   roleName?: string | undefined;
+  userLevel?: string | undefined;
   isActive?: boolean | undefined;
 }
 
 export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   onBackToWorkspace,
   roleName,
+  userLevel: propUserLevel,
   isActive = true,
 }) => {
   const [fontSizeIndex, setFontSizeIndex] = useState<number>(() => {
@@ -124,9 +127,16 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     return roleName || profile?.profession || "Professional";
   }, [roleName, profile?.profession]);
   const userLevel = React.useMemo(() => {
-    if (!profile?.cefrLevel) return isProfileLoading ? undefined : "B1";
-    return String(profile.cefrLevel).split(" ")[0].trim().toUpperCase();
-  }, [profile?.cefrLevel, isProfileLoading]);
+    if (propUserLevel) return normalizeCefr(propUserLevel);
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("celaest:cefrLevel");
+      if (saved) return normalizeCefr(saved);
+    }
+    if (profile?.cefrLevel) {
+      return normalizeCefr(String(profile.cefrLevel).split(" ")[0]);
+    }
+    return isProfileLoading ? undefined : "B1";
+  }, [propUserLevel, profile?.cefrLevel, isProfileLoading]);
 
   const activeFontSize = READING_FONT_SIZES[fontSizeIndex] || READING_FONT_SIZES[0];
 

@@ -238,6 +238,7 @@ export const useInterviewSession = (
   // Synchronize ONLY when initialLevel prop genuinely changes externally from parent (e.g. updated in Settings)
   const prevInitialLevelRef = useRef<string | undefined>(initialLevel ? normalizeCefr(initialLevel) : undefined);
   useEffect(() => {
+    if (!isActive) return;
     if (initialLevel) {
       const norm = normalizeCefr(initialLevel);
       if (norm !== prevInitialLevelRef.current) {
@@ -245,10 +246,11 @@ export const useInterviewSession = (
         setActiveCefrLevel(norm);
       }
     }
-  }, [initialLevel, setActiveCefrLevel]);
+  }, [isActive, initialLevel, setActiveCefrLevel]);
 
   useEffect(() => {
     const onLevelChanged = (e: Event) => {
+      if (!isActiveRef.current) return;
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
         setActiveCefrLevel(customEvent.detail);
@@ -261,6 +263,7 @@ export const useInterviewSession = (
   // Synchronize when role changes while user is at the initial question (e.g. after profile finishes loading)
   const prevEffectiveRoleRef = useRef<string>(effectiveRoleName);
   useEffect(() => {
+    if (!isActive) return;
     if (effectiveRoleName && effectiveRoleName !== prevEffectiveRoleRef.current) {
       prevEffectiveRoleRef.current = effectiveRoleName;
       if (currentQuestionIndex === 0) {
@@ -272,13 +275,14 @@ export const useInterviewSession = (
         setSessionQuestions(newQuestions);
       }
     }
-  }, [effectiveRoleName, activeCefrLevel, currentQuestionIndex]);
+  }, [isActive, effectiveRoleName, activeCefrLevel, currentQuestionIndex]);
 
   const isReplenishingRef = useRef<boolean>(false);
   const lastReplenishedIndexRef = useRef<number>(-1);
 
   // Background question replenishment ONLY when actively playing and approaching the end of the session pool
   useEffect(() => {
+    if (!isActive) return;
     const normLevel = normalizeCefr(activeCefrLevel);
     const remaining = sessionQuestions.length - currentQuestionIndex;
 
@@ -313,7 +317,7 @@ export const useInterviewSession = (
           isReplenishingRef.current = false;
         });
     }
-  }, [currentQuestionIndex, sessionQuestions.length, effectiveRoleName, activeCefrLevel]);
+  }, [isActive, currentQuestionIndex, sessionQuestions.length, effectiveRoleName, activeCefrLevel]);
 
   // Dynamically generate question for the current question index (Continuous infinite rounds).
   // Memoized so the returned object reference is stable across renders that don't change the
@@ -894,6 +898,7 @@ export const useInterviewSession = (
 
   // Proactively prefetch the current and upcoming questions in background
   useEffect(() => {
+    if (!isActive) return;
     if (currentQuestion?.question) {
       SpeechSynthesisService.prefetch(currentQuestion.question, selectedVoice);
       const nextQ = DynamicQuestionService.getQuestionForIndex(currentQuestionIndex + 1, effectiveRoleName, activeCefrLevel);
@@ -901,7 +906,7 @@ export const useInterviewSession = (
         SpeechSynthesisService.prefetch(nextQ.question, selectedVoice);
       }
     }
-  }, [currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
+  }, [isActive, currentQuestion?.question, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
 
   // Stop audio/recording immediately and release hardware tracks when the tab/view becomes inactive
   useEffect(() => {

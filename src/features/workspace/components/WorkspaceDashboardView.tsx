@@ -53,7 +53,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab, "interview"]));
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
@@ -375,6 +375,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
               <Suspense fallback={<ReadingSkeleton />}>
                 <ReadingPracticeView
                   roleName={userProfession}
+                  userLevel={activeUserLevel}
                   onBackToWorkspace={handleBackToWorkspace}
                   isActive={activeTab === "reading"}
                 />

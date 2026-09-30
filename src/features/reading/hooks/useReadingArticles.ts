@@ -98,22 +98,37 @@ interface InitialReadingState {
   activeArticleId: string | null;
 }
 
-/** One-time mount read of the persisted reading cache. */
-function readInitialState(): InitialReadingState {
+function matchesRole(art: ReadingArticle | undefined | null, targetProfession?: string): boolean {
+  if (!art || !targetProfession) return true;
+  const p = targetProfession.trim().toLowerCase();
+  if (p === "" || p === "professional" || p === "general") return true;
+  const artProf = (art.profession || "").toLowerCase();
+  if (artProf && (artProf === p || artProf.includes(p) || p.includes(artProf))) return true;
+  const text = `${art.content || ""} ${art.title || ""} ${art.excerpt || ""} ${art.category || ""}`.toLowerCase();
+  return text.includes(p);
+}
+
+/** One-time mount read of the persisted reading cache filtered strictly to target level and profession. */
+function readInitialState(level?: string, profession?: string): InitialReadingState {
   let cachedArticles: ReadingArticle[] = [];
   try {
     const cachedStr = localStorage.getItem(READING_CACHE_KEY);
     if (cachedStr) {
       const parsed = JSON.parse(cachedStr) as unknown;
       if (Array.isArray(parsed)) {
-        cachedArticles = parsed as ReadingArticle[];
+        cachedArticles = (parsed as ReadingArticle[]).filter((a) => {
+          if (!a || !a.id) return false;
+          if (level && a.cefrLevel && a.cefrLevel.toUpperCase() !== level.toUpperCase()) return false;
+          if (profession && !matchesRole(a, profession)) return false;
+          return true;
+        });
       }
     }
   } catch (e) {
     logger.warn("Failed to load reading cache from localStorage", e);
   }
 
-  const storedActiveId = localStorage.getItem(ACTIVE_ARTICLE_ID_KEY);
+  const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
   const activeArticleId =
     storedActiveId && cachedArticles.some((a) => a.id === storedActiveId)
       ? storedActiveId
@@ -126,7 +141,9 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
 
-  const [{ cachedArticles, activeArticleId: initialActiveId }] = useState(readInitialState);
+  const [{ cachedArticles, activeArticleId: initialActiveId }] = useState(() =>
+    readInitialState(level, profession),
+  );
 
   /**
    * Local source of truth: cache-loaded articles plus everything created or
@@ -159,6 +176,10 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         return true;
       }
       const p = profession.toLowerCase();
+      const artProf = (art.profession || "").toLowerCase();
+      if (artProf && (artProf === p || artProf.includes(p) || p.includes(artProf))) {
+        return true;
+      }
       const content = (art.content || "").toLowerCase();
       const title = (art.title || "").toLowerCase();
       const excerpt = (art.excerpt || "").toLowerCase();
@@ -168,16 +189,17 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     [profession],
   );
 
-  /** Server list merged with local session articles (fresh server articles take priority). */
+  /** Server list merged with local session articles (local session articles take priority). */
   const articles = useMemo(() => {
     const serverList = Array.isArray(fetchedArticles) ? fetchedArticles : [];
     const localList = Array.isArray(localArticles) ? localArticles : [];
     if (serverList.length === 0) return localList;
+    if (localList.length === 0) return serverList;
     const map = new Map<string, ReadingArticle>();
-    serverList.forEach((art) => {
+    localList.forEach((art) => {
       if (art && art.id) map.set(art.id, art);
     });
-    localList.forEach((art) => {
+    serverList.forEach((art) => {
       if (art && art.id && !map.has(art.id)) {
         map.set(art.id, art);
       }
@@ -189,9 +211,15 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     const byLevel = articles.filter(
       (a) => Boolean(a) && (!level || a.cefrLevel?.toUpperCase() === level.toUpperCase()),
     );
-    const byProfession = byLevel.filter(matchesProfession);
-    return byProfession.length > 0 ? byProfession : byLevel;
-  }, [articles, level, matchesProfession]);
+    const isSpecificProf =
+      profession &&
+      profession.toLowerCase() !== "professional" &&
+      profession.toLowerCase() !== "general";
+    if (isSpecificProf) {
+      return byLevel.filter(matchesProfession);
+    }
+    return byLevel;
+  }, [articles, level, matchesProfession, profession]);
 
   const currentArticle = useMemo(
     () => {
@@ -199,7 +227,7 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
       if (active && (!level || active.cefrLevel?.toUpperCase() === level.toUpperCase()) && matchesProfession(active)) {
         return active;
       }
-      return matchingLevelArticles[0] ?? articles[0] ?? null;
+      return matchingLevelArticles[0] ?? null;
     },
     [articles, activeArticleId, level, matchingLevelArticles, matchesProfession],
   );
@@ -209,6 +237,17 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
   useEffect(() => {
     if (!hasInitializedServerSelection.current && Array.isArray(fetchedArticles) && fetchedArticles.length > 0) {
       hasInitializedServerSelection.current = true;
+      if (activeArticleId) {
+        const current = articles.find((a) => a && a.id === activeArticleId);
+        if (
+          current &&
+          matchesProfession(current) &&
+          (!level || current.cefrLevel?.toUpperCase() === level.toUpperCase())
+        ) {
+          return;
+        }
+      }
+
       const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
       const storedArt = storedActiveId ? articles.find((a) => a && a.id === storedActiveId) : null;
       const restored =
@@ -220,22 +259,33 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         setActiveArticleId(restored.id);
       }
     }
-  }, [fetchedArticles, matchingLevelArticles, articles, activeArticleId, matchesProfession]);
+  }, [fetchedArticles, matchingLevelArticles, articles, activeArticleId, matchesProfession, level]);
 
   const prevLevelRef = useRef(level);
+  const prevProfRef = useRef(profession);
   useEffect(() => {
-    if (prevLevelRef.current !== level) {
+    if (prevLevelRef.current !== level || prevProfRef.current !== profession) {
       prevLevelRef.current = level;
+      prevProfRef.current = profession;
       setCurrentPageIndex(0);
       setHasFinishedArticle(false);
-      const matching = articles.find(
-        (a) => Boolean(a) && (!level || a.cefrLevel?.toUpperCase() === level.toUpperCase()),
-      );
-      if (matching && matching.id) {
-        setActiveArticleId(matching.id);
+
+      const currentActive = articles.find((a) => a && a.id === activeArticleId);
+      const stillValid =
+        currentActive &&
+        (!level || currentActive.cefrLevel?.toUpperCase() === level.toUpperCase()) &&
+        matchesProfession(currentActive);
+
+      if (!stillValid) {
+        const matching = matchingLevelArticles[0];
+        if (matching && matching.id) {
+          setActiveArticleId(matching.id);
+        } else {
+          setActiveArticleId(null);
+        }
       }
     }
-  }, [level, articles]);
+  }, [level, profession, matchingLevelArticles, articles, activeArticleId, matchesProfession]);
 
   // Reset per-article session telemetry whenever the active article changes
   const lastTrackedArticleIdRef = useRef<string | null>(initialActiveId);
@@ -393,7 +443,14 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
           profession,
         });
 
-        setLocalArticles((prev) => [newArticle, ...prev.filter((a) => a.id !== newArticle.id)]);
+        setLocalArticles((prev) => {
+          const next = [newArticle, ...prev.filter((a) => a.id !== newArticle.id)];
+          try {
+            localStorage.setItem(READING_CACHE_KEY, JSON.stringify(next.slice(0, 8)));
+            localStorage.setItem(ACTIVE_ARTICLE_ID_KEY, newArticle.id);
+          } catch {}
+          return next;
+        });
         setActiveArticleId(newArticle.id);
         setCurrentPageIndex(0);
         setHasFinishedArticle(false);
@@ -691,7 +748,7 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     estimatedMinutesTotal,
     estimatedMinutesRemaining,
     actualReadingTimeMin,
-    isLoading: isQueryLoading && articles.length === 0,
+    isLoading: isQueryLoading && !currentArticle,
     isGenerating,
     isCompleted: hasFinishedArticle,
     nextPage,

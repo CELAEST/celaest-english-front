@@ -87,7 +87,7 @@ export function useInterviewQuestionManager({
     ) {
       return persistedQuestions;
     }
-    return AiInterviewQuestionGenerator.getCachedOrSeedQuestions(effectiveRoleName, activeCefrLevel, 12);
+    return AiInterviewQuestionGenerator.getCachedOrSeedQuestions(effectiveRoleName, activeCefrLevel, 5);
   });
 
   const lastAppliedInitialLevelRef = useRef<string | undefined>(
@@ -99,10 +99,13 @@ export function useInterviewQuestionManager({
     onLevelOrRoleResetRef.current = onLevelOrRoleReset;
   }, [onLevelOrRoleReset]);
 
+  const lastGeneratedKeyRef = useRef<string>("");
+
   const setActiveCefrLevel = useCallback(
     (level: string) => {
       const norm = normalizeCefr(level);
       lastAppliedInitialLevelRef.current = norm;
+      lastGeneratedKeyRef.current = "";
       setActiveCefrLevelState(norm);
       if (typeof window !== "undefined") {
         try {
@@ -115,7 +118,7 @@ export function useInterviewQuestionManager({
       const newQuestions = AiInterviewQuestionGenerator.getCachedOrSeedQuestions(
         effectiveRoleName,
         norm,
-        12,
+        5,
       );
       setSessionQuestions(newQuestions);
       setCurrentQuestionIndex(0);
@@ -150,11 +153,12 @@ export function useInterviewQuestionManager({
     if (!isActive) return;
     if (effectiveRoleName && effectiveRoleName !== prevEffectiveRoleRef.current) {
       prevEffectiveRoleRef.current = effectiveRoleName;
+      lastGeneratedKeyRef.current = "";
       if (currentQuestionIndex === 0) {
         const newQuestions = AiInterviewQuestionGenerator.getCachedOrSeedQuestions(
           effectiveRoleName,
           normalizeCefr(activeCefrLevel),
-          12,
+          5,
         );
         queueMicrotask(() => {
           setSessionQuestions(newQuestions);
@@ -167,7 +171,67 @@ export function useInterviewQuestionManager({
   const isReplenishingRef = useRef<boolean>(false);
   const lastReplenishedIndexRef = useRef<number>(persistedIndex);
 
-  // Background question replenishment when approaching end of session pool
+  // 1. Initial AI question generation on session mount / level / role change
+  useEffect(() => {
+    if (!isActive) return;
+    const normLevel = normalizeCefr(activeCefrLevel);
+    const key = `${effectiveRoleName}::${normLevel}`;
+
+    const hasProceduralSeeds = sessionQuestions.some(
+      (q) =>
+        q.question.includes("Hello! What is your name and what is your job") ||
+        q.question.includes("what do you do as a") ||
+        q.question.includes("healthcare?") ||
+        q.question.includes("technology?"),
+    );
+
+    // If sessionQuestions is already populated with specialized AI questions (no procedural seeds), do NOT re-generate on mount
+    if (!hasProceduralSeeds) {
+      lastGeneratedKeyRef.current = key;
+      return;
+    }
+
+    if (lastGeneratedKeyRef.current === key) return;
+    lastGeneratedKeyRef.current = key;
+
+    let isCancelled = false;
+    AiInterviewQuestionGenerator.generateSessionQuestions({
+      profession: effectiveRoleName,
+      cefrLevel: normLevel,
+      count: 5,
+    })
+      .then((freshQuestions) => {
+        if (isCancelled || !freshQuestions || freshQuestions.length === 0) return;
+        setSessionQuestions((prev) => {
+          // Keep current question 0 in place to prevent visual flicker or audio stuttering,
+          // and seamlessly merge fresh AI questions for subsequent turns.
+          if (currentQuestionIndex === 0) {
+            const currentQ = prev[0];
+            if (!currentQ) return freshQuestions;
+            const remainingFresh = freshQuestions.filter(
+              (f) => f.question.toLowerCase().trim() !== currentQ.question.toLowerCase().trim(),
+            );
+            return [currentQ, ...remainingFresh];
+          }
+          // If user already answered some questions, keep answered ones and current active question
+          const answered = prev.slice(0, currentQuestionIndex + 1);
+          const answeredTexts = new Set(answered.map((p) => p.question.toLowerCase().trim()));
+          const deduplicated = freshQuestions.filter(
+            (f) => !answeredTexts.has(f.question.toLowerCase().trim()),
+          );
+          return deduplicated.length > 0 ? [...answered, ...deduplicated] : prev;
+        });
+      })
+      .catch((err) => {
+        logger.warn("[useInterviewQuestionManager] Initial AI question generation error:", err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isActive, effectiveRoleName, activeCefrLevel, currentQuestionIndex, sessionQuestions]);
+
+  // 2. Background replenishment when approaching end of session pool
   useEffect(() => {
     if (!isActive || !hasUserAdvancedInSessionRef.current) return;
     const normLevel = normalizeCefr(activeCefrLevel);
@@ -176,7 +240,7 @@ export function useInterviewQuestionManager({
     if (
       sessionQuestions.length > 0 &&
       currentQuestionIndex > 0 &&
-      remaining <= 3 &&
+      remaining <= 2 &&
       lastReplenishedIndexRef.current !== currentQuestionIndex &&
       !isReplenishingRef.current
     ) {
@@ -186,6 +250,7 @@ export function useInterviewQuestionManager({
         profession: effectiveRoleName,
         cefrLevel: normLevel,
         count: 5,
+        forceFresh: true,
       })
         .then((freshQuestions) => {
           if (freshQuestions && freshQuestions.length > 0) {

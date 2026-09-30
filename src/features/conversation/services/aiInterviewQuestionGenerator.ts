@@ -42,7 +42,7 @@ export class AiInterviewQuestionGenerator {
   public static getCachedOrSeedQuestions(
     profession: string,
     cefrLevel: string,
-    count: number = 12,
+    count: number = 5,
   ): InterviewQuestionItem[] {
     if (typeof window !== "undefined") {
       try {
@@ -63,14 +63,14 @@ export class AiInterviewQuestionGenerator {
   }
 
   /**
-   * Pre-generates 10 to 15 questions with AI for the given profession and CEFR level.
+   * Pre-generates 5 questions with AI for the given profession and CEFR level.
    * If BYOK is active or CELAEST-CORE is reachable, calls the LLM with structured output.
    * Guarantees ZERO duplicate network calls via an in-flight singleton promise lock.
    */
   public static async generateSessionQuestions(
     params: GenerateSessionQuestionsParams,
   ): Promise<InterviewQuestionItem[]> {
-    const { profession, cefrLevel, count = 12, forceFresh = false } = params;
+    const { profession, cefrLevel, count = 5, forceFresh = false } = params;
     const cacheKey = getCacheKey(profession, cefrLevel);
 
     // Return from cache if fresh unless forced
@@ -79,7 +79,7 @@ export class AiInterviewQuestionGenerator {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length >= count) {
+          if (Array.isArray(parsed) && parsed.length >= Math.min(count, 5)) {
             return parsed;
           }
         }

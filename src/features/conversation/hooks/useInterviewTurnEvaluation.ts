@@ -136,15 +136,22 @@ export function useInterviewTurnEvaluation({
 
         // If user clicks submit while recording, stop hardware and transcribe audio first
         if (status === "RECORDING") {
-          setStatus("THINKING");
-          setProcessingStage("TRANSCRIBING");
           const audioResult = await AudioCaptureService.stopAndGetAudio();
           lastCapturedAudioRef.current = audioResult;
           audioUrl = audioResult.audioUrl;
           durationSeconds = audioResult.durationSeconds || speakingSeconds;
 
-          // Always transcribe captured audio via Whisper AI for verbatim ESL accuracy
+          if (typeof customText !== "string") {
+            const latestLive = (userTranscriptRef.current || userTranscript).trim();
+            if (latestLive.length > textToSubmit.length) {
+              textToSubmit = latestLive;
+            }
+          }
+
+          // If audio was captured via MediaRecorder, transcribe via Whisper AI for verbatim ESL accuracy
           if (audioResult.audioBlob) {
+            setStatus("THINKING");
+            setProcessingStage("TRANSCRIBING");
             try {
               const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
                 roleName: effectiveRoleName,
@@ -200,19 +207,23 @@ export function useInterviewTurnEvaluation({
         );
         if (!validation.isValid) {
           logger.info("[useInterviewTurnEvaluation] Suppressed turn submission:", validation.reason);
-          if (validation.message) {
-            setSpeechNotice(validation.message);
-            if (validation.reason === "SPANISH_DETECTED") {
-              appToast.spanishDetected(validation.message);
-            } else if (
-              validation.reason === "WHISPER_HALLUCINATION" ||
-              validation.reason === "SILENCE_OR_EMPTY" ||
-              validation.reason === "REPETITIVE_NOISE"
-            ) {
-              appToast.ambientNoise(validation.message);
-            } else {
-              appToast.warning("Atención", validation.message);
+          if (isMountedRef.current) {
+            if (validation.message) {
+              setSpeechNotice(validation.message);
+              if (validation.reason === "SPANISH_DETECTED") {
+                appToast.spanishDetected(validation.message);
+              } else if (
+                validation.reason === "WHISPER_HALLUCINATION" ||
+                validation.reason === "SILENCE_OR_EMPTY" ||
+                validation.reason === "REPETITIVE_NOISE"
+              ) {
+                appToast.ambientNoise(validation.message);
+              } else {
+                appToast.warning("Atención", validation.message);
+              }
             }
+            setStatus("IDLE");
+            setProcessingStage("IDLE");
           }
           return;
         }

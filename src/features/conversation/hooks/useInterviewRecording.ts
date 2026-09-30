@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly, isMobileDevice } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -81,20 +81,28 @@ export function useInterviewRecording({
       // ignore storage errors
     }
 
-    // Ensure hardware microphone is active
-    if (!AudioCaptureService.hasActiveMic()) {
-      let granted: boolean;
-      try {
-        granted = await AudioCaptureService.initMicrophone();
-      } catch {
-        granted = false;
-      }
-      if (!granted) {
-        if (isMountedRef.current) {
-          setStatus("IDLE");
-          setIsMicRecoveryModalOpen(true);
+    const isMobile = isMobileDevice();
+    const hasSpeechRec = AudioCaptureService.isSpeechRecognitionSupported();
+
+    // On desktop, or mobile browsers without native Web Speech API (e.g. Firefox Mobile),
+    // ensure hardware microphone stream is initialized for MediaRecorder + Whisper.
+    // On mobile with SpeechRecognition (Chrome Android / Safari iOS), skip getUserMedia
+    // so native SpeechRecognition has 100% uncontested, exclusive access to the microphone.
+    if (!isMobile || !hasSpeechRec) {
+      if (!AudioCaptureService.hasActiveMic()) {
+        let granted = false;
+        try {
+          granted = await AudioCaptureService.initMicrophone();
+        } catch {
+          granted = false;
         }
-        return;
+        if (!granted) {
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setIsMicRecoveryModalOpen(true);
+          }
+          return;
+        }
       }
     }
 

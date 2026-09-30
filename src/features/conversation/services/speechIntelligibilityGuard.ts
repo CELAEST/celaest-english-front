@@ -462,6 +462,9 @@ export function validateSpeechIntelligibility(
     }
   }
 
+  const upperLevel = options?.targetLevel?.toUpperCase() || "";
+  const isBeginner = upperLevel.startsWith("A1") || upperLevel.startsWith("A2");
+
   // Normalized lowercase text without surrounding punctuation for hallucination checks
   const normalized = clean
     .toLowerCase()
@@ -473,6 +476,14 @@ export function validateSpeechIntelligibility(
     WHISPER_SILENCE_HALLUCINATIONS.has(normalized) ||
     WHISPER_SILENCE_HALLUCINATIONS.has(clean.toLowerCase())
   ) {
+    if (isBeginner && (normalized === "yes" || normalized === "no" || normalized === "ok" || normalized === "okay")) {
+      return {
+        isValid: false,
+        reason: "INSUFFICIENT_WORDS",
+        message: "Tu respuesta es muy breve. Por favor elabora un poco más (ej. 'Yes, I do' o 'No, I don't').",
+        cleanTranscript: clean,
+      };
+    }
     return {
       isValid: false,
       reason: "WHISPER_HALLUCINATION",
@@ -581,8 +592,6 @@ export function validateSpeechIntelligibility(
     }
   }
 
-  const upperLevel = options?.targetLevel?.toUpperCase() || "";
-  const isBeginner = upperLevel.startsWith("A1") || upperLevel.startsWith("A2");
   const minRequiredWords = isBeginner ? 3 : 4;
   const minDistinctWords = isBeginner ? 2 : 3;
 

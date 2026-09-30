@@ -297,6 +297,7 @@ export class AudioCaptureService {
   }): SpeechRecognitionInstance | null {
     if (typeof window === "undefined") return null;
 
+    const isMobile = isMobileDevice();
     const SpeechRecognitionAPI =
       (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
         .SpeechRecognition ||
@@ -315,28 +316,46 @@ export class AudioCaptureService {
     this.recordedChunks = [];
     this.recordingStartTime = Date.now();
 
-    // 1. Prepare MediaRecorder capture (Collect audio chunks for Whisper AI transcription)
-    if (this.micStream) {
-      try {
-        const mimeType = getBestAudioMimeType();
-        let recorder: MediaRecorder;
+    // 1. Mobile Exclusive Microphone Access Protocol:
+    // On Android (Chrome) and iOS (Safari), hardware microphone access is strictly exclusive.
+    // If getUserMedia or MediaRecorder holds an active audio track, SpeechRecognition fails
+    // immediately with 'audio-capture' or silent death.
+    // When SpeechRecognition is supported on mobile, release any getUserMedia tracks and
+    // do NOT run MediaRecorder in parallel so native SpeechRecognition has 100% exclusive mic access.
+    if (isMobile && SpeechRecognitionAPI) {
+      if (this.micStream) {
         try {
-          recorder = mimeType
-            ? new MediaRecorder(this.micStream, { mimeType })
-            : new MediaRecorder(this.micStream);
+          this.micStream.getTracks().forEach((track) => track.stop());
         } catch {
-          recorder = new MediaRecorder(this.micStream);
+          // ignore
         }
-        this.mediaRecorder = recorder;
-        recorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            this.recordedChunks.push(event.data);
+        this.micStream = null;
+      }
+      this.mediaRecorder = null;
+    } else {
+      // On desktop (or mobile browsers without Web Speech API), capture audio via MediaRecorder
+      if (this.micStream) {
+        try {
+          const mimeType = getBestAudioMimeType();
+          let recorder: MediaRecorder;
+          try {
+            recorder = mimeType
+              ? new MediaRecorder(this.micStream, { mimeType })
+              : new MediaRecorder(this.micStream);
+          } catch {
+            recorder = new MediaRecorder(this.micStream);
           }
-        };
-        // Collect chunks smoothly without hammering CPU
-        recorder.start(100);
-      } catch (recErr) {
-        logger.warn("MediaRecorder start notice:", recErr);
+          this.mediaRecorder = recorder;
+          recorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+              this.recordedChunks.push(event.data);
+            }
+          };
+          // Collect chunks smoothly without hammering CPU
+          recorder.start(100);
+        } catch (recErr) {
+          logger.warn("MediaRecorder start notice:", recErr);
+        }
       }
     }
 
@@ -367,10 +386,11 @@ export class AudioCaptureService {
 
         const recognizer = new SpeechRecognitionAPI();
         try {
-          // continuous: true maintains uninterrupted recognition across natural pauses on mobile and desktop
-          recognizer.continuous = true;
+          // continuous: true maintains uninterrupted recognition across natural pauses on desktop;
+          // on mobile, continuous: false prevents Android Chrome from accumulating multi-item arrays in event.results
+          recognizer.continuous = !isMobile;
         } catch {
-          recognizer.continuous = true;
+          recognizer.continuous = false;
         }
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";

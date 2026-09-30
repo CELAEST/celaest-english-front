@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 
 export interface ConversationPromptAreaProps {
   currentQuestionText?: string;
+  currentQuestionIndex?: number;
   userTranscript?: string;
   selectedVoice?: "en-US-AriaNeural" | "en-US-ChristopherNeural";
   onSelectVoice?: (voice: "en-US-AriaNeural" | "en-US-ChristopherNeural") => void;
@@ -13,6 +14,7 @@ export interface ConversationPromptAreaProps {
 
 const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
   currentQuestionText = "",
+  currentQuestionIndex = 0,
   userTranscript = "",
   selectedVoice = "en-US-AriaNeural",
   onSelectVoice,
@@ -115,7 +117,7 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
             )}
           </div>
           <h2
-            key={currentQuestionText}
+            key={`question-${currentQuestionIndex}`}
             aria-live="polite"
             className="text-[clamp(15px,2.1vh,20px)] sm:text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.45] sm:leading-[1.6] select-text animate-[fadeSlideUp_0.3s_ease-out_both]"
           >

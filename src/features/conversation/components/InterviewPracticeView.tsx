@@ -39,6 +39,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     isPaused,
     currentRound,
     currentQuestionIndex,
+    overallQuestionIndex,
     currentQuestion,
     totalQuestions,
     remainingSeconds,
@@ -239,6 +240,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             {/* Question & Live Transcript — blindado contra crash si currentQuestion aún no hidrata */}
             <ConversationPromptArea
               currentQuestionText={currentQuestion?.question ?? "Tell me about your recent project and your role in it."}
+              currentQuestionIndex={overallQuestionIndex}
               userTranscript={userTranscript}
               selectedVoice={selectedVoice}
               onSelectVoice={setSelectedVoice}

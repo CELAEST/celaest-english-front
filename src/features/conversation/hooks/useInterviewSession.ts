@@ -277,12 +277,13 @@ export const useInterviewSession = (
     }
   }, [isActive, effectiveRoleName, activeCefrLevel, currentQuestionIndex]);
 
+  const hasUserAdvancedInSessionRef = useRef<boolean>(false);
   const isReplenishingRef = useRef<boolean>(false);
-  const lastReplenishedIndexRef = useRef<number>(-1);
+  const lastReplenishedIndexRef = useRef<number>(restoredRef.current?.currentQuestionIndex ?? 0);
 
   // Background question replenishment ONLY when actively playing and approaching the end of the session pool
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || !hasUserAdvancedInSessionRef.current) return;
     const normLevel = normalizeCefr(activeCefrLevel);
     const remaining = sessionQuestions.length - currentQuestionIndex;
 
@@ -981,6 +982,7 @@ export const useInterviewSession = (
    */
   const skipQuestion = useCallback(() => {
     if (isEvaluatingRef.current) return;
+    hasUserAdvancedInSessionRef.current = true;
     SpeechSynthesisService.stop();
     AudioCaptureService.stop();
     isAiSpeakingRef.current = false;
@@ -1075,7 +1077,10 @@ export const useInterviewSession = (
       latestTurn?: Record<string, unknown> | null;
     }) => {
       if (typeof p.speechRate === "number") setSpeechRate(p.speechRate);
-      if (typeof p.currentQuestionIndex === "number") setCurrentQuestionIndex(p.currentQuestionIndex);
+      if (typeof p.currentQuestionIndex === "number") {
+        setCurrentQuestionIndex(p.currentQuestionIndex);
+        lastReplenishedIndexRef.current = p.currentQuestionIndex;
+      }
       if (typeof p.userTranscript === "string") {
         setUserTranscript(p.userTranscript);
         userTranscriptRef.current = p.userTranscript;

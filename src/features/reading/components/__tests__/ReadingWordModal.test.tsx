@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ReadingWordModal } from "../ReadingWordModal";
 import { WordLookup } from "../../../../domain/repositories/IReadingRepository";
+import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
 
 describe("ReadingWordModal", () => {
   const mockWordData: WordLookup = {
@@ -94,5 +95,33 @@ describe("ReadingWordModal", () => {
     fireEvent.click(backdrop);
 
     expect(mockClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("automatically pronounces the word once upon opening and never repeats on rerender", () => {
+    const speakSpy = vi.spyOn(SpeechSynthesisService, "speak");
+
+    const { rerender } = render(
+      <ReadingWordModal
+        wordData={mockWordData}
+        isLoading={false}
+        coords={{ top: 100, left: 100 }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(speakSpy).toHaveBeenCalledTimes(1);
+    expect(speakSpy).toHaveBeenCalledWith("paradigm", expect.anything());
+
+    // Rerender with identical wordData must not trigger duplicate speech
+    rerender(
+      <ReadingWordModal
+        wordData={mockWordData}
+        isLoading={false}
+        coords={{ top: 100, left: 100 }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(speakSpy).toHaveBeenCalledTimes(1);
   });
 });

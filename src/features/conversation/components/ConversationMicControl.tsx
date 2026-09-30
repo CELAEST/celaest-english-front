@@ -25,6 +25,12 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
   const isSubmittingRef = React.useRef(false);
   const lastMicToggleRef = React.useRef(0);
 
+  React.useEffect(() => {
+    if (!isThinking) {
+      isSubmittingRef.current = false;
+    }
+  }, [isThinking]);
+
   const handleSubmit = (e?: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
@@ -140,6 +146,8 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
         {(isListening || hasText) && (
           <button
             type="button"
+            id="interview-submit-ok-button"
+            data-testid="interview-submit-ok-button"
             onClick={handleSubmit}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") e.stopPropagation();
@@ -147,7 +155,7 @@ const ConversationMicControlInner: React.FC<ConversationMicControlProps> = ({
             disabled={isThinking}
             aria-label="Submit response for AI evaluation (OK)"
             title="Submit response for AI evaluation (OK / Enter)"
-            className="w-[clamp(48px,6.8vh,66px)] h-[clamp(48px,6.8vh,66px)] rounded-full bg-[#22c55e]/20 border-2 border-[#22c55e]/60 hover:bg-[#22c55e]/30 hover:border-[#22c55e] flex items-center justify-center text-[#4ade80] transition-all duration-200 cursor-pointer shadow-[0_0_24px_rgba(34,197,94,0.35)] hover:shadow-[0_0_32px_rgba(34,197,94,0.6)] hover:scale-105 active:scale-95 shrink-0 animate-[scaleIn_0.25s_ease-out_both] touch-manipulation"
+            className="w-[clamp(48px,6.8vh,66px)] h-[clamp(48px,6.8vh,66px)] rounded-full bg-[#22c55e]/20 border-2 border-[#22c55e]/60 hover:bg-[#22c55e]/30 hover:border-[#22c55e] flex items-center justify-center text-[#4ade80] transition-all duration-200 cursor-pointer shadow-[0_0_24px_rgba(34,197,94,0.35)] hover:shadow-[0_0_32px_rgba(34,197,94,0.6)] hover:scale-105 active:scale-95 shrink-0 animate-[scaleIn_0.25s_ease-out_both] touch-manipulation disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isThinking ? (
               <div className="w-5 h-5 border-2 border-[#4ade80] border-t-transparent rounded-full animate-spin" />

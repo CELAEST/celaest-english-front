@@ -297,7 +297,6 @@ export class AudioCaptureService {
   }): SpeechRecognitionInstance | null {
     if (typeof window === "undefined") return null;
 
-    const isMobile = isMobileDevice();
     const SpeechRecognitionAPI =
       (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
         .SpeechRecognition ||
@@ -316,46 +315,28 @@ export class AudioCaptureService {
     this.recordedChunks = [];
     this.recordingStartTime = Date.now();
 
-    // 1. Mobile Exclusive Microphone Access Protocol:
-    // On Android (Chrome) and iOS (Safari), hardware microphone access is strictly exclusive.
-    // If getUserMedia or MediaRecorder holds an active audio track, SpeechRecognition fails
-    // immediately with 'audio-capture' or silent death.
-    // When SpeechRecognition is supported on mobile, release any getUserMedia tracks and
-    // do NOT run MediaRecorder in parallel so native SpeechRecognition has 100% exclusive mic access.
-    if (isMobile && SpeechRecognitionAPI) {
-      if (this.micStream) {
+    // 1. Prepare MediaRecorder capture (Collect audio chunks for Whisper AI transcription)
+    if (this.micStream) {
+      try {
+        const mimeType = getBestAudioMimeType();
+        let recorder: MediaRecorder;
         try {
-          this.micStream.getTracks().forEach((track) => track.stop());
+          recorder = mimeType
+            ? new MediaRecorder(this.micStream, { mimeType })
+            : new MediaRecorder(this.micStream);
         } catch {
-          // ignore
+          recorder = new MediaRecorder(this.micStream);
         }
-        this.micStream = null;
-      }
-      this.mediaRecorder = null;
-    } else {
-      // On desktop (or mobile browsers without Web Speech API), capture audio via MediaRecorder
-      if (this.micStream) {
-        try {
-          const mimeType = getBestAudioMimeType();
-          let recorder: MediaRecorder;
-          try {
-            recorder = mimeType
-              ? new MediaRecorder(this.micStream, { mimeType })
-              : new MediaRecorder(this.micStream);
-          } catch {
-            recorder = new MediaRecorder(this.micStream);
+        this.mediaRecorder = recorder;
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            this.recordedChunks.push(event.data);
           }
-          this.mediaRecorder = recorder;
-          recorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) {
-              this.recordedChunks.push(event.data);
-            }
-          };
-          // Collect chunks smoothly without hammering CPU
-          recorder.start(100);
-        } catch (recErr) {
-          logger.warn("MediaRecorder start notice:", recErr);
-        }
+        };
+        // Collect chunks smoothly without hammering CPU
+        recorder.start(100);
+      } catch (recErr) {
+        logger.warn("MediaRecorder start notice:", recErr);
       }
     }
 
@@ -493,7 +474,7 @@ export class AudioCaptureService {
               if (this.isListening) {
                 createAndStartRecognizer();
               }
-            }, isMobile ? 100 : 200);
+            }, isMobileDevice() ? 100 : 200);
             return;
           }
           if (options.onEnd) options.onEnd();
@@ -618,11 +599,12 @@ export class AudioCaptureService {
           ? "wav"
           : "webm";
 
-    const roleName = context?.roleName || "";
-    const question = context?.question || "";
-    const prompt = question
-      ? `ESL non-native English learner practice${roleName ? ` for ${roleName}` : ""}. Question: "${question}". Transcribe VERBATIM exactly as spoken, preserving all broken grammar, tense mistakes, and ungrammatical phrases without correcting them (e.g. it use, for to, most challenge, I design, we has):`
-      : `ESL non-native English learner practice${roleName ? ` for ${roleName}` : ""}. Transcribe VERBATIM exactly as spoken, preserving all broken grammar, tense mistakes, and ungrammatical phrases without correcting them (e.g. it use, for to, most challenge, I design, we has):`;
+    // Strict ESL Verbatim Conditioning:
+    // Do NOT include the polished interviewer question in the Whisper prompt, as Whisper's language model
+    // conditions on the question's sophisticated syntax and automatically fixes broken student grammar.
+    // Instead, prime Whisper with explicit ESL grammatical errors so it transcribes exact verbatim speech.
+    const prompt =
+      "Raw verbatim ESL transcript. Do not fix grammar, do not autocorrect, do not normalize tenses or prepositions. Transcribe exact broken speech verbatim (e.g. for drive, we must to focus, in optimize, yesterday we implement, worked hard for achieve, more personnels, without loose, it use, for to, we has):";
 
     // 1. Direct Edge/Browser Groq Whisper (Ultra-fast, ~150ms, zero backend dependence)
     try {

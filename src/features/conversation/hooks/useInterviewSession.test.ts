@@ -9,8 +9,12 @@ beforeEach(() => {
 // Isolate the hook from browser-only media/audio APIs so we can assert on the
 // pure memoization guarantee without jsdom limitations.
 vi.mock("../services/audioCaptureService", () => ({
+  isMobileDevice: vi.fn(() => false),
+  mergePhrasesCleanly: vi.fn((a: string, b: string) => (a ? `${a} ${b}` : b)),
   AudioCaptureService: {
-    initMicrophone: vi.fn(() => Promise.resolve()),
+    initMicrophone: vi.fn(() => Promise.resolve(true)),
+    hasActiveMic: vi.fn(() => true),
+    isSpeechRecognitionSupported: vi.fn(() => true),
     getMicVolume: vi.fn(() => 0),
     startRecognition: vi.fn(),
     stop: vi.fn(),
@@ -46,6 +50,20 @@ vi.mock("../../../infrastructure/repositories/ApiMemoryRepository", () => ({
   },
 }));
 
+vi.mock("../services/coreAiEvaluatorService", () => ({
+  CoreAiEvaluatorService: {
+    evaluate: vi.fn(),
+  },
+}));
+
+vi.mock("../../settings/services/providerKeyVault", () => ({
+  providerKeyVault: {
+    isCentralCoreEnabled: vi.fn(() => Promise.resolve(true)),
+    getActiveProviderId: vi.fn(() => Promise.resolve("groq")),
+    hasKey: vi.fn(() => Promise.resolve(true)),
+  },
+}));
+
 // jsdom may not implement rAF; stub it so the speak-on-mount effect is harmless.
 globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) =>
   setTimeout(() => cb(0), 0)) as unknown as typeof requestAnimationFrame;
@@ -56,6 +74,9 @@ import { useInterviewSession } from "./useInterviewSession";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
 import { AudioCaptureService } from "../services/audioCaptureService";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
+import type { SpecificErrorItem } from "../services/interviewEngineService";
+import type { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 
 const STORAGE_KEY = "celaest:interview-progress:v1";
 
@@ -260,8 +281,9 @@ describe("useInterviewSession edge cases & hardware resilience", () => {
 
     const { result } = renderHook(() => useInterviewSession("Product Manager"));
 
-    const fakeError = {
+    const fakeError: SpecificErrorItem = {
       id: "err-101",
+      errorType: "GRAMMAR",
       userSaidContext: "I did go yesterday",
       betterWay: "I went yesterday",
       translationSpanish: "Fui ayer",
@@ -269,14 +291,15 @@ describe("useInterviewSession edge cases & hardware resilience", () => {
       correctWord: "went",
       explanation: "Use simple past directly",
       cefrLevel: "B1",
+      savedToMemory: false,
     };
 
     let p1: Promise<boolean>;
     let p2: Promise<boolean>;
 
     act(() => {
-      p1 = result.current.saveSpecificErrorToMemory(fakeError as any);
-      p2 = result.current.saveSpecificErrorToMemory(fakeError as any);
+      p1 = result.current.saveSpecificErrorToMemory(fakeError);
+      p2 = result.current.saveSpecificErrorToMemory(fakeError);
     });
 
     const [r1, r2] = await Promise.all([p1!, p2!]);
@@ -311,3 +334,132 @@ describe("useInterviewSession edge cases & hardware resilience", () => {
     expect(result.current.overallQuestionIndex).toBe(1);
   });
 });
+
+describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", () => {
+  const fakeFeedback: ComprehensiveTurnFeedback = {
+    overallScore: 88,
+    grammarScore: 92,
+    clarityScore: 85,
+    vocabularyScore: 87,
+    userSpokenText: "I usually start my day by checking project tasks and team updates.",
+    improvedFullAnswer: "I typically begin each day by reviewing high-priority tasks and aligning with team updates.",
+    unclearOrErrorWords: [],
+    keyStrengths: ["Clear structure"],
+    tipsForNextTurn: "Add specific business outcomes.",
+    strategicFeedback: {
+      type: "CONTENT_TIP",
+      title: "Respuesta sólida",
+      explanation: "Demostraste orden y claridad en tu rutina.",
+      recommendation: "Menciona herramientas específicas que utilizas.",
+    },
+  };
+
+  beforeEach(() => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockReset();
+  });
+
+  it("submits answer cleanly, calls CoreAiEvaluatorService, and opens analysis modal without deadlock", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    await act(async () => {
+      await result.current.finishTurnManual("I usually start my day by checking project tasks and team updates.");
+    });
+
+    expect(CoreAiEvaluatorService.evaluate).toHaveBeenCalledTimes(1);
+    expect(result.current.showAnalysisModal).toBe(true);
+    expect(result.current.turnFeedback?.overallScore).toBe(88);
+    expect(result.current.isThinking).toBe(false);
+
+    // After evaluation finishes, user should be able to skip/advance question without being locked
+    act(() => {
+      result.current.skipQuestion();
+    });
+
+    expect(result.current.currentQuestionIndex).toBe(2);
+  });
+
+  it("stops active microphone and uses captured transcript when finishTurnManual is called during recording", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+    vi.mocked(AudioCaptureService.stopAndGetAudio).mockResolvedValueOnce({
+      audioBlob: new Blob(["test"], { type: "audio/webm" }),
+      audioUrl: "blob:http://localhost/test-audio",
+      durationSeconds: 8,
+    });
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    // Simulate active recording with transcript
+    act(() => {
+      result.current.toggleListening();
+      result.current.setUserTranscript("I lead a team of senior software engineers on critical projects.");
+    });
+
+    await act(async () => {
+      await result.current.finishTurnManual();
+    });
+
+    expect(AudioCaptureService.stopAndGetAudio).toHaveBeenCalled();
+    expect(CoreAiEvaluatorService.evaluate).toHaveBeenCalledTimes(1);
+    expect(result.current.showAnalysisModal).toBe(true);
+    expect(result.current.turnFeedback?.userAudioUrl).toBe("blob:http://localhost/test-audio");
+  });
+
+  it("transcribes audio with Whisper and passes verbatim text to AI evaluation", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+    vi.mocked(AudioCaptureService.stopAndGetAudio).mockResolvedValueOnce({
+      audioBlob: new Blob(["speech-bytes"], { type: "audio/webm" }),
+      audioUrl: "blob:http://localhost/speech-audio",
+      durationSeconds: 10,
+    });
+    vi.mocked(AudioCaptureService.transcribeAudio).mockResolvedValueOnce({
+      text: "I consider that for drive organizational transformation, we must to focus in optimize our operative processes.",
+      language: "en",
+      avgLogprob: -0.15,
+      noSpeechProb: 0.01,
+    });
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    // User was speaking (Web Speech had interim mangled words)
+    act(() => {
+      result.current.toggleListening();
+      result.current.setUserTranscript("for dry organizational transformation we must to focus in Optimus side");
+    });
+
+    await act(async () => {
+      await result.current.finishTurnManual();
+    });
+
+    expect(AudioCaptureService.transcribeAudio).toHaveBeenCalled();
+    expect(CoreAiEvaluatorService.evaluate).toHaveBeenCalledWith(
+      "I consider that for drive organizational transformation, we must to focus in optimize our operative processes.",
+      expect.anything(),
+      "Product Manager",
+      "B1",
+    );
+    expect(result.current.userTranscript).toBe("I consider that for drive organizational transformation, we must to focus in optimize our operative processes.");
+  });
+
+  it("recovers gracefully on evaluation error without permanently locking isEvaluatingRef or remaining stuck in THINKING", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockRejectedValueOnce(new Error("Network timeout"));
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    await act(async () => {
+      await result.current.finishTurnManual("I work with agile methodologies and sprint planning.");
+    });
+
+    // Should open recovery modal and reset isThinking
+    expect(result.current.isRecoveryModalOpen).toBe(true);
+    expect(result.current.isThinking).toBe(false);
+
+    // Ensure state is unblocked for subsequent operations
+    act(() => {
+      result.current.skipQuestion();
+    });
+    expect(result.current.currentQuestionIndex).toBe(2);
+  });
+});
+

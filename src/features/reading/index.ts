@@ -15,3 +15,4 @@ export * from "./components/ReadingAudioNarratorButton";
 export * from "./hooks/useReadingArticles";
 export * from "./hooks/useReadingAudioNarrator";
 export * from "./services/aiReadingArticleGenerator";
+export * from "./services/onDeviceTranslatorService";

@@ -37,7 +37,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     isAiSpeaking,
     isThinking,
     isPaused,
-    processingStage,
     currentRound,
     currentQuestionIndex,
     currentQuestion,
@@ -46,7 +45,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     speakingSeconds,
     speechRate,
     userTranscript,
-    speechNotice,
     clearTranscript,
     turnFeedback,
     savedErrorIds,
@@ -139,25 +137,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
   const handleSubmitAnswer = useCallback((text?: string) => {
     finishTurnManual(text);
   }, [finishTurnManual]);
-
-  const statusTitle = useMemo(() => {
-    if (isAiSpeaking) return "Interviewer speaking...";
-    if (processingStage === "TRANSCRIBING") return "Transcribiendo con Whisper AI...";
-    if (processingStage === "ANALYZING") return "Analizando con Mentor IA...";
-    if (processingStage === "PREPARING") return "Estructurando correcciones...";
-    if (isThinking) return "Procesando respuesta...";
-    if (isPaused) return "Interview paused";
-    if (isListening) return "Listening to your answer...";
-    if (speechNotice) return "Micrófono en pausa";
-    return "Ready for your answer";
-  }, [
-    isAiSpeaking,
-    processingStage,
-    isThinking,
-    isPaused,
-    isListening,
-    speechNotice,
-  ]);
 
   const handleSetLevel = useCallback(
     (level: string) => {
@@ -254,15 +233,8 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         <div className="flex-1 w-full h-full flex flex-col justify-between items-center min-h-0 overflow-hidden max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-0 sm:px-4 py-1 sm:py-2 lg:py-4">
           {/* Upper Section: Orb + Status + Question + Live Transcript */}
           <div className="w-full flex flex-col items-center justify-start gap-1.5 sm:gap-3 shrink-0">
-            {/* Glowing Orb & Status */}
-            <ConversationOrbHero
-              statusText={statusTitle}
-              isListening={isListening}
-              isAiSpeaking={isAiSpeaking}
-              isThinking={isThinking}
-              processingStage={processingStage}
-              isActive={isActive}
-            />
+            {/* Glowing Orb */}
+            <ConversationOrbHero isActive={isActive} />
 
             {/* Question & Live Transcript — blindado contra crash si currentQuestion aún no hidrata */}
             <ConversationPromptArea

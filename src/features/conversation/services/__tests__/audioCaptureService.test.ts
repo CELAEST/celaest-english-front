@@ -203,7 +203,7 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     }
   });
 
-  it("releases micStream tracks on mobile when SpeechRecognition is supported to guarantee exclusive hardware access", () => {
+  it("preserves micStream on mobile when SpeechRecognition is supported so Whisper receives audio", () => {
     const originalUserAgent = navigator.userAgent;
     try {
       Object.defineProperty(navigator, "userAgent", {
@@ -238,8 +238,8 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         onTranscript: vi.fn(),
       });
 
-      expect(stopTrackMock).toHaveBeenCalled();
-      expect(AudioCaptureService.hasActiveMic()).toBe(false);
+      expect(stopTrackMock).not.toHaveBeenCalled();
+      expect(AudioCaptureService.hasActiveMic()).toBe(true);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {

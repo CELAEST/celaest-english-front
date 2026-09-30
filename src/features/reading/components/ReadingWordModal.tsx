@@ -34,6 +34,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
     const [isTranslatingDirect, setIsTranslatingDirect] = useState(false);
     const [directTranslation, setDirectTranslation] = useState<string | null>(null);
     const isSavingRef = useRef(false);
+    const autoSpokenWordRef = useRef<string | null>(null);
 
     // 3D Spatial Tilt Physics & Dynamic Specular Sheen (Direct RAF DOM updates — Zero React Re-renders)
     const cardRef = useRef<HTMLDivElement>(null);
@@ -101,6 +102,31 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
       setIsPlayingAudio(false);
       SpeechSynthesisService.stop();
     }, [wordData?.word, wordData?.spanishTranslation]);
+
+    // Automatically pronounce the word upon opening the modal, exactly ONCE
+    useEffect(() => {
+      if (!wordData?.word || isLoading) return;
+
+      const currentWord = wordData.word.trim();
+      if (autoSpokenWordRef.current === currentWord) return;
+      autoSpokenWordRef.current = currentWord;
+
+      MobileAudioUnlocker.unlock();
+      setIsPlayingAudio(true);
+      void SpeechSynthesisService.speak(currentWord, {
+        voice: "en-US-AriaNeural",
+        rate: 0.9,
+        onStart: () => {
+          setIsPlayingAudio(true);
+        },
+        onEnd: () => {
+          setIsPlayingAudio(false);
+        },
+        onError: () => {
+          setIsPlayingAudio(false);
+        },
+      });
+    }, [wordData?.word, isLoading]);
 
     // Compute authentic IPA phonetic transcription (never fake fallback like /word/)
     const displayPhonetic = useMemo(() => {
@@ -230,7 +256,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
             left: `${coords.left}px`,
             willChange: "transform",
           }}
-          className="fixed z-[9999] w-[275px] sm:w-[305px] p-4 sm:p-5 rounded-2xl bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] shadow-[0_24px_60px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group max-h-[calc(100dvh-95px)] sm:max-h-[calc(100dvh-40px)]"
+          className="fixed z-[9999] w-[275px] sm:w-[305px] pl-6 pr-4 pt-4 pb-4 sm:pl-7 sm:pr-5 sm:pt-5 sm:pb-5 rounded-2xl bg-[#04040A] border border-white/[0.08] hover:border-white/[0.14] shadow-[0_24px_60px_rgba(0,0,0,0.95)] text-left flex flex-col select-none animate-[fadeIn_0.18s_ease-out_both] overflow-visible transition-transform duration-150 ease-out group max-h-[calc(100dvh-95px)] sm:max-h-[calc(100dvh-40px)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Ultra-Subtle Monochromatic White Backlight Glow */}
@@ -258,16 +284,16 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
           {/* Top Specular Hairline */}
           <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none z-20" />
 
-          {/* Left Speaker Icon (Clean, Borderless, Transparent) */}
+          {/* Left Speaker Squircle Badge */}
           {!isLoading && wordData && (
             <button
               type="button"
               onClick={handlePlayAudio}
               aria-label={`Listen to pronunciation of ${wordData.word}`}
-              className={`absolute top-[20px] -left-[16px] w-10 h-10 flex items-center justify-center text-[#c4b5fd] hover:text-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer z-40 animate-[scaleIn_0.2s_ease-out_both] ${
+              className={`absolute top-[20px] -left-[18px] w-11 h-11 rounded-2xl bg-[#04040A] border border-white/[0.08] hover:border-white/20 flex items-center justify-center text-[#c4b5fd] hover:text-white hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.06)] z-40 animate-[scaleIn_0.2s_ease-out_both] ${
                 isPlayingAudio
-                  ? "scale-110 text-white drop-shadow-[0_0_12px_rgba(162,127,243,0.8)]"
-                  : "hover:drop-shadow-[0_0_8px_rgba(196,181,253,0.5)]"
+                  ? "scale-105 text-white border-[#A27FF3]/60 shadow-[0_0_16px_rgba(162,127,243,0.4)]"
+                  : ""
               }`}
             >
               <svg
@@ -302,9 +328,9 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               <div className="h-3.5 w-24 rounded bg-white/[0.05] mt-1 pl-1" />
             </div>
           ) : wordData ? (
-            <div className="relative z-10 flex flex-col overflow-y-auto no-scrollbar max-h-[calc(100dvh-125px)] sm:max-h-[calc(100dvh-60px)] pr-0.5">
+            <div className="relative z-10 flex flex-col overflow-y-auto no-scrollbar max-h-[calc(100dvh-125px)] sm:max-h-[calc(100dvh-60px)] pl-2 pr-0.5">
               {/* Word Title & Phonetic */}
-              <div className="flex flex-col pl-2">
+              <div className="flex flex-col">
                 <h3
                   id="word-modal-title"
                   className="text-[20px] sm:text-[22px] font-bold text-white tracking-tight leading-none mt-0.5"
@@ -384,15 +410,15 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                 </p>
               )}
 
-              {/* Bottom Action: + Add to Memory / ✓ In Memory (Generous Mobile Touch Target + Instantaneous Feedback) */}
+              {/* Bottom Action: + Add to Memory / ✓ In Memory (Pure Floating Typography — Zero Pill, Zero Border) */}
               <div className="flex items-center justify-start pt-1">
                 {addedSuccess || isAlreadyInMemory ? (
                   <span
                     aria-label="Word already in Memory"
-                    className="min-h-[36px] px-3 py-1.5 rounded-xl text-[12px] font-medium tracking-wide flex items-center space-x-1.5 text-[#4ade80] select-none animate-[fadeIn_0.2s_ease-out]"
+                    className="text-[12px] font-medium tracking-wide flex items-center space-x-1.5 text-[#4ade80] select-none animate-[fadeIn_0.2s_ease-out]"
                   >
                     <svg
-                      className="w-4 h-4 text-[#4ade80]"
+                      className="w-3.5 h-3.5 text-[#4ade80]"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -410,7 +436,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
                     onClick={handleSaveToMemory}
                     disabled={isAdding}
                     aria-label="Add word to Memory"
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-[#A27FF3]/20 active:bg-[#A27FF3]/30 border border-white/[0.08] hover:border-[#A27FF3]/40 text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 text-[#C4B5FD] hover:text-white cursor-pointer touch-manipulation select-none active:scale-[0.98]"
+                    className="text-[12px] font-medium tracking-wide transition-all flex items-center space-x-1.5 group text-[#A27FF3] hover:text-white cursor-pointer select-none active:scale-[0.98]"
                   >
                     <MemoryBankSaveIcon className="w-3.5 h-3.5 text-[#A27FF3] group-hover:scale-110 transition-transform" />
                     <span>{isAdding ? "Saving..." : "Add to Memory"}</span>

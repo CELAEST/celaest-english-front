@@ -10,6 +10,7 @@ import { directClientAiService } from "../../settings/services/directClientAiSer
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { phoneticLookupService } from "../services/phoneticLookupService";
+import { onDeviceTranslatorService } from "../services/onDeviceTranslatorService";
 
 const READING_CACHE_KEY = "lingua_reading_articles_v2";
 const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
@@ -472,6 +473,58 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
       const cleanWord = word.trim();
       if (!cleanWord) return "";
 
+      const persistWordTranslation = (tr: string, source: string, resolutionTimeMs: number) => {
+        if (!currentArticleRef.current) return;
+        const currentArt = currentArticleRef.current;
+        const lowerKey = cleanWord.toLowerCase();
+        const existingEntry = currentArt.vocabularyMap?.[lowerKey];
+        const rawPhonetic = existingEntry?.phonetic;
+        const validPhonetic =
+          rawPhonetic && rawPhonetic !== `/${cleanWord}/` && !rawPhonetic.startsWith("/'")
+            ? rawPhonetic
+            : phoneticLookupService.getPhonetic(cleanWord);
+
+        const updatedEntry: WordLookup = {
+          word: cleanWord,
+          phonetic: validPhonetic,
+          partOfSpeech:
+            existingEntry?.partOfSpeech || (cleanWord.includes(" ") ? "phrasal verb" : "vocabulary"),
+          spanishTranslation: tr,
+          definition: existingEntry?.definition || `Meaning of '${cleanWord}' in context.`,
+          exampleSentence: context || existingEntry?.exampleSentence || `"${cleanWord}"`,
+          cefrLevel: existingEntry?.cefrLevel || level || "B1",
+          audioUrl: existingEntry?.audioUrl,
+          metadata: {
+            lexicalSource: existingEntry?.metadata?.lexicalSource || source,
+            translationSource: source,
+            cacheHit: false,
+            resolutionTimeMs,
+          },
+        };
+
+        upsertLocalArticle({
+          ...currentArt,
+          vocabularyMap: {
+            ...(currentArt.vocabularyMap ?? {}),
+            [lowerKey]: updatedEntry,
+          },
+        });
+      };
+
+      // 1. Tier 1: Try On-Device Translation API (Chrome 138+ / WICG Built-in AI) - 0 tokens, 0 network
+      if (onDeviceTranslatorService.isSupported()) {
+        try {
+          const onDeviceTr = await onDeviceTranslatorService.translate(cleanWord, { context });
+          if (onDeviceTr) {
+            persistWordTranslation(onDeviceTr, "on_device_browser", 10);
+            return onDeviceTr;
+          }
+        } catch {
+          // Graceful fallback to remote BYOK provider
+        }
+      }
+
+      // 2. Tier 2: Remote BYOK LLM Provider
       const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
       const hasKey = await providerKeyVault.hasKey(activeProvider);
 
@@ -498,41 +551,8 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         .trim()
         .toLowerCase();
 
-      if (cleanTranslation && currentArticleRef.current) {
-        const currentArt = currentArticleRef.current;
-        const lowerKey = cleanWord.toLowerCase();
-        const existingEntry = currentArt.vocabularyMap?.[lowerKey];
-        const rawPhonetic = existingEntry?.phonetic;
-        const validPhonetic =
-          rawPhonetic && rawPhonetic !== `/${cleanWord}/` && !rawPhonetic.startsWith("/'")
-            ? rawPhonetic
-            : phoneticLookupService.getPhonetic(cleanWord);
-
-        const updatedEntry: WordLookup = {
-          word: cleanWord,
-          phonetic: validPhonetic,
-          partOfSpeech:
-            existingEntry?.partOfSpeech || (cleanWord.includes(" ") ? "phrasal verb" : "vocabulary"),
-          spanishTranslation: cleanTranslation,
-          definition: existingEntry?.definition || `Meaning of '${cleanWord}' in context.`,
-          exampleSentence: context || existingEntry?.exampleSentence || `"${cleanWord}"`,
-          cefrLevel: existingEntry?.cefrLevel || level || "B1",
-          audioUrl: existingEntry?.audioUrl,
-          metadata: {
-            lexicalSource: existingEntry?.metadata?.lexicalSource || "client_byok",
-            translationSource: `client_${activeProvider}`,
-            cacheHit: false,
-            resolutionTimeMs: existingEntry?.metadata?.resolutionTimeMs || 120,
-          },
-        };
-
-        upsertLocalArticle({
-          ...currentArt,
-          vocabularyMap: {
-            ...(currentArt.vocabularyMap ?? {}),
-            [lowerKey]: updatedEntry,
-          },
-        });
+      if (cleanTranslation) {
+        persistWordTranslation(cleanTranslation, `client_${activeProvider}`, 120);
       }
 
       return cleanTranslation;
@@ -607,17 +627,31 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         try {
           const lookupResult = await apiReadingRepository.lookupWord(cleanWord, context);
 
-          // If backend returned untranslated or empty translation (e.g. CELAEST-CORE down), attempt client BYOK
+          // If backend returned untranslated or empty translation, attempt on-device translation first, then client BYOK
           if (!lookupResult.spanishTranslation || lookupResult.metadata?.translationSource === "untranslated") {
             try {
-              const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-              const hasKey = await providerKeyVault.hasKey(activeProvider);
-              if (hasKey) {
-                const directTr = await translateWordDirect(cleanWord, context);
-                if (directTr) {
-                  lookupResult.spanishTranslation = directTr;
+              // 1. Try On-Device Translation API (Chrome 138+) - 0 tokens
+              if (onDeviceTranslatorService.isSupported()) {
+                const onDeviceTr = await onDeviceTranslatorService.translate(cleanWord, { context });
+                if (onDeviceTr) {
+                  lookupResult.spanishTranslation = onDeviceTr;
                   if (lookupResult.metadata) {
-                    lookupResult.metadata.translationSource = `client_${activeProvider}`;
+                    lookupResult.metadata.translationSource = "on_device_browser";
+                  }
+                }
+              }
+
+              // 2. Fall back to BYOK LLM if still untranslated
+              if (!lookupResult.spanishTranslation || lookupResult.metadata?.translationSource === "untranslated") {
+                const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
+                const hasKey = await providerKeyVault.hasKey(activeProvider);
+                if (hasKey) {
+                  const directTr = await translateWordDirect(cleanWord, context);
+                  if (directTr) {
+                    lookupResult.spanishTranslation = directTr;
+                    if (lookupResult.metadata) {
+                      lookupResult.metadata.translationSource = `client_${activeProvider}`;
+                    }
                   }
                 }
               }

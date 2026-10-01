@@ -66,6 +66,7 @@ export class MasterAiFeedbackEngine {
 
     const detectedErrors: SpecificErrorItem[] = [];
     const lower = text.toLowerCase();
+    const words = text.split(/\s+/).filter(Boolean);
 
     // =========================================================================
     // PILLAR 1: STRATEGIC & BEHAVIORAL CONTENT ANALYSIS
@@ -845,14 +846,14 @@ export class MasterAiFeedbackEngine {
       });
     }
 
-    // U3. "for + verb" instead of "to + verb" (Spanish interference: "para mitigar" → "for mitigate")
+    // U3. "for + verb" instead of "to + verb" (Spanish interference: "para mitigar" → "for mitigate", "for drive", "for improve", "for achieve")
     if (
-      /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate)\b/i.test(
+      /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i.test(
         lower,
       )
     ) {
       const forMatch = lower.match(
-        /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate)\b/i,
+        /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i,
       );
       const verb = forMatch ? forMatch[1] : "mitigate";
       detectedErrors.push({
@@ -860,12 +861,12 @@ export class MasterAiFeedbackEngine {
         errorType: "GRAMMAR",
         errorWord: `for ${verb}`,
         correctWord: `to ${verb}`,
-        userSaidContext: `for ${verb} this`,
-        betterWay: `to ${verb} this issue effectively`,
+        userSaidContext: `for ${verb}`,
+        betterWay: text.replace(new RegExp(`\\bfor\\s+${verb}\\b`, "gi"), `to ${verb}`),
         explanation:
-          "In English, use 'to' (not 'for') before an infinitive verb to express purpose: 'to mitigate', 'to solve', 'to prevent'.",
+          `En inglés, para expresar propósito ('para + verbo'), se utiliza el infinitivo con 'to' ('to ${verb}'), nunca 'for + infinitivo'. La estructura 'for' se reserva para preposiciones con sustantivos o gerundios ('for driving', pero para el propósito de la acción se dice 'to ${verb}').`,
         translationSpanish:
-          "Interferencia del español 'para + verbo'. En inglés se usa 'to + verbo': 'to mitigate', 'to solve'.",
+          `Interferencia del español 'para + verbo': se dice 'to ${verb}' (para ${verb === "improve" ? "mejorar" : verb === "drive" ? "impulsar" : verb === "achieve" ? "alcanzar" : verb}).`,
         cefrLevel: "B1",
         savedToMemory: false,
       });
@@ -978,9 +979,191 @@ export class MasterAiFeedbackEngine {
       });
     }
 
-    // =========================================================================
-    // 3. ACCURATE SCORING & QUESTION-SPECIFIC MODEL ANSWER
-    // =========================================================================
+    // U9. Gerund after prepositions: "after make" → "after making", "without lose/loose" → "without losing"
+    if (
+      /\b(after|before|by|without|instead of)\s+(make|do|check|test|change|deploy|send|write|create|run|use|implement|fix|update|see|review|solve|build|optimize|deliver|loose|lose)\b/i.test(
+        lower,
+      )
+    ) {
+      const prepMatch = lower.match(
+        /\b(after|before|by|without|instead of)\s+(make|do|check|test|change|deploy|send|write|create|run|use|implement|fix|update|see|review|solve|build|optimize|deliver|loose|lose)\b/i,
+      );
+      const prep = prepMatch ? prepMatch[1] : "after";
+      const rawVerb = prepMatch ? prepMatch[2] : "make";
+      const baseVerb = rawVerb === "loose" ? "lose" : rawVerb;
+      const gerund =
+        baseVerb === "make"
+          ? "making"
+          : baseVerb === "write"
+            ? "writing"
+            : baseVerb === "use"
+              ? "using"
+              : baseVerb === "lose"
+                ? "losing"
+                : baseVerb === "create"
+                  ? "creating"
+                  : baseVerb === "optimize"
+                    ? "optimizing"
+                    : `${baseVerb}ing`;
+
+      detectedErrors.push({
+        id: `err-u9-prep-gerund-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `${prep} ${rawVerb}`,
+        correctWord: `${prep} ${gerund}`,
+        userSaidContext: `${prep} ${rawVerb}`,
+        betterWay: text.replace(new RegExp(`\\b${prep}\\s+${rawVerb}\\b`, "gi"), `${prep} ${gerund}`),
+        explanation: `Después de una preposición en inglés ('${prep}'), el verbo que le sigue debe ir en su forma de gerundio con la terminación '-ing' ('${prep} ${gerund}'), no en su forma base.`,
+        translationSpanish: `Regla de preposición: se dice '${prep} ${gerund}' (después de realizar cambios / sin perder calidad).`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U10. Missing preposition 'at' with look: "looking how" → "looking at how / observing how"
+    if (/\b(look|looks|looking|looked)\s+(how|what|where|who|why)\b/i.test(lower)) {
+      const lookMatch = lower.match(/\b(look|looks|looking|looked)\s+(how|what|where|who|why)\b/i);
+      const lookForm = lookMatch ? lookMatch[1] : "looking";
+      const whWord = lookMatch ? lookMatch[2] : "how";
+      detectedErrors.push({
+        id: `err-u10-look-at-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `${lookForm} ${whWord}`,
+        correctWord: `${lookForm} at ${whWord} / observing ${whWord}`,
+        userSaidContext: `${lookForm} ${whWord} the users interact`,
+        betterWay: text.replace(
+          new RegExp(`\\b${lookForm}\\s+${whWord}\\b`, "gi"),
+          `${lookForm} at ${whWord}`,
+        ),
+        explanation: `El verbo 'look' requiere la preposición 'at' para dirigirse hacia un objeto o comportamiento ('${lookForm} at ${whWord}'). En un contexto profesional de métricas, también puedes usar verbos de mayor precisión como 'observing ${whWord}' o 'monitoring ${whWord}'.`,
+        translationSpanish: `Uso de preposiciones: se dice '${lookForm} at ${whWord}' (observando cómo los usuarios interactúan).`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U11. Modal + 'to': "we must to focus" → "we must focus", "can to do" → "can do"
+    if (/\b(must|should|can|could|would|might|may)\s+to\s+([a-z]+)\b/i.test(lower)) {
+      const modalMatch = lower.match(
+        /\b(must|should|can|could|would|might|may)\s+to\s+([a-z]+)\b/i,
+      );
+      const modal = modalMatch ? modalMatch[1] : "must";
+      const v = modalMatch ? modalMatch[2] : "focus";
+      detectedErrors.push({
+        id: `err-u11-modal-to-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `${modal} to ${v}`,
+        correctWord: `${modal} ${v}`,
+        userSaidContext: `${modal} to ${v}`,
+        betterWay: text.replace(new RegExp(`\\b${modal}\\s+to\\s+${v}\\b`, "gi"), `${modal} ${v}`),
+        explanation: `Los verbos modales en inglés ('${modal}') van seguidos directamente del infinitivo sin 'to' (bare infinitive). Se dice '${modal} ${v}', no '${modal} to ${v}'.`,
+        translationSpanish: `Regla de verbos modales: se dice '${modal} ${v}' (debemos enfocarnos).`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // U12. Spanglish "focus in" (enfocarse en) → "focus on"
+    if (/\bfocus\s+in\b/i.test(lower)) {
+      detectedErrors.push({
+        id: `err-u12-focus-in-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "focus in",
+        correctWord: "focus on",
+        userSaidContext: "focus in",
+        betterWay: text.replace(/\bfocus\s+in\b/gi, "focus on"),
+        explanation:
+          "Interferencia del español 'enfocarse en'. En inglés, el verbo 'focus' siempre rige la preposición 'on' ('focus on optimizing'), nunca 'in'.",
+        translationSpanish:
+          "Preposición correcta: se dice 'focus on' (enfocarse en), no 'focus in'.",
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U13. "in optimize / in drive" → "on optimizing / on driving"
+    if (/\bin\s+(optimize|optimizing|drive|driving|improve|improving|manage|managing)\b/i.test(lower)) {
+      const inMatch = lower.match(
+        /\bin\s+(optimize|optimizing|drive|driving|improve|improving|manage|managing)\b/i,
+      );
+      const inVerb = inMatch ? inMatch[1] : "optimize";
+      const fixedGerund = inVerb.endsWith("ing") ? inVerb : `${inVerb.replace(/e$/, "")}ing`;
+      detectedErrors.push({
+        id: `err-u13-in-gerund-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: `in ${inVerb}`,
+        correctWord: `on ${fixedGerund}`,
+        userSaidContext: `in ${inVerb}`,
+        betterWay: text.replace(new RegExp(`\\bin\\s+${inVerb}\\b`, "gi"), `on ${fixedGerund}`),
+        explanation: `Para expresar el área de enfoque u objetivo, usa 'on ${fixedGerund}' ('focus on ${fixedGerund}').`,
+        translationSpanish: `Estructura correcta: 'on ${fixedGerund}' (en optimizar / en liderar).`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U14. Pluralization of collective noun "personnels" → "personnel / staff / team members"
+    if (/\b(more\s+)?personnels\b/i.test(lower)) {
+      detectedErrors.push({
+        id: `err-u14-personnels-${Date.now()}`,
+        errorType: "VOCABULARY",
+        errorWord: "personnels",
+        correctWord: "personnel / staff / team members",
+        userSaidContext: "more personnels",
+        betterWay: text.replace(/\bpersonnels\b/gi, "personnel"),
+        explanation:
+          "'Personnel' es un sustantivo colectivo incontable en inglés; no admite plural con 's'. Para hablar de más personas di 'more personnel', 'additional staff' o 'more team members'.",
+        translationSpanish:
+          "Sustantivo incontable: se dice 'personnel' o 'staff' (personal), nunca 'personnels'.",
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U15. Colloquial sentence fragment opening: "A lot of things." / "Many things."
+    if (/^(a\s+lot\s+of\s+things|many\s+things|a\s+lot\s+of\s+tools|many\s+tools)[.!,]/i.test(lower)) {
+      const fragMatch = text.match(/^(a\s+lot\s+of\s+things|many\s+things|a\s+lot\s+of\s+tools|many\s+tools)[.!,]/i);
+      const frag = fragMatch ? fragMatch[0] : "A lot of things.";
+      detectedErrors.push({
+        id: `err-u15-opening-fragment-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: frag,
+        correctWord: "In my daily workflow, I rely on a diverse set of specialized tools...",
+        userSaidContext: frag,
+        betterWay: text.replace(
+          new RegExp(`^${frag}\\s*`, "i"),
+          "In my daily workflow, I rely on a diverse set of specialized tools: ",
+        ),
+        explanation:
+          "Iniciar una respuesta con un fragmento aislado y coloquial ('A lot of things.') resta formalidad en una entrevista profesional. Abre directamente con una oración completa que establezca autoridad y contexto.",
+        translationSpanish:
+          "Estructura de entrevista: evita fragmentos informales de apertura y comienza con una oración completa y profesional.",
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U16. Excessive repetition of the basic verb "use" (3+ times in a short response)
+    const useMatches = lower.match(/\b(use|uses|used)\b/g);
+    if (useMatches && useMatches.length >= 3 && words.length < 90) {
+      detectedErrors.push({
+        id: `err-u16-use-repetition-${Date.now()}`,
+        errorType: "VOCABULARY",
+        errorWord: `Overuse of 'use' (${useMatches.length} times)`,
+        correctWord: "Diversify verbs: 'rely on', 'leverage', 'utilize', 'work with'",
+        userSaidContext: text.slice(0, 80),
+        betterWay: text
+          .replace(/\buse\s+Slack\b/i, "rely on Slack")
+          .replace(/\buse\s+Visual\s+Studio\s+Code\b/i, "leverage Visual Studio Code")
+          .replace(/\buse\s+GitHub\b/i, "utilize GitHub"),
+        explanation:
+          "Repetiste el verbo básico 'use' varias veces en tu respuesta. En entrevistas de trabajo en inglés, demostrar variedad léxica usando sinónimos profesionales como 'rely on', 'leverage', 'utilize' o 'deploy' proyecta un nivel de inglés significativamente más avanzado y senior.",
+        translationSpanish:
+          "Variedad de vocabulario: alterna 'use' con sinónimos profesionales como 'rely on', 'leverage' y 'utilize'.",
+        cefrLevel: "B2",
+        savedToMemory: false,
+      });
+    }
     const errorCount = detectedErrors.length;
     let grammarScore = 90;
     let clarityScore = 88;

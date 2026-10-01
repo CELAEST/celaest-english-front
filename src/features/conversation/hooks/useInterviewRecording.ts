@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly, isMobileDevice } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -81,21 +81,28 @@ export function useInterviewRecording({
       // ignore storage errors
     }
 
-    // Always ensure hardware microphone stream is active across all platforms (Mobile & Desktop).
-    // Prompting getUserMedia on user gesture guarantees permission and initializes AnalyserNode & MediaRecorder.
-    if (!AudioCaptureService.hasActiveMic()) {
-      let granted = false;
-      try {
-        granted = await AudioCaptureService.initMicrophone();
-      } catch {
-        granted = false;
-      }
-      if (!granted) {
-        if (isMountedRef.current) {
-          setStatus("IDLE");
-          setIsMicRecoveryModalOpen(true);
+    const isMobile = isMobileDevice();
+    const hasSpeechRec = AudioCaptureService.isSpeechRecognitionSupported();
+
+    // On desktop, or mobile browsers without native Web Speech API (e.g. Firefox Mobile),
+    // ensure hardware microphone stream is initialized for MediaRecorder + Whisper.
+    // On mobile with SpeechRecognition (Chrome Android / Safari iOS), skip getUserMedia
+    // so native SpeechRecognition has 100% uncontested, exclusive access to the microphone HAL.
+    if (!isMobile || !hasSpeechRec) {
+      if (!AudioCaptureService.hasActiveMic()) {
+        let granted = false;
+        try {
+          granted = await AudioCaptureService.initMicrophone();
+        } catch {
+          granted = false;
         }
-        return;
+        if (!granted) {
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setIsMicRecoveryModalOpen(true);
+          }
+          return;
+        }
       }
     }
 
@@ -111,10 +118,8 @@ export function useInterviewRecording({
       question: currentQuestionText,
       onTranscript: (liveTranscript: string) => {
         if (!isMountedRef.current) return;
-        const prefix = textBeforeSegmentRef.current.trim();
-        const merged = prefix ? mergePhrasesCleanly(prefix, liveTranscript) : liveTranscript;
-        userTranscriptRef.current = merged;
-        setUserTranscriptRaw(merged);
+        userTranscriptRef.current = liveTranscript;
+        setUserTranscriptRaw(liveTranscript);
       },
       onSpanishDetected: (noticeMessage: string) => {
         if (!isMountedRef.current) return;
@@ -132,7 +137,7 @@ export function useInterviewRecording({
           errCode.includes("not-allowed") ||
           errCode.includes("NotAllowedError")
         ) {
-          if (AudioCaptureService.hasActiveMic()) return;
+          if (!isMobile && AudioCaptureService.hasActiveMic()) return;
           if (isMountedRef.current) {
             setStatus("IDLE");
             setIsMicRecoveryModalOpen(true);

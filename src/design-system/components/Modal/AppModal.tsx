@@ -61,15 +61,19 @@ const AppModalInner: React.FC<AppModalProps> = ({
     onClose,
   });
 
+  const bodyRef = React.useRef<HTMLDivElement>(null);
   const touchStartYRef = React.useRef<number>(0);
   const touchDeltaRef = React.useRef<number>(0);
   const isDraggingRef = React.useRef<boolean>(false);
+  const isPullingFromBodyRef = React.useRef<boolean>(false);
   const handlePillRef = React.useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button, a, input, textarea")) return;
     touchStartYRef.current = e.touches[0].clientY;
     touchDeltaRef.current = 0;
     isDraggingRef.current = true;
+    isPullingFromBodyRef.current = false;
     if (handlePillRef.current) {
       handlePillRef.current.style.width = "48px";
       handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
@@ -85,14 +89,18 @@ const AppModalInner: React.FC<AppModalProps> = ({
     trapRef.current.style.transition = "none";
     if (delta > 0) {
       trapRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+      const opacity = Math.max(0.3, 1 - delta / 350);
+      trapRef.current.style.opacity = `${opacity}`;
     } else {
       trapRef.current.style.transform = `translate3d(0, ${delta * 0.15}px, 0)`;
+      trapRef.current.style.opacity = "1";
     }
   };
 
   const handleTouchEnd = () => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+    isPullingFromBodyRef.current = false;
     if (handlePillRef.current) {
       handlePillRef.current.style.width = "40px";
       handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
@@ -101,21 +109,63 @@ const AppModalInner: React.FC<AppModalProps> = ({
     const delta = touchDeltaRef.current;
     if (trapRef.current) {
       if (delta > 65) {
-        trapRef.current.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)";
+        trapRef.current.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out";
         trapRef.current.style.transform = "translate3d(0, 100%, 0)";
+        trapRef.current.style.opacity = "0";
         setTimeout(() => {
           onClose();
           if (trapRef.current) {
             trapRef.current.style.transform = "";
+            trapRef.current.style.opacity = "";
             trapRef.current.style.transition = "";
           }
         }, 200);
       } else {
-        trapRef.current.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)";
+        trapRef.current.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out";
         trapRef.current.style.transform = "translate3d(0, 0, 0)";
+        trapRef.current.style.opacity = "1";
       }
     }
     touchDeltaRef.current = 0;
+  };
+
+  const handleBodyTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+    touchDeltaRef.current = 0;
+    if (bodyRef.current && bodyRef.current.scrollTop <= 0) {
+      isPullingFromBodyRef.current = true;
+    } else {
+      isPullingFromBodyRef.current = false;
+    }
+  };
+
+  const handleBodyTouchMove = (e: React.TouchEvent) => {
+    if (!isPullingFromBodyRef.current || !trapRef.current || !bodyRef.current) return;
+    if (bodyRef.current.scrollTop > 0) {
+      isPullingFromBodyRef.current = false;
+      return;
+    }
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - touchStartYRef.current;
+    if (delta > 0) {
+      isDraggingRef.current = true;
+      touchDeltaRef.current = delta;
+      trapRef.current.style.transition = "none";
+      trapRef.current.style.transform = `translate3d(0, ${delta * 0.85}px, 0)`;
+      const opacity = Math.max(0.3, 1 - (delta * 0.85) / 350);
+      trapRef.current.style.opacity = `${opacity}`;
+      if (handlePillRef.current) {
+        handlePillRef.current.style.width = "48px";
+        handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
+      }
+    }
+  };
+
+  const handleBodyTouchEnd = () => {
+    if (isDraggingRef.current || isPullingFromBodyRef.current) {
+      isPullingFromBodyRef.current = false;
+      handleTouchEnd();
+    }
   };
 
   useEffect(() => {
@@ -191,7 +241,12 @@ const AppModalInner: React.FC<AppModalProps> = ({
 
         {/* Header */}
         {(title || icon || subtitle) && (
-          <div className="flex items-center justify-between gap-3 shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b border-white/[0.06]">
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="flex items-center justify-between gap-3 shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b border-white/[0.06] select-none cursor-grab active:cursor-grabbing"
+          >
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               {icon && (
                 <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-[#141028] border border-[#251d48] text-[#A27FF3]">
@@ -223,6 +278,10 @@ const AppModalInner: React.FC<AppModalProps> = ({
 
         {/* Body */}
         <div
+          ref={bodyRef}
+          onTouchStart={handleBodyTouchStart}
+          onTouchMove={handleBodyTouchMove}
+          onTouchEnd={handleBodyTouchEnd}
           className={`flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar ${
             footer
               ? "p-3.5 sm:p-6 pb-2 sm:pb-3"

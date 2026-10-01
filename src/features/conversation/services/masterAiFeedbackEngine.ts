@@ -248,6 +248,75 @@ export class MasterAiFeedbackEngine {
       });
     }
 
+    // 3b. Double verb / Auxiliary error: "I am help" / "I am work" / "I am agree"
+    if (
+      /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn)\b/i.test(
+        text,
+      )
+    ) {
+      const match = text.match(
+        /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn)\b/i,
+      );
+      const verb = match ? match[2].toLowerCase() : "help";
+      const userErr = match ? match[0] : "I am help";
+      const correctVerb =
+        verb === "agree"
+          ? "I agree"
+          : verb === "need"
+            ? "I need"
+            : verb === "want"
+              ? "I want"
+              : `I ${verb} / I am ${verb.replace(/e$/, "")}ing`;
+      detectedErrors.push({
+        id: `err-am-verb-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userErr,
+        correctWord: correctVerb,
+        userSaidContext: text.slice(0, 60),
+        betterWay: text.replace(
+          new RegExp(`\\b${userErr}\\b`, "gi"),
+          verb === "agree" ? "I agree" : `I ${verb}`,
+        ),
+        explanation:
+          "En inglés no se combina el verbo auxiliar 'am' con la forma base de un verbo de acción ('" +
+          verb +
+          "'). Usa el Presente Simple ('I " +
+          verb +
+          "') para tus hábitos y labores cotidianas, o el Presente Continuo ('I am " +
+          verb.replace(/e$/, "") +
+          "ing') para acciones en progreso.",
+        translationSpanish:
+          verb === "help"
+            ? "Ayudo a un cliente / Estoy ayudando a un cliente"
+            : verb === "work"
+              ? "Trabajo / Estoy trabajando"
+              : `Uso correcto del verbo: '${correctVerb}'`,
+        cefrLevel: "A1",
+        savedToMemory: false,
+      });
+    }
+
+    // 3c. Preposition error with tell / explaining: "to you how" / "tell to you"
+    if (/\bto\s+you\s+how\b|\btell\s+to\s+you\b|\btelling\s+to\s+you\b/i.test(text)) {
+      const isTellTo = /\btell(ing)?\s+to\s+you\b/i.test(text);
+      detectedErrors.push({
+        id: `err-tell-to-you-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: isTellTo ? "tell to you" : "to you how",
+        correctWord: isTellTo ? "tell you" : "explaining to you how / to show you how",
+        userSaidContext: text.slice(0, 60),
+        betterWay: text
+          .replace(/\bto\s+you\s+how\b/gi, "explaining to you how")
+          .replace(/\btell\s+to\s+you\b/gi, "tell you"),
+        explanation:
+          "En inglés, el verbo 'tell' toma un objeto directo sin la preposición 'to' (se dice 'I tell you', no 'I tell to you'). Si deseas expresar el propósito de guiar a alguien, usa 'explaining to you how' o 'to show you how'.",
+        translationSpanish:
+          "Estructura natural: 'explicándote cómo' o 'para mostrarte cómo'.",
+        cefrLevel: "A1",
+        savedToMemory: false,
+      });
+    }
+
     // 4. "I say them" (Say vs. Tell error)
     if (/\bi\s+(say|said|saying)\s+(them|him|her|us|me)\b/i.test(text)) {
       const match = text.match(/\bi\s+(say|said|saying)\s+(them|him|her|us|me)\b/i);

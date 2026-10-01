@@ -53,7 +53,7 @@ const InterviewAnalysisErrorCarouselInner: React.FC<InterviewAnalysisErrorCarous
         </span>
         <p className="text-[13.5px] sm:text-[15px] font-normal text-white/90 tracking-wide text-center leading-relaxed">
           {userSpokenText.split(/\s+/).filter(Boolean).length < 20
-            ? "Respuesta breve sin errores gramaticales directos. Te sugerimos ampliar tu argumento con ejemplos de tu experiencia técnica."
+            ? "Respuesta concisa sin errores gramaticales directos. Te sugerimos complementar tu respuesta con más detalles y ejemplos prácticos de tu labor."
             : "Excelente precisión gramatical en tu respuesta. No se detectaron errores sintácticos."}
         </p>
       </div>

@@ -144,8 +144,8 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
 
       expect(capturedRecognizerInstance).not.toBeNull();
-      // On mobile devices, continuous is set to false to prevent multi-item result pileup
-      expect(capturedRecognizerInstance.continuous).toBe(false);
+      // On mobile devices, continuous is set to true for uninterrupted dictation
+      expect(capturedRecognizerInstance.continuous).toBe(true);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {
@@ -203,7 +203,7 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     }
   });
 
-  it("releases micStream tracks on mobile when SpeechRecognition is supported to guarantee exclusive hardware access", () => {
+  it("preserves micStream and starts MediaRecorder on mobile devices for dual-stream audio capture", () => {
     const originalUserAgent = navigator.userAgent;
     try {
       Object.defineProperty(navigator, "userAgent", {
@@ -238,8 +238,9 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         onTranscript: vi.fn(),
       });
 
-      expect(stopTrackMock).toHaveBeenCalled();
-      expect(AudioCaptureService.hasActiveMic()).toBe(false);
+      // Hardware micStream must NOT be destroyed on mobile so MediaRecorder captures audio for Whisper AI
+      expect(stopTrackMock).not.toHaveBeenCalled();
+      expect(AudioCaptureService.hasActiveMic()).toBe(true);
       AudioCaptureService.stop();
     } finally {
       Object.defineProperty(navigator, "userAgent", {

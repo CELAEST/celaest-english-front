@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { AudioCaptureService, mergePhrasesCleanly, isMobileDevice } from "../services/audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -81,11 +81,10 @@ export function useInterviewRecording({
       // ignore storage errors
     }
 
-    // On mobile devices where Web Speech Recognition is natively supported, avoid opening
-    // an active getUserMedia track, as Android Audio HAL enforces strict single-client mic exclusivity
-    // which blocks Web Speech from receiving audio buffers.
-    const isMobileWithSpeech = isMobileDevice() && AudioCaptureService.isSpeechRecognitionSupported();
-    if (!isMobileWithSpeech && !AudioCaptureService.hasActiveMic()) {
+    // Ensure hardware microphone stream is initialized across all devices (Desktop, iOS Safari, Android Chrome).
+    // Requesting getUserMedia on user tap guarantees proper browser origin permissions,
+    // connects AudioContext for real-time waveform animation, and fuels MediaRecorder for Whisper AI.
+    if (!AudioCaptureService.hasActiveMic()) {
       let granted = false;
       try {
         granted = await AudioCaptureService.initMicrophone();
@@ -163,38 +162,17 @@ export function useInterviewRecording({
       const audioResult = await AudioCaptureService.stopAndGetAudio();
       lastCapturedAudioRef.current = audioResult;
 
-      // 1. FAST PATH: If live speech recognition already captured a solid transcript (>= 3 words),
-      // finish IMMEDIATELY with 0ms delay! No blocking cloud Whisper network call needed!
       const currentLive = (userTranscriptRef.current || "").trim();
-      const liveWordCount = currentLive.split(/\s+/).filter(Boolean).length;
-      if (liveWordCount >= 3) {
-        const validation = validateSpeechIntelligibility(
-          currentLive,
-          audioResult.durationSeconds,
-          "en",
-          { targetLevel: activeCefrLevel }
-        );
-        if (validation.reason === "SPANISH_DETECTED") {
-          setUserTranscriptRaw("");
-          userTranscriptRef.current = "";
-          textBeforeSegmentRef.current = "";
-          setSpeakingSeconds(0);
-          setSpeechNotice(validation.message || null);
-          appToast.spanishDetected(validation.message);
-          return;
-        }
-        if (validation.reason === "INSUFFICIENT_WORDS" || (!validation.isValid && validation.message)) {
-          setSpeechNotice(validation.message || null);
-        } else {
-          setSpeechNotice(null);
-        }
-        onTurnTranscribed?.(currentLive);
-        return;
-      }
 
-      // 2. FALLBACK PATH: If live transcript is empty or < 3 words (e.g. mobile Safari where Web Speech is restricted,
-      // or initial delay), transcribe recorded audio via Whisper.
-      if (audioResult.audioBlob) {
+      // 1. PRIMARY PATH: High-Accuracy Whisper AI Transcription
+      // Always transcribe recorded audio with Whisper to guarantee veridico, high-fidelity text
+      // with exact grammar, punctuation, and technical terms.
+      let finalTranscript = "";
+      let detectedLanguage = "en";
+      let avgLogprob: number | undefined;
+      let noSpeechProb: number | undefined;
+
+      if (audioResult.audioBlob && audioResult.audioBlob.size > 100) {
         setStatus("THINKING");
         setSpeechNotice("Transcribing audio with AI...");
         try {
@@ -202,61 +180,76 @@ export function useInterviewRecording({
             roleName: effectiveRoleName,
             question: currentQuestionText,
           });
+
           if (whisperResult && whisperResult.text.trim().length > 0) {
-            const trimmed = whisperResult.text.trim();
-            lastCapturedAudioRef.current.detectedLanguage = whisperResult.language;
-            lastCapturedAudioRef.current.avgLogprob = whisperResult.avgLogprob;
-            lastCapturedAudioRef.current.noSpeechProb = whisperResult.noSpeechProb;
-
-            const validation = validateSpeechIntelligibility(
-              trimmed,
-              audioResult.durationSeconds,
-              whisperResult.language,
-              {
-                avgLogprob: whisperResult.avgLogprob,
-                noSpeechProb: whisperResult.noSpeechProb,
-                targetLevel: activeCefrLevel,
-              },
-            );
-
-            if (
-              validation.reason === "WHISPER_HALLUCINATION" ||
-              validation.reason === "SILENCE_OR_EMPTY" ||
-              validation.reason === "REPETITIVE_NOISE"
-            ) {
-              setSpeechNotice(validation.message || null);
-              appToast.ambientNoise(validation.message);
-              return;
-            }
-            if (validation.reason === "SPANISH_DETECTED") {
-              setUserTranscriptRaw("");
-              userTranscriptRef.current = "";
-              textBeforeSegmentRef.current = "";
-              setSpeakingSeconds(0);
-              setSpeechNotice(validation.message || null);
-              appToast.spanishDetected(validation.message);
-              return;
-            }
-
-            const prefix = textBeforeSegmentRef.current.trim();
-            const merged = prefix ? mergePhrasesCleanly(prefix, trimmed) : trimmed;
-            setUserTranscriptRaw(merged);
-            userTranscriptRef.current = merged;
-            onTurnTranscribed?.(merged);
-
-            if (validation.reason === "INSUFFICIENT_WORDS") {
-              setSpeechNotice(validation.message || null);
-            } else if (!validation.isValid && validation.message) {
-              setSpeechNotice(validation.message);
-            } else {
-              setSpeechNotice(null);
-            }
+            finalTranscript = whisperResult.text.trim();
+            detectedLanguage = whisperResult.language || "en";
+            avgLogprob = whisperResult.avgLogprob;
+            noSpeechProb = whisperResult.noSpeechProb;
           }
         } catch (err) {
-          logger.warn("Whisper transcription fallback to web speech:", err);
+          logger.warn("Whisper transcription failed, falling back to live transcript:", err);
         } finally {
           setStatus("IDLE");
         }
+      }
+
+      // 2. FALLBACK PATH: If Whisper was unavailable or offline, use live speech transcript
+      if (!finalTranscript && currentLive) {
+        finalTranscript = currentLive;
+      }
+
+      if (!finalTranscript) {
+        setSpeechNotice("No speech detected. Please speak clearly into your microphone.");
+        return;
+      }
+
+      lastCapturedAudioRef.current.detectedLanguage = detectedLanguage;
+      lastCapturedAudioRef.current.avgLogprob = avgLogprob;
+      lastCapturedAudioRef.current.noSpeechProb = noSpeechProb;
+
+      const validation = validateSpeechIntelligibility(
+        finalTranscript,
+        audioResult.durationSeconds,
+        detectedLanguage,
+        {
+          avgLogprob,
+          noSpeechProb,
+          targetLevel: activeCefrLevel,
+        }
+      );
+
+      if (
+        validation.reason === "WHISPER_HALLUCINATION" ||
+        validation.reason === "SILENCE_OR_EMPTY" ||
+        validation.reason === "REPETITIVE_NOISE"
+      ) {
+        setSpeechNotice(validation.message || null);
+        appToast.ambientNoise(validation.message);
+        return;
+      }
+      if (validation.reason === "SPANISH_DETECTED") {
+        setUserTranscriptRaw("");
+        userTranscriptRef.current = "";
+        textBeforeSegmentRef.current = "";
+        setSpeakingSeconds(0);
+        setSpeechNotice(validation.message || null);
+        appToast.spanishDetected(validation.message);
+        return;
+      }
+
+      const prefix = textBeforeSegmentRef.current.trim();
+      const merged = prefix ? mergePhrasesCleanly(prefix, finalTranscript) : finalTranscript;
+      setUserTranscriptRaw(merged);
+      userTranscriptRef.current = merged;
+      onTurnTranscribed?.(merged);
+
+      if (validation.reason === "INSUFFICIENT_WORDS") {
+        setSpeechNotice(validation.message || null);
+      } else if (!validation.isValid && validation.message) {
+        setSpeechNotice(validation.message);
+      } else {
+        setSpeechNotice(null);
       }
     } catch (err) {
       logger.warn("Failed to stop recording cleanly:", err);
@@ -264,15 +257,17 @@ export function useInterviewRecording({
     }
   }, [
     status,
+    activeCefrLevel,
     effectiveRoleName,
     currentQuestionText,
-    activeCefrLevel,
-    userTranscriptRef,
+    onTurnTranscribed,
     setStatus,
     setSpeakingSeconds,
-    setUserTranscriptRaw,
     setSpeechNotice,
-    onTurnTranscribed,
+    setUserTranscriptRaw,
+    userTranscriptRef,
+    lastCapturedAudioRef,
+    textBeforeSegmentRef,
   ]);
 
   // ────────────────────────────────────────

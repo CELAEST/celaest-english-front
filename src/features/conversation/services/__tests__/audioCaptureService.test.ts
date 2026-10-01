@@ -218,6 +218,13 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       }
       (window as any).SpeechRecognition = MockSpeechRecognition;
 
+      const mockStream = {
+        active: true,
+        getAudioTracks: () => [{ readyState: "live", stop: vi.fn() }],
+        getTracks: () => [{ readyState: "live", stop: vi.fn() }],
+      } as unknown as MediaStream;
+      AudioCaptureService.setMicStream(mockStream);
+
       AudioCaptureService.startRecognition({
         lang: "en-US",
         onTranscript: vi.fn(),

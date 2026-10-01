@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly, isMobileDevice } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -81,10 +81,11 @@ export function useInterviewRecording({
       // ignore storage errors
     }
 
-    // Ensure hardware microphone stream is initialized across all devices (Desktop, iOS Safari, Android Chrome).
-    // Requesting getUserMedia on user tap guarantees proper browser origin permissions,
-    // connects AudioContext for real-time waveform animation, and fuels MediaRecorder for Whisper AI.
-    if (!AudioCaptureService.hasActiveMic()) {
+    // On mobile devices where Web Speech Recognition is natively supported, avoid opening
+    // an active getUserMedia track, as Android Audio HAL enforces strict single-client mic exclusivity
+    // which blocks Web Speech from receiving audio buffers.
+    const isMobileWithSpeech = isMobileDevice() && AudioCaptureService.isSpeechRecognitionSupported();
+    if (!isMobileWithSpeech && !AudioCaptureService.hasActiveMic()) {
       let granted = false;
       try {
         granted = await AudioCaptureService.initMicrophone();

@@ -28,6 +28,7 @@ export interface SpeechRecognitionInstance {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  maxAlternatives?: number;
   start: () => void;
   stop: () => void;
   abort: () => void;
@@ -204,6 +205,10 @@ export class AudioCaptureService {
    * Returns whether a live, active microphone stream track is available
    */
   public static hasActiveMic(): boolean {
+    if (this.isListening || !!this.recognizer) return true;
+    if (typeof window !== "undefined" && isMobileDevice() && this.isSpeechRecognitionSupported()) {
+      return true;
+    }
     if (!this.micStream || !this.micStream.active) return false;
     const tracks = this.micStream.getAudioTracks();
     return tracks.length > 0 && tracks.some((t) => t.readyState === "live");
@@ -314,11 +319,25 @@ export class AudioCaptureService {
     }
     this.recordedChunks = [];
     this.recordingStartTime = Date.now();
+    const isMobile = isMobileDevice();
 
-    // 1. Dual-Stream Audio Capture: Start MediaRecorder unconditionally across all devices (Desktop, iOS Safari, Android Chrome).
-    // MediaRecorder runs continuously in the background collecting high-fidelity raw audio chunks for Whisper AI transcription.
-    // This guarantees a 100% reliable safety net even when Web Speech API is silent, restricted in incognito, or unavailable.
-    if (this.micStream) {
+    // 1. Dual-Stream Audio Capture:
+    // On mobile devices where SpeechRecognition is natively supported, Android Audio HAL enforces
+    // strict single-client mic exclusivity. Keeping an active getUserMedia track or starting MediaRecorder
+    // locks the hardware microphone, starving SpeechRecognition so onresult never fires.
+    // Therefore, on mobile we release any active getUserMedia tracks so SpeechRecognition has 100% exclusive access.
+    // On desktop (PC), simultaneous mic access is supported by the OS-level audio mixer.
+    if (isMobile && SpeechRecognitionAPI && this.micStream) {
+      try {
+        this.micStream.getTracks().forEach((t) => t.stop());
+      } catch {
+        // ignore
+      }
+      this.micStream = null;
+    }
+
+    const shouldRunMediaRecorder = !isMobile || !SpeechRecognitionAPI;
+    if (shouldRunMediaRecorder && this.micStream) {
       try {
         const mimeType = getBestAudioMimeType();
         let recorder: MediaRecorder;
@@ -368,14 +387,24 @@ export class AudioCaptureService {
         }
 
         const recognizer = new SpeechRecognitionAPI();
-        try {
-          // continuous: true maintains uninterrupted recognition across natural pauses
-          recognizer.continuous = true;
-        } catch {
+        // On Android Chrome, continuous = true causes the speech recognition session to immediately abort.
+        // Android requires continuous = false with interimResults = true, handling continuous speech via onend auto-restart.
+        if (isMobile) {
           recognizer.continuous = false;
+        } else {
+          try {
+            recognizer.continuous = true;
+          } catch {
+            recognizer.continuous = false;
+          }
         }
         recognizer.interimResults = true;
         recognizer.lang = options.lang || "en-US";
+        try {
+          recognizer.maxAlternatives = 1;
+        } catch {
+          // ignore
+        }
 
         let currentSessionFinal = "";
 
@@ -474,6 +503,8 @@ export class AudioCaptureService {
             if (this.restartTimeout) {
               clearTimeout(this.restartTimeout);
             }
+            // Allow 180ms on mobile for Android Audio Server to cycle between utterances cleanly
+            const restartDelay = isMobile ? 180 : 100;
             this.restartTimeout = setTimeout(() => {
               if (this.isListening) {
                 try {
@@ -482,7 +513,7 @@ export class AudioCaptureService {
                   logger.warn("[AudioCaptureService] Auto-restart notice:", restartErr);
                 }
               }
-            }, 100);
+            }, restartDelay);
             return;
           }
           if (options.onEnd) options.onEnd();

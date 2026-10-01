@@ -111,32 +111,26 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     expect(result).toBeNull();
   });
 
-  it("configures continuous=true on mobile devices for uninterrupted dictation", () => {
-    const originalUserAgent = navigator.userAgent;
-    try {
-      Object.defineProperty(navigator, "userAgent", {
-        value: "Mozilla/5.0 (Linux; Android 10; SM-G980F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36",
-        configurable: true,
-      });
-
-      let capturedRecognizerInstance: any = null;
-      class MockSpeechRecognition {
-        continuous = false;
-        interimResults = true;
-        lang = "en-US";
-        start = vi.fn();
-        stop = vi.fn();
-        abort = vi.fn();
-        onresult = null;
-        onerror = null;
-        onend = null;
-        constructor() {
-          capturedRecognizerInstance = this;
-        }
+  it("configures continuous=true on desktop devices for uninterrupted dictation", () => {
+    let capturedRecognizerInstance: any = null;
+    class MockSpeechRecognition {
+      continuous = false;
+      interimResults = true;
+      lang = "en-US";
+      start = vi.fn();
+      stop = vi.fn();
+      abort = vi.fn();
+      onresult = null;
+      onerror = null;
+      onend = null;
+      constructor() {
+        capturedRecognizerInstance = this;
       }
+    }
 
-      (window as any).SpeechRecognition = MockSpeechRecognition;
+    (window as any).SpeechRecognition = MockSpeechRecognition;
 
+    try {
       const onTranscript = vi.fn();
       AudioCaptureService.startRecognition({
         lang: "en-US",
@@ -144,14 +138,10 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       });
 
       expect(capturedRecognizerInstance).not.toBeNull();
-      // On mobile devices, continuous is set to true for uninterrupted dictation
+      // On desktop devices, continuous is set to true for uninterrupted dictation
       expect(capturedRecognizerInstance.continuous).toBe(true);
       AudioCaptureService.stop();
     } finally {
-      Object.defineProperty(navigator, "userAgent", {
-        value: originalUserAgent,
-        configurable: true,
-      });
       delete (window as any).SpeechRecognition;
     }
   });
@@ -203,7 +193,7 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     }
   });
 
-  it("preserves micStream and starts MediaRecorder on mobile devices for dual-stream audio capture", () => {
+  it("configures continuous=false on mobile to prevent Android Chrome SpeechRecognition abort crash", () => {
     const originalUserAgent = navigator.userAgent;
     try {
       Object.defineProperty(navigator, "userAgent", {
@@ -211,15 +201,7 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         configurable: true,
       });
 
-      const stopTrackMock = vi.fn();
-      const mockStream = {
-        active: true,
-        getAudioTracks: () => [{ readyState: "live", stop: stopTrackMock }],
-        getTracks: () => [{ readyState: "live", stop: stopTrackMock }],
-      } as unknown as MediaStream;
-
-      (AudioCaptureService as any).micStream = mockStream;
-
+      let capturedRecognizerInstance: any = null;
       class MockSpeechRecognition {
         continuous = true;
         interimResults = true;
@@ -230,6 +212,9 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         onresult = null;
         onerror = null;
         onend = null;
+        constructor() {
+          capturedRecognizerInstance = this;
+        }
       }
       (window as any).SpeechRecognition = MockSpeechRecognition;
 
@@ -238,8 +223,8 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         onTranscript: vi.fn(),
       });
 
-      // Hardware micStream must NOT be destroyed on mobile so MediaRecorder captures audio for Whisper AI
-      expect(stopTrackMock).not.toHaveBeenCalled();
+      // On mobile devices, continuous must be false so native Google Speech Services does not abort
+      expect(capturedRecognizerInstance.continuous).toBe(false);
       expect(AudioCaptureService.hasActiveMic()).toBe(true);
       AudioCaptureService.stop();
     } finally {

@@ -141,6 +141,18 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
               LIVE TRANSCRIPT
             </span>
             <span className="h-px w-8 bg-gradient-to-r from-white/20 to-transparent inline-block shrink-0" />
+            {isListening && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium tracking-wide animate-fadeSlideUp">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live
+              </span>
+            )}
+            {isThinking && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-medium tracking-wide animate-fadeSlideUp">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping" />
+                Evaluating
+              </span>
+            )}
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
@@ -157,61 +169,38 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
           </div>
         </div>
 
-        {/* Text Area: High-definition typography with comfortable reading contrast */}
-        <div className="relative w-full">
-          {/* Animated live listening indicator when recording but transcript is still empty */}
-          {isListening && !userTranscript.trim() && (
-            <div className="absolute top-1 left-0 flex items-center gap-2 pointer-events-none select-none z-10 animate-fadeSlideUp">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
-              </span>
-              <span className="text-[14px] sm:text-[15px] font-sans font-medium text-violet-300/90 tracking-wide">
-                Listening... Speak in English
-              </span>
-            </div>
-          )}
-
-          {/* Animated thinking/transcribing indicator */}
-          {isThinking && !userTranscript.trim() && (
-            <div className="absolute top-1 left-0 flex items-center gap-2 pointer-events-none select-none z-10 animate-fadeSlideUp">
-              <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-violet-400 border-t-transparent rounded-full" />
-              <span className="text-[14px] sm:text-[15px] font-sans font-medium text-violet-300/90 tracking-wide">
-                Transcribing audio...
-              </span>
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            id="interview-user-transcript"
-            name="interviewUserTranscript"
-            aria-label="Tu respuesta en inglés"
-            value={userTranscript}
-            spellCheck={false}
-            autoCapitalize="sentences"
-            autoComplete="off"
-            autoCorrect="off"
-            onChange={(e) => onTranscriptChange && onTranscriptChange(e.target.value)}
-            onKeyDown={(e) => {
-              // Prevent Space or other typing keys from leaking to global window listeners
-              e.stopPropagation();
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (userTranscript.trim() && onSubmitAnswer) {
-                  onSubmitAnswer(userTranscript);
-                }
+        {/* Text Area: Clean native typography without artificial floating overlays */}
+        <textarea
+          ref={textareaRef}
+          id="interview-user-transcript"
+          name="interviewUserTranscript"
+          aria-label="Tu respuesta en inglés"
+          value={userTranscript}
+          spellCheck={false}
+          autoCapitalize="sentences"
+          autoComplete="off"
+          autoCorrect="off"
+          onChange={(e) => onTranscriptChange && onTranscriptChange(e.target.value)}
+          onKeyDown={(e) => {
+            // Prevent Space or other typing keys from leaking to global window listeners
+            e.stopPropagation();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (userTranscript.trim() && onSubmitAnswer) {
+                onSubmitAnswer(userTranscript);
               }
-            }}
-            placeholder={
-              isListening || isThinking
-                ? ""
-                : "Start speaking with the mic or type your answer here (Click green OK or press Enter to submit)..."
             }
-            style={{ outline: "none", boxShadow: "none" }}
-            className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(72px,12vh,125px)] sm:h-[clamp(85px,14vh,180px)] bg-transparent font-sans text-[clamp(16px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
-          />
-        </div>
+          }}
+          placeholder={
+            isListening
+              ? "Listening... speak in English"
+              : isThinking
+                ? "Processing your answer..."
+                : "Start speaking with the mic or type your answer here (Click green OK or press Enter to submit)..."
+          }
+          style={{ outline: "none", boxShadow: "none" }}
+          className="w-full border-0 border-transparent outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 ring-0 shadow-none focus:shadow-none h-[clamp(72px,12vh,125px)] sm:h-[clamp(85px,14vh,180px)] bg-transparent font-sans text-[clamp(16px,1.9vh,18.5px)] text-[#E2E8F0] font-normal leading-[1.65] tracking-[-0.012em] caret-[#A27FF3] resize-none placeholder:text-white/35 placeholder:font-light placeholder:tracking-normal overflow-y-auto no-scrollbar selection:bg-[#A27FF3]/30 selection:text-white transition-all duration-200"
+        />
       </div>
     </div>
   );

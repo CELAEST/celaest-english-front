@@ -162,7 +162,40 @@ export function useInterviewRecording({
       const audioResult = await AudioCaptureService.stopAndGetAudio();
       lastCapturedAudioRef.current = audioResult;
 
+      // 1. FAST PATH: If live speech recognition already captured a solid transcript (>= 3 words),
+      // finish IMMEDIATELY with 0ms delay! No blocking cloud Whisper network call needed!
+      const currentLive = (userTranscriptRef.current || "").trim();
+      const liveWordCount = currentLive.split(/\s+/).filter(Boolean).length;
+      if (liveWordCount >= 3) {
+        const validation = validateSpeechIntelligibility(
+          currentLive,
+          audioResult.durationSeconds,
+          "en",
+          { targetLevel: activeCefrLevel }
+        );
+        if (validation.reason === "SPANISH_DETECTED") {
+          setUserTranscriptRaw("");
+          userTranscriptRef.current = "";
+          textBeforeSegmentRef.current = "";
+          setSpeakingSeconds(0);
+          setSpeechNotice(validation.message || null);
+          appToast.spanishDetected(validation.message);
+          return;
+        }
+        if (validation.reason === "INSUFFICIENT_WORDS" || (!validation.isValid && validation.message)) {
+          setSpeechNotice(validation.message || null);
+        } else {
+          setSpeechNotice(null);
+        }
+        onTurnTranscribed?.(currentLive);
+        return;
+      }
+
+      // 2. FALLBACK PATH: If live transcript is empty or < 3 words (e.g. mobile Safari where Web Speech is restricted,
+      // or initial delay), transcribe recorded audio via Whisper.
       if (audioResult.audioBlob) {
+        setStatus("THINKING");
+        setSpeechNotice("Transcribing audio with AI...");
         try {
           const whisperResult = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
             roleName: effectiveRoleName,
@@ -220,10 +253,13 @@ export function useInterviewRecording({
           }
         } catch (err) {
           logger.warn("Whisper transcription fallback to web speech:", err);
+        } finally {
+          setStatus("IDLE");
         }
       }
     } catch (err) {
       logger.warn("Failed to stop recording cleanly:", err);
+      setStatus("IDLE");
     }
   }, [
     status,

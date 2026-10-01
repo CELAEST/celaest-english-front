@@ -380,32 +380,33 @@ export class AudioCaptureService {
         let currentSessionFinal = "";
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
-          let sessionFinal = "";
-          let sessionInterim = "";
+          let currentFinal = "";
+          let currentInterim = "";
 
-          // Web Speech API: Reconstruct session results fresh using deduplication.
-          // On Android Chrome, event.results may contain multiple cumulative or repeated items.
-          // Merging with mergePhrasesCleanly guarantees zero-multiplication across items.
+          // W3C Standard Web Speech API streaming accumulation with Android deduplication
           for (let i = 0; i < event.results.length; ++i) {
             const item = event.results[i];
-            if (item && item[0]) {
-              const text = (item[0].transcript || "").trim();
-              if (!text) continue;
+            if (!item || !item[0]) continue;
+            const text = (item[0].transcript || "").trim();
+            if (!text) continue;
 
-              if (item.isFinal) {
-                sessionFinal = sessionFinal ? mergePhrasesCleanly(sessionFinal, text) : text;
-              } else {
-                sessionInterim = sessionInterim ? mergePhrasesCleanly(sessionInterim, text) : text;
-              }
+            if (item.isFinal) {
+              currentFinal = currentFinal ? mergePhrasesCleanly(currentFinal, text) : text;
+            } else {
+              currentInterim = currentInterim ? mergePhrasesCleanly(currentInterim, text) : text;
             }
           }
 
-          currentSessionFinal = sessionFinal.trim();
-          const interimTrim = sessionInterim.trim();
+          currentSessionFinal = currentFinal.trim();
+          const prefix = this.confirmedHistory.trim();
+          let base = prefix;
+          if (currentSessionFinal) {
+            base = base ? mergePhrasesCleanly(base, currentSessionFinal) : currentSessionFinal;
+          }
 
-          // Merge confirmed history with current session final and interim results cleanly
-          const withFinal = mergePhrasesCleanly(this.confirmedHistory, currentSessionFinal);
-          const combined = interimTrim ? mergePhrasesCleanly(withFinal, interimTrim) : withFinal;
+          const combined = currentInterim.trim()
+            ? (base ? mergePhrasesCleanly(base, currentInterim.trim()) : currentInterim.trim())
+            : base;
 
           this.latestTranscript = combined;
 
@@ -463,10 +464,9 @@ export class AudioCaptureService {
         };
 
         recognizer.onend = () => {
-          // Commit current session final cleanly into confirmedHistory without repetition
-          if (currentSessionFinal) {
-            this.confirmedHistory = mergePhrasesCleanly(this.confirmedHistory, currentSessionFinal);
-            currentSessionFinal = "";
+          // Commit current session final cleanly into confirmedHistory without dropping speech
+          if (this.latestTranscript) {
+            this.confirmedHistory = this.latestTranscript.trim();
           }
 
           // Auto-restart: maintain uninterrupted live dictation across natural pauses
@@ -482,7 +482,7 @@ export class AudioCaptureService {
                   logger.warn("[AudioCaptureService] Auto-restart notice:", restartErr);
                 }
               }
-            }, 200);
+            }, 100);
             return;
           }
           if (options.onEnd) options.onEnd();
@@ -609,12 +609,12 @@ export class AudioCaptureService {
             ? "wav"
             : "webm";
 
-    // Strict ESL Verbatim Conditioning:
-    // Do NOT include the polished interviewer question in the Whisper prompt, as Whisper's language model
-    // conditions on the question's sophisticated syntax and automatically fixes broken student grammar.
-    // Instead, prime Whisper with explicit ESL grammatical errors so it transcribes exact verbatim speech.
-    const prompt =
-      "Raw verbatim ESL transcript. Do not fix grammar, do not autocorrect, do not normalize tenses or prepositions. Transcribe exact broken speech verbatim (e.g. for drive, we must to focus, in optimize, yesterday we implement, worked hard for achieve, more personnels, without loose, it use, for to, we has):";
+    // Clean Contextual Conditioning:
+    // Avoid artificial broken grammar examples in the prompt to prevent Whisper from hallucinating those words.
+    // Condition cleanly on the active question or general interview domain context.
+    const prompt = context?.question
+      ? `Interview response in English answering: ${context.question}`
+      : "Interview response in English about professional background and engineering experience.";
 
     // 1. Direct Edge/Browser Groq Whisper (Ultra-fast, ~150ms, zero backend dependence)
     try {
@@ -630,13 +630,18 @@ export class AudioCaptureService {
           directFormData.append("response_format", "verbose_json");
           directFormData.append("prompt", prompt);
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 7000);
+
           const groqResp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${key.trim()}`,
             },
             body: directFormData,
+            signal: controller.signal,
           });
+          clearTimeout(timeoutId);
 
           if (groqResp.ok) {
             const data = (await groqResp.json()) as {
@@ -688,13 +693,18 @@ export class AudioCaptureService {
           directFormData.append("response_format", "verbose_json");
           directFormData.append("prompt", prompt);
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 7000);
+
           const openAiResp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${key.trim()}`,
             },
             body: directFormData,
+            signal: controller.signal,
           });
+          clearTimeout(timeoutId);
 
           if (openAiResp.ok) {
             const data = (await openAiResp.json()) as {
@@ -756,10 +766,15 @@ export class AudioCaptureService {
         if (context?.roleName) formData.append("role", context.roleName);
         if (context?.question) formData.append("question", context.question);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6500);
+
         const response = await fetch(endpoint, {
           method: "POST",
           body: formData,
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const raw = (await response.json()) as any;

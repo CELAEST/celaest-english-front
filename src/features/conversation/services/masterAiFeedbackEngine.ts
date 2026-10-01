@@ -87,23 +87,23 @@ export class MasterAiFeedbackEngine {
         type: "STRATEGIC_WARNING",
         title: "Oportunidad de Liderazgo: Responsabilidad Compartida",
         explanation:
-          "Identificamos que buscaste explicar un momento difícil del proyecto. En entrevistas de liderazgo de producto, transmitir propiedad compartida ('shared ownership') y explicar cómo gestionaste el alcance técnico transmite gran madurez ejecutiva.",
+          "Identificamos que buscaste explicar un momento difícil del proyecto. En entrevistas profesionales, transmitir propiedad compartida ('shared ownership') y explicar cómo gestionaste los retos operativos proyecta gran madurez y liderazgo.",
         recommendation:
-          "Paso a paso: Para tu próxima respuesta, describe el retraso como un reto de complejidad técnica y explica cómo re-priorizaste funciones secundarias para proteger la calidad del lanzamiento.",
+          "Paso a paso: Para tu próxima respuesta, describe el retraso como un reto de complejidad operativa y explica cómo priorizaste tareas esenciales en conjunto con tu equipo para proteger la calidad de la entrega.",
       };
       detectedErrors.push({
         id: `err-strat-blame-${Date.now()}`,
         errorType: "VOCABULARY",
-        errorWord: "Blaming developers ('developers didn't do their job on time / work faster')",
+        errorWord: "Blaming team members ('they didn't do their job on time / work faster')",
         correctWord:
-          "Take shared ownership and run a blameless post-mortem ('We encountered unforeseen technical debt during QA...')",
+          "Take shared ownership and collaborate constructively ('We encountered unforeseen project complexities...')",
         userSaidContext: "because the developers didn't do his job on time",
         betterWay:
-          "We encountered unexpected technical complexity during QA, so I worked with engineering leads to de-scope secondary features rather than rushing an unstable release.",
+          "We encountered unexpected operational complexity during execution, so I worked with the team to prioritize essential deliverables rather than rushing an unverified outcome.",
         explanation:
-          "Frame delays as technical complexity managed through collaborative scope adjustment rather than personal fault.",
+          "Frame delays as operational complexity managed through collaborative prioritization rather than personal fault.",
         translationSpanish:
-          "Consejo de liderazgo: Describe el retraso como complejidad técnica gestionada con ajuste de alcance.",
+          "Consejo de liderazgo: Describe el retraso como complejidad operativa gestionada con priorización conjunta.",
         cefrLevel: "C1",
         savedToMemory: false,
       });
@@ -251,12 +251,12 @@ export class MasterAiFeedbackEngine {
 
     // 3b. Double verb / Auxiliary error: "I am help" / "I am work" / "I am agree"
     if (
-      /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn)\b/i.test(
+      /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn|check|clean|inspect|look|see|give|take|say|tell|ask|call|try|start|talk|write|read|speak)\b/i.test(
         text,
       )
     ) {
       const match = text.match(
-        /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn)\b/i,
+        /\b(i\s+am|i'm)\s+(help|work|live|agree|need|want|think|make|do|play|stay|use|know|learn|check|clean|inspect|look|see|give|take|say|tell|ask|call|try|start|talk|write|read|speak)\b/i,
       );
       const verb = match ? match[2].toLowerCase() : "help";
       const userErr = match ? match[0] : "I am help";
@@ -980,16 +980,18 @@ export class MasterAiFeedbackEngine {
     }
 
     // U9. Gerund after prepositions: "after make" → "after making", "without lose/loose" → "without losing"
-    if (
-      /\b(after|before|by|without|instead of)\s+(make|do|check|test|change|deploy|send|write|create|run|use|implement|fix|update|see|review|solve|build|optimize|deliver|loose|lose)\b/i.test(
-        lower,
-      )
-    ) {
-      const prepMatch = lower.match(
-        /\b(after|before|by|without|instead of)\s+(make|do|check|test|change|deploy|send|write|create|run|use|implement|fix|update|see|review|solve|build|optimize|deliver|loose|lose)\b/i,
-      );
-      const prep = prepMatch ? prepMatch[1] : "after";
-      const rawVerb = prepMatch ? prepMatch[2] : "make";
+    const prepGerundRegex =
+      /\b(after|before|by|without|instead of)\s+(make|do|check|test|change|deploy|send|write|create|run|use|implement|fix|update|see|review|solve|build|optimize|deliver|loose|lose)\b/gi;
+    const prepMatches = [...text.matchAll(prepGerundRegex)];
+    const seenPreps = new Set<string>();
+
+    for (const pMatch of prepMatches) {
+      const prep = pMatch[1].toLowerCase();
+      const rawVerb = pMatch[2].toLowerCase();
+      const key = `${prep} ${rawVerb}`;
+      if (seenPreps.has(key)) continue;
+      seenPreps.add(key);
+
       const baseVerb = rawVerb === "loose" ? "lose" : rawVerb;
       const gerund =
         baseVerb === "make"
@@ -1007,7 +1009,7 @@ export class MasterAiFeedbackEngine {
                     : `${baseVerb}ing`;
 
       detectedErrors.push({
-        id: `err-u9-prep-gerund-${Date.now()}`,
+        id: `err-u9-prep-gerund-${prep}-${rawVerb}-${Date.now()}`,
         errorType: "GRAMMAR",
         errorWord: `${prep} ${rawVerb}`,
         correctWord: `${prep} ${gerund}`,
@@ -1177,32 +1179,12 @@ export class MasterAiFeedbackEngine {
 
     const overallScore = Math.round((grammarScore + clarityScore + vocabularyScore) / 3);
 
-    // Dynamic Context-Specific Model Answers for all Question Categories
-    let modelAnswer =
-      "In my previous experience, I focused on structured execution, clear stakeholder alignment, and data-driven prioritization to overcome complex delivery challenges.";
-
-    if (isLaunchFailureQuestion || currentQuestion.id === 3) {
-      modelAnswer =
-        "In a previous product launch, we faced an unexpected delay when critical edge-case bugs were discovered during staging QA. Rather than pushing an unstable release to hit an arbitrary deadline, I took immediate ownership, conducted a rapid triaging session with the engineering leads to de-scope non-critical features, and proactively updated executive stakeholders with a revised two-week rollout plan. The launch succeeded with a 99.8% crash-free session rate.";
-    } else if (isConflictQuestion || currentQuestion.id === 5) {
-      modelAnswer =
-        "While I haven't had severe interpersonal conflicts, I frequently engage in constructive technical debates. In my previous role, a lead engineer and I disagreed on whether to build a custom auth microservice or integrate Auth0. I scheduled a 1-on-1 alignment meeting, anchored our discussion on our core quarterly goals and maintenance cost, and we mutually agreed to use the third-party solution to save two months of engineering bandwidth.";
-    } else if (isPrioritizationQuestion || currentQuestion.id === 2) {
-      modelAnswer =
-        "My priority is to apply structured product frameworks when handling competing requests. For me, it is a core principle that my team uses a transparent model like RICE (Reach, Impact, Confidence, Effort) to objectively balance urgent sales demands with long-term engineering scalability and executive goals.";
-    } else if (currentQuestion.id === 1) {
-      modelAnswer =
-        "I am deeply interested in this position because I have worked in product management for four years. My experience allows me to lead cross-functional teams and build user-centric roadmaps that drive measurable business outcomes.";
-    } else if (currentQuestion.id === 4) {
-      modelAnswer =
-        "I define feature success by establishing clear leading and lagging indicators before development begins. For our onboarding redesign, our North Star metric was Day-7 user retention, while leading metrics included step completion rates and time-to-first-value. We validated these via A/B cohorts before full rollout.";
-    } else if (currentQuestion.id === 6) {
-      modelAnswer =
-        "Before writing code, I conduct continuous discovery: running 5-8 qualitative customer interviews per sprint, building clickable Figma prototypes, and testing assumption riskiest-first to ensure strong problem-solution fit.";
-    } else if (currentQuestion.id === 7) {
-      modelAnswer =
-        "I allocate 20% of every sprint's engineering bandwidth to technical debt and infrastructure reliability. This prevents critical system degradation and keeps our team velocity high over the long term.";
-    }
+    // Dynamic, Domain-Invariant Model Answer Synthesis
+    const modelAnswer = MasterAiFeedbackEngine.synthesizeModelAnswer(
+      text,
+      currentQuestion,
+      detectedErrors,
+    );
 
     const keyStrengths: string[] = [];
     if (errorCount === 0) {
@@ -1232,5 +1214,109 @@ export class MasterAiFeedbackEngine {
       tipsForNextTurn,
       strategicFeedback,
     };
+  }
+
+  /**
+   * Synthesizes an improved, domain-invariant model answer.
+   * If candidate spoke enough text, polishes their actual response.
+   * Otherwise, generates a professional STAR answer from the question prompt.
+   */
+  private static synthesizeModelAnswer(
+    spokenText: string,
+    currentQuestion: InterviewQuestionItem,
+    errors: SpecificErrorItem[],
+  ): string {
+    const cleanSpoken = spokenText.trim();
+    const words = cleanSpoken.split(/\s+/).filter(Boolean);
+
+    if (words.length >= 8) {
+      let polished = cleanSpoken;
+
+      // 1. Replace specific errors with clean corrections
+      const sortedErrors = [...errors].sort(
+        (a, b) => (b.errorWord?.length || 0) - (a.errorWord?.length || 0),
+      );
+
+      for (const err of sortedErrors) {
+        if (!err.errorWord || err.errorType === "UNCLEAR_WORD") continue;
+
+        let cleanReplacement = err.correctWord.replace(/\s*\([^)]*\)/g, "").trim();
+        if (cleanReplacement.includes("/")) {
+          cleanReplacement = cleanReplacement.split("/")[0].trim();
+        }
+
+        if (/^overuse of/i.test(err.errorWord)) {
+          continue;
+        }
+
+        if (err.userSaidContext && polished.includes(err.userSaidContext)) {
+          if (err.betterWay && !err.betterWay.includes("\n") && err.betterWay.length <= 120) {
+            polished = polished.replace(err.userSaidContext, err.betterWay);
+            continue;
+          }
+        }
+
+        try {
+          const escaped = err.errorWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const reg = new RegExp(`\\b${escaped}\\b`, "i");
+          if (reg.test(polished) && cleanReplacement) {
+            polished = polished.replace(reg, cleanReplacement);
+          }
+        } catch {
+          // ignore regex errors
+        }
+      }
+
+      // 2. Polish fragment openings
+      polished = polished.replace(
+        /^(a\s+lot\s+of\s+things|many\s+things|a\s+lot\s+of\s+tools|many\s+tools)[.!,]\s*/i,
+        "In my daily workflow, I rely on a diverse set of specialized tools: ",
+      );
+
+      // 3. Diversify basic repeated verbs like "use"
+      let useCount = 0;
+      polished = polished.replace(/\buse\b/gi, (match) => {
+        useCount++;
+        if (useCount === 1) return "work with";
+        if (useCount === 2) return "utilize";
+        if (useCount === 3) return "leverage";
+        return match;
+      });
+
+      // 4. Normalize spacing and punctuation
+      polished = polished
+        .replace(/\s{2,}/g, " ")
+        .replace(/\s+([.,!?;:])/g, "$1")
+        .trim();
+
+      if (polished.length > 0) {
+        polished = polished.charAt(0).toUpperCase() + polished.slice(1);
+      }
+
+      if (polished.split(/\s+/).length >= 10) {
+        return polished;
+      }
+    }
+
+    // Fallback: domain-invariant, professional STAR response based on question prompt
+    const qLower = currentQuestion.question.toLowerCase();
+
+    if (/didn't go as planned|failed launch|launch failure|delay|challenge|obstacle/i.test(qLower)) {
+      return "When an important initiative encounters unexpected delays or complications, my approach is to take prompt ownership, analyze root causes with the team, and proactively communicate a realistic recovery plan to stakeholders to protect delivery quality.";
+    }
+    if (/disagree|conflict|stakeholder|dispute|different view/i.test(qLower)) {
+      return "When professional disagreements arise regarding strategy or execution, I schedule a dedicated 1-on-1 meeting to listen to other perspectives, anchor our discussion on shared objectives and empirical evidence, and collaborate toward a consensus that ensures project success.";
+    }
+    if (/priorit|competing|trade-off|tradeoff/i.test(qLower)) {
+      return "When managing competing demands, I evaluate each initiative using objective criteria such as urgency, stakeholder impact, and available capacity. This maintains transparent expectations and ensures that resources are allocated to the highest-value priorities.";
+    }
+    if (/kpi|metric|indicator|evaluate|measure|performance/i.test(qLower)) {
+      return "To evaluate operational performance and key metrics effectively, I systematically monitor quantitative outcomes and qualitative feedback, identify key bottlenecks, and collaborate across teams to implement data-driven enhancements.";
+    }
+    if (/tool|technology|workflow|routine|daily/i.test(qLower)) {
+      return "In my daily workflow, I rely on a combination of communication, planning, and specialized operational tools to maintain efficient execution and seamless collaboration across my team.";
+    }
+
+    return "In approaching this responsibility, I focus on structured execution, clear stakeholder alignment, and continuous improvement to achieve measurable, high-quality results.";
   }
 }

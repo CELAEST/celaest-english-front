@@ -236,6 +236,97 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
     }
   });
 
+  it("simulates full real-world multi-utterance mobile live transcription with onend auto-restart across pauses", () => {
+    vi.useFakeTimers();
+    const originalUserAgent = navigator.userAgent;
+    try {
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36",
+        configurable: true,
+      });
+
+      let currentRecognizer: any = null;
+      class MockSpeechRecognition {
+        continuous = true;
+        interimResults = true;
+        lang = "en-US";
+        start = vi.fn();
+        stop = vi.fn();
+        abort = vi.fn();
+        onresult: ((e: any) => void) | null = null;
+        onerror: ((e: any) => void) | null = null;
+        onend: (() => void) | null = null;
+        constructor() {
+          currentRecognizer = this;
+        }
+      }
+      (window as any).SpeechRecognition = MockSpeechRecognition;
+
+      const transcripts: string[] = [];
+      const onTranscript = vi.fn((t: string) => {
+        transcripts.push(t);
+      });
+
+      AudioCaptureService.startRecognition({
+        lang: "en-US",
+        onTranscript,
+      });
+
+      // 1. First utterance on mobile
+      expect(currentRecognizer).not.toBeNull();
+      currentRecognizer.onresult({
+        resultIndex: 0,
+        results: [{ isFinal: false, 0: { transcript: "At my job I use" } }],
+      });
+      expect(onTranscript).toHaveBeenLastCalledWith("At my job I use", false);
+
+      currentRecognizer.onresult({
+        resultIndex: 0,
+        results: [{ isFinal: true, 0: { transcript: "At my job I use many different tools" } }],
+      });
+      expect(onTranscript).toHaveBeenLastCalledWith("At my job I use many different tools", false);
+
+      // 2. Natural pause: Android Chrome ends utterance 1 and triggers onend
+      currentRecognizer.onend();
+
+      // Fast-forward 180ms auto-restart timeout
+      vi.advanceTimersByTime(200);
+
+      // 3. New recognizer created for utterance 2
+      expect(currentRecognizer).not.toBeNull();
+      currentRecognizer.onresult({
+        resultIndex: 0,
+        results: [{ isFinal: false, 0: { transcript: "First of all I use Slack" } }],
+      });
+      expect(onTranscript).toHaveBeenLastCalledWith(
+        "At my job I use many different tools First of all I use Slack",
+        false
+      );
+
+      currentRecognizer.onresult({
+        resultIndex: 0,
+        results: [{ isFinal: true, 0: { transcript: "First of all I use Slack to communicate" } }],
+      });
+      expect(onTranscript).toHaveBeenLastCalledWith(
+        "At my job I use many different tools First of all I use Slack to communicate",
+        false
+      );
+
+      expect(AudioCaptureService.getLatestTranscript()).toBe(
+        "At my job I use many different tools First of all I use Slack to communicate"
+      );
+
+      AudioCaptureService.stop();
+    } finally {
+      vi.useRealTimers();
+      Object.defineProperty(navigator, "userAgent", {
+        value: originalUserAgent,
+        configurable: true,
+      });
+      delete (window as any).SpeechRecognition;
+    }
+  });
+
   it("detects whether device is mobile accurately", () => {
     const originalUserAgent = navigator.userAgent;
     try {

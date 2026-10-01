@@ -142,14 +142,12 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
             </span>
             <span className="h-px w-8 bg-gradient-to-r from-white/20 to-transparent inline-block shrink-0" />
             {isListening && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium tracking-wide animate-fadeSlideUp">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] sm:text-[10.5px] font-medium tracking-[0.18em] uppercase font-sans text-white/45 select-none transition-opacity duration-200">
                 Live
               </span>
             )}
             {isThinking && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-medium tracking-wide animate-fadeSlideUp">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping" />
+              <span className="text-[10px] sm:text-[10.5px] font-medium tracking-[0.18em] uppercase font-sans text-white/45 select-none transition-opacity duration-200">
                 Evaluating
               </span>
             )}

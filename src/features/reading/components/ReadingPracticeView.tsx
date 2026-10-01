@@ -98,7 +98,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     | null
   >(null);
 
-  const { profile, isLoading: isProfileLoading } = useSettingsProfile();
+  const { profile } = useSettingsProfile();
   const effectiveProfession = useMemo(() => {
     if (roleName && roleName.trim() && roleName.toLowerCase() !== "professional") {
       return roleName.trim();
@@ -135,8 +135,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     if (profile?.cefrLevel) {
       return normalizeCefr(String(profile.cefrLevel).split(" ")[0]);
     }
-    return isProfileLoading ? undefined : "B1";
-  }, [propUserLevel, profile?.cefrLevel, isProfileLoading]);
+    return "B1";
+  }, [propUserLevel, profile?.cefrLevel]);
 
   const activeFontSize = READING_FONT_SIZES[fontSizeIndex] || READING_FONT_SIZES[0];
 

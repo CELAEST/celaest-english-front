@@ -292,8 +292,9 @@ export function useReadingAudioNarrator(
     return calculatePhoneticSpans(trimmed);
   }, [text]);
 
-  // Proactive Background Audio Prefetching (Current Page + Next Pages + Both Mentors)
+  // Intelligent Low-Bandwidth Audio Prefetching (Only current page for selected voice when active)
   useEffect(() => {
+    if (!isActive) return;
     const trimmed = text ? text.trim() : "";
     if (trimmed) {
       readingAudioPrefetcher.prefetchText(trimmed, selectedVoice).then((item) => {
@@ -301,16 +302,16 @@ export function useReadingAudioNarrator(
           domTimestampsRef.current = alignBoundariesToDomWords(rawWords, item.wordBoundaries);
         }
       });
-      readingAudioPrefetcher.prefetchText(
-        trimmed,
-        selectedVoice === "en-US-AriaNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural",
-      );
     }
 
-    if (allPages && allPages.length > 0) {
-      readingAudioPrefetcher.prefetchArticlePages(allPages, currentPageIndex ?? 0);
+    // Only prefetch the immediate next page if audio is actively playing
+    if (isPlaying && allPages && allPages.length > 0 && typeof currentPageIndex === "number") {
+      const nextPage = allPages[currentPageIndex + 1];
+      if (nextPage) {
+        readingAudioPrefetcher.prefetchText(nextPage.trim(), selectedVoice);
+      }
     }
-  }, [text, rawWords, selectedVoice, allPages, currentPageIndex]);
+  }, [isActive, isPlaying, text, rawWords, selectedVoice, allPages, currentPageIndex]);
 
   const stopTracker = useCallback(() => {
     if (animFrameRef.current !== null) {

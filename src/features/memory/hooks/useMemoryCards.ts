@@ -13,9 +13,9 @@ export const useMemoryCards = (category?: string) => {
   const { data: cards = [], isLoading } = useQuery({
     queryKey: cardsKey,
     queryFn: () => apiMemoryRepository.getDueCards(category),
-    staleTime: 30 * 1000, // 30 seconds freshness
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000, // 60 seconds freshness
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const reviewMutation = useMutation({

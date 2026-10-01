@@ -10,12 +10,10 @@ import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesis
 import { clearPersistedInterview } from "../../conversation/services/interviewPersistence";
 
 import { InterviewPracticeView } from "../../conversation/components/InterviewPracticeView";
+import { ReadingPracticeView } from "../../reading";
 
 const WritingPracticeView = lazy(() =>
   import("../../writing").then((m) => ({ default: m.WritingPracticeView })),
-);
-const ReadingPracticeView = lazy(() =>
-  import("../../reading").then((m) => ({ default: m.ReadingPracticeView })),
 );
 const MemoryView = lazy(() =>
   import("../../memory").then((m) => ({ default: m.MemoryView })),
@@ -29,7 +27,6 @@ const LabView = lazy(() =>
 
 // Intelligent Skeletons adapted 1:1 to each feature anatomy (zero generic spinners)
 import { WritingSkeleton } from "../../writing/components/WritingSkeleton";
-import { ReadingSkeleton } from "../../reading/components/ReadingSkeleton";
 import { MemorySkeleton } from "../../memory/components/MemorySkeleton";
 import { SettingsSkeleton } from "../../settings/components/SettingsSkeleton";
 
@@ -72,7 +69,6 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     const prefetchTimer = setTimeout(() => {
       void Promise.allSettled([
         import("../../writing"),
-        import("../../reading"),
         import("../../memory"),
         import("../../settings"),
       ]);
@@ -372,14 +368,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 </div>
               }
             >
-              <Suspense fallback={<ReadingSkeleton />}>
-                <ReadingPracticeView
-                  roleName={userProfession}
-                  userLevel={activeUserLevel}
-                  onBackToWorkspace={handleBackToWorkspace}
-                  isActive={activeTab === "reading"}
-                />
-              </Suspense>
+              <ReadingPracticeView
+                roleName={userProfession}
+                userLevel={activeUserLevel}
+                onBackToWorkspace={handleBackToWorkspace}
+                isActive={activeTab === "reading"}
+              />
             </ErrorBoundary>
           </div>
         )}

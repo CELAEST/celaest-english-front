@@ -316,7 +316,6 @@ const CelaestLogoMark: React.FC<{ className?: string }> = ({ className = "w-5 h-
 // Mobile Floating Glass Bottom Dock (Visible only on viewports < lg)
 const prefetchTabRoute = (id: string) => {
   if (id === "writing") void import("../../writing");
-  else if (id === "reading") void import("../../reading");
   else if (id === "memory") void import("../../memory");
   else if (id === "settings") void import("../../settings");
 };

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { WordLookup, GenerateQuizResponse } from "../../../domain/repositories/IReadingRepository";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
-import { readingAudioPrefetcher } from "../services/readingAudioPrefetcher";
 import { AiReadingArticleGenerator } from "../services/aiReadingArticleGenerator";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { directClientAiService } from "../../settings/services/directClientAiService";
@@ -11,6 +10,7 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { phoneticLookupService } from "../services/phoneticLookupService";
 import { onDeviceTranslatorService } from "../services/onDeviceTranslatorService";
+import { getUniversalSeedArticle } from "../services/universalSeedArticles";
 
 const READING_CACHE_KEY = "lingua_reading_articles_v2";
 const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
@@ -127,6 +127,11 @@ function readInitialState(level?: string, profession?: string): InitialReadingSt
     }
   } catch (e) {
     logger.warn("Failed to load reading cache from localStorage", e);
+  }
+
+  if (cachedArticles.length === 0) {
+    const seed = getUniversalSeedArticle(level || "B1", profession);
+    cachedArticles = [seed];
   }
 
   const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
@@ -375,13 +380,6 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
   const safePageIndex = Math.min(Math.max(0, currentPageIndex), totalPages - 1);
   const progressPercentage = Math.min(100, Math.round(((safePageIndex + 1) / totalPages) * 100));
   const currentPageContent = dynamicPages[safePageIndex] || dynamicPages[0] || fullContent;
-
-  // Proactive Background Audio Prefetching for 0ms Instant Playback (Page-by-Page & Mentor-by-Mentor)
-  useEffect(() => {
-    if (dynamicPages.length > 0) {
-      readingAudioPrefetcher.prefetchArticlePages(dynamicPages, currentPageIndex);
-    }
-  }, [dynamicPages, currentPageIndex]);
 
   // Real Exact Word Counts & Session Telemetry
   const totalWords = useMemo(() => countWords(fullContent), [fullContent]);

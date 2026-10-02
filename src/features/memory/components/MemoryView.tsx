@@ -44,11 +44,16 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
 
   const { cards = [], isLoading, reviewCard, deleteCard, refetch } = useMemoryCards();
 
-  // Instant zero-reload reactivity: re-fetch cards whenever user returns to Memory tab
+  const wasActiveRef = useRef(isActive);
+
+  // Instant zero-reload reactivity: re-fetch cards ONLY when transitioning from inactive to active
   useEffect(() => {
-    if (isActive && typeof refetch === "function") {
-      void refetch();
+    if (isActive && !wasActiveRef.current) {
+      if (typeof refetch === "function") {
+        void refetch();
+      }
     }
+    wasActiveRef.current = isActive;
   }, [isActive, refetch]);
 
   const currentCategory = CATEGORIES[activeTab] || "SPEAKING";
@@ -221,6 +226,8 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
 
   // Global Keyboard Shortcuts (Space to flip, 1, 2, 3 to rate, Left/Right to navigate, Esc to exit)
   useEffect(() => {
+    if (!isActive) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         document.activeElement?.tagName === "INPUT" ||
@@ -257,6 +264,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
+    isActive,
     isSessionCompleted,
     totalCards,
     handleReviewScore,

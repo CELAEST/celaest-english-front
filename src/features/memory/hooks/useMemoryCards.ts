@@ -19,7 +19,12 @@ export const useMemoryCards = (category?: string) => {
 
   // Zero-Reload Cross-Feature Sync: Listen for global memory changes across features
   useEffect(() => {
-    const handleMemoryUpdated = () => {
+    const handleMemoryUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ action?: string }>;
+      // Ignore 'reviewed' actions: in-place review card states are already handled via setQueryData to avoid mutating deck indices mid-session
+      if (customEvent.detail?.action === "reviewed") {
+        return;
+      }
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
     };
 
@@ -51,18 +56,21 @@ export const useMemoryCards = (category?: string) => {
     },
   });
 
+  const { mutateAsync: mutateReview } = reviewMutation;
+  const { mutateAsync: mutateDelete } = deleteMutation;
+
   const reviewCard = useCallback(
     async (cardId: string, score: number) => {
-      return reviewMutation.mutateAsync({ cardId, score });
+      return mutateReview({ cardId, score });
     },
-    [reviewMutation],
+    [mutateReview],
   );
 
   const deleteCard = useCallback(
     async (cardId: string) => {
-      return deleteMutation.mutateAsync(cardId);
+      return mutateDelete(cardId);
     },
-    [deleteMutation],
+    [mutateDelete],
   );
 
   const safeCards = Array.isArray(cards) ? cards : [];

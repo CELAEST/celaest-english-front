@@ -91,11 +91,30 @@ describe("Cross-Feature Memory Reactivity (Zero-Reload Architecture)", () => {
     act(() => {
       window.dispatchEvent(
         new CustomEvent("celaest:memory-updated", {
-          detail: { card: { category: "SPEAKING" } },
+          detail: { card: { category: "SPEAKING" }, action: "created" },
         }),
       );
     });
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: QUERY_KEYS.memory.all });
+  });
+
+  it("does not invalidate queries on 'reviewed' action to protect active card review session", async () => {
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      React.createElement(QueryClientProvider, { client: queryClient }, children)
+    );
+
+    renderHook(() => useMemoryCards("SPEAKING"), { wrapper });
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent("celaest:memory-updated", {
+          detail: { action: "reviewed" },
+        }),
+      );
+    });
+
+    expect(invalidateSpy).not.toHaveBeenCalled();
   });
 });

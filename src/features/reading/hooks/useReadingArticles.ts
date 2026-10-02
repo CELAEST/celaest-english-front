@@ -11,9 +11,24 @@ import { logger } from "../../../shared/utils/logger";
 import { phoneticLookupService } from "../services/phoneticLookupService";
 import { onDeviceTranslatorService } from "../services/onDeviceTranslatorService";
 import { getUniversalSeedArticle } from "../services/universalSeedArticles";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 const READING_CACHE_KEY = "lingua_reading_articles_v2";
 const ACTIVE_ARTICLE_ID_KEY = "lingua_reading_active_id_v2";
+
+function getReadingCacheKey(userId?: string): string {
+  if (userId && userId !== "anon") {
+    return `lingua:user:${userId}:reading_articles_v2`;
+  }
+  return READING_CACHE_KEY;
+}
+
+function getActiveArticleIdKey(userId?: string): string {
+  if (userId && userId !== "anon") {
+    return `lingua:user:${userId}:reading_active_id_v2`;
+  }
+  return ACTIVE_ARTICLE_ID_KEY;
+}
 
 /**
  * Calculates ideal words per page based on viewport height to ensure:
@@ -110,10 +125,14 @@ function matchesRole(art: ReadingArticle | undefined | null, targetProfession?: 
 }
 
 /** One-time mount read of the persisted reading cache filtered strictly to target level and profession. */
-function readInitialState(level?: string, profession?: string): InitialReadingState {
+function readInitialState(level?: string, profession?: string, userId?: string): InitialReadingState {
   let cachedArticles: ReadingArticle[] = [];
   try {
-    const cachedStr = localStorage.getItem(READING_CACHE_KEY);
+    const key = getReadingCacheKey(userId);
+    let cachedStr = localStorage.getItem(key);
+    if (!cachedStr && userId && userId !== "anon") {
+      cachedStr = localStorage.getItem(READING_CACHE_KEY);
+    }
     if (cachedStr) {
       const parsed = JSON.parse(cachedStr) as unknown;
       if (Array.isArray(parsed)) {
@@ -134,7 +153,11 @@ function readInitialState(level?: string, profession?: string): InitialReadingSt
     cachedArticles = [seed];
   }
 
-  const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
+  const activeKey = getActiveArticleIdKey(userId);
+  let storedActiveId = typeof window !== "undefined" ? localStorage.getItem(activeKey) : null;
+  if (!storedActiveId && userId && userId !== "anon") {
+    storedActiveId = localStorage.getItem(ACTIVE_ARTICLE_ID_KEY);
+  }
   const activeArticleId =
     storedActiveId && cachedArticles.some((a) => a.id === storedActiveId)
       ? storedActiveId
@@ -144,11 +167,12 @@ function readInitialState(level?: string, profession?: string): InitialReadingSt
 }
 
 export const useReadingArticles = (level?: string, profession?: string, fontSizeIndex: number = 0) => {
+  const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
 
   const [{ cachedArticles, activeArticleId: initialActiveId }] = useState(() =>
-    readInitialState(level, profession),
+    readInitialState(level, profession, currentUserId),
   );
 
   /**
@@ -254,7 +278,7 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         }
       }
 
-      const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_ARTICLE_ID_KEY) : null;
+      const storedActiveId = typeof window !== "undefined" ? localStorage.getItem(getActiveArticleIdKey(currentUserId)) : null;
       const storedArt = storedActiveId ? articles.find((a) => a && a.id === storedActiveId) : null;
       const restored =
         (storedArt && matchesProfession(storedArt) ? storedArt : null) ||
@@ -321,8 +345,8 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     const timer = setTimeout(() => {
       try {
         const cappedArticles = articles.slice(0, 8);
-        localStorage.setItem(READING_CACHE_KEY, JSON.stringify(cappedArticles));
-        localStorage.setItem(ACTIVE_ARTICLE_ID_KEY, activeArticleId ?? "");
+        localStorage.setItem(getReadingCacheKey(currentUserId), JSON.stringify(cappedArticles));
+        localStorage.setItem(getActiveArticleIdKey(currentUserId), activeArticleId ?? "");
       } catch (e) {
         logger.warn("Failed to persist reading cache to localStorage", e);
       }
@@ -445,8 +469,8 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
         setLocalArticles((prev) => {
           const next = [newArticle, ...prev.filter((a) => a.id !== newArticle.id)];
           try {
-            localStorage.setItem(READING_CACHE_KEY, JSON.stringify(next.slice(0, 8)));
-            localStorage.setItem(ACTIVE_ARTICLE_ID_KEY, newArticle.id);
+            localStorage.setItem(getReadingCacheKey(currentUserId), JSON.stringify(next.slice(0, 8)));
+            localStorage.setItem(getActiveArticleIdKey(currentUserId), newArticle.id);
           } catch {}
           return next;
         });

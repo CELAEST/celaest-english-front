@@ -23,11 +23,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
 
   // Desktop fine-pointer hover triggers loop, unhover pauses to static frame
   const handleMouseEnter = useCallback(() => {
-    const isFinePointer =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (isFinePointer && videoRef.current && typeof videoRef.current.play === "function") {
+    if (videoRef.current && typeof videoRef.current.play === "function") {
       const p = videoRef.current.play();
       if (p && typeof p.catch === "function") {
         p.catch(() => {});
@@ -36,29 +32,13 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    // Only pause on desktop unhover with a fine pointer (mouse), never stop on mobile touch screens
-    const isFinePointer =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (
-      isFinePointer &&
-      videoRef.current &&
-      typeof videoRef.current.pause === "function"
-    ) {
-      videoRef.current.pause();
-    }
+    // Keep ambient video playing smoothly
   }, []);
 
-  // Automatic stutter-free playback on mobile; interactive on desktop; pause when backgrounded or inactive
+  // Automatic smooth playback whenever active; pause when backgrounded or inactive
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    const isFinePointer =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
     const syncPlayback = () => {
       if (!isActive || document.visibilityState === "hidden") {
@@ -70,13 +50,11 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         return;
       }
 
-      // On touch / mobile screens, always play automatically with hardware decoding
-      if (!isFinePointer) {
-        if (typeof video.play === "function") {
-          const p = video.play();
-          if (p && typeof p.catch === "function") {
-            p.catch(() => {});
-          }
+      // Always ensure video plays when active
+      if (typeof video.play === "function") {
+        const p = video.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
         }
       }
     };

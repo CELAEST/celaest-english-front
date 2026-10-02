@@ -1,6 +1,54 @@
 import React from "react";
 
-export const MemorySkeleton: React.FC = React.memo(() => {
+export interface MemorySkeletonProps {
+  embedded?: boolean;
+}
+
+export const MemorySkeleton: React.FC<MemorySkeletonProps> = React.memo(({ embedded = false }) => {
+  const content = (
+    <main className="relative flex-1 min-h-0 w-full max-w-5xl mx-auto flex items-center justify-center my-auto py-2">
+      {/* Left 3D Peek (Desktop only) */}
+      <div className="hidden sm:block absolute left-2 lg:left-8 w-[180px] lg:w-[210px] h-[340px] lg:h-[400px] rounded-3xl bg-[#0e0e15] opacity-40 [transform:rotateY(10deg)_scale(0.88)]" />
+
+      {/* Center Active Flashcard Canvas (Radix Modern: Clean Dark Slate) */}
+      <article className="relative w-full max-w-[340px] xs:max-w-[370px] sm:max-w-[480px] lg:max-w-[520px] h-[365px] xs:h-[395px] sm:h-[450px] lg:h-[470px] rounded-3xl bg-[#14141d] p-6 sm:p-7 flex flex-col justify-between z-10 animate-pulse">
+        {/* Card Top Row */}
+        <div className="flex items-center justify-between">
+          <div className="w-24 h-4 rounded-full bg-[#1e1e2d]" />
+          <div className="w-7 h-7 rounded-full bg-[#1e1e2d]" />
+        </div>
+
+        {/* Card Sentence Body */}
+        <div className="space-y-4 my-auto py-2">
+          {/* User Said */}
+          <div className="space-y-1.5">
+            <div className="w-16 h-3 rounded-full bg-[#1e1e2d]" />
+            <div className="w-4/5 h-5 sm:h-6 rounded-full bg-[#1e1e2d]" />
+          </div>
+
+          {/* Better Way */}
+          <div className="space-y-1.5 pt-2">
+            <div className="w-20 h-3 rounded-full bg-[#1e1e2d]" />
+            <div className="w-full h-6 sm:h-7 rounded-full bg-[#1e1e2d]" />
+            <div className="w-2/3 h-5 sm:h-6 rounded-full bg-[#1e1e2d]" />
+          </div>
+        </div>
+
+        {/* Card Footer: Flip Hint */}
+        <div className="flex items-center justify-center pt-2">
+          <div className="w-28 h-6 rounded-full bg-[#1e1e2d]" />
+        </div>
+      </article>
+
+      {/* Right 3D Peek (Desktop only) */}
+      <div className="hidden sm:block absolute right-2 lg:right-8 w-[180px] lg:w-[210px] h-[340px] lg:h-[400px] rounded-3xl bg-[#0e0e15] opacity-40 [transform:rotateY(-10deg)_scale(0.88)]" />
+    </main>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
   return (
     <div
       role="status"

@@ -200,7 +200,7 @@ export function useInterviewCloudSync({
     didHydrateRef.current = true;
     const hydrateKey = currentUserId ?? "__anon__";
     const lastHydrated = hydrationLog.get(hydrateKey) ?? 0;
-    if (lastHydrated > 0 && Date.now() - lastHydrated < 5 * 60 * 1000) return;
+    if (lastHydrated > 0 && Date.now() - lastHydrated < 5 * 1000) return;
     hydrationLog.set(hydrateKey, Date.now());
     let cancelled = false;
 

@@ -13,8 +13,8 @@ export const useMemoryCards = (category?: string) => {
   const { data: cards = [], isLoading, refetch } = useQuery({
     queryKey: cardsKey,
     queryFn: () => apiMemoryRepository.getDueCards(category),
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 5 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Zero-Reload Cross-Feature Sync: Listen for global memory changes across features

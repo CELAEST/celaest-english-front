@@ -10,6 +10,7 @@ import { useMemoryCards } from "../hooks/useMemoryCards";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import { deduplicateMemoryCards } from "../services/memoryDeduplication";
+import { MemorySkeleton } from "./MemorySkeleton";
 import { logger } from "../../../shared/utils/logger";
 
 export interface MemoryViewProps {
@@ -44,16 +45,11 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
 
   const { cards = [], isLoading, reviewCard, deleteCard, refetch } = useMemoryCards();
 
-  const wasActiveRef = useRef(isActive);
-
-  // Instant zero-reload reactivity: re-fetch cards ONLY when transitioning from inactive to active
+  // Instant zero-reload reactivity: re-fetch cards whenever user returns to or activates Memory tab
   useEffect(() => {
-    if (isActive && !wasActiveRef.current) {
-      if (typeof refetch === "function") {
-        void refetch();
-      }
+    if (isActive && typeof refetch === "function") {
+      void refetch();
     }
-    wasActiveRef.current = isActive;
   }, [isActive, refetch]);
 
   const currentCategory = CATEGORIES[activeTab] || "SPEAKING";
@@ -389,7 +385,18 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
                   }}
                 />
               </motion.div>
-            ) : totalCards === 0 && !isLoading ? (
+            ) : isLoading && totalCards === 0 ? (
+              <motion.div
+                key="loading-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 min-h-0 flex items-center justify-center w-full"
+              >
+                <MemorySkeleton embedded />
+              </motion.div>
+            ) : totalCards === 0 ? (
               <motion.div
                 key={`empty-${activeTab}`}
                 initial={{ opacity: 0, y: 12, scale: 0.99 }}

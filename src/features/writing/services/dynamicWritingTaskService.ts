@@ -105,10 +105,24 @@ export class DynamicWritingTaskService {
     }
   }
 
-  public static persistActiveTask(task: WritingTaskItem): void {
+  private static getActiveTaskStorageKey(userId?: string): string {
+    if (userId && userId !== "anon") {
+      return `celaest:user:${userId}:writing:activeTask`;
+    }
+    return ACTIVE_TASK_STORAGE_KEY;
+  }
+
+  private static getActiveSubmissionKey(userId?: string): string {
+    if (userId && userId !== "anon") {
+      return `lingua:user:${userId}:writing_active_submission`;
+    }
+    return "lingua:writing_active_submission";
+  }
+
+  public static persistActiveTask(task: WritingTaskItem, userId?: string): void {
     try {
       if (typeof window === "undefined") return;
-      window.localStorage.setItem(ACTIVE_TASK_STORAGE_KEY, JSON.stringify(task));
+      window.localStorage.setItem(this.getActiveTaskStorageKey(userId), JSON.stringify(task));
     } catch {
       // Storage unavailable
     }
@@ -126,11 +140,15 @@ export class DynamicWritingTaskService {
    * Returns the current active task. It is persisted in localStorage so a page
    * reload ALWAYS shows the same task until the user answers it.
    */
-  public static getActiveTask(userCefr?: string, roleName?: string): WritingTaskItem {
+  public static getActiveTask(userCefr?: string, roleName?: string, userId?: string): WritingTaskItem {
     const targetCefr = normalizeCefr(userCefr || "B1");
     try {
       if (typeof window !== "undefined") {
-        const raw = window.localStorage.getItem(ACTIVE_TASK_STORAGE_KEY);
+        const key = this.getActiveTaskStorageKey(userId);
+        let raw = window.localStorage.getItem(key);
+        if (!raw && userId && userId !== "anon") {
+          raw = window.localStorage.getItem(ACTIVE_TASK_STORAGE_KEY);
+        }
         if (raw) {
           const parsed = JSON.parse(raw) as WritingTaskItem;
           if (parsed && parsed.id && parsed.level === targetCefr) {
@@ -241,11 +259,12 @@ export class DynamicWritingTaskService {
     submission: WritingSubmission,
     modalOpen: boolean,
     savedErrorIds: string[] = [],
+    userId?: string,
   ): void {
     try {
       if (typeof window === "undefined") return;
       window.localStorage.setItem(
-        "lingua:writing_active_submission",
+        this.getActiveSubmissionKey(userId),
         JSON.stringify({ submission, savedErrorIds, modalOpen }),
       );
     } catch {
@@ -256,14 +275,18 @@ export class DynamicWritingTaskService {
   /**
    * Restores active submission state
    */
-  public static loadActiveSubmission(): {
+  public static loadActiveSubmission(userId?: string): {
     submission: WritingSubmission;
     savedErrorIds: string[];
     modalOpen: boolean;
   } | null {
     try {
       if (typeof window === "undefined") return null;
-      const raw = window.localStorage.getItem("lingua:writing_active_submission");
+      const key = this.getActiveSubmissionKey(userId);
+      let raw = window.localStorage.getItem(key);
+      if (!raw && userId && userId !== "anon") {
+        raw = window.localStorage.getItem("lingua:writing_active_submission");
+      }
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (parsed?.submission?.id) {
@@ -282,9 +305,10 @@ export class DynamicWritingTaskService {
   /**
    * Clears stored submission state
    */
-  public static clearActiveSubmission(): void {
+  public static clearActiveSubmission(userId?: string): void {
     try {
       if (typeof window === "undefined") return;
+      window.localStorage.removeItem(this.getActiveSubmissionKey(userId));
       window.localStorage.removeItem("lingua:writing_active_submission");
     } catch {
       // noop

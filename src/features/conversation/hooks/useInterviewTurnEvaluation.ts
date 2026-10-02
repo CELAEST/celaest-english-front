@@ -52,7 +52,12 @@ export function useInterviewTurnEvaluation({
   setSpeechNotice,
   isMountedRef,
 }: UseInterviewTurnEvaluationOptions) {
-  const queryClient = useQueryClient();
+  let queryClient: ReturnType<typeof useQueryClient> | undefined;
+  try {
+    queryClient = useQueryClient();
+  } catch {
+    // Graceful fallback for isolated test harnesses without QueryClientProvider
+  }
   const [processingStage, setProcessingStage] = useState<ProcessingStage>("IDLE");
   const [turnFeedback, setTurnFeedback] = useState<ComprehensiveTurnFeedback | null>(initialFeedback);
   const [savedErrorIds, setSavedErrorIds] = useState<Set<string>>(new Set(initialSavedErrorIds));
@@ -279,7 +284,7 @@ export function useInterviewTurnEvaluation({
         });
 
         // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+        void queryClient?.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
 
         setSavedErrorIds((prev) => new Set([...prev, errorItem.id]));
         return true;

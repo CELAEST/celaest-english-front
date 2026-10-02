@@ -23,6 +23,7 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { ENV } from "../../../shared/constants/env";
 
 export interface WritingPracticeViewProps {
@@ -43,8 +44,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     isActive = true,
   }) {
     const queryClient = useQueryClient();
+    const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
     const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
-    const initialStored = DynamicWritingTaskService.loadActiveSubmission();
+    const initialStored = DynamicWritingTaskService.loadActiveSubmission(currentUserId);
 
     const [isLocalEvaluating, setIsLocalEvaluating] = useState<boolean>(false);
     const isEvaluatingActive = isEvaluating || isLocalEvaluating;
@@ -81,7 +83,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     const [taskIndex, setTaskIndex] = useState<number>(0);
 
     const [currentTask, setCurrentTask] = useState<WritingTaskItem>(() => {
-      const active = DynamicWritingTaskService.getActiveTask(activeCefrLevel, roleName);
+      const active = DynamicWritingTaskService.getActiveTask(activeCefrLevel, roleName, currentUserId);
       return active || taskBatch[0];
     });
 
@@ -102,12 +104,12 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
         const newBatch = AiWritingTaskGenerator.getCachedOrSeedBatch(curRole, norm);
         setTaskBatch(newBatch);
         setTaskIndex(0);
-        const task = newBatch[0] || DynamicWritingTaskService.getActiveTask(norm, curRole);
+        const task = newBatch[0] || DynamicWritingTaskService.getActiveTask(norm, curRole, currentUserId);
         setCurrentTask(task);
-        DynamicWritingTaskService.persistActiveTask(task);
-        setEditorText(DynamicWritingTaskService.loadDraft(task.id));
+        DynamicWritingTaskService.persistActiveTask(task, currentUserId);
+        setEditorText(DynamicWritingTaskService.loadDraft(task.id, currentUserId));
         setPersistedSubmission(null);
-        DynamicWritingTaskService.clearActiveSubmission();
+        DynamicWritingTaskService.clearActiveSubmission(currentUserId);
         if (onSelectLevel) {
           onSelectLevel(norm as CefrLevelCode);
         }
@@ -143,7 +145,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       if (initialStored?.submission?.content) {
         return initialStored.submission.content;
       }
-      return DynamicWritingTaskService.loadDraft(currentTask.id);
+      return DynamicWritingTaskService.loadDraft(currentTask.id, currentUserId);
     });
   const [persistedSubmission, setPersistedSubmission] = useState<WritingSubmission | null>(
     () => initialStored?.submission ?? null,
@@ -160,10 +162,10 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
   // Debounced draft persistence: never writes on every keystroke
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      DynamicWritingTaskService.saveDraft(currentTask.id, editorText);
+      DynamicWritingTaskService.saveDraft(currentTask.id, editorText, currentUserId);
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [editorText, currentTask.id]);
+  }, [editorText, currentTask.id, currentUserId]);
 
   const wordCount = editorText.trim().split(/\s+/).filter(Boolean).length;
   const minWordsRequired = Math.min(8, currentTask.minWords || 8);
@@ -445,6 +447,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         activeSubmission,
         true,
         Array.from(savedErrorIds),
+        currentUserId,
       );
     }
   };
@@ -472,6 +475,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
             activeSubmission,
             showResultModal,
             Array.from(next),
+            currentUserId,
           );
         }
         return next;

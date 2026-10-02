@@ -365,14 +365,14 @@ export const SettingsAiProvidersSection: React.FC = () => {
 
               {/* Expanded Content */}
               {isExpanded && (
-                <div className="pb-5 pt-1 px-1 flex flex-col gap-5 animate-[fadeSlideUp_0.2s_ease-out]">
+                <div className="pb-5 pt-1 px-1 sm:px-2 flex flex-col gap-4 sm:gap-5 animate-[fadeSlideUp_0.2s_ease-out]">
                   {/* Key Pool Section */}
                   {provider.type === "cloud" && (
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1.5 xs:gap-2">
                         <span className="text-[10px] font-mono tracking-widest uppercase text-white/40 flex items-center gap-1.5">
-                          <Layers className="h-3.5 w-3.5 text-white/40" aria-hidden="true" />
-                          Pool de API Keys
+                          <Layers className="h-3.5 w-3.5 text-white/40 shrink-0" aria-hidden="true" />
+                          <span>Pool de API Keys</span>
                           <span className="text-white/20">
                             ({keys.length} {keys.length === 1 ? "clave activa" : "claves activas"})
                           </span>
@@ -383,10 +383,10 @@ export const SettingsAiProvidersSection: React.FC = () => {
                             href={consoleInfo.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-[#C4B5FD] hover:text-white transition font-mono cursor-pointer"
+                            className="inline-flex items-center gap-1 text-[11px] text-[#C4B5FD] hover:text-white transition font-mono cursor-pointer self-start xs:self-auto"
                           >
                             <span>Obtener clave en consola</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3 h-3 shrink-0" />
                           </a>
                         )}
                       </div>
@@ -403,10 +403,10 @@ export const SettingsAiProvidersSection: React.FC = () => {
                             return (
                               <div
                                 key={keyUniqueId}
-                                className="flex items-center justify-between gap-3 py-2.5 hover:bg-white/[0.015] transition-colors"
+                                className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 xs:gap-3 py-2.5 hover:bg-white/[0.015] transition-colors"
                               >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/35 shrink-0">
+                                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                  <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 shrink-0 bg-white/[0.04] px-1.5 py-0.5 rounded">
                                     {idx === 0 ? "Principal" : `Respaldo ${idx + 1}`}
                                   </span>
                                   <span className="font-mono text-xs text-zinc-300 truncate select-all">
@@ -414,19 +414,19 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0 self-end xs:self-auto">
                                   {/* Key Status Indicator */}
                                   {testRes && !testRes.isTesting && (
                                     <span
-                                      className={`inline-flex items-center gap-1 font-mono text-xs ${
+                                      className={`inline-flex items-center gap-1 font-mono text-xs mr-1 ${
                                         testRes.ok ? "text-emerald-400" : "text-red-400"
                                       }`}
                                       title={testRes.message}
                                     >
                                       {testRes.ok ? (
-                                        <Check className="w-3 h-3 text-emerald-400" />
+                                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                                       ) : (
-                                        <AlertCircle className="w-3 h-3 text-red-400" />
+                                        <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />
                                       )}
                                       <span>
                                         {testRes.ok ? `${testRes.latencyMs ?? 0} ms` : "Error"}
@@ -441,7 +441,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                       handleTestIndividualKey(provider.id, k, keyUniqueId)
                                     }
                                     disabled={testRes?.isTesting}
-                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-30"
+                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-30 rounded-lg hover:bg-white/[0.04]"
                                     title="Probar esta clave"
                                   >
                                     {testRes?.isTesting ? (
@@ -455,7 +455,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => toggleShowKey(keyUniqueId)}
-                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer"
+                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer rounded-lg hover:bg-white/[0.04]"
                                     title={isVisible ? "Ocultar clave" : "Ver clave"}
                                   >
                                     {isVisible ? (
@@ -469,7 +469,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleCopyKey(keyUniqueId, k)}
-                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer"
+                                    className="p-1.5 text-zinc-400 hover:text-white transition cursor-pointer rounded-lg hover:bg-white/[0.04]"
                                     title="Copiar clave"
                                   >
                                     {isCopied ? (
@@ -483,7 +483,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveKey(provider.id, idx)}
-                                    className="p-1.5 text-zinc-500 hover:text-red-400 transition cursor-pointer"
+                                    className="p-1.5 text-zinc-500 hover:text-red-400 transition cursor-pointer rounded-lg hover:bg-white/[0.04]"
                                     title="Eliminar esta clave del pool"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -497,7 +497,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
 
                       {/* Add Key with Pre-Validation */}
                       <div className="space-y-2 mt-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <div className="relative flex-1">
                             <input
                               type="password"
@@ -531,7 +531,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                               }
                               autoComplete="off"
                               spellCheck={false}
-                              className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-white/30 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/20 outline-none font-mono transition"
+                              className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-white/30 rounded-xl px-3.5 py-2.5 sm:py-2 text-xs text-white placeholder-white/20 outline-none font-mono transition"
                             />
                           </div>
                           <button
@@ -541,7 +541,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                               !(newKeyDrafts[provider.id] ?? "").trim() ||
                               isValidatingKey[provider.id]
                             }
-                            className="px-3 sm:px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium cursor-pointer transition-all shrink-0 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium cursor-pointer transition-all shrink-0 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                           >
                             {isValidatingKey[provider.id] ? (
                               <>
@@ -643,15 +643,17 @@ export const SettingsAiProvidersSection: React.FC = () => {
                   </fieldset>
 
                   {/* Actions Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-t border-white/[0.06] pt-3.5 mt-1">
-                    <SettingsProviderTestButton
-                      onClick={() => testProvider(provider.id)}
-                      isTesting={isTesting}
-                      result={latestTestResult}
-                      disabled={!hasKeys && provider.type === "cloud"}
-                    />
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 border-t border-white/[0.06] pt-3.5 mt-1">
+                    <div className="w-full sm:w-auto flex justify-start">
+                      <SettingsProviderTestButton
+                        onClick={() => testProvider(provider.id)}
+                        isTesting={isTesting}
+                        result={latestTestResult}
+                        disabled={!hasKeys && provider.type === "cloud"}
+                      />
+                    </div>
                     {isActive ? (
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 px-3 py-2">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 bg-emerald-500/[0.05] sm:bg-transparent rounded-xl sm:rounded-none border border-emerald-500/10 sm:border-none">
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
                         Proveedor Activo
                       </span>
@@ -660,7 +662,7 @@ export const SettingsAiProvidersSection: React.FC = () => {
                         type="button"
                         onClick={() => activateProvider(provider.id)}
                         disabled={!hasKeys && provider.type === "cloud"}
-                        className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-center"
                       >
                         Establecer como Activo
                       </button>

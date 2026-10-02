@@ -69,12 +69,12 @@ const SettingsViewInner: React.FC<SettingsViewProps> = ({
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-3.5 sm:p-6 lg:px-10 pt-3 sm:pt-6 pb-0 lg:pb-4">
       {/*  Header: Title + Orb + Back Button (Fixed Top Section)  */}
       <div className="relative flex items-center justify-between mb-3 sm:mb-6 pt-1 sm:pt-4 shrink-0 z-20">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {onBackToWorkspace && (
             <button
               onClick={onBackToWorkspace}
               type="button"
-              className="lg:hidden p-2 rounded-xl bg-white/[0.04] border border-white/10 text-white/70 hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-xl bg-white/[0.04] border border-white/10 text-white/70 hover:text-white transition-colors mt-0.5"
               aria-label="Back to workspace"
             >
               <ArrowLeft className="w-4 h-4" />

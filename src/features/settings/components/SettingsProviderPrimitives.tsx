@@ -73,12 +73,12 @@ export const SettingsProviderTestButton: React.FC<SettingsProviderTestButtonProp
   result,
   disabled,
 }) => (
-  <div className="flex items-center gap-2.5 flex-wrap">
+  <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto justify-start">
       <button
         type="button"
         onClick={onClick}
         disabled={disabled || isTesting}
-        className="group relative flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.02] text-xs text-[#d4d4e8] hover:border-white/25 hover:bg-white/[0.05] hover:text-white active:scale-[0.97] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+        className="group relative flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl border border-white/10 bg-white/[0.02] text-xs text-[#d4d4e8] hover:border-white/25 hover:bg-white/[0.05] hover:text-white active:scale-[0.97] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
       >
         {isTesting ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

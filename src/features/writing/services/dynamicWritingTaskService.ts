@@ -167,7 +167,7 @@ export class DynamicWritingTaskService {
     if (!fresh.starterPhrases || fresh.starterPhrases.length === 0) {
       fresh.starterPhrases = getDefaultStarterPhrases(fresh.level, fresh.category);
     }
-    this.persistActiveTask(fresh);
+    this.persistActiveTask(fresh, userId);
     return fresh;
   }
 

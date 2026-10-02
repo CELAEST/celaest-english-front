@@ -62,7 +62,11 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       if (userLevel) return normalizeCefr(userLevel);
       if (typeof window !== "undefined") {
         try {
-          const saved = localStorage.getItem("celaest:writing:cefrLevel");
+          const userKey = currentUserId ? `celaest:user:${currentUserId}:cefrLevel` : null;
+          const saved =
+            (userKey ? localStorage.getItem(userKey) : null) ||
+            localStorage.getItem("celaest:writing:cefrLevel") ||
+            localStorage.getItem("celaest:cefrLevel");
           if (saved) return normalizeCefr(saved);
         } catch {
           // ignore
@@ -88,12 +92,16 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     });
 
     const handleSelectLevel = React.useCallback(
-      (newLevel: CefrLevelCode) => {
+      (newLevel: CefrLevelCode, source: "internal" | "external" = "internal") => {
         const norm = normalizeCefr(newLevel);
+        if (norm === activeCefrLevel) return;
         prevUserLevelPropRef.current = norm;
         setActiveCefrLevel(norm);
         if (typeof window !== "undefined") {
           try {
+            if (currentUserId) {
+              localStorage.setItem(`celaest:user:${currentUserId}:cefrLevel`, norm);
+            }
             localStorage.setItem("celaest:writing:cefrLevel", norm);
             localStorage.setItem("celaest:cefrLevel", norm);
           } catch {
@@ -110,11 +118,11 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
         setEditorText(DynamicWritingTaskService.loadDraft(task.id, currentUserId));
         setPersistedSubmission(null);
         DynamicWritingTaskService.clearActiveSubmission(currentUserId);
-        if (onSelectLevel) {
+        if (source === "internal" && onSelectLevel) {
           onSelectLevel(norm as CefrLevelCode);
         }
       },
-      [onSelectLevel],
+      [onSelectLevel, activeCefrLevel, currentUserId],
     );
 
     // Synchronize ONLY when userLevel prop genuinely changes externally from parent (e.g. Settings)
@@ -122,23 +130,26 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     useEffect(() => {
       if (userLevel) {
         const norm = normalizeCefr(userLevel);
-        if (norm !== prevUserLevelPropRef.current) {
+        if (norm !== prevUserLevelPropRef.current && norm !== activeCefrLevel) {
           prevUserLevelPropRef.current = norm;
-          handleSelectLevel(norm as CefrLevelCode);
+          handleSelectLevel(norm as CefrLevelCode, "external");
         }
       }
-    }, [userLevel, handleSelectLevel]);
+    }, [userLevel, handleSelectLevel, activeCefrLevel]);
 
     useEffect(() => {
       const onLevelChanged = (e: Event) => {
         const customEvent = e as CustomEvent<string>;
         if (customEvent.detail) {
-          handleSelectLevel(normalizeCefr(customEvent.detail) as CefrLevelCode);
+          const norm = normalizeCefr(customEvent.detail) as CefrLevelCode;
+          if (norm !== activeCefrLevel) {
+            handleSelectLevel(norm, "external");
+          }
         }
       };
       window.addEventListener("celaest:level-changed", onLevelChanged);
       return () => window.removeEventListener("celaest:level-changed", onLevelChanged);
-    }, [handleSelectLevel]);
+    }, [handleSelectLevel, activeCefrLevel]);
 
     // Restore the draft saved for the active task or submission content (survives page reloads)
     const [editorText, setEditorText] = useState<string>(() => {

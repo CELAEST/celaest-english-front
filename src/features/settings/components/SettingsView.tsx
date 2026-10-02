@@ -17,6 +17,7 @@ import { SettingsAboutModal } from "./SettingsAboutModal";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { logger } from "../../../shared/utils/logger";
 import { ArrowLeft } from "lucide-react";
 
@@ -131,8 +132,12 @@ const SettingsViewInner: React.FC<SettingsViewProps> = ({
         currentLevel={currentLevel}
         onSelectLevel={async (newLevel) => {
           const norm = normalizeCefr(newLevel.split(" ")[0]);
+          const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
           if (typeof window !== "undefined") {
             try {
+              if (currentUserId) {
+                localStorage.setItem(`celaest:user:${currentUserId}:cefrLevel`, norm);
+              }
               localStorage.setItem("celaest:cefrLevel", norm);
               localStorage.setItem("celaest:writing:cefrLevel", norm);
               localStorage.setItem("celaest:interview:cefrLevel", norm);

@@ -147,7 +147,7 @@ export class StorageLifecycleService {
             k.startsWith("celaest:provider-key:") ||
             k.startsWith("lingua_onboarding_completed_") ||
             k.startsWith("lingua_memory_cards_cache_") ||
-            (k.startsWith("celaest:user:") && (k.includes(":interview-progress:") || k.includes(":writing:draft:"))))
+            k.startsWith("celaest:user:"))
         ) {
           sessionKeys.push(k);
         }

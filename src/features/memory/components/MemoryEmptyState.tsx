@@ -89,7 +89,6 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
             playsInline
             preload="auto"
             disablePictureInPicture
-            // @ts-ignore
             disableRemotePlayback
             className="w-full sm:w-auto h-auto max-w-[min(96vw,520px)] sm:max-w-[min(96vw,1200px)] max-h-[58vh] xs:max-h-[64vh] sm:max-h-[70vh] lg:max-h-[76vh] object-contain select-none"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}

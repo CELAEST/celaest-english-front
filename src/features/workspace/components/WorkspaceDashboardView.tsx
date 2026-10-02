@@ -123,7 +123,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const activeUserName = settings.name || userName || "";
   const [activeUserLevel, setActiveUserLevel] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("celaest:cefrLevel");
+      const userKey = user?.id ? `celaest:user:${user.id}:cefrLevel` : null;
+      const saved =
+        (userKey ? localStorage.getItem(userKey) : null) ||
+        localStorage.getItem("celaest:cefrLevel");
       if (saved) return normalizeCefr(saved);
     }
     return normalizeCefr(settings.cefrLevel || userLevel || "B1");
@@ -132,7 +135,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   useEffect(() => {
     if (settings.cefrLevel) {
       const norm = normalizeCefr(settings.cefrLevel);
-      setActiveUserLevel(norm);
+      setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
     }
   }, [settings.cefrLevel]);
 
@@ -207,9 +210,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const handleGlobalSelectLevel = React.useCallback(
     (newLevel: CefrLevelCode) => {
       const norm = normalizeCefr(newLevel);
-      setActiveUserLevel(norm);
+      setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
       if (typeof window !== "undefined") {
         try {
+          if (user?.id) {
+            localStorage.setItem(`celaest:user:${user.id}:cefrLevel`, norm);
+          }
           localStorage.setItem("celaest:cefrLevel", norm);
           localStorage.setItem("celaest:writing:cefrLevel", norm);
           localStorage.setItem("celaest:interview:cefrLevel", norm);
@@ -219,14 +225,15 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       }
       void updateProfileSettings({ cefrLevel: norm });
     },
-    [updateProfileSettings],
+    [updateProfileSettings, user?.id],
   );
 
   React.useEffect(() => {
     const handleLevelChanged = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
-        setActiveUserLevel(normalizeCefr(customEvent.detail));
+        const norm = normalizeCefr(customEvent.detail);
+        setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
       }
     };
     window.addEventListener("celaest:level-changed", handleLevelChanged);

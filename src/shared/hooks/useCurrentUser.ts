@@ -9,6 +9,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { SupabaseAuthAdapter } from "../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { AuthUser } from "../../application/ports/IAuthService";
 import { useSettingsProfile } from "../../features/settings/hooks/useSettingsProfile";
+import { normalizeCefr } from "../../features/conversation/services/dynamicQuestionService";
 
 export interface UserSettings {
   name: string;
@@ -72,9 +73,12 @@ export const useCurrentUser = () => {
         }
       } catch {}
     }
+    const userScopedKey = user?.id ? `celaest:user:${user.id}:cefrLevel` : null;
     const cachedLevel =
       typeof window !== "undefined"
-        ? localStorage.getItem("celaest:cefrLevel") || ""
+        ? (userScopedKey ? localStorage.getItem(userScopedKey) : null) ||
+          localStorage.getItem("celaest:cefrLevel") ||
+          ""
         : "";
 
     if (profile) {
@@ -98,10 +102,15 @@ export const useCurrentUser = () => {
           // ignore
         }
       }
-      const effectiveLevel = profile.cefrLevel || cachedLevel || "B1";
-      if (typeof window !== "undefined" && profile.cefrLevel) {
+      const normBackend = profile.cefrLevel ? normalizeCefr(profile.cefrLevel) : "";
+      const normCached = cachedLevel ? normalizeCefr(cachedLevel) : "";
+      const effectiveLevel = normCached || normBackend || "B1";
+      if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("celaest:cefrLevel", profile.cefrLevel);
+          if (userScopedKey) {
+            localStorage.setItem(userScopedKey, effectiveLevel);
+          }
+          localStorage.setItem("celaest:cefrLevel", effectiveLevel);
         } catch {
           // ignore
         }
@@ -119,11 +128,12 @@ export const useCurrentUser = () => {
       };
     }
 
+    const normOffline = cachedLevel ? normalizeCefr(cachedLevel) : "B1";
     // Offline / loading: recover persisted active profession and onboarding status
     return {
       name: user?.name ?? "",
       email: user?.email ?? "",
-      cefrLevel: cachedLevel || "B1",
+      cefrLevel: normOffline,
       dailyFocus: "",
       learningGoal: "",
       preferenceStyle: "",
@@ -136,11 +146,15 @@ export const useCurrentUser = () => {
   const updateProfileSettings = useCallback(
     async (partial: Partial<UserSettings>) => {
       if (partial.cefrLevel && typeof window !== "undefined") {
+        const norm = normalizeCefr(partial.cefrLevel);
         try {
-          localStorage.setItem("celaest:cefrLevel", partial.cefrLevel);
-          localStorage.setItem("celaest:writing:cefrLevel", partial.cefrLevel);
-          localStorage.setItem("celaest:interview:cefrLevel", partial.cefrLevel);
-          window.dispatchEvent(new CustomEvent("celaest:level-changed", { detail: partial.cefrLevel }));
+          if (user?.id) {
+            localStorage.setItem(`celaest:user:${user.id}:cefrLevel`, norm);
+          }
+          localStorage.setItem("celaest:cefrLevel", norm);
+          localStorage.setItem("celaest:writing:cefrLevel", norm);
+          localStorage.setItem("celaest:interview:cefrLevel", norm);
+          window.dispatchEvent(new CustomEvent("celaest:level-changed", { detail: norm }));
         } catch {
           // ignore
         }
@@ -164,7 +178,7 @@ export const useCurrentUser = () => {
       }
       await updateSettings({
         ...(partial.name !== undefined ? { name: partial.name } : {}),
-        ...(partial.cefrLevel !== undefined ? { cefrLevel: partial.cefrLevel } : {}),
+        ...(partial.cefrLevel !== undefined ? { cefrLevel: normalizeCefr(partial.cefrLevel) } : {}),
         ...(partial.dailyFocus !== undefined ? { dailyFocus: partial.dailyFocus } : {}),
         ...(partial.learningGoal !== undefined ? { learningGoal: partial.learningGoal } : {}),
         ...(partial.preferenceStyle !== undefined

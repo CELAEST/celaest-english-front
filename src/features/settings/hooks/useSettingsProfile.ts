@@ -42,24 +42,36 @@ export const useSettingsProfile = (initialUserName?: string) => {
     onMutate: async (newPayload: UpdateSettingsPayload) => {
       await queryClient.cancelQueries({ queryKey: profileQueryKey });
       const previousProfile = queryClient.getQueryData<UserProfile | null>(profileQueryKey);
-      if (previousProfile) {
-        queryClient.setQueryData<UserProfile>(profileQueryKey, {
-          ...previousProfile,
-          ...(newPayload.cefrLevel ? { cefrLevel: newPayload.cefrLevel } : {}),
-          ...(newPayload.dailyFocus ? { dailyFocus: newPayload.dailyFocus } : {}),
-          ...(newPayload.learningGoal ? { learningGoal: newPayload.learningGoal } : {}),
-          ...(newPayload.preferenceStyle ? { preferenceStyle: newPayload.preferenceStyle } : {}),
-        });
-      }
+      const baseProfile: UserProfile = previousProfile || {
+        id: storedUser?.id || "local-user",
+        name: storedUser?.name || fallbackName || "Learner",
+        email: storedUser?.email || "",
+        cefrLevel: newPayload.cefrLevel || "B1",
+        dailyFocus: newPayload.dailyFocus || "Clarity & Vocabulary",
+        learningGoal: newPayload.learningGoal || "Daily Conversation",
+        preferenceStyle: newPayload.preferenceStyle || "Conversation First",
+        streakDays: 1,
+      };
+      queryClient.setQueryData<UserProfile>(profileQueryKey, {
+        ...baseProfile,
+        ...(newPayload.cefrLevel ? { cefrLevel: newPayload.cefrLevel } : {}),
+        ...(newPayload.dailyFocus ? { dailyFocus: newPayload.dailyFocus } : {}),
+        ...(newPayload.learningGoal ? { learningGoal: newPayload.learningGoal } : {}),
+        ...(newPayload.preferenceStyle ? { preferenceStyle: newPayload.preferenceStyle } : {}),
+        ...(newPayload.profession ? { profession: newPayload.profession } : {}),
+      });
       return { previousProfile };
     },
-    onError: (_err, _newPayload, context) => {
-      if (context?.previousProfile) {
+    onError: (_err, newPayload, context) => {
+      logger.warn("[useSettingsProfile] Failed to update backend settings, retaining local state:", _err);
+      if (context?.previousProfile && !newPayload.cefrLevel) {
         queryClient.setQueryData(profileQueryKey, context.previousProfile);
       }
     },
     onSuccess: (updatedProfile) => {
-      queryClient.setQueryData(profileQueryKey, updatedProfile);
+      if (updatedProfile) {
+        queryClient.setQueryData(profileQueryKey, updatedProfile);
+      }
       queryClient.invalidateQueries({ queryKey: ["reading"] });
     },
   });

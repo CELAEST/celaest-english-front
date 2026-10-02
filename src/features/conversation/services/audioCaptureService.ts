@@ -105,13 +105,18 @@ export function mergePhrasesCleanly(history: string, newPhrase: string): string 
     return n;
   }
 
-  // 2. If history already ends with or includes the new phrase, preserve history
-  if (hClean.endsWith(nClean) || hClean.includes(nClean) || hLower.endsWith(nLower) || hLower.includes(nLower)) {
-    return h;
-  }
-
   const hWords = h.split(/\s+/);
   const nWords = n.split(/\s+/);
+
+  // 2. If history already ends with the new phrase, or contains it as a multi-word subphrase (>= 3 words)
+  if (
+    hClean === nClean ||
+    hClean.endsWith(nClean) ||
+    hLower.endsWith(nLower) ||
+    (nWords.length >= 3 && (hClean.includes(nClean) || hLower.includes(nLower)))
+  ) {
+    return h;
+  }
 
   const cleanWord = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -202,10 +207,12 @@ export class AudioCaptureService {
   }
 
   /**
-   * Returns whether a live, active microphone stream track is available
+   * Returns whether a live, active microphone stream track or speech recognition is available
    */
   public static hasActiveMic(): boolean {
-    if (this.isListening && !!this.mediaRecorder && this.mediaRecorder.state === "recording") return true;
+    if (this.isListening) return true;
+    if (!!this.recognizer) return true;
+    if (this.mediaRecorder && this.mediaRecorder.state === "recording") return true;
     if (!this.micStream || !this.micStream.active) return false;
     const tracks = this.micStream.getAudioTracks();
     return tracks.length > 0 && tracks.some((t) => t.readyState === "live");
@@ -371,8 +378,6 @@ export class AudioCaptureService {
         }
 
         const recognizer = new SpeechRecognitionAPI();
-        // On Android Chrome, continuous = true causes the speech recognition session to immediately abort.
-        // Android requires continuous = false with interimResults = true, handling continuous speech via onend auto-restart.
         if (isMobile) {
           recognizer.continuous = false;
         } else {
@@ -467,9 +472,13 @@ export class AudioCaptureService {
             if (this.restartTimeout) clearTimeout(this.restartTimeout);
             this.restartTimeout = setTimeout(() => {
               if (this.isListening) {
-                createAndStartRecognizer();
+                try {
+                  recognizer.start();
+                } catch {
+                  createAndStartRecognizer();
+                }
               }
-            }, 300);
+            }, 250);
             return;
           }
 
@@ -487,14 +496,18 @@ export class AudioCaptureService {
             if (this.restartTimeout) {
               clearTimeout(this.restartTimeout);
             }
-            // Allow 180ms on mobile for Android Audio Server to cycle between utterances cleanly
-            const restartDelay = isMobile ? 180 : 100;
+            // Allow 120ms on mobile for Android Audio Server to cycle between utterances cleanly
+            const restartDelay = isMobile ? 120 : 60;
             this.restartTimeout = setTimeout(() => {
               if (this.isListening) {
                 try {
-                  createAndStartRecognizer();
-                } catch (restartErr) {
-                  logger.warn("[AudioCaptureService] Auto-restart notice:", restartErr);
+                  recognizer.start();
+                } catch {
+                  try {
+                    createAndStartRecognizer();
+                  } catch (restartErr) {
+                    logger.warn("[AudioCaptureService] Auto-restart notice:", restartErr);
+                  }
                 }
               }
             }, restartDelay);
@@ -760,6 +773,11 @@ export class AudioCaptureService {
       candidateEndpoints.push(defaultBackTranscribe);
     }
 
+    const publicBackTranscribe = "https://celaest-english-back.onrender.com/ai/audio/transcribe";
+    if (!candidateEndpoints.includes(publicBackTranscribe)) {
+      candidateEndpoints.push(publicBackTranscribe);
+    }
+
     const isLocalhostInProd =
       typeof window !== "undefined" &&
       window.location.protocol === "https:" &&
@@ -774,6 +792,8 @@ export class AudioCaptureService {
       candidateEndpoints.push(defaultCoreTranscribe);
     }
 
+    const activeToken = typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null;
+
     for (const endpoint of candidateEndpoints) {
       try {
         const formData = new FormData();
@@ -784,8 +804,14 @@ export class AudioCaptureService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6500);
 
+        const headers: Record<string, string> = {};
+        if (activeToken) {
+          headers["Authorization"] = `Bearer ${activeToken.trim()}`;
+        }
+
         const response = await fetch(endpoint, {
           method: "POST",
+          headers,
           body: formData,
           signal: controller.signal,
         });

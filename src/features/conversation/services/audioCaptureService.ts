@@ -134,6 +134,19 @@ export function mergePhrasesCleanly(history: string, newPhrase: string): string 
   return `${h} ${n}`;
 }
 
+/**
+ * Sanitizes transcribed speech ensuring pure verbatim fidelity without artificial prompt regurgitations
+ */
+export function cleanVerbatimTranscription(rawText: string): string {
+  if (!rawText) return "";
+  let text = rawText.trim();
+  // Strip Whisper prompt regurgitations or hallucinated interview metadata
+  text = text.replace(/interview\s+(response|answer)\s+in\s+english\s*(answering\s*:?)?/gi, "");
+  // Strip common Whisper silence/closing hallucinations
+  text = text.replace(/^(thank you(\s+for watching)?\.?|subtitles? by.*|transcription by.*|watching\.?)$/gi, "");
+  return text.replace(/\s+/g, " ").trim();
+}
+
 export class AudioCaptureService {
   private static audioContext: AudioContext | null = null;
   private static analyser: AnalyserNode | null = null;
@@ -690,14 +703,10 @@ export class AudioCaptureService {
             ? "wav"
             : "webm";
 
-    // Clean Contextual Conditioning:
-    // Avoid artificial broken grammar examples in the prompt to prevent Whisper from hallucinating those words.
-    // Condition cleanly on the active question or general interview domain context.
-    const prompt = context?.question
-      ? `Interview response in English answering: ${context.question}`
-      : "Interview response in English about professional background and engineering experience.";
-
     // 1. Direct Edge/Browser Groq Whisper (Ultra-fast, ~150ms, zero backend dependence)
+    // NOTE: We deliberately do NOT pass a conditioning prompt to Whisper. Passing prompts causes Whisper
+    // to auto-correct ESL grammatical errors or regurgitate prompt tokens ("Interview response in English answering").
+    // Omitting prompt guarantees 100% literal, verbatim acoustic transcription of what the candidate actually spoke.
     try {
       const groqKeys = await providerKeyVault.getKeys("groq");
       for (const key of groqKeys) {
@@ -709,7 +718,6 @@ export class AudioCaptureService {
           directFormData.append("language", "en");
           directFormData.append("temperature", "0");
           directFormData.append("response_format", "verbose_json");
-          directFormData.append("prompt", prompt);
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 7000);
@@ -732,7 +740,7 @@ export class AudioCaptureService {
               avg_logprob?: number;
               no_speech_prob?: number;
             };
-            const text = (data.text || "").trim();
+            const text = cleanVerbatimTranscription(data.text || "");
             if (text) {
               logger.info("[AudioCaptureService] Edge Whisper transcription successful via Groq:", {
                 duration: data.duration,
@@ -772,7 +780,6 @@ export class AudioCaptureService {
           directFormData.append("language", "en");
           directFormData.append("temperature", "0");
           directFormData.append("response_format", "verbose_json");
-          directFormData.append("prompt", prompt);
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 7000);
@@ -795,7 +802,7 @@ export class AudioCaptureService {
               avg_logprob?: number;
               no_speech_prob?: number;
             };
-            const text = (data.text || "").trim();
+            const text = cleanVerbatimTranscription(data.text || "");
             if (text) {
               return {
                 text,
@@ -852,7 +859,6 @@ export class AudioCaptureService {
         const formData = new FormData();
         formData.append("file", audioBlob, `recording.${extension}`);
         if (context?.roleName) formData.append("role", context.roleName);
-        if (context?.question) formData.append("question", context.question);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6500);
@@ -876,7 +882,7 @@ export class AudioCaptureService {
             raw && typeof raw === "object" && "data" in raw && raw.data
               ? raw.data
               : raw;
-          const text = (data.transcript || data.text || "").trim();
+          const text = cleanVerbatimTranscription(data.transcript || data.text || "");
           if (text) {
             return {
               text,

@@ -380,6 +380,111 @@ export class MasterAiFeedbackEngine {
       });
     }
 
+    // 6b. "for me workspace" / "for me work" / "in me job" (Object pronoun 'me' used instead of possessive 'my')
+    if (
+      /\b(for|to|in|at|on|with)\s+me\s+([a-z]+)\b/i.test(text) ||
+      /\bme\s+(workspace|work|job|computer|office|team|code|project)\b/i.test(text)
+    ) {
+      const match = text.match(/\b((?:for|to|in|at|on|with)\s+)?me\s+([a-z]+)\b/i);
+      const prep = match && match[1] ? match[1].trim() : "";
+      const noun = match && match[2] ? match[2].trim() : "workspace";
+      const userPhrase = match ? match[0] : "me workspace";
+      const correctPhrase = prep ? `${prep} my ${noun}` : `my ${noun}`;
+
+      detectedErrors.push({
+        id: `err-me-possessive-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userPhrase,
+        correctWord: correctPhrase,
+        userSaidContext: text.slice(0, 60),
+        betterWay: text.replace(new RegExp(`\\b${userPhrase}\\b`, "gi"), correctPhrase),
+        explanation:
+          "En inglés, delante de un sustantivo ('" +
+          noun +
+          "') se debe emplear el determinante posesivo 'my' ('my " +
+          noun +
+          "'), nunca el pronombre objeto 'me'. Se dice '" +
+          correctPhrase +
+          "'.",
+        translationSpanish: `Uso de posesivo: '${correctPhrase}' en lugar de '${userPhrase}'.`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // 6c. "a computer brand Asus is" (Missing relative pronoun / run-on copula)
+    if (/\b(a\s+)?(computer|laptop|phone|pc|device)\s+brand\s+([a-z0-9]+)\s+is\b/i.test(text)) {
+      const match = text.match(
+        /\b(a\s+)?(computer|laptop|phone|pc|device)\s+brand\s+([a-z0-9]+)\s+is\b/i,
+      );
+      const userPhrase = match ? match[0] : "computer brand Asus is";
+      const brand = match ? match[3] : "Asus";
+      const device = match ? match[2] : "computer";
+      const correctPhrase = `an ${brand} ${device}, which is`;
+
+      detectedErrors.push({
+        id: `err-brand-relative-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userPhrase,
+        correctWord: correctPhrase,
+        userSaidContext: text.slice(0, 60),
+        betterWay: text.replace(new RegExp(`\\b${userPhrase}\\b`, "gi"), correctPhrase),
+        explanation: `En inglés no se encadenan sustantivo y marca seguidos de 'is' sin un conector relativo o estructura atributiva. Lo natural es decir 'an ${brand} ${device}, which is' o 'a ${device} of the ${brand} brand, which is'.`,
+        translationSpanish: `Estructura recomendada: 'un ${device} de marca ${brand}, el cual es...'`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // 6d. Redundant subject pronoun: "my other PC it is" / "the computer it is"
+    if (/\b(pc|computer|laptop|system|tool|device)\s+it\s+is\b/i.test(text)) {
+      const match = text.match(
+        /\b((?:[a-z]+\s+)?(?:pc|computer|laptop|system|tool|device))\s+it\s+is\b/i,
+      );
+      const userPhrase = match ? match[0] : "PC it is";
+      const correctPhrase = userPhrase.replace(/\bit\s+is\b/i, "is");
+
+      detectedErrors.push({
+        id: `err-redundant-it-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userPhrase,
+        correctWord: correctPhrase,
+        userSaidContext: text.slice(0, 60),
+        betterWay: text.replace(new RegExp(`\\b${userPhrase}\\b`, "gi"), correctPhrase),
+        explanation:
+          "El pronombre 'it' es redundante cuando el sujeto ya está expresado explícitamente. Di directamente '" +
+          correctPhrase +
+          "'.",
+        translationSpanish: `Elimina el pronombre redundante 'it': '${correctPhrase}'.`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // 6e. "wet computer" (Lexical confusion in hardware context)
+    if (/\b(very\s+)?wet\s+(computer|laptop|pc|keyboard|screen|device)\b/i.test(text)) {
+      const match = text.match(
+        /\b((?:very\s+)?wet)\s+(computer|laptop|pc|keyboard|screen|device)\b/i,
+      );
+      const userPhrase = match ? match[0] : "wet computer";
+      const dev = match ? match[2] : "computer";
+      const correctPhrase = `reliable / high-performance ${dev}`;
+
+      detectedErrors.push({
+        id: `err-wet-computer-${Date.now()}`,
+        errorType: "VOCABULARY",
+        errorWord: userPhrase,
+        correctWord: correctPhrase,
+        userSaidContext: text.slice(0, 60),
+        betterWay: text.replace(new RegExp(`\\b${userPhrase}\\b`, "gi"), `reliable ${dev}`),
+        explanation:
+          "'Wet' significa literalmente 'mojado' o 'empapado' y no describe la calidad de hardware en inglés. Si querías decir confiable ('reliable'), rápido ('fast') o silencioso ('quiet'), usa el término técnico adecuado.",
+        translationSpanish: `Término adecuado para tecnología: 'reliable ${dev}' (ordenador confiable).`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
     // 7. "so is necessary a person" / "is necessary a person"
     if (
       /\b(so\s+is|is|it's|it\s+is)\s+necessary\s+a\s+person\b/i.test(text) ||

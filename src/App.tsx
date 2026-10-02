@@ -4,10 +4,13 @@ import { AppRoutes } from "./routes/AppRoutes";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
 import { ToastProvider } from "./design-system/components/Toast";
 import { StorageLifecycleService } from "./shared/services/storageLifecycleService";
+import { orbVideoCacheService } from "./design-system/components/Orb/orbVideoCacheService";
 
 export function App() {
   useEffect(() => {
     StorageLifecycleService.performMountHygiene();
+    void orbVideoCacheService.preload("/assets/orve.mp4");
+    void orbVideoCacheService.preload("/assets/orve.webm");
   }, []);
 
   return (

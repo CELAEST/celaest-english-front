@@ -8,12 +8,12 @@ describe("Workspace & Video Mobile Performance Audit", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders VideoOrb with preload=metadata, playsInline, and muted to prevent mobile jump and battery drain", () => {
+  it("renders VideoOrb with preload=auto, playsInline, and muted for instant cache mounting", () => {
     const { container } = render(<VideoOrb isActive={true} />);
     const video = container.querySelector("video");
 
     expect(video).not.toBeNull();
-    expect(video?.getAttribute("preload")).toBe("metadata");
+    expect(video?.getAttribute("preload")).toBe("auto");
     expect(video?.hasAttribute("playsinline")).toBe(true);
     expect(video?.muted).toBe(true);
     expect(video?.hasAttribute("poster")).toBe(false);

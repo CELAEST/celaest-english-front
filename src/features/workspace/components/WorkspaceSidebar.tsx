@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
+import { orbVideoCacheService } from "../../../design-system/components/Orb";
 
 export interface WorkspaceSidebarProps {
   userName?: string;
@@ -318,6 +319,8 @@ const prefetchTabRoute = (id: string) => {
   if (id === "writing") void import("../../writing");
   else if (id === "memory") void import("../../memory");
   else if (id === "settings") void import("../../settings");
+  void orbVideoCacheService.preload("/assets/orve.mp4");
+  void orbVideoCacheService.preload("/assets/orve.webm");
 };
 
 const MobileBottomDock: React.FC<{

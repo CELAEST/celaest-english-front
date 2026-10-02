@@ -98,7 +98,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
         className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
       >
         <div
-          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-4 xs:-translate-y-6 sm:-translate-y-10 lg:-translate-y-12 origin-center"
+          className="pointer-events-auto cursor-pointer group relative flex items-center justify-center -translate-y-2 xs:-translate-y-3 sm:-translate-y-6 lg:-translate-y-8 origin-center scale-[1.46] xs:scale-[1.54] sm:scale-[1.22] md:scale-[1.10] lg:scale-100 transition-transform duration-300"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -113,7 +113,7 @@ export const MemoryEmptyState: React.FC<MemoryEmptyStateProps> = React.memo(({
             disablePictureInPicture
             // @ts-ignore
             disableRemotePlayback
-            className="w-full sm:w-auto h-auto max-w-[min(92vw,460px)] sm:max-w-[min(96vw,1200px)] max-h-[54vh] xs:max-h-[58vh] sm:max-h-[66vh] lg:max-h-[72vh] xl:max-h-[78vh] object-contain select-none"
+            className="w-full sm:w-auto h-auto max-w-[min(96vw,520px)] sm:max-w-[min(96vw,1200px)] max-h-[58vh] xs:max-h-[64vh] sm:max-h-[70vh] lg:max-h-[76vh] object-contain select-none"
             style={{ willChange: "transform", backfaceVisibility: "hidden", transform: "translateZ(0)" }}
           >
             <source src="/assets/cards.mp4" type="video/mp4" />

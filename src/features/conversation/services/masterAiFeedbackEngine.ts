@@ -862,12 +862,29 @@ export class MasterAiFeedbackEngine {
     // =========================================================================
 
     // U1. Missing past tense in past-narrative context
-    // Detects: "we have a big problem" when context implies past ("one time", "last year", "previous", "past job")
+    // Detects: "we have a big problem" when context implies past ("yesterday", "one time", "last year", "previous", "past job")
     const hasPastContext =
-      /\b(one time|last (year|month|week|time)|in my (past|previous|last)|previously|ago|back then|when i was)\b/i.test(
+      /\b(yesterday|the other day|last night|two days ago|in the past|one time|last (year|month|week|time)|in my (past|previous|last)|previously|ago|back then|when i was)\b/i.test(
         lower,
       );
     if (hasPastContext) {
+      // "yesterday ... go" → "yesterday ... went"
+      if (/\byesterday\b[^\.\?!]*\b(i|we|they|he|she)\s+go\b/i.test(lower) || /\byesterday\s*,\s*i\s+go\b/i.test(lower)) {
+        detectedErrors.push({
+          id: `err-u1-yesterday-go-${Date.now()}`,
+          errorType: "GRAMMAR",
+          errorWord: "go",
+          correctWord: "went",
+          userSaidContext: text.match(/yesterday[^\.\?!]*\bgo\b/i)?.[0] ?? "Yesterday, I go",
+          betterWay: text.replace(/\bgo\b/i, "went"),
+          explanation:
+            "Al narrar una acción completada en el pasado introducida por 'yesterday', se debe utilizar el pasado simple del verbo irregular 'go', que es 'went'.",
+          translationSpanish: "Ayer fui a la tienda",
+          cefrLevel: "A2",
+          savedToMemory: false,
+        });
+      }
+
       // "we have" → "we had" in past context
       if (/\bwe\s+have\s+(?:a|an|the|some|many|big|serious|major)\b/i.test(lower)) {
         detectedErrors.push({
@@ -951,16 +968,16 @@ export class MasterAiFeedbackEngine {
       });
     }
 
-    // U3. "for + verb" instead of "to + verb" (Spanish interference: "para mitigar" → "for mitigate", "for drive", "for improve", "for achieve")
+    // U3. "for + verb" instead of "to + verb" (Spanish interference: "para comprar" → "for buy", "para mitigar" → "for mitigate", "for improve")
     if (
-      /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i.test(
+      /\bfor\s+(buy|get|see|find|sell|hire|take|bring|have|leave|start|finish|check|test|run|visit|meet|ask|eat|drink|watch|read|write|order|learn|mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i.test(
         lower,
       )
     ) {
       const forMatch = lower.match(
-        /\bfor\s+(mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i,
+        /\bfor\s+(buy|get|see|find|sell|hire|take|bring|have|leave|start|finish|check|test|run|visit|meet|ask|eat|drink|watch|read|write|order|learn|mitigate|solve|fix|prevent|reduce|improve|manage|handle|resolve|avoid|implement|deploy|complete|create|build|develop|maintain|investigate|drive|optimize|achieve|ensure|protect|deliver|reach|help|make|do|support)\b/i,
       );
-      const verb = forMatch ? forMatch[1] : "mitigate";
+      const verb = forMatch ? forMatch[1] : "buy";
       detectedErrors.push({
         id: `err-u3-for-to-${Date.now()}`,
         errorType: "GRAMMAR",
@@ -969,9 +986,93 @@ export class MasterAiFeedbackEngine {
         userSaidContext: `for ${verb}`,
         betterWay: text.replace(new RegExp(`\\bfor\\s+${verb}\\b`, "gi"), `to ${verb}`),
         explanation:
-          `En inglés, para expresar propósito ('para + verbo'), se utiliza el infinitivo con 'to' ('to ${verb}'), nunca 'for + infinitivo'. La estructura 'for' se reserva para preposiciones con sustantivos o gerundios ('for driving', pero para el propósito de la acción se dice 'to ${verb}').`,
+          `En inglés, para expresar propósito ('para + verbo'), se utiliza el infinitivo con 'to' ('to ${verb}'), nunca 'for + infinitivo'. La estructura 'for' se reserva para preposiciones con sustantivos o gerundios ('for buying', pero para el propósito de la acción se dice 'to ${verb}').`,
         translationSpanish:
-          `Interferencia del español 'para + verbo': se dice 'to ${verb}' (para ${verb === "improve" ? "mejorar" : verb === "drive" ? "impulsar" : verb === "achieve" ? "alcanzar" : verb}).`,
+          `Interferencia del español 'para + verbo': se dice 'to ${verb}' (para ${verb === "buy" ? "comprar" : verb === "improve" ? "mejorar" : verb === "drive" ? "impulsar" : verb === "achieve" ? "alcanzar" : verb}).`,
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // U3b. Participle adjective for states/conditions: "was close" -> "was closed"
+    if (
+      /\b(?:was|were)\s+close\b/i.test(lower) ||
+      (/\b(?:is|are)\s+close\b/i.test(lower) &&
+        /\b(?:supermarket|store|shop|market|office|bank|door|doors|restaurant|pharmacy|building)\b/i.test(lower))
+    ) {
+      detectedErrors.push({
+        id: `err-u3b-was-close-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "was close",
+        correctWord: "was closed",
+        userSaidContext: text.match(/\b\w+\s+was\s+close\b/i)?.[0] ?? "the supermarket was close",
+        betterWay: text.replace(/\bwas\s+close\b/gi, "was closed"),
+        explanation:
+          "Para describir el estado de un establecimiento comercial o puerta ('estaba cerrado'), se utiliza el participio pasado como adjetivo ('closed'), no 'close' (que como adjetivo significa 'cerca').",
+        translationSpanish: "el supermercado estaba cerrado",
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // U3c. Modal auxiliary tense & bare base form: "can't bought" / "couldn't bought" -> "couldn't buy"
+    if (
+      /\b(can't|cannot|couldn't|could\s+not)\s+(bought|went|saw|took|came|told|found|made|felt|broken|done)\b/i.test(
+        lower,
+      )
+    ) {
+      const match = lower.match(
+        /\b(can't|cannot|couldn't|could\s+not)\s+(bought|went|saw|took|came|told|found|made|felt|broken|done)\b/i,
+      );
+      const badVerb = match ? match[2] : "bought";
+      const baseMap: Record<string, string> = {
+        bought: "buy",
+        went: "go",
+        saw: "see",
+        took: "take",
+        came: "come",
+        told: "tell",
+        found: "find",
+        made: "make",
+        felt: "feel",
+        broken: "break",
+        done: "do",
+      };
+      const baseVerb = baseMap[badVerb] || "buy";
+      const userModal = match ? match[0] : "can't bought";
+      const correctModal = "couldn't " + baseVerb;
+      detectedErrors.push({
+        id: `err-u3c-modal-past-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userModal,
+        correctWord: correctModal,
+        userSaidContext: userModal,
+        betterWay: text.replace(new RegExp(`\\b${userModal}\\b`, "gi"), correctModal),
+        explanation:
+          `Doble regla gramatical de modales: 1) Los verbos modales siempre van seguidos de la forma base del verbo ('${baseVerb}'), nunca del pasado ('${badVerb}'). 2) En una narración en pasado se usa 'couldn't', no 'can't'. Por tanto, se dice '${correctModal}'.`,
+        translationSpanish: `no pude ${baseVerb === "buy" ? "comprar" : baseVerb}`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // U3d. Double negative: "couldn't / can't ... nothing" -> "anything"
+    if (
+      /\b(can't|couldn't|could\s+not|didn't|did\s+not|don't|do\s+not|doesn't|does\s+not)\s+[^\.\?!]*\bnothing\b/i.test(
+        lower,
+      )
+    ) {
+      detectedErrors.push({
+        id: `err-u3d-double-negative-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "nothing",
+        correctWord: "anything",
+        userSaidContext:
+          text.match(/\b(?:can't|couldn't|didn't)[^\.\?!]*nothing\b/i)?.[0] ?? "couldn't buy nothing",
+        betterWay: text.replace(/\bnothing\b/gi, "anything"),
+        explanation:
+          "En inglés estándar no se permite la doble negación ('couldn't ... nothing'). Dado que el verbo ya está negado ('couldn't'), debes emplear el pronombre indefinido 'anything' ('couldn't buy anything').",
+        translationSpanish: "no pude comprar nada",
         cefrLevel: "B1",
         savedToMemory: false,
       });

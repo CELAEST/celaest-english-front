@@ -101,4 +101,35 @@ describe("Beginner A1 Grammar Detection in MasterAiFeedbackEngine", () => {
     expect(errorWords.some((w) => w.includes("without loose") || w.includes("without lose"))).toBe(true);
     expect(errorWords.some((w) => w.includes("personnels"))).toBe(true);
   });
+
+  it("detects all 5 distinct ESL errors in user's test sentence", () => {
+    const question: InterviewQuestionItem = {
+      id: 5,
+      question: "Tell me about a challenging situation you faced recently.",
+      category: "BEHAVIORAL",
+      starHint: "STAR method",
+      expectedKeywords: ["problem", "challenge"],
+      targetLevel: "B1",
+    };
+    const answer =
+      "Yesterday, I go to the store for buy some milk, but the supermarket was close and I can't bought nothing.";
+
+    const result = MasterAiFeedbackEngine.evaluateTurn(answer, question);
+    const errors = result.unclearOrErrorWords;
+
+    expect(errors.length).toBeGreaterThanOrEqual(5);
+
+    const corrWords = errors.map((e) => e.correctWord.toLowerCase());
+
+    // 1. go -> went
+    expect(corrWords.some((c) => c.includes("went"))).toBe(true);
+    // 2. for buy -> to buy
+    expect(corrWords.some((c) => c.includes("to buy"))).toBe(true);
+    // 3. was close -> was closed
+    expect(corrWords.some((c) => c.includes("was closed"))).toBe(true);
+    // 4. can't bought -> couldn't buy
+    expect(corrWords.some((c) => c.includes("couldn't buy"))).toBe(true);
+    // 5. nothing -> anything
+    expect(corrWords.some((c) => c.includes("anything"))).toBe(true);
+  });
 });

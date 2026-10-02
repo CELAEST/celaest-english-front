@@ -311,9 +311,9 @@ export class UniversalLinguisticParser {
       });
     }
 
-    // 5. "for + base verb" (Purpose: for know, for tell, for validate, for make)
+    // 5. "for + base verb" (Purpose: for buy, for know, for tell, for validate, for make)
     const forVerbMatch = text.match(
-      /\bfor\s+(know|no|tell|validate|make|do|build|stop|have|say|learn|work|create|construct)\b/i,
+      /\bfor\s+(buy|get|see|find|sell|hire|take|bring|have|leave|start|finish|check|test|run|visit|meet|ask|eat|drink|watch|read|write|order|learn|know|no|tell|validate|make|do|build|stop|say|work|create|construct)\b/i,
     );
     if (forVerbMatch) {
       const rawVerb = forVerbMatch[1].toLowerCase();
@@ -326,8 +326,95 @@ export class UniversalLinguisticParser {
         userSaidContext: forVerbMatch[0],
         betterWay: `to ${properVerb}`,
         explanation: `Para expresar propósito u objetivo en inglés se utiliza 'to + infinitivo' ('to ${properVerb}'), nunca 'for + verbo base' ('for ${forVerbMatch[1]}').`,
-        translationSpanish: `para ${properVerb === "know" ? "saber / conocer" : properVerb === "validate" ? "validar" : properVerb === "build" ? "construir" : "hacer"}`,
+        translationSpanish: `para ${properVerb === "buy" ? "comprar" : properVerb === "know" ? "saber / conocer" : properVerb === "validate" ? "validar" : properVerb === "build" ? "construir" : "hacer"}`,
         cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // 5b. Past narrative tense: "yesterday ... go" -> "yesterday ... went"
+    if (/\byesterday\b[^\.\?!]*\b(i|we|they|he|she)\s+go\b/i.test(text) || /\byesterday\s*,\s*i\s+go\b/i.test(text)) {
+      detectedErrors.push({
+        id: `err-yesterday-go-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "go",
+        correctWord: "went",
+        userSaidContext: text.match(/yesterday[^\.\?!]*\bgo\b/i)?.[0] ?? "Yesterday, I go",
+        betterWay: text.replace(/\bgo\b/i, "went"),
+        explanation:
+          "Al narrar una acción en el pasado introducida por 'yesterday', se debe utilizar el pasado simple del verbo irregular 'go', que es 'went'.",
+        translationSpanish: "Ayer fui a la tienda",
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // 5c. Participle adjective for states: "was close" -> "was closed"
+    if (
+      /\b(?:was|were)\s+close\b/i.test(text) ||
+      (/\b(?:is|are)\s+close\b/i.test(text) &&
+        /\b(?:supermarket|store|shop|market|office|bank|door|doors|restaurant|pharmacy|building)\b/i.test(text))
+    ) {
+      detectedErrors.push({
+        id: `err-was-close-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "was close",
+        correctWord: "was closed",
+        userSaidContext: text.match(/\b\w+\s+was\s+close\b/i)?.[0] ?? "the supermarket was close",
+        betterWay: text.replace(/\bwas\s+close\b/gi, "was closed"),
+        explanation:
+          "Para describir el estado de un establecimiento o puerta ('estaba cerrado'), se utiliza el participio pasado como adjetivo ('closed'), no 'close' ('cerca').",
+        translationSpanish: "el supermercado estaba cerrado",
+        cefrLevel: "A2",
+        savedToMemory: false,
+      });
+    }
+
+    // 5d. Modal auxiliary tense & bare base form: "can't bought" -> "couldn't buy"
+    const modalPastMatch = text.match(
+      /\b(can't|cannot|couldn't|could\s+not)\s+(bought|went|saw|took|came|told|found|made|felt|broken|done)\b/i,
+    );
+    if (modalPastMatch) {
+      const badVerb = modalPastMatch[2].toLowerCase();
+      const baseMap: Record<string, string> = {
+        bought: "buy", went: "go", saw: "see", took: "take", came: "come",
+        told: "tell", found: "find", made: "make", felt: "feel", broken: "break", done: "do",
+      };
+      const baseVerb = baseMap[badVerb] || "buy";
+      const userModal = modalPastMatch[0];
+      const correctModal = "couldn't " + baseVerb;
+      detectedErrors.push({
+        id: `err-modal-past-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: userModal,
+        correctWord: correctModal,
+        userSaidContext: userModal,
+        betterWay: text.replace(new RegExp(`\\b${userModal}\\b`, "gi"), correctModal),
+        explanation: `Doble regla de modales: 1) Los verbos modales siempre van seguidos de la forma base ('${baseVerb}'), nunca del pasado ('${badVerb}'). 2) En narraciones del pasado se usa 'couldn't', no 'can't'. Por tanto, se dice '${correctModal}'.`,
+        translationSpanish: `no pude ${baseVerb === "buy" ? "comprar" : baseVerb}`,
+        cefrLevel: "B1",
+        savedToMemory: false,
+      });
+    }
+
+    // 5e. Double negative: "couldn't / can't ... nothing" -> "anything"
+    if (
+      /\b(can't|couldn't|could\s+not|didn't|did\s+not|don't|do\s+not|doesn't|does\s+not)\s+[^\.\?!]*\bnothing\b/i.test(
+        text,
+      )
+    ) {
+      detectedErrors.push({
+        id: `err-double-negative-${Date.now()}`,
+        errorType: "GRAMMAR",
+        errorWord: "nothing",
+        correctWord: "anything",
+        userSaidContext:
+          text.match(/\b(?:can't|couldn't|didn't)[^\.\?!]*nothing\b/i)?.[0] ?? "couldn't buy nothing",
+        betterWay: text.replace(/\bnothing\b/gi, "anything"),
+        explanation:
+          "En inglés estándar no se permite la doble negación ('couldn't ... nothing'). Dado que el verbo ya está negado ('couldn't'), debes emplear el pronombre indefinido 'anything' ('couldn't buy anything').",
+        translationSpanish: "no pude comprar nada",
+        cefrLevel: "B1",
         savedToMemory: false,
       });
     }

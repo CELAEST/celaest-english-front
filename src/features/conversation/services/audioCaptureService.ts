@@ -150,6 +150,11 @@ export class AudioCaptureService {
   private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // Enterprise Adaptive Phrase-Chunked Whisper streaming fields
+  private static interimInterval: ReturnType<typeof setInterval> | null = null;
+  private static isTranscribingInterim: boolean = false;
+  private static lastWebSpeechTimestamp: number = 0;
+
   /**
    * Returns whether native Web Speech Recognition API is supported in current browser
    */
@@ -355,6 +360,48 @@ export class AudioCaptureService {
     this.isListening = true;
     this.confirmedHistory = (options.initialTranscript || "").trim();
     this.latestTranscript = this.confirmedHistory;
+    this.lastWebSpeechTimestamp = Date.now();
+    this.isTranscribingInterim = false;
+
+    if (this.interimInterval) {
+      clearInterval(this.interimInterval);
+      this.interimInterval = null;
+    }
+
+    // Enterprise Adaptive Phrase-Chunked Whisper Timer:
+    // If Web Speech is inactive, silent, or blocked by Android HAL / iOS restrictions,
+    // this timer automatically transcribes accumulated audio from MediaRecorder every 2.5s via Groq Whisper Turbo.
+    this.interimInterval = setInterval(() => {
+      if (!this.isListening) return;
+      const timeSinceWebSpeech = Date.now() - this.lastWebSpeechTimestamp;
+      // If Web Speech emitted results within the last 2200ms, it is actively dictating (0 extra API calls needed)
+      if (timeSinceWebSpeech < 2200) return;
+      // If Web Speech is silent/blocked/dead, and we have audio recorded, transcribe interim chunks with Whisper
+      if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
+        const mime = getBestAudioMimeType() || "audio/webm";
+        const interimBlob = new Blob(this.recordedChunks, { type: mime });
+        if (interimBlob.size > 800) {
+          this.isTranscribingInterim = true;
+          void AudioCaptureService.transcribeAudio(interimBlob, {
+            roleName: options.roleName,
+            question: options.question,
+          })
+            .then((res) => {
+              if (res && res.text.trim()) {
+                const text = res.text.trim();
+                this.latestTranscript = text;
+                options.onTranscript(text, false);
+              }
+            })
+            .catch(() => {
+              // ignore interim error, next interval will try with fuller audio
+            })
+            .finally(() => {
+              this.isTranscribingInterim = false;
+            });
+        }
+      }
+    }, 2500);
 
     // 2. Prepare Web Speech Recognition (Instant 60fps streaming preview)
     if (!SpeechRecognitionAPI) {
@@ -398,6 +445,7 @@ export class AudioCaptureService {
         let currentSessionFinal = "";
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
+          this.lastWebSpeechTimestamp = Date.now();
           let currentFinal = "";
           let currentInterim = "";
 
@@ -550,6 +598,11 @@ export class AudioCaptureService {
    */
   public static async stopAndGetAudio(): Promise<AudioCaptureResult> {
     this.isListening = false;
+    if (this.interimInterval) {
+      clearInterval(this.interimInterval);
+      this.interimInterval = null;
+    }
+    this.isTranscribingInterim = false;
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
@@ -847,6 +900,11 @@ export class AudioCaptureService {
    */
   public static stop(): void {
     this.isListening = false;
+    if (this.interimInterval) {
+      clearInterval(this.interimInterval);
+      this.interimInterval = null;
+    }
+    this.isTranscribingInterim = false;
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;

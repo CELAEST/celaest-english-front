@@ -2,6 +2,10 @@ import { IMemoryRepository } from "../../domain/repositories/IMemoryRepository";
 import { MemoryCard } from "../../domain/entities/MemoryCard";
 import { HttpClient } from "../http/HttpClient";
 import { logger } from "../../shared/utils/logger";
+import {
+  areCardsDuplicate,
+  deduplicateMemoryCards,
+} from "../../features/memory/services/memoryDeduplication";
 
 function getActiveUserId(): string {
   try {
@@ -41,10 +45,11 @@ function getLocalCards(): MemoryCard[] {
         try {
           const anonCards: MemoryCard[] = JSON.parse(anonRaw);
           if (Array.isArray(anonCards) && anonCards.length > 0) {
-            const existingIds = new Set(cards.map((c) => c.id));
-            const newOrphans = anonCards.filter((c) => !existingIds.has(c.id));
+            const newOrphans = anonCards.filter(
+              (anon) => !cards.some((existing) => areCardsDuplicate(existing, anon)),
+            );
             if (newOrphans.length > 0) {
-              cards = [...cards, ...newOrphans];
+              cards = deduplicateMemoryCards([...cards, ...newOrphans]);
               localStorage.setItem(getStorageKey(), JSON.stringify(cards));
             }
             localStorage.removeItem("lingua_memory_cards_cache_anon");
@@ -55,7 +60,12 @@ function getLocalCards(): MemoryCard[] {
       }
     }
 
-    return Array.isArray(cards) ? cards : [];
+    const deduped = deduplicateMemoryCards(Array.isArray(cards) ? cards : []);
+    if (deduped.length !== cards.length) {
+      // Self-heal corrupted localStorage automatically
+      saveLocalCards(deduped);
+    }
+    return deduped;
   } catch {
     return [];
   }
@@ -64,7 +74,8 @@ function getLocalCards(): MemoryCard[] {
 function saveLocalCards(cards: MemoryCard[]): void {
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
-    localStorage.setItem(getStorageKey(), JSON.stringify(cards));
+    const sanitized = deduplicateMemoryCards(Array.isArray(cards) ? cards : []);
+    localStorage.setItem(getStorageKey(), JSON.stringify(sanitized));
   } catch {
     // quota exceeded or private mode
   }
@@ -75,12 +86,13 @@ export class ApiMemoryRepository implements IMemoryRepository {
     const query = category ? `?category=${encodeURIComponent(category)}` : "";
     try {
       const res = await HttpClient.get<MemoryCard[]>(`/memory/cards${query}`);
-      const serverCards = Array.isArray(res) ? res : [];
+      const serverCards = deduplicateMemoryCards(Array.isArray(res) ? res : []);
 
-      // Merge with any un-synced local cards
+      // Merge only local cards that do NOT already exist on the server (semantic check)
       const localCards = getLocalCards();
-      const serverIds = new Set(serverCards.map((c) => c.id));
-      const unSyncedLocal = localCards.filter((c) => !serverIds.has(c.id));
+      const unSyncedLocal = localCards.filter(
+        (local) => !serverCards.some((srv) => areCardsDuplicate(srv, local)),
+      );
 
       // Sync any un-synced local cards to server in background if authenticated
       if (unSyncedLocal.length > 0 && getActiveUserId() !== "anon") {
@@ -89,7 +101,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
         }
       }
 
-      const merged = [...serverCards, ...unSyncedLocal];
+      const merged = deduplicateMemoryCards([...serverCards, ...unSyncedLocal]);
       saveLocalCards(merged);
 
       if (category) {
@@ -171,16 +183,28 @@ export class ApiMemoryRepository implements IMemoryRepository {
       createdAt: new Date().toISOString(),
     };
 
+    // If an identical card already exists in local storage with a server UUID, reuse it
+    const localCards = getLocalCards();
+    const existing = localCards.find((c) => areCardsDuplicate(c, localCard));
+    if (existing && existing.id && !existing.id.startsWith("card_")) {
+      return existing;
+    }
+
     try {
       const serverCard = await HttpClient.post<MemoryCard>("/memory/cards", card);
-      const localCards = getLocalCards();
-      const filtered = localCards.filter((c) => c.id !== serverCard.id && c.id !== fallbackId);
-      saveLocalCards([serverCard, ...filtered]);
+      const currentLocal = getLocalCards();
+      const filtered = currentLocal.filter(
+        (c) => c.id !== serverCard.id && c.id !== fallbackId && !areCardsDuplicate(c, serverCard),
+      );
+      saveLocalCards(deduplicateMemoryCards([serverCard, ...filtered]));
       return serverCard;
     } catch (err) {
       logger.warn("ApiMemoryRepository.createCard failed on server, persisting locally to prevent data loss", err);
-      const localCards = getLocalCards();
-      saveLocalCards([localCard, ...localCards.filter((c) => c.id !== fallbackId)]);
+      const currentLocal = getLocalCards();
+      const filtered = currentLocal.filter(
+        (c) => c.id !== fallbackId && !areCardsDuplicate(c, localCard),
+      );
+      saveLocalCards(deduplicateMemoryCards([localCard, ...filtered]));
       return localCard;
     }
   }

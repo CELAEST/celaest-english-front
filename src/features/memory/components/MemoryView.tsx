@@ -9,6 +9,7 @@ import { VideoOrb } from "../../../design-system/components/Orb/VideoOrb";
 import { useMemoryCards } from "../hooks/useMemoryCards";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
+import { deduplicateMemoryCards } from "../services/memoryDeduplication";
 import { logger } from "../../../shared/utils/logger";
 
 export interface MemoryViewProps {
@@ -54,7 +55,8 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     return upper || "SPEAKING";
   };
 
-  const cardList = Array.isArray(cards) ? cards : [];
+  const rawCards = Array.isArray(cards) ? cards : [];
+  const cardList = useMemo(() => deduplicateMemoryCards(rawCards), [rawCards]);
 
   // Filter real cards by category (memoized: only recomputed when the card list
   // or the active category changes, not on every keystroke/flip).

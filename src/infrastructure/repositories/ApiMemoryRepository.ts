@@ -81,6 +81,23 @@ function saveLocalCards(cards: MemoryCard[]): void {
   }
 }
 
+function notifyMemoryUpdated(
+  card?: Partial<MemoryCard>,
+  action?: "created" | "reviewed" | "deleted" | "bookmarked",
+) {
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("celaest:memory-updated", {
+          detail: { card, action, timestamp: Date.now() },
+        }),
+      );
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export class ApiMemoryRepository implements IMemoryRepository {
   async getDueCards(category?: string): Promise<MemoryCard[]> {
     const query = category ? `?category=${encodeURIComponent(category)}` : "";
@@ -131,6 +148,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
         localCards[idx] = card;
         saveLocalCards(localCards);
       }
+      notifyMemoryUpdated(card, "reviewed");
       return card;
     } catch (err) {
       logger.warn("ApiMemoryRepository.reviewCard fallback to local cache", err);
@@ -151,6 +169,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
           nextReviewAt: new Date(Date.now() + intervalDays * 86400000).toISOString(),
         };
         saveLocalCards(localCards.map((c) => (c.id === cardId ? updated : c)));
+        notifyMemoryUpdated(updated, "reviewed");
         return updated;
       }
       throw err;
@@ -187,6 +206,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
     const localCards = getLocalCards();
     const existing = localCards.find((c) => areCardsDuplicate(c, localCard));
     if (existing && existing.id && !existing.id.startsWith("card_")) {
+      notifyMemoryUpdated(existing, "created");
       return existing;
     }
 
@@ -197,6 +217,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
         (c) => c.id !== serverCard.id && c.id !== fallbackId && !areCardsDuplicate(c, serverCard),
       );
       saveLocalCards(deduplicateMemoryCards([serverCard, ...filtered]));
+      notifyMemoryUpdated(serverCard, "created");
       return serverCard;
     } catch (err) {
       logger.warn("ApiMemoryRepository.createCard failed on server, persisting locally to prevent data loss", err);
@@ -205,6 +226,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
         (c) => c.id !== fallbackId && !areCardsDuplicate(c, localCard),
       );
       saveLocalCards(deduplicateMemoryCards([localCard, ...filtered]));
+      notifyMemoryUpdated(localCard, "created");
       return localCard;
     }
   }
@@ -219,6 +241,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
       if (existing) {
         existing.bookmarked = res.bookmarked;
         saveLocalCards(localCards);
+        notifyMemoryUpdated(existing, "bookmarked");
       }
       return res;
     } catch (err) {
@@ -226,9 +249,11 @@ export class ApiMemoryRepository implements IMemoryRepository {
       const existing = localCards.find((c) => c.id === cardId);
       const nextBookmark = existing ? !existing.bookmarked : true;
       if (existing) {
+        const updated = { ...existing, bookmarked: nextBookmark };
         saveLocalCards(
-          localCards.map((c) => (c.id === cardId ? { ...c, bookmarked: nextBookmark } : c)),
+          localCards.map((c) => (c.id === cardId ? updated : c)),
         );
+        notifyMemoryUpdated(updated, "bookmarked");
       }
       return { cardId, bookmarked: nextBookmark };
     }
@@ -244,6 +269,7 @@ export class ApiMemoryRepository implements IMemoryRepository {
     }
     const localCards = getLocalCards();
     saveLocalCards(localCards.filter((c) => c.id !== cardId));
+    notifyMemoryUpdated({ id: cardId } as MemoryCard, "deleted");
     return { cardId, deleted: true };
   }
 }

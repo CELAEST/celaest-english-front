@@ -1,10 +1,12 @@
 import { useState, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { SpecificErrorItem, InterviewQuestionItem } from "../services/interviewEngineService";
 import { AudioCaptureService } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
 import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
@@ -50,6 +52,7 @@ export function useInterviewTurnEvaluation({
   setSpeechNotice,
   isMountedRef,
 }: UseInterviewTurnEvaluationOptions) {
+  const queryClient = useQueryClient();
   const [processingStage, setProcessingStage] = useState<ProcessingStage>("IDLE");
   const [turnFeedback, setTurnFeedback] = useState<ComprehensiveTurnFeedback | null>(initialFeedback);
   const [savedErrorIds, setSavedErrorIds] = useState<Set<string>>(new Set(initialSavedErrorIds));
@@ -275,6 +278,9 @@ export function useInterviewTurnEvaluation({
           cefrLevel: errorItem.cefrLevel || "B2",
         });
 
+        // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+
         setSavedErrorIds((prev) => new Set([...prev, errorItem.id]));
         return true;
       } catch (err) {
@@ -284,7 +290,7 @@ export function useInterviewTurnEvaluation({
         savingItemIdsRef.current.delete(errorItem.id);
       }
     },
-    [savedErrorIds],
+    [savedErrorIds, queryClient],
   );
 
   const saveAllErrorsToMemory = useCallback(async (): Promise<number> => {

@@ -9,6 +9,7 @@ vi.mock("../../hooks/useMemoryCards", () => ({
     isLoading: false,
     reviewCard: vi.fn(),
     deleteCard: vi.fn(),
+    refetch: vi.fn(),
   }),
 }));
 

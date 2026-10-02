@@ -42,7 +42,14 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   const [isSessionCompleted, setIsSessionCompleted] = useState(false);
   const [slideDirection, setSlideDirection] = useState<number>(1);
 
-  const { cards = [], isLoading, reviewCard, deleteCard } = useMemoryCards();
+  const { cards = [], isLoading, reviewCard, deleteCard, refetch } = useMemoryCards();
+
+  // Instant zero-reload reactivity: re-fetch cards whenever user returns to Memory tab
+  useEffect(() => {
+    if (isActive && typeof refetch === "function") {
+      void refetch();
+    }
+  }, [isActive, refetch]);
 
   const currentCategory = CATEGORIES[activeTab] || "SPEAKING";
 

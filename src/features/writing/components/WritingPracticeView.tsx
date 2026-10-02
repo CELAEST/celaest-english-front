@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { WritingTaskHeader } from "./WritingTaskHeader";
 import { WritingEditor } from "./WritingEditor";
 import { WritingSubmitBar } from "./WritingSubmitBar";
@@ -11,6 +12,7 @@ import { useWritingEvaluation } from "../hooks/useWritingEvaluation";
 import { DynamicWritingTaskService, WritingTaskItem } from "../services/dynamicWritingTaskService";
 import { WritingSubmission } from "../../../domain/entities/WritingSubmission";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { validateSpeechIntelligibility } from "../../conversation/services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -40,6 +42,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     onSelectLevel,
     isActive = true,
   }) {
+    const queryClient = useQueryClient();
     const { evaluateText, isEvaluating, submission: liveSubmission } = useWritingEvaluation();
     const initialStored = DynamicWritingTaskService.loadActiveSubmission();
 
@@ -458,6 +461,9 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         grammarExplanation: errorItem.grammarExplanation,
         cefrLevel: errorItem.cefrLevel || "B2",
       });
+
+      // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
 
       setSavedErrorIds((prev) => {
         const next = new Set([...prev, errorItem.id]);

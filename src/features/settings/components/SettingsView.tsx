@@ -14,6 +14,7 @@ import { SettingsProfileModal } from "./SettingsProfileModal";
 import { SettingsNotificationsModal } from "./SettingsNotificationsModal";
 import { SettingsPrivacyModal } from "./SettingsPrivacyModal";
 import { SettingsAboutModal } from "./SettingsAboutModal";
+import { SettingsLogoutModal } from "./SettingsLogoutModal";
 import { useSettingsProfile } from "../hooks/useSettingsProfile";
 
 import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
@@ -25,12 +26,14 @@ export interface SettingsViewProps {
   userName?: string | undefined;
   onBackToWorkspace?: (() => void) | undefined;
   onSelectLevel?: ((level: CefrLevelCode) => Promise<void> | void) | undefined;
+  onLogout?: (() => Promise<void> | void) | undefined;
 }
 
 const SettingsViewInner: React.FC<SettingsViewProps> = ({
   userName,
   onBackToWorkspace,
   onSelectLevel,
+  onLogout,
 }: SettingsViewProps) => {
   const { displayName, currentLevel, currentFocus, profile, isLoading, updateSettings } =
     useSettingsProfile(userName);
@@ -42,10 +45,25 @@ const SettingsViewInner: React.FC<SettingsViewProps> = ({
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [notificationPref, setNotificationPref] = useState<string>(() =>
     typeof window !== "undefined" ? localStorage.getItem("celaest:notification-pref") ?? "Smart" : "Smart",
   );
   const isOffline = !isLoading && profile === null;
+
+  const handleExecuteLogout = async () => {
+    try {
+      if (onLogout) {
+        await onLogout();
+      } else {
+        await SupabaseAuthAdapter.getInstance().logout();
+        window.location.href = "/onboarding";
+      }
+    } catch (err) {
+      logger.error("[SettingsView] Error executing logout:", err);
+      window.location.href = "/onboarding";
+    }
+  };
 
   return (
     <div className="relative w-full h-full min-h-0 bg-[#000001] text-white flex flex-col select-none overflow-hidden p-3.5 sm:p-6 lg:px-10 pt-3 sm:pt-6 pb-0 lg:pb-4">
@@ -114,6 +132,7 @@ const SettingsViewInner: React.FC<SettingsViewProps> = ({
               else if (item === "notifications") setIsNotificationsModalOpen(true);
               else if (item === "privacy") setIsPrivacyModalOpen(true);
               else if (item === "about") setIsAboutModalOpen(true);
+              else if (item === "logout") setIsLogoutModalOpen(true);
             }}
           />
         </div>
@@ -202,6 +221,11 @@ const SettingsViewInner: React.FC<SettingsViewProps> = ({
       />
       <SettingsPrivacyModal isOpen={isPrivacyModalOpen} onClose={() => setIsPrivacyModalOpen(false)} />
       <SettingsAboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
+      <SettingsLogoutModal
+        isOpen={isLogoutModalOpen}
+        onConfirmLogout={handleExecuteLogout}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </div>
   );
 };

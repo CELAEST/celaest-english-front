@@ -6,6 +6,7 @@ import {
   NotificationJewelIcon,
   VaultShieldIcon,
   AboutOrbitIcon,
+  SessionExitIcon,
 } from "./SettingsBespokeIcons";
 
 export interface SettingsPersonalSectionProps {
@@ -49,6 +50,13 @@ export const SettingsPersonalSection: React.FC<SettingsPersonalSectionProps> = (
           subtitle="Version, terms and more information."
           value="v1.0.0"
           onClick={() => onItemClick?.("about")}
+        />
+        <SettingsListItem
+          icon={<SessionExitIcon className="w-6 h-6" />}
+          title="Cerrar Sesión"
+          subtitle="Finalizar sesión y desvincular este dispositivo."
+          value="Salir"
+          onClick={() => onItemClick?.("logout")}
         />
       </div>
     </SettingsSection>

@@ -207,6 +207,16 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     handleSelectNav("workspace");
   }, [handleSelectNav]);
 
+  const handleLogout = React.useCallback(async () => {
+    try {
+      const { SupabaseAuthAdapter } = await import("../../../infrastructure/adapters/auth/SupabaseAuthAdapter");
+      await SupabaseAuthAdapter.getInstance().logout();
+    } catch (e) {
+      console.error("Logout error", e);
+    }
+    if (onNavigate) onNavigate("onboarding");
+  }, [onNavigate]);
+
   const handleGlobalSelectLevel = React.useCallback(
     (newLevel: CefrLevelCode) => {
       const norm = normalizeCefr(newLevel);
@@ -502,6 +512,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                   userName={activeUserName}
                   onBackToWorkspace={() => handleSelectNav("workspace")}
                   onSelectLevel={handleGlobalSelectLevel}
+                  onLogout={handleLogout}
                 />
               </Suspense>
             </ErrorBoundary>

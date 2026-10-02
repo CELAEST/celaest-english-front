@@ -112,4 +112,36 @@ describe("SettingsView — real flow, verified authentication & contracts", () =
     render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
     expect(await screen.findByText("I adapt to you.")).toBeInTheDocument();
   });
+
+  it("opens Logout modal via Personal section item and executes onLogout upon confirmation", async () => {
+    const handleLogout = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsView userName="Camila" onLogout={handleLogout} />, { wrapper: createWrapper() });
+
+    const logoutRow = await screen.findByText("Cerrar Sesión");
+    fireEvent.click(logoutRow.closest("button")!);
+
+    expect(await screen.findByRole("heading", { name: "¿Cerrar sesión?" })).toBeInTheDocument();
+
+    const confirmButton = screen.getByRole("button", { name: "Cerrar sesión" });
+    fireEvent.click(confirmButton);
+    await waitFor(() => expect(handleLogout).toHaveBeenCalledTimes(1));
+  });
+
+  it("opens Logout modal via Personal section item and cancels gracefully", async () => {
+    render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
+
+    const logoutRow = await screen.findByText("Cerrar Sesión");
+    fireEvent.click(logoutRow.closest("button")!);
+
+    expect(await screen.findByRole("heading", { name: "¿Cerrar sesión?" })).toBeInTheDocument();
+
+    // Cancel closes the modal
+    const cancelButton = screen.getByRole("button", { name: "Cancelar" });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("heading", { name: "¿Cerrar sesión?" })).not.toBeInTheDocument();
+    });
+  });
 });
+

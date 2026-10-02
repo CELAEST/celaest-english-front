@@ -11,3 +11,5 @@ export * from "./components/SettingsAiProvidersSection";
 export * from "./components/SettingsAIMentorCard";
 export * from "./components/SettingsQuickActionsCard";
 export * from "./components/SettingsFooterMessage";
+export * from "./components/SettingsLogoutModal";
+export * from "./components/SettingsBespokeIcons";

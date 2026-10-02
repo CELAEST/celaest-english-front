@@ -249,3 +249,30 @@ export const SparkleMark: React.FC<IconProps> = ({ className }) => {
     </svg>
   );
 };
+
+/** Session exit / logout — portal doorway with outbound arrow and rose accent. */
+export const SessionExitIcon: React.FC<IconProps> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <path
+      d="M9 4.8H6.5A2.1 2.1 0 0 0 4.4 6.9v10.2a2.1 2.1 0 0 0 2.1 2.1H9"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="m14.5 8.5 3.8 3.5-3.8 3.5"
+      stroke="#F87171"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M18.3 12H9"
+      stroke="#F87171"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+

@@ -38,8 +38,12 @@ export class ApiInterviewRepository implements IInterviewRepository {
     }
   }
 
-  async saveProgress(payload: SaveProgressPayload): Promise<void> {
-    await HttpClient.post<void>("/interview/progress", payload);
+  async saveProgress(payload: SaveProgressPayload): Promise<InterviewProgressDTO | null> {
+    try {
+      return await HttpClient.post<InterviewProgressDTO>("/interview/progress", payload);
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -358,13 +358,20 @@ export class SupabaseAuthAdapter implements IAuthService {
     try {
       const token = this.getStoredToken();
       if (token) {
-        await fetch(`${ENV.celaestBackUrl}/auth/logout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        try {
+          await fetch(`${ENV.celaestBackUrl}/auth/logout`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
       await supabase.auth.signOut().catch(() => {});
     } catch (e) {

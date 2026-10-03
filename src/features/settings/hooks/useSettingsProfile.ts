@@ -4,6 +4,7 @@ import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiS
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { logger } from "../../../shared/utils/logger";
+import { setUserCefrLevel } from "../../../shared/services/levelStore";
 
 export const useSettingsProfile = (initialUserName?: string) => {
   const queryClient = useQueryClient();
@@ -25,16 +26,20 @@ export const useSettingsProfile = (initialUserName?: string) => {
     queryKey: profileQueryKey,
     queryFn: async () => {
       try {
-        return await apiSettingsRepository.getProfile();
+        const data = await apiSettingsRepository.getProfile();
+        if (data?.cefrLevel && storedUser?.id) {
+          setUserCefrLevel(storedUser.id, data.cefrLevel);
+        }
+        return data;
       } catch (err) {
-        logger.warn("Backend API offline or unreachable, using fallback profile", err);
-        return null;
+        logger.warn("[useSettingsProfile] Backend API error, retrying...", err);
+        throw err;
       }
     },
     enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const updateMutation = useMutation({
@@ -71,6 +76,9 @@ export const useSettingsProfile = (initialUserName?: string) => {
     onSuccess: (updatedProfile) => {
       if (updatedProfile) {
         queryClient.setQueryData(profileQueryKey, updatedProfile);
+        if (updatedProfile.cefrLevel && storedUser?.id) {
+          setUserCefrLevel(storedUser.id, updatedProfile.cefrLevel);
+        }
       }
       queryClient.invalidateQueries({ queryKey: ["reading"] });
     },

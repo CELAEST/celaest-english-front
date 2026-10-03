@@ -5,7 +5,12 @@ import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
 import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
-import { CefrLevelCode, normalizeCefr } from "../../conversation/services/dynamicQuestionService";
+import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import {
+  getUserCefrLevel,
+  setUserCefrLevel,
+  normalizeCefrLevel,
+} from "../../../shared/services/levelStore";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 import { clearPersistedInterview } from "../../conversation/services/interviewPersistence";
 
@@ -118,23 +123,17 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     }
   }, [defaultTab]);
 
-  const { user, settings, updateProfileSettings } = useCurrentUser();
+  const { user, settings, updateProfileSettings, isLevelResolved } = useCurrentUser();
   // Single source of truth — no duplicate GET /user/profile
   const activeUserName = settings.name || userName || "";
   const [activeUserLevel, setActiveUserLevel] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const userKey = user?.id ? `celaest:user:${user.id}:cefrLevel` : null;
-      const saved =
-        (userKey ? localStorage.getItem(userKey) : null) ||
-        localStorage.getItem("celaest:cefrLevel");
-      if (saved) return normalizeCefr(saved);
-    }
-    return normalizeCefr(settings.cefrLevel || userLevel || "B1");
+    const cached = getUserCefrLevel(user?.id ?? "");
+    return normalizeCefrLevel(settings.cefrLevel || cached || userLevel || "B1");
   });
 
   useEffect(() => {
     if (settings.cefrLevel) {
-      const norm = normalizeCefr(settings.cefrLevel);
+      const norm = normalizeCefrLevel(settings.cefrLevel);
       setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
     }
   }, [settings.cefrLevel]);
@@ -219,19 +218,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const handleGlobalSelectLevel = React.useCallback(
     (newLevel: CefrLevelCode) => {
-      const norm = normalizeCefr(newLevel);
+      const norm = normalizeCefrLevel(newLevel);
       setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
-      if (typeof window !== "undefined") {
-        try {
-          if (user?.id) {
-            localStorage.setItem(`celaest:user:${user.id}:cefrLevel`, norm);
-          }
-          localStorage.setItem("celaest:cefrLevel", norm);
-          localStorage.setItem("celaest:writing:cefrLevel", norm);
-          localStorage.setItem("celaest:interview:cefrLevel", norm);
-        } catch {
-          // ignore
-        }
+      if (user?.id) {
+        setUserCefrLevel(user.id, norm);
       }
       void updateProfileSettings({ cefrLevel: norm });
     },
@@ -242,7 +232,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     const handleLevelChanged = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
-        const norm = normalizeCefr(customEvent.detail);
+        const norm = normalizeCefrLevel(customEvent.detail);
         setActiveUserLevel((prev) => (prev !== norm ? norm : prev));
       }
     };
@@ -328,7 +318,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
                 userLevel={activeUserLevel}
                 onSelectLevel={handleGlobalSelectLevel}
                 onBackToWorkspace={handleBackToWorkspace}
-                isActive={activeTab === "interview"}
+                isActive={activeTab === "interview" && isLevelResolved}
               />
             </ErrorBoundary>
           </div>

@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { InterviewQuestionItem } from "../services/interviewEngineService";
 import { normalizeCefr, CefrLevelCode } from "../services/dynamicQuestionService";
+import {
+  getUserCefrLevel,
+  setUserCefrLevel,
+  normalizeCefrLevel,
+} from "../../../shared/services/levelStore";
 import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { loadPersistedInterview } from "../services/interviewPersistence";
@@ -39,20 +44,9 @@ export function useInterviewQuestionManager({
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
 
   const [activeCefrLevel, setActiveCefrLevelState] = useState<string>(() => {
-    if (initialLevel) return normalizeCefr(initialLevel);
-    if (typeof window !== "undefined") {
-      try {
-        const userKey = currentUserId ? `celaest:user:${currentUserId}:cefrLevel` : null;
-        const saved =
-          (userKey ? localStorage.getItem(userKey) : null) ||
-          localStorage.getItem("celaest:interview:cefrLevel") ||
-          localStorage.getItem("celaest:cefrLevel");
-        if (saved) return normalizeCefr(saved);
-      } catch {
-        // ignore
-      }
-    }
-    return "B1";
+    if (initialLevel) return normalizeCefrLevel(initialLevel);
+    const cached = getUserCefrLevel(currentUserId || "");
+    return cached || "B1";
   });
 
   const professionMatchesPersisted =
@@ -119,19 +113,11 @@ export function useInterviewQuestionManager({
 
   const setActiveCefrLevel = useCallback(
     (level: string) => {
-      const norm = normalizeCefr(level);
+      const norm = normalizeCefrLevel(level);
       if (norm === activeCefrLevel) return;
       setActiveCefrLevelState(norm);
-      if (typeof window !== "undefined") {
-        try {
-          if (currentUserId) {
-            localStorage.setItem(`celaest:user:${currentUserId}:cefrLevel`, norm);
-          }
-          localStorage.setItem("celaest:interview:cefrLevel", norm);
-          localStorage.setItem("celaest:cefrLevel", norm);
-        } catch {
-          // ignore
-        }
+      if (currentUserId) {
+        setUserCefrLevel(currentUserId, norm);
       }
 
       // Restore locally persisted questions for the new level immediately
@@ -156,7 +142,7 @@ export function useInterviewQuestionManager({
     if (!isActive || !initialLevel) return;
     if (prevPropInitialLevelRef.current !== initialLevel) {
       prevPropInitialLevelRef.current = initialLevel;
-      const norm = normalizeCefr(initialLevel);
+      const norm = normalizeCefrLevel(initialLevel);
       if (norm !== activeCefrLevel) {
         setActiveCefrLevel(norm);
       }
@@ -168,7 +154,7 @@ export function useInterviewQuestionManager({
       if (!isActive) return;
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
-        const norm = normalizeCefr(customEvent.detail);
+        const norm = normalizeCefrLevel(customEvent.detail);
         if (norm !== activeCefrLevel) {
           setActiveCefrLevel(norm);
         }

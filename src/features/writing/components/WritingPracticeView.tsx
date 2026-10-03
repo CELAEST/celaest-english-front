@@ -23,6 +23,11 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import {
+  getUserCefrLevel,
+  setUserCefrLevel,
+  normalizeCefrLevel,
+} from "../../../shared/services/levelStore";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { ENV } from "../../../shared/constants/env";
 
@@ -59,20 +64,9 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     const [isGeneratingTask, setIsGeneratingTask] = useState<boolean>(false);
 
     const [activeCefrLevel, setActiveCefrLevel] = useState<string>(() => {
-      if (userLevel) return normalizeCefr(userLevel);
-      if (typeof window !== "undefined") {
-        try {
-          const userKey = currentUserId ? `celaest:user:${currentUserId}:cefrLevel` : null;
-          const saved =
-            (userKey ? localStorage.getItem(userKey) : null) ||
-            localStorage.getItem("celaest:writing:cefrLevel") ||
-            localStorage.getItem("celaest:cefrLevel");
-          if (saved) return normalizeCefr(saved);
-        } catch {
-          // ignore
-        }
-      }
-      return "B1";
+      if (userLevel) return normalizeCefrLevel(userLevel);
+      const cached = getUserCefrLevel(currentUserId || "");
+      return cached || "B1";
     });
 
     const roleNameRef = useRef(roleName);
@@ -93,21 +87,11 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
 
     const handleSelectLevel = React.useCallback(
       (newLevel: CefrLevelCode, source: "internal" | "external" = "internal") => {
-        const norm = normalizeCefr(newLevel);
+        const norm = normalizeCefrLevel(newLevel);
         if (norm === activeCefrLevel) return;
         prevUserLevelPropRef.current = norm;
         setActiveCefrLevel(norm);
-        if (typeof window !== "undefined") {
-          try {
-            if (currentUserId) {
-              localStorage.setItem(`celaest:user:${currentUserId}:cefrLevel`, norm);
-            }
-            localStorage.setItem("celaest:writing:cefrLevel", norm);
-            localStorage.setItem("celaest:cefrLevel", norm);
-          } catch {
-            // ignore
-          }
-        }
+        setUserCefrLevel(currentUserId || "", norm);
         const curRole = roleNameRef.current || "Professional";
         const newBatch = AiWritingTaskGenerator.getCachedOrSeedBatch(curRole, norm);
         setTaskBatch(newBatch);

@@ -29,6 +29,7 @@ export interface SaveProgressPayload {
   cefrLevel?: string | undefined;
   sessionQuestions?: InterviewQuestionItem[] | undefined;
   askedQuestions?: string[] | undefined;
+  replaceQuestions?: boolean | undefined;
 }
 
 export interface IInterviewRepository {
@@ -36,5 +37,5 @@ export interface IInterviewRepository {
   getSession(sessionId: string): Promise<InterviewSession>;
   connectAudioStream(sessionId: string, onSpectrumFrame: (bars: number[]) => void): WebSocket;
   getProgress(cefrLevel?: string): Promise<InterviewProgressDTO | null>;
-  saveProgress(payload: SaveProgressPayload): Promise<void>;
+  saveProgress(payload: SaveProgressPayload): Promise<InterviewProgressDTO | null>;
 }

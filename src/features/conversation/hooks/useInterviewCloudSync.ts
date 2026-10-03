@@ -363,15 +363,19 @@ export function useInterviewCloudSync({
     }
   }, [activeCefrLevel, syncFromBackend]);
 
-  // Cross-device sync: When tab becomes visible, check backend for updates made from other devices
+  // Cross-device sync: When tab becomes visible or window gains focus, check backend for updates
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        syncFromBackend(activeCefrLevel);
+        syncFromBackend(activeCefrLevel, true);
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onVisibilityChange);
+    };
   }, [syncFromBackend, activeCefrLevel]);
 
   // Immediate save bypasses debounce for critical lifecycle actions (questions generated, turn advance)
@@ -426,9 +430,22 @@ export function useInterviewCloudSync({
       };
       savePersistedInterview(snapshot, currentUserId);
 
-      return apiInterviewRepository.saveProgress(payload).catch((err) => {
-        logger.warn("[useInterviewCloudSync] Immediate save error:", err);
-      });
+      return apiInterviewRepository
+        .saveProgress(payload)
+        .then((canonical) => {
+          if (canonical?.sessionQuestions && canonical.sessionQuestions.length > 0) {
+            applyProgress({
+              roleName: canonical.roleName,
+              cefrLevel: canonical.cefrLevel,
+              sessionQuestions: canonical.sessionQuestions,
+              currentQuestionIndex: canonical.currentQuestionIndex,
+              askedQuestions: canonical.askedQuestions,
+            });
+          }
+        })
+        .catch((err) => {
+          logger.warn("[useInterviewCloudSync] Immediate save error:", err);
+        });
     },
     [
       effectiveRoleName,

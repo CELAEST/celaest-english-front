@@ -23,7 +23,10 @@ import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
-import { normalizeCefr } from "../../conversation/services/dynamicQuestionService";
+import {
+  getUserCefrLevel,
+  normalizeCefrLevel,
+} from "../../../shared/services/levelStore";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export const READING_FONT_SIZES = [
@@ -129,18 +132,12 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   }, [roleName, profile?.profession]);
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   const userLevel = React.useMemo(() => {
-    if (propUserLevel) return normalizeCefr(propUserLevel);
-    if (typeof window !== "undefined") {
-      const userKey = currentUserId ? `celaest:user:${currentUserId}:cefrLevel` : null;
-      const saved =
-        (userKey ? localStorage.getItem(userKey) : null) ||
-        localStorage.getItem("celaest:cefrLevel");
-      if (saved) return normalizeCefr(saved);
-    }
+    if (propUserLevel) return normalizeCefrLevel(propUserLevel);
     if (profile?.cefrLevel) {
-      return normalizeCefr(String(profile.cefrLevel).split(" ")[0]);
+      return normalizeCefrLevel(profile.cefrLevel);
     }
-    return "B1";
+    const cached = getUserCefrLevel(currentUserId || "");
+    return cached || "B1";
   }, [propUserLevel, profile?.cefrLevel, currentUserId]);
 
   const activeFontSize = READING_FONT_SIZES[fontSizeIndex] || READING_FONT_SIZES[0];

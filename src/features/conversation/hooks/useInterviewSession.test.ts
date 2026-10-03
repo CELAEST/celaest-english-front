@@ -40,7 +40,7 @@ vi.mock("../services/speechSynthesisService", () => ({
 vi.mock("../../../infrastructure/repositories/ApiInterviewRepository", () => ({
   apiInterviewRepository: {
     getProgress: vi.fn(() => Promise.resolve(null)),
-    saveProgress: vi.fn(() => Promise.resolve()),
+    saveProgress: vi.fn(() => Promise.resolve(null)),
   },
 }));
 
@@ -173,7 +173,7 @@ describe("useInterviewSession persistence", () => {
       Promise.resolve(null),
     );
     vi.mocked(apiInterviewRepository.saveProgress).mockReturnValue(
-      Promise.resolve(),
+      Promise.resolve(null),
     );
   });
 

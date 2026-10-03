@@ -76,8 +76,11 @@ describe("StorageLifecycleService - Safe LocalStorage Hygiene", () => {
     localStorage.setItem("celaest:interview-progress:v2", JSON.stringify({ index: 1 }));
     localStorage.setItem("celaest:user:user-123:interview-progress:v2", JSON.stringify({ index: 1 }));
 
-    // Non-transient device preferences that must be preserved
+    // Non-transient device preferences and encrypted BYOK keys that must be preserved
     localStorage.setItem("celaest:mentor_voice", "en-US-AriaNeural");
+    localStorage.setItem("celaest:user:user-123:provider-key:groq", JSON.stringify({ apiKey: "gsk_test" }));
+    localStorage.setItem("celaest:session:provider-key:gemini", JSON.stringify({ apiKey: "gemini_test" }));
+    localStorage.setItem("celaest:user:user-123:active-provider", JSON.stringify({ providerId: "groq" }));
 
     StorageLifecycleService.purgeOnLogout();
 
@@ -93,6 +96,9 @@ describe("StorageLifecycleService - Safe LocalStorage Hygiene", () => {
     expect(localStorage.getItem("celaest:interview-progress:v2")).toBeNull();
     expect(localStorage.getItem("celaest:user:user-123:interview-progress:v2")).toBeNull();
     expect(localStorage.getItem("celaest:mentor_voice")).toBe("en-US-AriaNeural");
+    expect(localStorage.getItem("celaest:user:user-123:provider-key:groq")).not.toBeNull();
+    expect(localStorage.getItem("celaest:session:provider-key:gemini")).not.toBeNull();
+    expect(localStorage.getItem("celaest:user:user-123:active-provider")).not.toBeNull();
   });
 
   it("cleans stale AI question caches when profession changes", () => {

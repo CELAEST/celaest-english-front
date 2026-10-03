@@ -34,6 +34,19 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   const [restored] = useState<PersistedInterviewState | null>(() => loadPersistedInterview(currentUserId));
+  const [hasCloudHydrated, setHasCloudHydrated] = useState<boolean>(() => {
+    return Boolean(restored?.sessionQuestions && restored.sessionQuestions.length > 0);
+  });
+
+  const handleHydrationComplete = useCallback((_hasQuestions: boolean, _level: string) => {
+    setHasCloudHydrated(true);
+  }, []);
+
+  const handleLevelOrRoleReset = useCallback(() => {
+    const uid = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
+    const local = loadPersistedInterview(uid);
+    setHasCloudHydrated(Boolean(local?.sessionQuestions && local.sessionQuestions.length > 0));
+  }, []);
 
   // ──────────────────────────────────────────────
   // 2. Question Progression Sub-Hook
@@ -54,10 +67,12 @@ export const useInterviewSession = (
     roleName,
     initialLevel,
     isActive,
+    hasHydrated: hasCloudHydrated,
     persistedQuestions: restored?.sessionQuestions,
     persistedRoleName: restored?.roleName,
     persistedIndex: restored?.currentQuestionIndex ?? 0,
     persistedAskedQuestions: restored?.askedQuestions,
+    onLevelOrRoleReset: handleLevelOrRoleReset,
     onAiInfrastructureError: handleAiInfrastructureError,
     onQuestionsGenerated: (fresh, lvl) => {
       cloudSyncRef.current?.saveProgressNow({
@@ -139,6 +154,7 @@ export const useInterviewSession = (
     setAskedQuestions: questions.setAskedQuestions,
     currentQuestionText: questions.currentQuestion?.question,
     restoredState: restored,
+    onHydrationComplete: handleHydrationComplete,
   });
 
   cloudSyncRef.current = cloudSync;

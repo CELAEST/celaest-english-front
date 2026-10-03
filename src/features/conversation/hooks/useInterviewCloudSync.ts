@@ -261,16 +261,20 @@ export function useInterviewCloudSync({
           const localState = loadPersistedInterview(currentUserId, levelToFetch);
           const localTime = localState?.updatedAt ?? restoredRef.current?.updatedAt ?? 0;
 
-          // If local state is strictly newer than backend, keep the local snapshot
+          const hasLocalQuestions =
+            Array.isArray(localState?.sessionQuestions) && localState.sessionQuestions.length > 0;
+          const backendHasQuestions =
+            Array.isArray(dto.sessionQuestions) && dto.sessionQuestions.length > 0;
+
+          // If local state is strictly newer than backend, keep the local snapshot UNLESS local has no questions and backend does
           if (
             !force &&
             Number.isFinite(backendTime) &&
             Number.isFinite(localTime) &&
             localTime > 0 &&
-            backendTime <= localTime
+            backendTime <= localTime &&
+            (!backendHasQuestions || hasLocalQuestions)
           ) {
-            const hasLocalQuestions =
-              Array.isArray(localState?.sessionQuestions) && localState.sessionQuestions.length > 0;
             onHydrationCompleteRef.current?.(hasLocalQuestions, levelToFetch);
             return;
           }

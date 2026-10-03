@@ -10,6 +10,7 @@ export interface UseInterviewQuestionManagerOptions {
   roleName?: string | undefined;
   initialLevel?: string | undefined;
   isActive: boolean;
+  hasHydrated?: boolean | undefined;
   persistedQuestions?: InterviewQuestionItem[] | undefined;
   persistedRoleName?: string | undefined;
   persistedIndex?: number | undefined;
@@ -23,6 +24,7 @@ export function useInterviewQuestionManager({
   roleName = "Professional",
   initialLevel,
   isActive,
+  hasHydrated = true,
   persistedQuestions,
   persistedRoleName,
   persistedIndex = 0,
@@ -179,9 +181,10 @@ export function useInterviewQuestionManager({
   const isGeneratingRef = useRef<boolean>(false);
   const isReplenishingRef = useRef<boolean>(false);
 
-  // 1. Initial AI question generation when session pool is empty
+  // 1. Initial AI question generation when session pool is empty (waits for cloud DB hydration)
   useEffect(() => {
     if (!isActive) return;
+    if (!hasHydrated) return;
     if (sessionQuestions.length > 0 || isGeneratingRef.current) return;
 
     isGeneratingRef.current = true;
@@ -216,7 +219,7 @@ export function useInterviewQuestionManager({
         isGeneratingRef.current = false;
         setIsGeneratingQuestions(false);
       });
-  }, [isActive, sessionQuestions.length, effectiveRoleName, activeCefrLevel, askedQuestions]);
+  }, [isActive, hasHydrated, sessionQuestions.length, effectiveRoleName, activeCefrLevel, askedQuestions]);
 
   // 2. Background replenishment when approaching end of session pool
   useEffect(() => {
@@ -372,7 +375,7 @@ export function useInterviewQuestionManager({
     currentRound,
     questionInRound,
     totalQuestionsInRound,
-    isGeneratingQuestions,
+    isGeneratingQuestions: isGeneratingQuestions || (!hasHydrated && sessionQuestions.length === 0),
     markUserAdvanced,
     retryGeneration,
   };

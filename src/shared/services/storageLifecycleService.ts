@@ -126,8 +126,6 @@ export class StorageLifecycleService {
       "lingua:writing_active_submission",
       "lingua_reading_articles_v2",
       "lingua_reading_active_id_v2",
-      "celaest:active-provider",
-      "celaest:session:active-provider",
     ];
 
     keysToRemove.forEach((key) => {
@@ -136,23 +134,34 @@ export class StorageLifecycleService {
       } catch {}
     });
 
-    // Remove any session-scoped, user-scoped progress/drafts, or legacy keys
+    // Remove session-scoped and user-scoped transient progress/drafts
+    // (Never delete BYOK provider keys, provider configs, active provider, or mentor voice)
     try {
-      const sessionKeys: string[] = [];
+      const keysToPurge: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
+        if (!k) continue;
+
+        // CRITICAL: Never delete encrypted BYOK AI provider keys or configurations on logout
         if (
-          k &&
-          (k.startsWith("celaest:session:provider-") ||
-            k.startsWith("celaest:provider-key:") ||
-            k.startsWith("lingua_onboarding_completed_") ||
-            k.startsWith("lingua_memory_cards_cache_") ||
-            k.startsWith("celaest:user:"))
+          k.includes("provider-key") ||
+          k.includes("provider-config") ||
+          k.includes("active-provider") ||
+          k.includes("mentor_voice")
         ) {
-          sessionKeys.push(k);
+          continue;
+        }
+
+        if (
+          k.startsWith("lingua_onboarding_completed_") ||
+          k.startsWith("lingua_memory_cards_cache_") ||
+          k.startsWith("celaest:session:") ||
+          k.startsWith("celaest:user:")
+        ) {
+          keysToPurge.push(k);
         }
       }
-      sessionKeys.forEach((k) => localStorage.removeItem(k));
+      keysToPurge.forEach((k) => localStorage.removeItem(k));
     } catch {}
   }
 

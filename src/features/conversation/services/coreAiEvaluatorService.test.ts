@@ -27,7 +27,7 @@ describe("CoreAiEvaluatorService enrichment", () => {
     );
   });
 
-  it("merges deterministic local errors with the LLM result (more than the LLM alone)", async () => {
+  it("preserves LLM errors sovereignly without local regex pollution or overriding", async () => {
     const llmPayload = {
       overallScore: 80,
       grammarScore: 78,
@@ -65,16 +65,15 @@ describe("CoreAiEvaluatorService enrichment", () => {
 
     vi.mocked(HttpClient.post).mockResolvedValue(llmPayload as never);
 
-    // Text triggers the local "have work" + "during N years" patterns.
     const feedback = await CoreAiEvaluatorService.evaluate(
       "I have work during 4 years and I says things fastly",
       baseQuestion,
     );
 
-    // LLM gave 2; local engine adds at least "have work" + "during 4 years".
-    // The result is capped at the 5 most relevant corrections.
-    expect(feedback.unclearOrErrorWords.length).toBeGreaterThan(2);
-    expect(feedback.unclearOrErrorWords.length).toBeLessThanOrEqual(5);
+    // LLM gave 2 corrections; local engine does NOT pollute or override them when LLM succeeds
+    expect(feedback.unclearOrErrorWords.length).toBe(2);
+    expect(feedback.unclearOrErrorWords[0].errorWord).toBe("I says");
+    expect(feedback.unclearOrErrorWords[1].errorWord).toBe("fastly");
     // LLM's own model answer is preserved (not overwritten by the local engine).
     expect(feedback.improvedFullAnswer).toBe("C2 model answer from LLM.");
   });

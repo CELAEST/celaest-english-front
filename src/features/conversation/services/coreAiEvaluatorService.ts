@@ -135,21 +135,6 @@ const asScore = (value: unknown, fallback = 50): number => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-/**
- * Pedagogical relevance of a correction: grammar/vocabulary issues and more
- * foundational (lower CEFR) mistakes are prioritized so the learner always sees
- * the 5 most useful corrections first, never an overwhelming wall of notes.
- */
-const relevanceScore = (e: SpecificErrorItem): number => {
-  const typeWeight = e.errorType === "GRAMMAR" || e.errorType === "VOCABULARY" ? 3 : 2;
-  const cefrWeight = ["A1", "A2"].includes(e.cefrLevel)
-    ? 3
-    : ["B1", "B2"].includes(e.cefrLevel)
-      ? 2
-      : 1;
-  const actionable = e.translationSpanish && e.translationSpanish.trim().length > 0 ? 1 : 0;
-  return typeWeight + cefrWeight + actionable;
-};
 
 /**
  * Resiliently repairs and parses JSON from LLMs, handling truncated strings or unclosed brackets
@@ -325,10 +310,11 @@ RULES:
    - "overallScore" (0-100): Balanced overall evaluation reflecting candidate interview readiness.
    - SHORT / EVASIVE ANSWERS: If the candidate gives a very short phrase that lacks professional depth: keep grammarScore accurate (high if no typos), but assign realistic vocabularyScore (30-45%), clarityScore (30-45%), and overallScore (35-50%). In strategicFeedback, explain in Spanish that while the sentence has no grammar errors, it needs to be expanded with concrete examples to effectively answer the interviewer.
    - COMPREHENSIVE TECHNICAL ANSWERS: For well-elaborated answers addressing the question with depth, reward with 85-100% and empty [] for unclearOrErrorWords if natural and correct.
-1B. EXHAUSTIVE CLAUSE-BY-CLAUSE ERROR DETECTION:
-   - Scrutinize the candidate's entire utterance from first word to last word.
-   - If the candidate makes 3, 4, 5, or more distinct grammatical, prepositional, tense, modal, adjective, or double-negative errors across the sentence, you MUST identify and return EVERY SINGLE ONE of them in "unclearOrErrorWords".
-   - NEVER truncate or stop after 1 or 2 errors if additional errors exist in subsequent clauses!
+1B. TOP 5 MOST CRITICAL PEDAGOGICAL CORRECTIONS:
+   - Scrutinize the candidate's answer and identify grammatical, prepositional, tense, modal, and vocabulary errors.
+   - Return AT MOST the 5 most critical errors in "unclearOrErrorWords", prioritized strictly by communicative gravity (how much they impede clarity) and foundational grammar rules for the candidate's level.
+   - For each error, "correctWord" MUST be the complete, grammatically correct standard English replacement for "errorWord" (e.g. if errorWord is "must to fixing", correctWord is "must fix", never an incomplete fragment like "must" or "fixing").
+   - If there are fewer than 5 errors, return only the errors that genuinely exist. If there are 0 errors, return [].
 2. FALSE COGNATES: Flag Spanish false friends (assist≠attend, resume≠summarize, realize≠implement, pretend≠intend, compromise≠commitment, actual≠current, fastly→quickly, win money→earn/generate revenue, make the work→do the work). Explain in Spanish.
 ${strategicFeedbackDirective}
 4. RIGOROUS GRAMMAR RULE CARDS & ZERO-TYPO ORTHOGRAPHY:
@@ -349,13 +335,6 @@ JSON schema:
   "clarityScore": number (0-100),
   "vocabularyScore": number (0-100),
   "estimatedCefrLevel": "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
-  "reconciledTranscript": string (User answer with acoustic/homophone brand names corrected, preserving original grammar errors),
-  "improvedFullAnswer": string (Model answer IN ENGLISH ONLY matching target level ${effectiveLevel}),
-  "strategicFeedback": {
-    "title": string (ES),
-    "explanation": string (ES, 2nd person tú),
-    "recommendation": string (ES, step-by-step with example)
-  },
   "unclearOrErrorWords": [
     {
       "id": string,
@@ -369,6 +348,12 @@ JSON schema:
       "cefrLevel": "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
     }
   ],
+  "improvedFullAnswer": string (Model answer IN ENGLISH ONLY matching target level ${effectiveLevel}),
+  "strategicFeedback": {
+    "title": string (ES),
+    "explanation": string (ES, 2nd person tú),
+    "recommendation": string (ES, step-by-step with example)
+  },
   "keyStrengths": string[],
   "tipsForNextTurn": string
 }
@@ -583,11 +568,6 @@ Candidate Spoken Answer: "${cleanText}"`;
       }
 
       if (parsed) {
-          // 🧠 Enrich LLM feedback with the deterministic local grammar/spanglish
-          // engine so learners always get thorough, actionable corrections even
-          // when the model returns only a couple of items.
-          const localEngine = MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion);
-
           const rawErrors: SpecificErrorItem[] = Array.isArray(parsed.unclearOrErrorWords)
             ? parsed.unclearOrErrorWords.filter(isRecord).map((item, idx) => {
                 const betterWay = asString(item.betterWay) || asString(item.correctWord);
@@ -628,29 +608,19 @@ Candidate Spoken Answer: "${cleanText}"`;
               })
             : [];
 
-          // 🛡️ Merge LLM errors with the local pattern engine, dedupe by phrase,
-          // then keep the 5 most pedagogically relevant corrections.
-          const mergedErrors: SpecificErrorItem[] = [
-            ...rawErrors,
-            ...(localEngine.unclearOrErrorWords || []),
-          ];
-
+          // The AI model evaluates and ranks the most critical errors (max 5).
+          // Deduplicate if identical phrase keys exist, preserving AI priority.
           const seenErrorKeys = new Set<string>();
-          const uniqueErrors: SpecificErrorItem[] = [];
+          const errors: SpecificErrorItem[] = [];
 
-          for (const err of mergedErrors) {
+          for (const err of rawErrors) {
             const key = `${err.errorWord.toLowerCase().trim()}|${err.correctWord.toLowerCase().trim()}`;
             if (!seenErrorKeys.has(key)) {
               seenErrorKeys.add(key);
-              uniqueErrors.push(err);
+              errors.push(err);
+              if (errors.length >= 5) break;
             }
           }
-
-          const errors = uniqueErrors
-            .map((e) => ({ e, score: relevanceScore(e) }))
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5)
-            .map((x) => x.e);
 
           // Count grammar & vocabulary errors to enforce mathematical honesty
           const grammarErrorsCount = errors.filter((e) => e.errorType === "GRAMMAR").length;
@@ -744,8 +714,9 @@ Candidate Spoken Answer: "${cleanText}"`;
                   "Paso a paso: Para tu próxima toma, conecta 2 oraciones simples usando el modelo STAR.",
               ),
             };
-          } else if (rawTips) {
-            strategicFeedback = {
+          } else {
+            const fallbackEngineFeedback = MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion).strategicFeedback;
+            strategicFeedback = fallbackEngineFeedback || {
               type: "STRATEGIC_WARNING",
               title: "Recomendación Estratégica",
               explanation: sanitizeFeedbackTone(
@@ -756,13 +727,14 @@ Candidate Spoken Answer: "${cleanText}"`;
                       .join(" y ")} con iniciativa comunicativa.`
                   : "Tu respuesta demuestra entendimiento del rol y ganas de transmitir tu experiencia.",
               ),
-              recommendation: sanitizeFeedbackTone(rawTips),
+              recommendation: sanitizeFeedbackTone(
+                rawTips ||
+                  "Estructura tu respuesta siguiendo la metodología STAR (Situación, Tarea, Acción, Resultado) para mayor impacto.",
+              ),
             };
           }
 
-          if (!strategicFeedback && localEngine.strategicFeedback) {
-            strategicFeedback = localEngine.strategicFeedback;
-          }
+
 
           const sanitizeTypos = (str?: string): string => {
             if (!str) return "";

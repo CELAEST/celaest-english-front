@@ -318,103 +318,7 @@ export class MasterAiFeedbackEngine {
       });
     }
 
-    // 3d. Subject-verb agreement with I / You ("I needs", "I looks", "I works")
-    if (/\b(i|you)\s+(needs|looks|works|knows|helps|takes|gives|wants|thinks|runs|makes|sees)\b/i.test(text)) {
-      const match = text.match(/\b(i|you)\s+(needs|looks|works|knows|helps|takes|gives|wants|thinks|runs|makes|sees)\b/i);
-      const pr = match ? match[1] : "I";
-      const badVerb = match ? match[2] : "needs";
-      const corrVerb = badVerb.replace(/s$/i, "");
-      detectedErrors.push({
-        id: `err-sub-verb-${Date.now()}`,
-        errorType: "GRAMMAR",
-        errorWord: badVerb,
-        correctWord: corrVerb,
-        userSaidContext: `${pr} ${badVerb}`,
-        betterWay: text.replace(new RegExp(`\\b${badVerb}\\b`, "gi"), corrVerb),
-        explanation: `Con los pronombres '${pr}' en el Presente Simple, el verbo va en forma base ('${corrVerb}'), sin la 's' final de tercera persona.`,
-        translationSpanish: `Uso correcto: '${pr} ${corrVerb}'.`,
-        cefrLevel: "A1",
-        savedToMemory: false,
-      });
-    }
 
-    // 3e. To + Gerund error ("to measuring", "to making", "to doing")
-    if (/\bto\s+(measuring|doing|making|taking|having|going|helping|working|testing)\b/i.test(text)) {
-      const match = text.match(/\bto\s+(measuring|doing|making|taking|having|going|helping|working|testing)\b/i);
-      const badIng = match ? match[1] : "measuring";
-      let corrBase = badIng.replace(/ing$/i, "");
-      if (badIng.toLowerCase() === "measuring") corrBase = "measure";
-      else if (badIng.toLowerCase() === "making") corrBase = "make";
-      else if (badIng.toLowerCase() === "taking") corrBase = "take";
-      else if (badIng.toLowerCase() === "having") corrBase = "have";
-      detectedErrors.push({
-        id: `err-to-ing-${Date.now()}`,
-        errorType: "GRAMMAR",
-        errorWord: `to ${badIng}`,
-        correctWord: `to ${corrBase}`,
-        userSaidContext: `to ${badIng}`,
-        betterWay: text.replace(new RegExp(`\\bto\\s+${badIng}\\b`, "gi"), `to ${corrBase}`),
-        explanation: `Después de la partícula de infinitivo 'to', se debe utilizar el verbo en su forma base ('to ${corrBase}'), nunca en gerundio ('-ing').`,
-        translationSpanish: `Traducción: "para ${corrBase}"`,
-        cefrLevel: "B1",
-        savedToMemory: false,
-      });
-    }
-
-    // 3f. Modal verb agreement ("will avoids", "must to fixing", "must to")
-    if (/\b(will|would|can|could|should|must)\s+([a-zA-Z]+s|[a-zA-Z]+ing)\b|\bmust\s+to\b/i.test(text)) {
-      const hasMustTo = /\bmust\s+to\b/i.test(text);
-      if (hasMustTo) {
-        detectedErrors.push({
-          id: `err-modal-must-to-${Date.now()}`,
-          errorType: "GRAMMAR",
-          errorWord: "must to",
-          correctWord: "must",
-          userSaidContext: "must to",
-          betterWay: text.replace(/\bmust\s+to\s+fixing\b/gi, "must fix").replace(/\bmust\s+to\b/gi, "must"),
-          explanation: "Los verbos modales como 'must' van seguidos directamente del infinitivo sin 'to' (bare infinitive) y sin terminación '-ing'.",
-          translationSpanish: "Debo realizar la tarea",
-          cefrLevel: "B1",
-          savedToMemory: false,
-        });
-      }
-      const matchModalS = text.match(/\b(will|would|can|could|should|must)\s+([a-zA-Z]+s)\b/i);
-      if (matchModalS) {
-        const modal = matchModalS[1];
-        const badVerb = matchModalS[2];
-        const corrVerb = badVerb.replace(/s$/i, "");
-        detectedErrors.push({
-          id: `err-modal-s-${Date.now()}`,
-          errorType: "GRAMMAR",
-          errorWord: badVerb,
-          correctWord: corrVerb,
-          userSaidContext: `${modal} ${badVerb}`,
-          betterWay: text.replace(new RegExp(`\\b${modal}\\s+${badVerb}\\b`, "gi"), `${modal} ${corrVerb}`),
-          explanation: `Después de un verbo modal ('${modal}'), el verbo debe mantenerse en su forma base ('${modal} ${corrVerb}'), nunca conjugado con '-s'.`,
-          translationSpanish: `Forma correcta: '${modal} ${corrVerb}'.`,
-          cefrLevel: "B1",
-          savedToMemory: false,
-        });
-      }
-    }
-
-    // 3g. Subject pronoun & plural agreement ("me and my ... was")
-    if (/\bme\s+and\s+my\s+(\w+)\s+(was|is)\b/i.test(text)) {
-      const match = text.match(/\bme\s+and\s+my\s+(\w+)\s+(was|is)\b/i);
-      const partner = match ? match[1] : "supervisor";
-      detectedErrors.push({
-        id: `err-me-subject-${Date.now()}`,
-        errorType: "GRAMMAR",
-        errorWord: match ? match[0] : "me and my supervisor was",
-        correctWord: `my ${partner} and I were`,
-        userSaidContext: match ? match[0] : "me and my supervisor was",
-        betterWay: text.replace(new RegExp(match ? match[0] : "me and my supervisor was", "gi"), `my ${partner} and I were`),
-        explanation: `En posición de sujeto se usa el pronombre nominativo 'I' (colocándolo al final: 'my ${partner} and I') y el verbo debe concordar en plural ('were').`,
-        translationSpanish: `Estructura correcta: "mi ${partner} y yo estábamos"`,
-        cefrLevel: "B1",
-        savedToMemory: false,
-      });
-    }
 
     // 4. "I say them" (Say vs. Tell error)
     if (/\bi\s+(say|said|saying)\s+(them|him|her|us|me)\b/i.test(text)) {
@@ -1348,22 +1252,32 @@ export class MasterAiFeedbackEngine {
       });
     }
 
-    // U11. Modal + 'to': "we must to focus" → "we must focus", "can to do" → "can do"
+    // U11. Modal + 'to': "we must to focus" → "we must focus", "must to fixing" → "must fix", "can to do" → "can do"
     if (/\b(must|should|can|could|would|might|may)\s+to\s+([a-z]+)\b/i.test(lower)) {
       const modalMatch = lower.match(
         /\b(must|should|can|could|would|might|may)\s+to\s+([a-z]+)\b/i,
       );
       const modal = modalMatch ? modalMatch[1] : "must";
-      const v = modalMatch ? modalMatch[2] : "focus";
+      const rawV = modalMatch ? modalMatch[2] : "focus";
+      let baseV = rawV;
+      if (rawV.endsWith("ing")) {
+        baseV = rawV.replace(/ing$/, "");
+        if (rawV === "fixing") baseV = "fix";
+        else if (rawV === "making") baseV = "make";
+        else if (rawV === "taking") baseV = "take";
+        else if (rawV === "having") baseV = "have";
+      } else if (rawV.endsWith("s") && !rawV.endsWith("ss")) {
+        baseV = rawV.replace(/s$/, "");
+      }
       detectedErrors.push({
         id: `err-u11-modal-to-${Date.now()}`,
         errorType: "GRAMMAR",
-        errorWord: `${modal} to ${v}`,
-        correctWord: `${modal} ${v}`,
-        userSaidContext: `${modal} to ${v}`,
-        betterWay: text.replace(new RegExp(`\\b${modal}\\s+to\\s+${v}\\b`, "gi"), `${modal} ${v}`),
-        explanation: `Los verbos modales en inglés ('${modal}') van seguidos directamente del infinitivo sin 'to' (bare infinitive). Se dice '${modal} ${v}', no '${modal} to ${v}'.`,
-        translationSpanish: `Regla de verbos modales: se dice '${modal} ${v}' (debemos enfocarnos).`,
+        errorWord: `${modal} to ${rawV}`,
+        correctWord: `${modal} ${baseV}`,
+        userSaidContext: `${modal} to ${rawV}`,
+        betterWay: text.replace(new RegExp(`\\b${modal}\\s+to\\s+${rawV}\\b`, "gi"), `${modal} ${baseV}`),
+        explanation: `Los verbos modales en inglés ('${modal}') van seguidos directamente del infinitivo sin 'to' ni gerundio '-ing' (bare infinitive). Se dice '${modal} ${baseV}', no '${modal} to ${rawV}'.`,
+        translationSpanish: `Regla de verbos modales: se dice '${modal} ${baseV}'.`,
         cefrLevel: "A2",
         savedToMemory: false,
       });

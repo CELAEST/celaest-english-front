@@ -219,22 +219,32 @@ export class UniversalLinguisticParser {
       });
     }
 
-    // 1. Modal Verb + "to" + Base Verb (e.g., "we can to solve it", "should to do", "must to have", "will to build")
+    // 1. Modal Verb + "to" + Verb (e.g., "we can to solve it", "must to fixing", "should to do")
     const modalToMatch = text.match(
       /\b(can|could|should|would|must|will|may|might)\s+to\s+([a-z]+)\b/i,
     );
     if (modalToMatch) {
       const modal = modalToMatch[1];
-      const verb = modalToMatch[2];
+      const rawVerb = modalToMatch[2].toLowerCase();
+      let baseVerb = rawVerb;
+      if (rawVerb.endsWith("ing")) {
+        baseVerb = rawVerb.replace(/ing$/i, "");
+        if (rawVerb === "fixing") baseVerb = "fix";
+        else if (rawVerb === "making") baseVerb = "make";
+        else if (rawVerb === "taking") baseVerb = "take";
+        else if (rawVerb === "having") baseVerb = "have";
+      } else if (rawVerb.endsWith("s") && !rawVerb.endsWith("ss")) {
+        baseVerb = rawVerb.replace(/s$/i, "");
+      }
       detectedErrors.push({
         id: `err-modal-to-${Date.now()}`,
         errorType: "GRAMMAR",
-        errorWord: `${modal} to ${verb}`,
-        correctWord: `${modal} ${verb} (without 'to')`,
+        errorWord: `${modal} to ${modalToMatch[2]}`,
+        correctWord: `${modal} ${baseVerb}`,
         userSaidContext: modalToMatch[0],
-        betterWay: `${modal} ${verb}`,
-        explanation: `Los verbos modales ('${modal}', 'should', 'must', 'will') nunca llevan 'to'. Van directamente con el infinitivo simple ('${modal} ${verb}', no '${modal} to ${verb}').`,
-        translationSpanish: `podemos ${verb} / se puede ${verb}`,
+        betterWay: `${modal} ${baseVerb}`,
+        explanation: `Los verbos modales ('${modal}', 'should', 'must', 'will') nunca llevan 'to' ni terminación '-ing'. Van directamente con el infinitivo simple ('${modal} ${baseVerb}', no '${modal} to ${modalToMatch[2]}').`,
+        translationSpanish: `podemos ${baseVerb} / se debe ${baseVerb}`,
         cefrLevel: "A2",
         savedToMemory: false,
       });

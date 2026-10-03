@@ -353,15 +353,9 @@ export const directClientAiService = {
       // 3. OpenAI-compatible format (Groq, OpenAI, DeepSeek, Grok xAI)
       let effectiveMaxTokens = params.maxTokens || 4096;
       if (activeProvider === "groq") {
-        if (model.includes("qwen")) {
-          // Groq enforces a strict 1,000 Output Tokens Per Minute (OTPM) limit on Qwen free tier.
-          // Clamping to 850 tokens prevents "Request too large ... OTPM: Limit 1000" errors.
-          effectiveMaxTokens = Math.min(effectiveMaxTokens, 850);
-        } else {
-          // For gpt-oss-120b, gpt-oss-20b and standard models, Groq supports up to 8,192 completion tokens.
-          // Never artificially clamp to 1000/1500 tokens, which causes premature JSON cutoffs and HTTP 400 json_validate_failed!
-          effectiveMaxTokens = Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
-        }
+        // Groq models support up to 8,192 completion tokens.
+        // Never clamp to 850 tokens, which truncates JSON arrays and cuts off evaluation cards prematurely.
+        effectiveMaxTokens = Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
       }
 
       const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode;

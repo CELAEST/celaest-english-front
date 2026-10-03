@@ -7,7 +7,7 @@
 export interface InterviewQuestionItem {
   id: number;
   question: string;
-  category: "WARMUP" | "BEHAVIORAL" | "TECHNICAL" | "SITUATIONAL" | "STRATEGY" | "WRAPUP";
+  category: "WARMUP" | "BEHAVIORAL" | "TECHNICAL" | "SITUATIONAL" | "STRATEGY" | "WRAPUP" | "ROUTINE" | "TEAMWORK" | string;
   starHint: string;
   expectedKeywords: string[];
   round?: number;

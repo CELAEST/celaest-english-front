@@ -57,20 +57,21 @@ Every question you generate MUST be completely brand new and explore different s
         : "";
 
     const systemPrompt = `You are a world-class Cambridge and Oxford ESL oral examiner specializing in career-specific English language assessments.
-Generate exactly ${count} realistic, practical speaking interview questions for a professional who is an: "${role}".
+Generate exactly ${count} realistic, practical speaking interview questions for a candidate whose role is: "${role}".
 Target CEFR Level: ${level}.
 
 ${levelGuidance}
 ${avoidListText}
 
-Strict Domain Rules:
-1. Every single question MUST be authentic and specific to the daily reality, vocabulary, procedures, and challenges of an "${role}".
-2. If the profession is medical, dental, or healthcare (e.g. Odontóloga, Dentist, Physician, Nurse), questions MUST focus on patients, clinical procedures, diagnosis, dental/medical emergencies, anesthesia, patient anxiety, hygiene, and treatment plans.
-3. Absolutely DO NOT generate generic software engineering, DevOps, or IT questions unless the profession is explicitly Software/IT.
-4. Vary the categories across: WARMUP, TECHNICAL, BEHAVIORAL, SITUATIONAL, STRATEGY.
-5. Provide a helpful starHint in English suggesting how to structure a good response.
-6. Provide an array of 4-6 expected technical and conversational keywords that a candidate at CEFR ${level} should use.
-7. NEVER use unescaped double quotes inside any string value; use single quotes for quotes or dialogue.
+Strict Domain & Linguistic Boundaries:
+1. Domain Alignment: Every question MUST strictly fit the real-world context of a "${role}".
+   - If the role is generic ("Professional"), focus exclusively on universal workplace situations (daily schedule, teamwork, office/remote environment, communication, tools). NEVER assume healthcare, clinical, engineering, or legal settings unless explicitly specified in the role.
+   - Multi-Domain Invariance: Never leak terminology from unrelated industries (e.g. NEVER mention 'patients', 'medical', 'gloves', 'clinic' unless the role is genuinely healthcare; NEVER mention 'DevOps', 'code' unless software).
+2. CEFR Level Ceiling:
+   - For A1 and A2 levels, questions MUST be ultra-basic, simple, and direct. Use ONLY common, high-frequency foundational English words. Avoid rare verbs or complex terminology.
+3. Provide a helpful starHint in English suggesting how to structure a good response at CEFR ${level}.
+4. Provide an array of 3-5 expected keywords that a candidate at CEFR ${level} should use.
+5. NEVER use unescaped double quotes inside any string value; use single quotes for quotes or dialogue.
 
 Output format: Return ONLY valid raw JSON with the following structure:
 {
@@ -215,28 +216,35 @@ Output format: Return ONLY valid raw JSON with the following structure:
 
   private static getLevelPromptDirectives(level: string): string {
     if (level.startsWith("A1")) {
-      return `Pedagogical CEFR A1 (Absolute Beginner) Guidance:
-- Questions MUST be ultra-short, friendly, and direct (max 8 to 12 words per question).
-- Grammar: Strictly SIMPLE PRESENT (verb to be, do/does, like, work, use, have). Absolutely NO past tense, NO present perfect, NO complex conditional or multi-clause structures.
-- Focus strictly on elementary basics: introducing themselves, where they work, what simple tools/instruments they use, their daily routine, and what they like about their job.
-- StarHint: Extremely simple and accessible in English (e.g. "Answer in 1 or 2 short sentences: 'Hello, my name is... and I work as a [role].'").
-- ExpectedKeywords: 3-4 elementary high-frequency words (e.g. "name", "work", "like", "use").
-- The candidate is an absolute beginner; never intimidate them with multi-part questions or complex behavioral scenarios.`;
+      return `Pedagogical CEFR A1 (Beginner) Guidance - MANDATORY:
+- Candidate ONLY understands ultra-basic, high-frequency words (e.g., work, start, time, office, computer, team, like, day, help, speak).
+- Questions MUST be ultra-short, simple, and direct (max 6 to 9 words).
+- Grammar: Strictly SIMPLE PRESENT with auxiliary 'Do/Does' or verb 'to be' (e.g., "Do you work in an office?", "What time do you start work?", "Do you use a computer?").
+- STRICTLY FORBIDDEN in A1: Specialized technical jargon, medical/clinical vocabulary ("gloves", "patients", "examine", "treat"), multi-clause sentences, conditionals, or past/future tenses.
+- Categories: Use only "WARMUP" or "ROUTINE".
+- StarHint: Very short 1-sentence pattern (e.g., "Answer simply: 'I start work at 8 AM.'").
+- ExpectedKeywords: 3 elementary high-frequency words (e.g., ["work", "morning", "computer"]).`;
     }
     if (level.startsWith("A2")) {
-      return `Pedagogical CEFR A2 (Elementary) Guidance:
-- Keep question sentences concise, direct, and accessible (simple present, simple past).
-- Focus on daily workplace routine, basic tools/instruments, introducing themselves, and simple patient/client interactions.
-- Avoid multi-clause convoluted idioms or abstract corporate buzzwords.`;
+      return `Pedagogical CEFR A2 (Elementary) Guidance - MANDATORY:
+- Candidate has basic elementary vocabulary for everyday work routines and familiar workplace situations.
+- Questions MUST be direct, short, and very simple (max 8 to 12 words). Must be basiquísimo.
+- Grammar: Simple present and simple past only (e.g., "What tasks do you do in the morning?", "How do you communicate with your team?", "Did you work yesterday?").
+- STRICTLY FORBIDDEN in A2: Unfamiliar technical terms, clinical/medical words ("examine", "patients", "gloves" unless the candidate is a healthcare worker), abstract corporate idioms, or complex multi-clause structures.
+- Categories: Use "WARMUP", "ROUTINE", or "TEAMWORK".
+- StarHint: Simple structure suggestion (e.g., "Say: 'In the morning I check emails and speak with my team.'").
+- ExpectedKeywords: 3-4 basic words (e.g., ["tasks", "team", "routine", "email"]).`;
     }
     if (level.startsWith("B1") || level.startsWith("B2")) {
       return `Pedagogical CEFR B1/B2 Guidance:
-- Intermediate professional English: explaining procedures, addressing patient or client concerns, handling unexpected roadblocks.
-- Emphasize clear narrative structure, professional collocations, and conflict resolution or consultation skills.`;
+- Intermediate professional English: explaining procedures, addressing client or colleague concerns, handling everyday roadblocks.
+- Emphasize clear narrative structure, professional collocations, and collaborative problem-solving skills.
+- Categories: WARMUP, TECHNICAL, BEHAVIORAL, SITUATIONAL.`;
     }
     return `Pedagogical CEFR C1/C2 Guidance:
-- Advanced professional fluency: clinical ethics, complex decision-making, multidisciplinary consultations, leadership, and technical nuances.
-- Demand sophisticated discourse markers, precise medical/professional terminology, and articulate hypothetical reasoning.`;
+- Advanced professional fluency: strategic vision, complex decision-making, multidisciplinary leadership, and technical nuances.
+- Demand sophisticated discourse markers, precise professional terminology, and articulate hypothetical reasoning.
+- Categories: TECHNICAL, STRATEGY, BEHAVIORAL, SITUATIONAL.`;
   }
 
   private static parseAiQuestionsResponse(

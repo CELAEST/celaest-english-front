@@ -1,17 +1,16 @@
 /**
  * AI Interview Question Generator Service
- * Pre-generates 10-15 hyper-personalized interview questions tailored to the user's
- * exact profession (e.g. Odontóloga, Arquitecto, Abogado) and CEFR level (A1 to C2).
+ * Pre-generates hyper-personalized interview questions tailored to the user's
+ * exact profession and CEFR level (A1 to C2).
  *
  * Implements the user's architectural mandate:
- * 1. AI-driven question generation (no static monolithic arrays per role).
- * 2. Pre-generation of 12 questions per session block for zero-latency turn transitions.
+ * 1. 100% Sovereign AI-driven question generation (ZERO static / hardcoded questions).
+ * 2. Strict anti-repetition: accepts `avoidQuestions` so previous turns are never repeated.
  * 3. Deep pedagogical calibration by CEFR level.
- * 4. Resilient caching and procedural instant fallback.
+ * 4. Zero silent fallback to hardcoded question banks: throws on failure to trigger AI recovery modal.
  */
 
 import { InterviewQuestionItem } from "./interviewEngineService";
-import { DynamicQuestionService } from "./dynamicQuestionService";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { ENV } from "../../../shared/constants/env";
@@ -21,88 +20,47 @@ export interface GenerateSessionQuestionsParams {
   profession: string;
   cefrLevel: string;
   count?: number;
+  avoidQuestions?: string[];
   forceFresh?: boolean;
-}
-
-const STORAGE_PREFIX = "celaest:interview:ai_questions:v2";
-
-function getCacheKey(profession: string, cefrLevel: string): string {
-  const normProf = (profession || "Professional").toLowerCase().trim().replace(/[^a-z0-9]+/g, "_");
-  const normLevel = (cefrLevel || "B1").toUpperCase().trim();
-  return `${STORAGE_PREFIX}:${normProf}:${normLevel}`;
 }
 
 export class AiInterviewQuestionGenerator {
   private static inFlightQuestionPromises = new Map<string, Promise<InterviewQuestionItem[]>>();
 
   /**
-   * Returns cached questions if available, otherwise generates a rich instant seed batch
-   * matching the profession and CEFR level so rendering is 100% instantaneous.
-   */
-  public static getCachedOrSeedQuestions(
-    profession: string,
-    cefrLevel: string,
-    count: number = 5,
-  ): InterviewQuestionItem[] {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(getCacheKey(profession, cefrLevel));
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length >= 5) {
-            return parsed;
-          }
-        }
-      } catch {
-        // ignore cache read error
-      }
-    }
-
-    // Instant procedural seed tailored to domain & level
-    return DynamicQuestionService.getRoundQuestions(1, profession, cefrLevel, count);
-  }
-
-  /**
-   * Pre-generates 5 questions with AI for the given profession and CEFR level.
-   * If BYOK is active or CELAEST-CORE is reachable, calls the LLM with structured output.
+   * Pre-generates questions with AI for the given profession and CEFR level.
+   * Enforces anti-repetition against `avoidQuestions`.
    * Guarantees ZERO duplicate network calls via an in-flight singleton promise lock.
    */
   public static async generateSessionQuestions(
     params: GenerateSessionQuestionsParams,
   ): Promise<InterviewQuestionItem[]> {
-    const { profession, cefrLevel, count = 5, forceFresh = false } = params;
-    const cacheKey = getCacheKey(profession, cefrLevel);
-
-    // Return from cache if fresh unless forced
-    if (!forceFresh && typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length >= Math.min(count, 5)) {
-            return parsed;
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    // In-flight singleton promise lock: If already in progress, reuse the existing promise!
-    if (!forceFresh && this.inFlightQuestionPromises.has(cacheKey)) {
-      return this.inFlightQuestionPromises.get(cacheKey)!;
-    }
-
+    const { profession, cefrLevel, count = 5, avoidQuestions = [], forceFresh = false } = params;
     const level = cefrLevel.toUpperCase().trim() || "B1";
     const role = profession.trim() || "Professional";
 
+    const inFlightKey = `${role}::${level}::${avoidQuestions.length}::${count}`;
+
+    if (!forceFresh && this.inFlightQuestionPromises.has(inFlightKey)) {
+      return this.inFlightQuestionPromises.get(inFlightKey)!;
+    }
+
     const levelGuidance = this.getLevelPromptDirectives(level);
+
+    const avoidListText =
+      avoidQuestions.length > 0
+        ? `\n\nSTRICT ANTI-REPETITION MANDATE:
+The candidate has ALREADY been asked the following questions in this interview. You MUST NOT repeat, rephrase, or duplicate any of them:
+${avoidQuestions.slice(-25).map((q, idx) => `${idx + 1}. "${q}"`).join("\n")}
+Every question you generate MUST be completely brand new and explore different scenarios, tools, or responsibilities.`
+        : "";
 
     const systemPrompt = `You are a world-class Cambridge and Oxford ESL oral examiner specializing in career-specific English language assessments.
 Generate exactly ${count} realistic, practical speaking interview questions for a professional who is an: "${role}".
 Target CEFR Level: ${level}.
 
 ${levelGuidance}
+${avoidListText}
 
 Strict Domain Rules:
 1. Every single question MUST be authentic and specific to the daily reality, vocabulary, procedures, and challenges of an "${role}".
@@ -111,6 +69,7 @@ Strict Domain Rules:
 4. Vary the categories across: WARMUP, TECHNICAL, BEHAVIORAL, SITUATIONAL, STRATEGY.
 5. Provide a helpful starHint in English suggesting how to structure a good response.
 6. Provide an array of 4-6 expected technical and conversational keywords that a candidate at CEFR ${level} should use.
+7. NEVER use unescaped double quotes inside any string value; use single quotes for quotes or dialogue.
 
 Output format: Return ONLY valid raw JSON with the following structure:
 {
@@ -126,7 +85,8 @@ Output format: Return ONLY valid raw JSON with the following structure:
   ]
 }`;
 
-    const userPrompt = `Generate ${count} progressive interview questions for an ${role} at CEFR ${level} level.`;
+    const userPrompt = `Generate ${count} progressive, unique interview questions for a ${role} at CEFR ${level} level.`;
+
     const executeRequest = (async (): Promise<InterviewQuestionItem[]> => {
       try {
         const isCore = await providerKeyVault.isCentralCoreEnabled();
@@ -189,33 +149,22 @@ Output format: Return ONLY valid raw JSON with the following structure:
         }
 
         if (!rawResponse || !rawResponse.trim()) {
-          return DynamicQuestionService.getRoundQuestions(1, role, level, count);
+          throw new Error("Empty response received from AI interview question generator");
         }
 
-        const parsed = this.parseAiQuestionsResponse(rawResponse, count, role, level);
-
-        if (parsed.length > 0 && typeof window !== "undefined") {
-          try {
-            localStorage.setItem(cacheKey, JSON.stringify(parsed));
-          } catch {
-            // ignore storage quota error
-          }
-        }
-
-        return parsed;
+        return this.parseAiQuestionsResponse(rawResponse, count, role, level);
       } catch (err) {
-        logger.warn("[AiInterviewQuestionGenerator] Failed to generate AI questions, using procedural seed", err);
-        // Fallback to rich procedural seeds
-        return DynamicQuestionService.getRoundQuestions(1, role, level, count);
+        logger.error("[AiInterviewQuestionGenerator] Failed to generate AI questions:", err);
+        throw err;
       }
     })();
 
-    this.inFlightQuestionPromises.set(cacheKey, executeRequest);
+    this.inFlightQuestionPromises.set(inFlightKey, executeRequest);
 
     try {
       return await executeRequest;
     } finally {
-      this.inFlightQuestionPromises.delete(cacheKey);
+      this.inFlightQuestionPromises.delete(inFlightKey);
     }
   }
 
@@ -224,7 +173,7 @@ Output format: Return ONLY valid raw JSON with the following structure:
       return `Pedagogical CEFR A1 (Absolute Beginner) Guidance:
 - Questions MUST be ultra-short, friendly, and direct (max 8 to 12 words per question).
 - Grammar: Strictly SIMPLE PRESENT (verb to be, do/does, like, work, use, have). Absolutely NO past tense, NO present perfect, NO complex conditional or multi-clause structures.
-- Focus strictly on elementary basics: introducing themselves, where they work, what simple tools/computer they use, their daily morning routine, and what they like about their job.
+- Focus strictly on elementary basics: introducing themselves, where they work, what simple tools/instruments they use, their daily routine, and what they like about their job.
 - StarHint: Extremely simple and accessible in English (e.g. "Answer in 1 or 2 short sentences: 'Hello, my name is... and I work as a [role].'").
 - ExpectedKeywords: 3-4 elementary high-frequency words (e.g. "name", "work", "like", "use").
 - The candidate is an absolute beginner; never intimidate them with multi-part questions or complex behavioral scenarios.`;
@@ -263,31 +212,26 @@ Output format: Return ONLY valid raw JSON with the following structure:
     }
 
     if (!clean) {
-      return DynamicQuestionService.getRoundQuestions(1, role, level, targetCount);
+      throw new Error("Unable to locate JSON object in AI question response");
     }
 
-    try {
-      const data = JSON.parse(clean);
-      const list = Array.isArray(data) ? data : data?.questions || data?.items;
+    const data = JSON.parse(clean);
+    const list = Array.isArray(data) ? data : data?.questions || data?.items;
 
-      if (Array.isArray(list) && list.length > 0) {
-        return list.slice(0, targetCount).map((item, idx) => ({
-          id: idx + 1,
-          question: String(item.question || `Tell me about your experience as a ${role}.`),
-          category: item.category || "WARMUP",
-          starHint: String(item.starHint || "Explain the situation, your actions, and the outcome."),
-          expectedKeywords: Array.isArray(item.expectedKeywords)
-            ? item.expectedKeywords.map(String)
-            : [role.toLowerCase(), "communication", "analysis", "outcome"],
-          round: Math.floor(idx / 5) + 1,
-          targetLevel: (item.targetLevel || level) as any,
-        }));
-      }
-    } catch (e) {
-      logger.warn("[AiInterviewQuestionGenerator] JSON parse error on AI response", e);
+    if (!Array.isArray(list) || list.length === 0) {
+      throw new Error("AI response did not contain an array of questions");
     }
 
-    // Fallback if parsing failed
-    return DynamicQuestionService.getRoundQuestions(1, role, level, targetCount);
+    return list.slice(0, targetCount).map((item, idx) => ({
+      id: idx + 1,
+      question: String(item.question || `Tell me about your experience as a ${role}.`),
+      category: item.category || "WARMUP",
+      starHint: String(item.starHint || "Explain the situation, your actions, and the outcome."),
+      expectedKeywords: Array.isArray(item.expectedKeywords)
+        ? item.expectedKeywords.map(String)
+        : [role.toLowerCase(), "communication", "analysis", "outcome"],
+      round: Math.floor(idx / 5) + 1,
+      targetLevel: (item.targetLevel || level) as any,
+    }));
   }
 }

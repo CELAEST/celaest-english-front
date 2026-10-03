@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { DynamicQuestionService } from "../services/dynamicQuestionService";
 import { useInterviewQuestionManager } from "./useInterviewQuestionManager";
 import {
   useInterviewSpeechAudio,
@@ -45,6 +44,7 @@ export const useInterviewSession = (
     persistedQuestions: restored?.sessionQuestions,
     persistedRoleName: restored?.roleName,
     persistedIndex: restored?.currentQuestionIndex ?? 0,
+    persistedAskedQuestions: restored?.askedQuestions,
   });
 
   // ──────────────────────────────────────────────
@@ -87,6 +87,8 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   useInterviewCloudSync({
     effectiveRoleName: questions.effectiveRoleName,
+    activeCefrLevel: questions.activeCefrLevel,
+    setActiveCefrLevel: questions.setActiveCefrLevel,
     speechRate: speech.speechRate,
     setSpeechRate: speech.setSpeechRate,
     currentQuestionIndex: questions.currentQuestionIndex,
@@ -101,8 +103,10 @@ export const useInterviewSession = (
     savedErrorIds: evaluation.savedErrorIds,
     setSavedErrorIds: evaluation.setSavedErrorIds,
     sessionQuestions: questions.sessionQuestions,
+    setSessionQuestions: questions.setSessionQuestions,
+    askedQuestions: questions.askedQuestions,
+    setAskedQuestions: questions.setAskedQuestions,
     currentQuestionText: questions.currentQuestion?.question,
-    lastReplenishedIndexRef: questions.lastReplenishedIndexRef,
     restoredState: restored,
   });
 
@@ -110,22 +114,19 @@ export const useInterviewSession = (
   // 6. Proactive question TTS prefetch
   // ──────────────────────────────────────────────
   const { selectedVoice, speakQuestion } = speech;
-  const { currentQuestionIndex, effectiveRoleName, activeCefrLevel } = questions;
+  const { currentQuestionIndex } = questions;
   const questionText = questions.currentQuestion?.question;
 
   useEffect(() => {
     if (!isActive || !questionText) return;
+    if (questionText.startsWith("Generating") || questionText.startsWith("Preparing")) return;
     SpeechSynthesisService.prefetch(questionText, selectedVoice);
 
-    const nextQ = DynamicQuestionService.getQuestionForIndex(
-      currentQuestionIndex + 1,
-      effectiveRoleName,
-      activeCefrLevel,
-    );
+    const nextQ = questions.sessionQuestions[currentQuestionIndex + 1];
     if (nextQ?.question) {
       SpeechSynthesisService.prefetch(nextQ.question, selectedVoice);
     }
-  }, [isActive, questionText, currentQuestionIndex, effectiveRoleName, activeCefrLevel, selectedVoice]);
+  }, [isActive, questionText, currentQuestionIndex, questions.sessionQuestions, selectedVoice]);
 
   // ──────────────────────────────────────────────
   // 7. Auto-speak question on activation / change
@@ -144,6 +145,7 @@ export const useInterviewSession = (
     prevActiveRef.current = true;
 
     if (!questionText || showAnalysisModal || turnFeedback) return;
+    if (questionText.startsWith("Generating") || questionText.startsWith("Preparing")) return;
 
     if (justActivated || lastSpokenQuestionRef.current !== questionText) {
       lastSpokenQuestionRef.current = questionText;
@@ -161,6 +163,8 @@ export const useInterviewSession = (
     speech.setUserTranscript("");
     speech.setSpeakingSeconds(0);
     evaluation.setTurnFeedback(null);
+    evaluation.setShowAnalysisModal(false);
+    lastSpokenQuestionRef.current = "";
     questions.setCurrentQuestionIndex((prev) => prev + 1);
   }, [questions, speech, evaluation]);
 

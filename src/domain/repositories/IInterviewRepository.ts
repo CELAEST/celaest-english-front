@@ -1,4 +1,5 @@
 import { InterviewSession } from "../entities/InterviewSession";
+import { InterviewQuestionItem } from "../../features/conversation/services/interviewEngineService";
 
 /** Mirrors the backend InterviewProgress DTO returned by GET /interview/progress. */
 export interface InterviewProgressDTO {
@@ -10,6 +11,9 @@ export interface InterviewProgressDTO {
   savedErrorIds: string[];
   showAnalysisModal: boolean;
   latestTurn: Record<string, unknown> | null;
+  cefrLevel?: string | undefined;
+  sessionQuestions?: InterviewQuestionItem[] | undefined;
+  askedQuestions?: string[] | undefined;
   updatedAt: string;
 }
 
@@ -22,6 +26,9 @@ export interface SaveProgressPayload {
   savedErrorIds: string[];
   showAnalysisModal: boolean;
   latestTurn: Record<string, unknown>;
+  cefrLevel?: string | undefined;
+  sessionQuestions?: InterviewQuestionItem[] | undefined;
+  askedQuestions?: string[] | undefined;
 }
 
 export interface IInterviewRepository {

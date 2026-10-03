@@ -8,8 +8,9 @@ import {
 } from "../services/interviewPersistence";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { InterviewQuestionItem } from "../services/interviewEngineService";
+import { logger } from "../../../shared/utils/logger";
 
-/** Per-user hydration tracking to prevent cross-user contamination in Strict Mode */
+/** Per-user hydration tracking to prevent duplicate requests in Strict Mode */
 const hydrationLog = new Map<string, number>();
 
 export function __resetInterviewHydrationForTest(): void {
@@ -18,6 +19,8 @@ export function __resetInterviewHydrationForTest(): void {
 
 export interface UseInterviewCloudSyncOptions {
   effectiveRoleName: string;
+  activeCefrLevel: string;
+  setActiveCefrLevel: (lvl: string) => void;
   speechRate: number;
   setSpeechRate: (r: number) => void;
   currentQuestionIndex: number;
@@ -32,13 +35,17 @@ export interface UseInterviewCloudSyncOptions {
   savedErrorIds: Set<string>;
   setSavedErrorIds: (ids: Set<string>) => void;
   sessionQuestions: InterviewQuestionItem[];
+  setSessionQuestions: React.Dispatch<React.SetStateAction<InterviewQuestionItem[]>>;
+  askedQuestions: string[];
+  setAskedQuestions: React.Dispatch<React.SetStateAction<string[]>>;
   currentQuestionText?: string;
-  lastReplenishedIndexRef: React.MutableRefObject<number>;
   restoredState?: PersistedInterviewState | null;
 }
 
 export function useInterviewCloudSync({
   effectiveRoleName,
+  activeCefrLevel,
+  setActiveCefrLevel,
   speechRate,
   setSpeechRate,
   currentQuestionIndex,
@@ -53,8 +60,10 @@ export function useInterviewCloudSync({
   savedErrorIds,
   setSavedErrorIds,
   sessionQuestions,
+  setSessionQuestions,
+  askedQuestions,
+  setAskedQuestions,
   currentQuestionText = "",
-  lastReplenishedIndexRef,
   restoredState,
 }: UseInterviewCloudSyncOptions) {
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
@@ -64,18 +73,29 @@ export function useInterviewCloudSync({
 
   const applyProgress = useCallback(
     (p: {
-      roleName?: string;
-      speechRate?: number;
-      currentQuestionIndex?: number;
-      userTranscript?: string;
-      savedErrorIds?: string[];
-      showAnalysisModal?: boolean;
-      latestTurn?: Record<string, unknown> | null;
+      roleName?: string | undefined;
+      cefrLevel?: string | undefined;
+      speechRate?: number | undefined;
+      currentQuestionIndex?: number | undefined;
+      userTranscript?: string | undefined;
+      savedErrorIds?: string[] | undefined;
+      showAnalysisModal?: boolean | undefined;
+      sessionQuestions?: InterviewQuestionItem[] | undefined;
+      askedQuestions?: string[] | undefined;
+      latestTurn?: Record<string, unknown> | null | undefined;
     }) => {
       if (typeof p.speechRate === "number") setSpeechRate(p.speechRate);
+      if (typeof p.cefrLevel === "string" && p.cefrLevel) {
+        setActiveCefrLevel(p.cefrLevel);
+      }
       if (typeof p.currentQuestionIndex === "number") {
         setCurrentQuestionIndex(p.currentQuestionIndex);
-        lastReplenishedIndexRef.current = p.currentQuestionIndex;
+      }
+      if (Array.isArray(p.sessionQuestions) && p.sessionQuestions.length > 0) {
+        setSessionQuestions(p.sessionQuestions);
+      }
+      if (Array.isArray(p.askedQuestions)) {
+        setAskedQuestions(p.askedQuestions);
       }
       if (typeof p.userTranscript === "string") {
         setUserTranscript(p.userTranscript);
@@ -90,8 +110,10 @@ export function useInterviewCloudSync({
     },
     [
       setSpeechRate,
+      setActiveCefrLevel,
       setCurrentQuestionIndex,
-      lastReplenishedIndexRef,
+      setSessionQuestions,
+      setAskedQuestions,
       setUserTranscript,
       userTranscriptRef,
       setSavedErrorIds,
@@ -110,10 +132,14 @@ export function useInterviewCloudSync({
     };
   }, []);
 
+  // Event-driven persistence: save only on meaningful milestones
+  // (index change, feedback received, modal toggled, level changed, questions updated)
+  // NEVER on each spoken character of userTranscript!
   useEffect(() => {
     const snapshot: PersistedInterviewState = {
       version: 2,
       roleName: effectiveRoleName,
+      cefrLevel: activeCefrLevel,
       speechRate,
       currentQuestionIndex,
       userTranscript,
@@ -121,18 +147,21 @@ export function useInterviewCloudSync({
       showAnalysisModal,
       savedErrorIds: Array.from(savedErrorIds),
       sessionQuestions: sessionQuestions.length > 0 ? sessionQuestions : undefined,
+      askedQuestions: askedQuestions.length > 0 ? askedQuestions : undefined,
       updatedAt: Date.now(),
     };
 
     const comparable = JSON.stringify({
       version: 2,
       roleName: effectiveRoleName,
+      cefrLevel: activeCefrLevel,
       speechRate,
       currentQuestionIndex,
-      userTranscript,
-      turnFeedback,
+      turnFeedback: turnFeedback ? turnFeedback.overallScore : null,
       showAnalysisModal,
       savedErrorIds: Array.from(savedErrorIds),
+      questionsCount: sessionQuestions.length,
+      askedCount: askedQuestions.length,
     });
 
     if (isFirstPersistRef.current) {
@@ -147,14 +176,16 @@ export function useInterviewCloudSync({
 
     lastSavedSnapshotRef.current = comparable;
 
-    const save = () => savePersistedInterview(snapshot, currentUserId);
+    // Save offline localStorage copy
+    const saveLocal = () => savePersistedInterview(snapshot, currentUserId);
     if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
-      window.requestIdleCallback(save);
+      window.requestIdleCallback(saveLocal);
     } else {
-      save();
+      saveLocal();
     }
 
-    const debounceMs = 500;
+    // Debounce cloud sync to backend
+    const debounceMs = 600;
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
@@ -165,87 +196,132 @@ export function useInterviewCloudSync({
       apiInterviewRepository
         .saveProgress({
           roleName: effectiveRoleName,
+          cefrLevel: activeCefrLevel,
           speechRate,
           currentQuestionIndex,
           userTranscript,
           savedErrorIds: Array.from(savedErrorIds),
           showAnalysisModal,
+          sessionQuestions: sessionQuestions.length > 0 ? sessionQuestions : undefined,
+          askedQuestions: askedQuestions.length > 0 ? askedQuestions : undefined,
           latestTurn: {
             question: currentQuestionText,
             transcript: userTranscript,
             feedback: turnFeedback ?? {},
           },
         })
-        .catch(() => {
-          // Backend sync is best effort
+        .catch((err) => {
+          logger.warn("[useInterviewCloudSync] SaveProgress error (best-effort):", err);
         });
     }, debounceMs);
   }, [
     effectiveRoleName,
+    activeCefrLevel,
     speechRate,
     currentQuestionIndex,
-    userTranscript,
     turnFeedback,
     showAnalysisModal,
     savedErrorIds,
     sessionQuestions,
+    askedQuestions,
     currentQuestionText,
+    userTranscript,
     currentUserId,
   ]);
 
-  // Hydrate from backend on mount
+  // Server-Wins Hydration from backend on mount
   const didHydrateRef = useRef(false);
-  useEffect(() => {
-    if (didHydrateRef.current) return;
-    didHydrateRef.current = true;
+  const syncFromBackend = useCallback(() => {
     const hydrateKey = currentUserId ?? "__anon__";
     const lastHydrated = hydrationLog.get(hydrateKey) ?? 0;
-    if (lastHydrated > 0 && Date.now() - lastHydrated < 5 * 1000) return;
+    if (lastHydrated > 0 && Date.now() - lastHydrated < 3 * 1000) return;
     hydrationLog.set(hydrateKey, Date.now());
-    let cancelled = false;
 
     apiInterviewRepository
       .getProgress()
       .then((dto) => {
-        if (cancelled || !dto || !dto.updatedAt) return;
+        if (!dto || !dto.updatedAt) return;
         const backendTime = new Date(dto.updatedAt).getTime();
         const localTime = restoredRef.current?.updatedAt ?? 0;
-        if (!Number.isFinite(backendTime) || backendTime <= localTime) return;
+        if (Number.isFinite(backendTime) && Number.isFinite(localTime) && backendTime <= localTime) {
+          return;
+        }
 
         const sanitizedIndex = dto.currentQuestionIndex || 0;
-        const sanitizedTurn = dto.latestTurn;
+        let sanitizedTurn: Record<string, unknown> | null = null;
+        if (dto.latestTurn) {
+          if (typeof dto.latestTurn === "string") {
+            try {
+              sanitizedTurn = JSON.parse(dto.latestTurn);
+            } catch {
+              sanitizedTurn = null;
+            }
+          } else if (typeof dto.latestTurn === "object") {
+            sanitizedTurn = dto.latestTurn;
+          }
+        }
+
+        // Cancel any pending save timeout to avoid overwriting or redundant POST
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = null;
+        }
+
+        const adoptedRole = dto.roleName || effectiveRoleName;
+        const adoptedLevel = dto.cefrLevel || activeCefrLevel;
+        const adoptedRate = dto.speechRate ?? speechRate;
+        const adoptedSavedErrIds = dto.savedErrorIds || [];
 
         lastSavedSnapshotRef.current = JSON.stringify({
           version: 2,
-          roleName: dto.roleName || effectiveRoleName,
-          speechRate: dto.speechRate,
+          roleName: adoptedRole,
+          cefrLevel: adoptedLevel,
+          speechRate: adoptedRate,
           currentQuestionIndex: sanitizedIndex,
-          userTranscript: dto.userTranscript,
-          turnFeedback: sanitizedTurn?.feedback ?? null,
-          showAnalysisModal: dto.showAnalysisModal,
-          savedErrorIds: dto.savedErrorIds,
+          turnFeedback: sanitizedTurn?.feedback ? (sanitizedTurn.feedback as any).overallScore : null,
+          showAnalysisModal: Boolean(dto.showAnalysisModal),
+          savedErrorIds: Array.from(adoptedSavedErrIds),
+          questionsCount: dto.sessionQuestions?.length ?? 0,
+          askedCount: dto.askedQuestions?.length ?? 0,
         });
 
         applyProgress({
-          roleName: dto.roleName || effectiveRoleName,
-          speechRate: dto.speechRate,
+          roleName: adoptedRole,
+          cefrLevel: adoptedLevel,
+          speechRate: adoptedRate,
           currentQuestionIndex: sanitizedIndex,
           userTranscript: dto.userTranscript,
-          savedErrorIds: dto.savedErrorIds,
+          savedErrorIds: adoptedSavedErrIds,
           showAnalysisModal: dto.showAnalysisModal,
+          sessionQuestions: dto.sessionQuestions,
+          askedQuestions: dto.askedQuestions,
           latestTurn: sanitizedTurn,
         });
       })
-      .catch(() => {
-        // Offline or backend unavailable
+      .catch((err) => {
+        logger.warn("[useInterviewCloudSync] Initial hydration offline or failed:", err);
       });
+  }, [currentUserId, applyProgress, effectiveRoleName, activeCefrLevel]);
 
-    return () => {
-      cancelled = true;
+  useEffect(() => {
+    if (didHydrateRef.current) return;
+    didHydrateRef.current = true;
+    syncFromBackend();
+  }, [syncFromBackend]);
+
+  // Cross-device sync: When tab becomes visible, check backend for updates made from other devices
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncFromBackend();
+      }
     };
-  }, [effectiveRoleName, applyProgress, currentUserId]);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [syncFromBackend]);
 
   return {
     restoredRef,
+    syncFromBackend,
   };
 }

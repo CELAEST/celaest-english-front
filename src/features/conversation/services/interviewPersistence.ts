@@ -19,6 +19,8 @@ export interface PersistedInterviewState {
   showAnalysisModal: boolean;
   savedErrorIds: string[];
   sessionQuestions?: InterviewQuestionItem[] | undefined;
+  cefrLevel?: string | undefined;
+  askedQuestions?: string[] | undefined;
   updatedAt: number;
 }
 

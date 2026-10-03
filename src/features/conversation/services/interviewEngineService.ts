@@ -48,21 +48,18 @@ export interface InterviewRoleData {
   companyContext: string;
   questions: InterviewQuestionItem[];
 }
- 
-import { DynamicQuestionService } from "./dynamicQuestionService";
-
 export const INTERVIEW_ROLES_BANK: Record<string, InterviewRoleData> = {};
 
 export class InterviewEngineService {
   /**
-   * Dynamically generates role data for any profession and CEFR level.
+   * Dynamically generates role data structure for any profession and CEFR level.
    */
-  public static getRoleData(roleName: string = "Professional", userCefr: string = "B1"): InterviewRoleData {
+  public static getRoleData(roleName: string = "Professional", _userCefr: string = "B1"): InterviewRoleData {
     const role = roleName?.trim() || "Professional";
     return {
       roleName: role,
       companyContext: `${role} Professional Practice`,
-      questions: DynamicQuestionService.getRoundQuestions(1, role, userCefr, 5),
+      questions: [],
     };
   }
 }

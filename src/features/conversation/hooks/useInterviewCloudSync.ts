@@ -424,6 +424,7 @@ export function useInterviewCloudSync({
         sessionQuestions: questions,
         askedQuestions: asked,
         latestTurn,
+        replaceQuestions: Boolean(questions && questions.length > 0),
       };
 
       const snapshot: PersistedInterviewState = {

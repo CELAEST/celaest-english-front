@@ -45,6 +45,9 @@ export function useInterviewQuestionManager({
 
   const [activeCefrLevel, setActiveCefrLevelState] = useState<string>(() => {
     if (initialLevel) return normalizeCefrLevel(initialLevel);
+    if (persistedQuestions && persistedQuestions.length > 0 && persistedQuestions[0].targetLevel) {
+      return normalizeCefr(persistedQuestions[0].targetLevel);
+    }
     const cached = getUserCefrLevel(currentUserId || "");
     return cached || "B1";
   });

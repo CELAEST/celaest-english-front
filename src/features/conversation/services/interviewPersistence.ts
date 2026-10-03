@@ -68,12 +68,8 @@ export function loadPersistedInterview(
 
     // Automatic TTL Invalidation (24 hours) to prevent stale/ghost interview sessions
     const isExpired = !parsed.updatedAt || Date.now() - parsed.updatedAt > 24 * 60 * 60 * 1000;
-    const isFinished =
-      typeof parsed.currentQuestionIndex === "number" &&
-      parsed.sessionQuestions &&
-      parsed.currentQuestionIndex >= parsed.sessionQuestions.length;
 
-    if (isExpired || isFinished) {
+    if (isExpired) {
       clearPersistedInterview(userId, cefrLevel);
       return null;
     }

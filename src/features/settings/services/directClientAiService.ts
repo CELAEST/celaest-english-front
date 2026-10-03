@@ -358,7 +358,11 @@ export const directClientAiService = {
         effectiveMaxTokens = Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
       }
 
-      const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode;
+      // Groq's server-side grammar constraint engine (response_format: { type: "json_object" }) is notoriously
+      // brittle with Qwen models and Spanish narrative/quotation marks, triggering premature 'json_validate_failed' 400 errors.
+      // For Qwen on Groq, we rely on strict system prompting and client-side JSON parsing rather than the brittle server grammar constraint.
+      const isGroqQwen = activeProvider === "groq" && model.toLowerCase().includes("qwen");
+      const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode && !isGroqQwen;
 
       const url = `${endpoint}/chat/completions`;
       const res = await fetch(url, {
@@ -383,7 +387,6 @@ export const directClientAiService = {
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => "");
-        logger.warn(`[directClientAiService] ${activeProvider} HTTP ${res.status}:`, errBody);
 
         // A. When Groq returns json_validate_failed, check if failed_generation contains usable JSON
         if (activeProvider === "groq" && errBody.includes("json_validate_failed")) {
@@ -391,7 +394,11 @@ export const directClientAiService = {
             const errObj = JSON.parse(errBody);
             const failedGen = errObj?.error?.failed_generation;
             if (typeof failedGen === "string" && failedGen.includes("{")) {
-              const salvaged = extractFirstJsonObject(failedGen);
+              let salvaged = extractFirstJsonObject(failedGen);
+              if (!salvaged) {
+                const repaired = failedGen.replace(/:\s*"([^"]*)"/g, (_, inner) => `:"${inner.replace(/"/g, "'")}"`);
+                salvaged = extractFirstJsonObject(repaired);
+              }
               if (salvaged) {
                 logger.info("[directClientAiService] Successfully salvaged valid JSON from failed_generation!");
                 return salvaged;
@@ -401,6 +408,8 @@ export const directClientAiService = {
             // ignore JSON parse error of error body
           }
         }
+
+        logger.warn(`[directClientAiService] ${activeProvider} HTTP ${res.status}:`, errBody);
 
         // B. Auto-recovery from JSON validation failure or token limit cutoff:
         // When Groq's validator aborts ('max completion tokens reached before generating a valid document'),

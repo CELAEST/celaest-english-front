@@ -313,6 +313,7 @@ RULES:
 1B. TOP 5 MOST CRITICAL PEDAGOGICAL CORRECTIONS:
    - Scrutinize the candidate's answer and identify grammatical, prepositional, tense, modal, and vocabulary errors.
    - Return AT MOST the 5 most critical errors in "unclearOrErrorWords", prioritized strictly by communicative gravity (how much they impede clarity) and foundational grammar rules for the candidate's level.
+   - STRICT CARD LIMIT: You MUST return a maximum of 5 items in "unclearOrErrorWords". NEVER return 6 or more items. If candidate has 10 errors, choose ONLY the 5 highest-gravity errors and omit the rest.
    - For each error, "correctWord" MUST be the complete, grammatically correct standard English replacement for "errorWord" (e.g. if errorWord is "must to fixing", correctWord is "must fix", never an incomplete fragment like "must" or "fixing").
    - If there are fewer than 5 errors, return only the errors that genuinely exist. If there are 0 errors, return [].
 2. FALSE COGNATES: Flag Spanish false friends (assist≠attend, resume≠summarize, realize≠implement, pretend≠intend, compromise≠commitment, actual≠current, fastly→quickly, win money→earn/generate revenue, make the work→do the work). Explain in Spanish.
@@ -321,7 +322,10 @@ ${strategicFeedbackDirective}
    - ZERO-TYPO ENGLISH ORTHOGRAPHY: When generating corrections in "correctWord" or "betterWay", ensure the spelling strictly follows 100% standard English orthography. Regular past tense verbs MUST include the 'e' in '-ed' (e.g., 'checked', NEVER 'checkd'; 'worked', NEVER 'workd'; 'looked', NEVER 'lookd'; 'stopped', NEVER 'stoped'; 'planned', NEVER 'planed').
    - "explanation": DEBES explicar la regla lingüística o gramatical formal SIEMPRE EN ESPAÑOL con claridad pedagógica y rigor técnico. PROHIBIDO escribir la explicación en inglés y PROHIBIDO poner simples palabras sueltas como "utiliza" o "usa".
    - "translationSpanish": Traducción natural y completa al español de la frase u oración corregida, para que el estudiante entienda el significado exacto de lo que debió decir (e.g. "Ayer fui a la tienda para comprar leche, pero el supermercado estaba cerrado y no pude comprar nada"). PROHIBIDO poner reglas gramaticales o tips en este campo; debe ser únicamente la traducción directa en español de la frase corregida.
-5. No emojis. No markdown. Return ONLY raw JSON.
+5. STRICT JSON VALIDITY & QUOTE RULES:
+   - No emojis. No markdown code blocks (no \`\`\`json). Return ONLY a single raw valid JSON object.
+   - NEVER use unescaped double quotes (") inside any JSON string values (especially inside "explanation", "recommendation", "betterWay", or "userSaidContext").
+   - ALWAYS use single quotes (') for any quotes, examples, dialogue, or labels (e.g. use 'Situation: ...' instead of "Situation: ..."). Unescaped double quotes corrupt the JSON structure.
 6. CEFR ESTIMATION: Based on the grammar complexity, vocabulary range, coherence, and error density of the candidate's answer, estimate their CEFR level (A1, A2, B1, B2, C1, or C2) and return it in the "estimatedCefrLevel" field.
 ${modelAnswerDirective}
 8. NO FABRICATED METRICS (HONEST PLACEHOLDERS): In "improvedFullAnswer" and "strategicFeedback", NEVER invent arbitrary numerical metrics, percentages, or performance benchmarks that the candidate did not explicitly state. When framing quantifiable results, you MUST use clear bracketed placeholders like [X]%.

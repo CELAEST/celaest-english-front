@@ -54,6 +54,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     toggleListening,
     finishTurnManual,
     skipQuestion,
+    closeAnalysisModal,
     repeatQuestion,
     takeTime,
     saveSpecificErrorToMemory,
@@ -125,13 +126,12 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
 
   const handleOpenAnalysisModal = useCallback(() => setShowAnalysisModal(true), []);
   const handleCloseAnalysisModal = useCallback(() => {
-    setShowAnalysisModal(false);
-    setUserTranscript("");
-  }, [setUserTranscript]);
+    closeAnalysisModal();
+  }, [closeAnalysisModal]);
   const handleContinueNextQuestion = useCallback(() => {
-    setShowAnalysisModal(false);
+    closeAnalysisModal();
     skipQuestion();
-  }, [skipQuestion]);
+  }, [closeAnalysisModal, skipQuestion]);
   const handleOpenControlsDrawer = useCallback(() => setShowControlsDrawer(true), []);
   const handleCloseControlsDrawer = useCallback(() => setShowControlsDrawer(false), []);
   const handleRepeatQuestion = useCallback(() => repeatQuestion(), [repeatQuestion]);
@@ -237,9 +237,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             {/* Glowing Orb */}
             <ConversationOrbHero isActive={isActive} />
 
-            {/* Question & Live Transcript — blindado contra crash si currentQuestion aún no hidrata */}
+            {/* Question & Live Transcript */}
             <ConversationPromptArea
-              currentQuestionText={currentQuestion?.question ?? "Tell me about your recent project and your role in it."}
+              currentQuestionText={currentQuestion?.question || "Preparing your personalized challenge..."}
               currentQuestionIndex={overallQuestionIndex}
               userTranscript={userTranscript}
               isListening={isListening}
@@ -289,18 +289,22 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         panelProps={panelProps}
       />
 
-      {/* 4. Full Turn Analysis Modal */}
-      {showAnalysisModal && turnFeedback && (
-        <InterviewAnalysisModal
-          feedback={turnFeedback}
-          savedErrorIds={savedErrorIds}
-          onClose={handleCloseAnalysisModal}
-          onContinue={handleContinueNextQuestion}
-          onSaveSpecificError={saveSpecificErrorToMemory}
-          onSaveAllErrors={saveAllErrorsToMemory}
-          onNavigateToMemory={onNavigateToMemory}
-        />
-      )}
+      {/* 4. Full Turn Analysis Modal (strictly guarded against NaN or empty feedback) */}
+      {showAnalysisModal &&
+        turnFeedback &&
+        typeof turnFeedback.overallScore === "number" &&
+        !isNaN(turnFeedback.overallScore) &&
+        turnFeedback.overallScore > 0 && (
+          <InterviewAnalysisModal
+            feedback={turnFeedback}
+            savedErrorIds={savedErrorIds}
+            onClose={handleCloseAnalysisModal}
+            onContinue={handleContinueNextQuestion}
+            onSaveSpecificError={saveSpecificErrorToMemory}
+            onSaveAllErrors={saveAllErrorsToMemory}
+            onNavigateToMemory={onNavigateToMemory}
+          />
+        )}
 
       {/* 5. Audio & Mic Settings Modal */}
       {showAudioSettings && (

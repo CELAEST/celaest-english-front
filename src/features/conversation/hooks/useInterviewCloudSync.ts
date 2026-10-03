@@ -112,10 +112,22 @@ export function useInterviewCloudSync({
         userTranscriptRef.current = p.userTranscript;
       }
       if (Array.isArray(p.savedErrorIds)) setSavedErrorIds(new Set(p.savedErrorIds));
-      if (typeof p.showAnalysisModal === "boolean") setShowAnalysisModal(p.showAnalysisModal);
-      const fb = p.latestTurn?.feedback;
-      if (fb && typeof fb === "object") {
+
+      const fb = p.latestTurn?.feedback as any;
+      const hasValidFeedback =
+        fb &&
+        typeof fb === "object" &&
+        typeof fb.overallScore === "number" &&
+        !isNaN(fb.overallScore) &&
+        fb.overallScore > 0;
+
+      if (hasValidFeedback) {
         setTurnFeedback(fb as unknown as ComprehensiveTurnFeedback);
+        if (typeof p.showAnalysisModal === "boolean") setShowAnalysisModal(p.showAnalysisModal);
+      } else {
+        // Blindaje contra modal fantasma con NaN: si la BD no tiene feedback numérico real, jamás abrir el modal
+        setTurnFeedback(null);
+        setShowAnalysisModal(false);
       }
     },
     [

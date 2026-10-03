@@ -235,6 +235,17 @@ export const useInterviewSession = (
     });
   }, [questions, speech, evaluation]);
 
+  const closeAnalysisModal = useCallback(() => {
+    evaluation.setShowAnalysisModal(false);
+    evaluation.setTurnFeedback(null);
+    speech.setUserTranscript("");
+    cloudSyncRef.current?.saveProgressNow({
+      showAnalysisModal: false,
+      userTranscript: "",
+      latestTurn: {},
+    });
+  }, [evaluation, speech]);
+
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
       if (evaluation.isBusy()) return;
@@ -321,6 +332,7 @@ export const useInterviewSession = (
     // User actions
     repeatQuestion,
     skipQuestion,
+    closeAnalysisModal,
     pauseInterview: speech.pauseInterview,
     resumeInterview: speech.resumeInterview,
     toggleListening: speech.toggleRecording,

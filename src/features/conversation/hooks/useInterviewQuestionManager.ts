@@ -207,21 +207,20 @@ export function useInterviewQuestionManager({
       });
   }, [isActive, hasHydrated, sessionQuestions.length, effectiveRoleName, activeCefrLevel, askedQuestions]);
 
-  // 2. Background replenishment when approaching end of session pool
+  // 2. Round completion generation: only generate next round when user has reached the end of current pool
   useEffect(() => {
     if (!isActive) return;
     const remaining = sessionQuestions.length - currentQuestionIndex;
 
+    // Only fetch if session is active, questions are loaded, and user has genuinely completed the batch (remaining <= 0)
     if (
       sessionQuestions.length > 0 &&
-      remaining <= 2 &&
+      remaining <= 0 &&
       !isReplenishingRef.current &&
       !isGeneratingRef.current
     ) {
       isReplenishingRef.current = true;
-      if (remaining <= 0) {
-        setIsGeneratingQuestions(true);
-      }
+      setIsGeneratingQuestions(true);
       const normLevel = normalizeCefr(activeCefrLevel);
       const allCurrentQuestionTexts = [
         ...askedQuestions,
@@ -237,29 +236,21 @@ export function useInterviewQuestionManager({
       })
         .then((freshQuestions) => {
           if (freshQuestions && freshQuestions.length > 0) {
-            setSessionQuestions((prev) => {
-              const existingTexts = new Set(prev.map((p) => p.question.toLowerCase().trim()));
-              const deduplicated = freshQuestions.filter(
-                (f) => !existingTexts.has(f.question.toLowerCase().trim()),
-              );
-              const combined = deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
-              onQuestionsGeneratedRef.current?.(combined, normLevel);
-              return combined;
-            });
+            setSessionQuestions(freshQuestions);
+            setCurrentQuestionIndex(0);
+            onQuestionsGeneratedRef.current?.(freshQuestions, normLevel);
           }
         })
         .catch((err) => {
-          logger.warn("[useInterviewQuestionManager] Replenishment error:", err);
-          if (remaining <= 0) {
-            onAiInfrastructureErrorRef.current?.(err);
-          }
+          logger.warn("[useInterviewQuestionManager] Round completion generation error:", err);
+          onAiInfrastructureErrorRef.current?.(err);
         })
         .finally(() => {
           isReplenishingRef.current = false;
           setIsGeneratingQuestions(false);
         });
     }
-  }, [isActive, sessionQuestions, currentQuestionIndex, effectiveRoleName, activeCefrLevel, askedQuestions]);
+  }, [isActive, sessionQuestions.length, currentQuestionIndex, effectiveRoleName, activeCefrLevel, askedQuestions]);
 
   // Anti-loop question calculation: never mod (% length), never wrap back to question 1!
   const currentQuestion = useMemo<InterviewQuestionItem>(() => {

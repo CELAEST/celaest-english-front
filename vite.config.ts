@@ -122,7 +122,7 @@ export default defineConfig(({ command, mode }) => ({
         ws: true,
       },
       "/core-ai": {
-        target: "http://127.0.0.1:8085",
+        target: "https://celaest-core.onrender.com",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/core-ai/, "/api/v1"),
       },

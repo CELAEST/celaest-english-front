@@ -138,12 +138,15 @@ export function useInterviewQuestionManager({
     [effectiveRoleName, activeCefrLevel, currentUserId],
   );
 
+  const prevPropInitialLevelRef = useRef<string | undefined>(initialLevel);
   useEffect(() => {
     if (!isActive || !initialLevel) return;
-    const norm = normalizeCefr(initialLevel);
-    if (lastAppliedInitialLevelRef.current !== norm && norm !== activeCefrLevel) {
-      lastAppliedInitialLevelRef.current = norm;
-      setActiveCefrLevel(norm);
+    if (prevPropInitialLevelRef.current !== initialLevel) {
+      prevPropInitialLevelRef.current = initialLevel;
+      const norm = normalizeCefr(initialLevel);
+      if (norm !== activeCefrLevel) {
+        setActiveCefrLevel(norm);
+      }
     }
   }, [isActive, initialLevel, setActiveCefrLevel, activeCefrLevel]);
 

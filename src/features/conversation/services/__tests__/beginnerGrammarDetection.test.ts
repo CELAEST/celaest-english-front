@@ -132,4 +132,36 @@ describe("Beginner A1 Grammar Detection in MasterAiFeedbackEngine", () => {
     // 5. nothing -> anything
     expect(corrWords.some((c) => c.includes("anything"))).toBe(true);
   });
+
+  it("detects errors in multi-clause technical KPI response ('I needs', 'to measuring', 'must to', 'will avoids', 'me and my supervisor was')", () => {
+    const question: InterviewQuestionItem = {
+      id: 6,
+      question: "How do you track operational metrics and handle unexpected issues in your systems?",
+      category: "TECHNICAL",
+      starHint: "Metrics tracking",
+      expectedKeywords: ["metrics", "kpi"],
+      targetLevel: "B1",
+    };
+    const answer =
+      "When I needs to measuring the operation metrics and key performance indicators in my job, first I looks at the dashboard data what is update every hours. Yesterday, me and my supervisor was talking about why our conversion rate drops down unexpectedly, and we realizes that our backend system had a bug who causes many errors for users. Because of this, my team must to fixing the problem immediately before the client complains us again. In the future, we will avoids these mistakes using better tests.";
+
+    const result = MasterAiFeedbackEngine.evaluateTurn(answer, question);
+    const errors = result.unclearOrErrorWords;
+
+    expect(errors.length).toBeGreaterThanOrEqual(4);
+
+    const errorWords = errors.map((e) => e.errorWord.toLowerCase());
+    const corrWords = errors.map((e) => e.correctWord.toLowerCase());
+
+    // 1. needs -> need
+    expect(errorWords.some((w) => w.includes("needs")) || corrWords.some((c) => c.includes("need"))).toBe(true);
+    // 2. to measuring -> to measure
+    expect(errorWords.some((w) => w.includes("to measuring")) || corrWords.some((c) => c.includes("measure"))).toBe(true);
+    // 3. must to -> must
+    expect(errorWords.some((w) => w.includes("must to")) || corrWords.some((c) => c.includes("must"))).toBe(true);
+    // 4. will avoids -> will avoid
+    expect(errorWords.some((w) => w.includes("avoids")) || corrWords.some((c) => c.includes("avoid"))).toBe(true);
+    // 5. me and my supervisor was -> my supervisor and I were
+    expect(errorWords.some((w) => w.includes("me and my")) || corrWords.some((c) => c.includes("i were"))).toBe(true);
+  });
 });

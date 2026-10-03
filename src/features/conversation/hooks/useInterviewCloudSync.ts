@@ -445,7 +445,7 @@ export function useInterviewCloudSync({
       return apiInterviewRepository
         .saveProgress(payload)
         .then((canonical) => {
-          if (canonical?.sessionQuestions && canonical.sessionQuestions.length > 0) {
+          if (canonical?.sessionQuestions && canonical.sessionQuestions.length > 0 && sessionQuestions.length === 0) {
             applyProgress({
               roleName: canonical.roleName,
               cefrLevel: canonical.cefrLevel,

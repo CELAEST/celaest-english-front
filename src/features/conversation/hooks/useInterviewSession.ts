@@ -74,11 +74,11 @@ export const useInterviewSession = (
     persistedAskedQuestions: restored?.askedQuestions,
     onLevelOrRoleReset: handleLevelOrRoleReset,
     onAiInfrastructureError: handleAiInfrastructureError,
-    onQuestionsGenerated: (fresh, lvl) => {
+    onQuestionsGenerated: (fresh, lvl, targetIndex) => {
       cloudSyncRef.current?.saveProgressNow({
         sessionQuestions: fresh,
         cefrLevel: lvl,
-        currentQuestionIndex: questions.currentQuestionIndex,
+        currentQuestionIndex: targetIndex ?? 0,
       });
     },
   });
@@ -216,6 +216,11 @@ export const useInterviewSession = (
     lastSpokenQuestionRef.current = "";
 
     const nextIndex = questions.currentQuestionIndex + 1;
+    if (questions.sessionQuestions.length > 0 && nextIndex >= questions.sessionQuestions.length) {
+      questions.generateNextRound();
+      return;
+    }
+
     questions.setCurrentQuestionIndex(nextIndex);
 
     const currentQText = questions.currentQuestion?.question;

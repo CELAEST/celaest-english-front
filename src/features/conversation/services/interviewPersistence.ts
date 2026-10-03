@@ -24,24 +24,47 @@ export interface PersistedInterviewState {
   updatedAt: number;
 }
 
-export function getInterviewStorageKey(userId?: string): string {
+export function getInterviewStorageKey(userId?: string, cefrLevel?: string): string {
+  const normLevel = cefrLevel ? cefrLevel.toUpperCase().trim() : "";
   if (userId && userId !== "anon") {
-    return `celaest:user:${userId}:interview-progress:v2`;
+    return normLevel
+      ? `celaest:user:${userId}:level:${normLevel}:interview-progress:v2`
+      : `celaest:user:${userId}:interview-progress:v2`;
   }
-  return STORAGE_KEY;
+  return normLevel ? `${STORAGE_KEY}:${normLevel}` : STORAGE_KEY;
 }
 
-export function loadPersistedInterview(userId?: string): PersistedInterviewState | null {
+export function loadPersistedInterview(
+  userId?: string,
+  cefrLevel?: string,
+): PersistedInterviewState | null {
   try {
     if (typeof localStorage === "undefined") return null;
-    const userKey = getInterviewStorageKey(userId);
-    let raw = localStorage.getItem(userKey);
+    const normLevel = cefrLevel ? cefrLevel.toUpperCase().trim() : "";
+
+    // 1. Try level-specific key first
+    let raw: string | null = null;
+    if (normLevel) {
+      const levelKey = getInterviewStorageKey(userId, normLevel);
+      raw = localStorage.getItem(levelKey);
+    }
+
+    // 2. If not found or level not provided, try general key
+    if (!raw) {
+      const userKey = getInterviewStorageKey(userId);
+      raw = localStorage.getItem(userKey);
+    }
     if (!raw && (!userId || userId === "anon")) {
       raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     }
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PersistedInterviewState;
     if (!parsed || (parsed.version !== 1 && parsed.version !== 2)) return null;
+
+    // If level requested, verify level matches
+    if (normLevel && parsed.cefrLevel && parsed.cefrLevel.toUpperCase().trim() !== normLevel) {
+      return null;
+    }
 
     // Automatic TTL Invalidation (24 hours) to prevent stale/ghost interview sessions
     const isExpired = !parsed.updatedAt || Date.now() - parsed.updatedAt > 24 * 60 * 60 * 1000;
@@ -51,7 +74,7 @@ export function loadPersistedInterview(userId?: string): PersistedInterviewState
       parsed.currentQuestionIndex >= parsed.sessionQuestions.length;
 
     if (isExpired || isFinished) {
-      clearPersistedInterview(userId);
+      clearPersistedInterview(userId, cefrLevel);
       return null;
     }
 
@@ -64,19 +87,32 @@ export function loadPersistedInterview(userId?: string): PersistedInterviewState
 export function savePersistedInterview(state: PersistedInterviewState, userId?: string): void {
   try {
     if (typeof localStorage === "undefined") return;
-    const key = getInterviewStorageKey(userId);
-    localStorage.setItem(key, JSON.stringify(state));
+    const jsonStr = JSON.stringify(state);
+
+    // Save to general key (latest state)
+    const generalKey = getInterviewStorageKey(userId);
+    localStorage.setItem(generalKey, jsonStr);
+
+    // Save to level-specific key
+    if (state.cefrLevel) {
+      const levelKey = getInterviewStorageKey(userId, state.cefrLevel);
+      localStorage.setItem(levelKey, jsonStr);
+    }
   } catch {
     // Quota exceeded or storage unavailable: persistence is best-effort.
   }
 }
 
-export function clearPersistedInterview(userId?: string): void {
+export function clearPersistedInterview(userId?: string, cefrLevel?: string): void {
   try {
     if (typeof localStorage === "undefined") return;
-    const key = getInterviewStorageKey(userId);
-    localStorage.removeItem(key);
-    if (key !== STORAGE_KEY) {
+    const generalKey = getInterviewStorageKey(userId);
+    localStorage.removeItem(generalKey);
+    if (cefrLevel) {
+      const levelKey = getInterviewStorageKey(userId, cefrLevel);
+      localStorage.removeItem(levelKey);
+    }
+    if (generalKey !== STORAGE_KEY) {
       localStorage.removeItem(STORAGE_KEY);
     }
     localStorage.removeItem(LEGACY_STORAGE_KEY);

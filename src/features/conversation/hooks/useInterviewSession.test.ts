@@ -461,5 +461,123 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
     });
     expect(result.current.currentQuestionIndex).toBe(2);
   });
+
+  it("preserves questions and pending index per CEFR level when switching levels", async () => {
+    // Mock backend returning different state for A1 and B2
+    vi.mocked(apiInterviewRepository.getProgress).mockImplementation((level?: string) => {
+      if (level === "A1") {
+        return Promise.resolve({
+          userId: "user-1",
+          roleName: "Product Manager",
+          speechRate: 0.95,
+          currentQuestionIndex: 1, // Question 2 in A1
+          userTranscript: "",
+          savedErrorIds: [],
+          showAnalysisModal: false,
+          latestTurn: null,
+          cefrLevel: "A1",
+          sessionQuestions: [
+            {
+              id: 1,
+              question: "A1 question 1",
+              category: "WARMUP",
+              starHint: "",
+              expectedKeywords: [],
+              round: 1,
+            },
+            {
+              id: 2,
+              question: "A1 question 2",
+              category: "WARMUP",
+              starHint: "",
+              expectedKeywords: [],
+              round: 1,
+            },
+          ],
+          askedQuestions: ["A1 question 1"],
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      return Promise.resolve({
+        userId: "user-1",
+        roleName: "Product Manager",
+        speechRate: 0.95,
+        currentQuestionIndex: 3, // Question 4 in B1
+        userTranscript: "",
+        savedErrorIds: [],
+        showAnalysisModal: false,
+        latestTurn: null,
+        cefrLevel: "B1",
+        sessionQuestions: [
+          {
+            id: 1,
+            question: "B1 question 1",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+          {
+            id: 2,
+            question: "B1 question 2",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+          {
+            id: 3,
+            question: "B1 question 3",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+          {
+            id: 4,
+            question: "B1 question 4",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+        ],
+        askedQuestions: ["B1 question 1", "B1 question 2", "B1 question 3"],
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    // Wait for initial B1 hydration
+    await waitFor(() => {
+      expect(result.current.overallQuestionIndex).toBe(4);
+      expect(result.current.currentQuestion?.question).toBe("B1 question 4");
+    });
+
+    // Switch to A1
+    act(() => {
+      result.current.setActiveCefrLevel("A1");
+    });
+
+    // Verify A1 questions and index (Question 2) are loaded
+    await waitFor(() => {
+      expect(result.current.activeCefrLevel).toBe("A1");
+      expect(result.current.overallQuestionIndex).toBe(2);
+      expect(result.current.currentQuestion?.question).toBe("A1 question 2");
+    });
+
+    // Switch back to B1
+    act(() => {
+      result.current.setActiveCefrLevel("B1");
+    });
+
+    // Verify B1 questions and index (Question 4) are restored without loss
+    await waitFor(() => {
+      expect(result.current.activeCefrLevel).toBe("B1");
+      expect(result.current.overallQuestionIndex).toBe(4);
+      expect(result.current.currentQuestion?.question).toBe("B1 question 4");
+    });
+  });
 });
 

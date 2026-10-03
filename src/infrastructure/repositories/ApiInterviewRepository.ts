@@ -27,9 +27,12 @@ export class ApiInterviewRepository implements IInterviewRepository {
     });
   }
 
-  async getProgress(): Promise<InterviewProgressDTO | null> {
+  async getProgress(cefrLevel?: string): Promise<InterviewProgressDTO | null> {
     try {
-      return await HttpClient.get<InterviewProgressDTO | null>("/interview/progress");
+      const url = cefrLevel
+        ? `/interview/progress?cefrLevel=${encodeURIComponent(cefrLevel)}`
+        : "/interview/progress";
+      return await HttpClient.get<InterviewProgressDTO | null>(url);
     } catch {
       return null;
     }

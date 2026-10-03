@@ -39,6 +39,7 @@ export const useInterviewSession = (
   // 2. Question Progression Sub-Hook
   // ──────────────────────────────────────────────
   const evaluationRef = useRef<ReturnType<typeof useInterviewTurnEvaluation> | null>(null);
+  const cloudSyncRef = useRef<ReturnType<typeof useInterviewCloudSync> | null>(null);
 
   const handleAiInfrastructureError = useCallback((err: unknown) => {
     const { scenario, cooldownSeconds } = classifyAiError(err);
@@ -58,6 +59,13 @@ export const useInterviewSession = (
     persistedIndex: restored?.currentQuestionIndex ?? 0,
     persistedAskedQuestions: restored?.askedQuestions,
     onAiInfrastructureError: handleAiInfrastructureError,
+    onQuestionsGenerated: (fresh, lvl) => {
+      cloudSyncRef.current?.saveProgressNow({
+        sessionQuestions: fresh,
+        cefrLevel: lvl,
+        currentQuestionIndex: questions.currentQuestionIndex,
+      });
+    },
   });
 
   // ──────────────────────────────────────────────
@@ -108,7 +116,7 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   // 5. Cloud Synchronization Sub-Hook
   // ──────────────────────────────────────────────
-  useInterviewCloudSync({
+  const cloudSync = useInterviewCloudSync({
     effectiveRoleName: questions.effectiveRoleName,
     activeCefrLevel: questions.activeCefrLevel,
     setActiveCefrLevel: questions.setActiveCefrLevel,
@@ -132,6 +140,8 @@ export const useInterviewSession = (
     currentQuestionText: questions.currentQuestion?.question,
     restoredState: restored,
   });
+
+  cloudSyncRef.current = cloudSync;
 
   // ──────────────────────────────────────────────
   // 6. Proactive question TTS prefetch
@@ -188,7 +198,25 @@ export const useInterviewSession = (
     evaluation.setTurnFeedback(null);
     evaluation.setShowAnalysisModal(false);
     lastSpokenQuestionRef.current = "";
-    questions.setCurrentQuestionIndex((prev) => prev + 1);
+
+    const nextIndex = questions.currentQuestionIndex + 1;
+    questions.setCurrentQuestionIndex(nextIndex);
+
+    const currentQText = questions.currentQuestion?.question;
+    const updatedAsked =
+      currentQText &&
+      !currentQText.startsWith("Generating") &&
+      !currentQText.startsWith("Preparing")
+        ? Array.from(new Set([...questions.askedQuestions, currentQText]))
+        : questions.askedQuestions;
+
+    cloudSyncRef.current?.saveProgressNow({
+      currentQuestionIndex: nextIndex,
+      userTranscript: "",
+      showAnalysisModal: false,
+      askedQuestions: updatedAsked,
+      latestTurn: {},
+    });
   }, [questions, speech, evaluation]);
 
   const repeatQuestion = useCallback(
@@ -210,6 +238,7 @@ export const useInterviewSession = (
       speech.stopSpeakingAndReset();
       speech.setUserTranscript("");
       evaluation.setTurnFeedback(null);
+      evaluation.setShowAnalysisModal(false);
       questions.setActiveCefrLevel(level);
     },
     [questions, speech, evaluation],

@@ -3,6 +3,7 @@ import { InterviewQuestionItem } from "../services/interviewEngineService";
 import { normalizeCefr, CefrLevelCode } from "../services/dynamicQuestionService";
 import { AiInterviewQuestionGenerator } from "../services/aiInterviewQuestionGenerator";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
+import { loadPersistedInterview } from "../services/interviewPersistence";
 import { logger } from "../../../shared/utils/logger";
 
 export interface UseInterviewQuestionManagerOptions {
@@ -15,6 +16,7 @@ export interface UseInterviewQuestionManagerOptions {
   persistedAskedQuestions?: string[] | undefined;
   onLevelOrRoleReset?: (() => void) | undefined;
   onAiInfrastructureError?: ((err: unknown) => void) | undefined;
+  onQuestionsGenerated?: ((questions: InterviewQuestionItem[], level: string) => void) | undefined;
 }
 
 export function useInterviewQuestionManager({
@@ -27,6 +29,7 @@ export function useInterviewQuestionManager({
   persistedAskedQuestions,
   onLevelOrRoleReset,
   onAiInfrastructureError,
+  onQuestionsGenerated,
 }: UseInterviewQuestionManagerOptions) {
   const effectiveRoleName =
     roleName && roleName !== "Professional" ? roleName : "Professional";
@@ -50,17 +53,38 @@ export function useInterviewQuestionManager({
     return "B1";
   });
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(persistedIndex);
-  const [askedQuestions, setAskedQuestions] = useState<string[]>(() => persistedAskedQuestions || []);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState<boolean>(false);
-
   const professionMatchesPersisted =
     Boolean(persistedRoleName) &&
     persistedRoleName?.toLowerCase() === effectiveRoleName.toLowerCase();
 
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(() => {
+    const normActiveLevel = normalizeCefr(activeCefrLevel);
+    const localForLevel = loadPersistedInterview(currentUserId, normActiveLevel);
+    if (typeof localForLevel?.currentQuestionIndex === "number") {
+      return localForLevel.currentQuestionIndex;
+    }
+    return persistedIndex;
+  });
+
+  const [askedQuestions, setAskedQuestions] = useState<string[]>(() => {
+    const normActiveLevel = normalizeCefr(activeCefrLevel);
+    const localForLevel = loadPersistedInterview(currentUserId, normActiveLevel);
+    if (Array.isArray(localForLevel?.askedQuestions)) {
+      return localForLevel.askedQuestions;
+    }
+    return persistedAskedQuestions || [];
+  });
+
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState<boolean>(false);
+
   // Session-level questions tailored to exact (effectiveRoleName, activeCefrLevel)
   const [sessionQuestions, setSessionQuestions] = useState<InterviewQuestionItem[]>(() => {
     const normActiveLevel = normalizeCefr(activeCefrLevel);
+    const localForLevel = loadPersistedInterview(currentUserId, normActiveLevel);
+    if (localForLevel?.sessionQuestions && localForLevel.sessionQuestions.length > 0) {
+      return localForLevel.sessionQuestions;
+    }
+
     const hasLevelMismatch = (questions: InterviewQuestionItem[]) => {
       return questions.some((q) => q.targetLevel && normalizeCefr(q.targetLevel) !== normActiveLevel);
     };
@@ -86,6 +110,11 @@ export function useInterviewQuestionManager({
     onAiInfrastructureErrorRef.current = onAiInfrastructureError;
   }, [onAiInfrastructureError]);
 
+  const onQuestionsGeneratedRef = useRef(onQuestionsGenerated);
+  useEffect(() => {
+    onQuestionsGeneratedRef.current = onQuestionsGenerated;
+  }, [onQuestionsGenerated]);
+
   const setActiveCefrLevel = useCallback(
     (level: string) => {
       const norm = normalizeCefr(level);
@@ -102,8 +131,19 @@ export function useInterviewQuestionManager({
           // ignore
         }
       }
-      setSessionQuestions([]);
-      setCurrentQuestionIndex(0);
+
+      // Restore locally persisted questions for the new level immediately
+      const localForLevel = loadPersistedInterview(currentUserId, norm);
+      if (localForLevel?.sessionQuestions && localForLevel.sessionQuestions.length > 0) {
+        setSessionQuestions(localForLevel.sessionQuestions);
+        setCurrentQuestionIndex(localForLevel.currentQuestionIndex ?? 0);
+        setAskedQuestions(localForLevel.askedQuestions ?? []);
+      } else {
+        setSessionQuestions([]);
+        setCurrentQuestionIndex(0);
+        setAskedQuestions([]);
+      }
+
       onLevelOrRoleResetRef.current?.();
     },
     [activeCefrLevel, currentUserId],
@@ -165,6 +205,7 @@ export function useInterviewQuestionManager({
             }
             return prevIdx;
           });
+          onQuestionsGeneratedRef.current?.(freshQuestions, normLevel);
         }
       })
       .catch((err) => {
@@ -212,7 +253,9 @@ export function useInterviewQuestionManager({
               const deduplicated = freshQuestions.filter(
                 (f) => !existingTexts.has(f.question.toLowerCase().trim()),
               );
-              return deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
+              const combined = deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
+              onQuestionsGeneratedRef.current?.(combined, normLevel);
+              return combined;
             });
           }
         })
@@ -294,7 +337,9 @@ export function useInterviewQuestionManager({
             const deduplicated = freshQuestions.filter(
               (f) => !existingTexts.has(f.question.toLowerCase().trim()),
             );
-            return deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
+            const combined = deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
+            onQuestionsGeneratedRef.current?.(combined, normLevel);
+            return combined;
           });
           setCurrentQuestionIndex((prevIdx) => {
             if (sessionQuestions.length === 0 && prevIdx >= freshQuestions.length) {

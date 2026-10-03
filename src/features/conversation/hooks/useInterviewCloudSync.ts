@@ -8,6 +8,7 @@ import {
 } from "../services/interviewPersistence";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { InterviewQuestionItem } from "../services/interviewEngineService";
+import { SaveProgressPayload } from "../../../domain/repositories/IInterviewRepository";
 import { logger } from "../../../shared/utils/logger";
 
 /** Per-user hydration tracking to prevent duplicate requests in Strict Mode */
@@ -40,6 +41,7 @@ export interface UseInterviewCloudSyncOptions {
   setAskedQuestions: React.Dispatch<React.SetStateAction<string[]>>;
   currentQuestionText?: string;
   restoredState?: PersistedInterviewState | null;
+  onHydrationComplete?: (hasQuestions: boolean, level: string) => void;
 }
 
 export function useInterviewCloudSync({
@@ -65,11 +67,19 @@ export function useInterviewCloudSync({
   setAskedQuestions,
   currentQuestionText = "",
   restoredState,
+  onHydrationComplete,
 }: UseInterviewCloudSyncOptions) {
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   const restoredRef = useRef<PersistedInterviewState | null>(
-    restoredState !== undefined ? restoredState : loadPersistedInterview(currentUserId),
+    restoredState !== undefined
+      ? restoredState
+      : loadPersistedInterview(currentUserId, activeCefrLevel),
   );
+
+  const onHydrationCompleteRef = useRef(onHydrationComplete);
+  useEffect(() => {
+    onHydrationCompleteRef.current = onHydrationComplete;
+  }, [onHydrationComplete]);
 
   const applyProgress = useCallback(
     (p: {
@@ -229,99 +239,212 @@ export function useInterviewCloudSync({
     currentUserId,
   ]);
 
-  // Server-Wins Hydration from backend on mount
+  // Server-Wins Hydration from backend on mount and level change
   const didHydrateRef = useRef(false);
-  const syncFromBackend = useCallback(() => {
-    const hydrateKey = currentUserId ?? "__anon__";
-    const lastHydrated = hydrationLog.get(hydrateKey) ?? 0;
-    if (lastHydrated > 0 && Date.now() - lastHydrated < 3 * 1000) return;
-    hydrationLog.set(hydrateKey, Date.now());
+  const syncFromBackend = useCallback(
+    (targetLevel?: string, force: boolean = false) => {
+      const levelToFetch = (targetLevel || activeCefrLevel).toUpperCase().trim();
+      const hydrateKey = `${currentUserId ?? "__anon__"}:${levelToFetch}`;
+      const lastHydrated = hydrationLog.get(hydrateKey) ?? 0;
+      if (!force && lastHydrated > 0 && Date.now() - lastHydrated < 2 * 1000) return;
+      hydrationLog.set(hydrateKey, Date.now());
 
-    apiInterviewRepository
-      .getProgress()
-      .then((dto) => {
-        if (!dto || !dto.updatedAt) return;
-        const backendTime = new Date(dto.updatedAt).getTime();
-        const localTime = restoredRef.current?.updatedAt ?? 0;
-        if (Number.isFinite(backendTime) && Number.isFinite(localTime) && backendTime <= localTime) {
-          return;
-        }
-
-        const sanitizedIndex = dto.currentQuestionIndex || 0;
-        let sanitizedTurn: Record<string, unknown> | null = null;
-        if (dto.latestTurn) {
-          if (typeof dto.latestTurn === "string") {
-            try {
-              sanitizedTurn = JSON.parse(dto.latestTurn);
-            } catch {
-              sanitizedTurn = null;
-            }
-          } else if (typeof dto.latestTurn === "object") {
-            sanitizedTurn = dto.latestTurn;
+      apiInterviewRepository
+        .getProgress(levelToFetch)
+        .then((dto) => {
+          if (!dto) {
+            onHydrationCompleteRef.current?.(false, levelToFetch);
+            return;
           }
-        }
 
-        // Cancel any pending save timeout to avoid overwriting or redundant POST
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-          saveTimeoutRef.current = null;
-        }
+          const backendTime = dto.updatedAt ? new Date(dto.updatedAt).getTime() : 0;
+          const localState = loadPersistedInterview(currentUserId, levelToFetch);
+          const localTime = localState?.updatedAt ?? restoredRef.current?.updatedAt ?? 0;
 
-        const adoptedRole = dto.roleName || effectiveRoleName;
-        const adoptedLevel = dto.cefrLevel || activeCefrLevel;
-        const adoptedRate = dto.speechRate ?? speechRate;
-        const adoptedSavedErrIds = dto.savedErrorIds || [];
+          // If local state is strictly newer than backend, keep the local snapshot
+          if (
+            !force &&
+            Number.isFinite(backendTime) &&
+            Number.isFinite(localTime) &&
+            localTime > 0 &&
+            backendTime <= localTime
+          ) {
+            const hasLocalQuestions =
+              Array.isArray(localState?.sessionQuestions) && localState.sessionQuestions.length > 0;
+            onHydrationCompleteRef.current?.(hasLocalQuestions, levelToFetch);
+            return;
+          }
 
-        lastSavedSnapshotRef.current = JSON.stringify({
-          version: 2,
-          roleName: adoptedRole,
-          cefrLevel: adoptedLevel,
-          speechRate: adoptedRate,
-          currentQuestionIndex: sanitizedIndex,
-          turnFeedback: sanitizedTurn?.feedback ? (sanitizedTurn.feedback as any).overallScore : null,
-          showAnalysisModal: Boolean(dto.showAnalysisModal),
-          savedErrorIds: Array.from(adoptedSavedErrIds),
-          questionsCount: dto.sessionQuestions?.length ?? 0,
-          askedCount: dto.askedQuestions?.length ?? 0,
+          const sanitizedIndex = dto.currentQuestionIndex || 0;
+          let sanitizedTurn: Record<string, unknown> | null = null;
+          if (dto.latestTurn) {
+            if (typeof dto.latestTurn === "string") {
+              try {
+                sanitizedTurn = JSON.parse(dto.latestTurn);
+              } catch {
+                sanitizedTurn = null;
+              }
+            } else if (typeof dto.latestTurn === "object") {
+              sanitizedTurn = dto.latestTurn;
+            }
+          }
+
+          // Cancel any pending save timeout to avoid overwriting or redundant POST
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+          }
+
+          const adoptedRole = dto.roleName || effectiveRoleName;
+          const adoptedLevel = dto.cefrLevel || levelToFetch;
+          const adoptedRate = dto.speechRate ?? speechRate;
+          const adoptedSavedErrIds = dto.savedErrorIds || [];
+
+          lastSavedSnapshotRef.current = JSON.stringify({
+            version: 2,
+            roleName: adoptedRole,
+            cefrLevel: adoptedLevel,
+            speechRate: adoptedRate,
+            currentQuestionIndex: sanitizedIndex,
+            turnFeedback: sanitizedTurn?.feedback
+              ? (sanitizedTurn.feedback as any).overallScore
+              : null,
+            showAnalysisModal: Boolean(dto.showAnalysisModal),
+            savedErrorIds: Array.from(adoptedSavedErrIds),
+            questionsCount: dto.sessionQuestions?.length ?? 0,
+            askedCount: dto.askedQuestions?.length ?? 0,
+          });
+
+          applyProgress({
+            roleName: adoptedRole,
+            cefrLevel: adoptedLevel,
+            speechRate: adoptedRate,
+            currentQuestionIndex: sanitizedIndex,
+            userTranscript: dto.userTranscript,
+            savedErrorIds: adoptedSavedErrIds,
+            showAnalysisModal: dto.showAnalysisModal,
+            sessionQuestions: dto.sessionQuestions,
+            askedQuestions: dto.askedQuestions,
+            latestTurn: sanitizedTurn,
+          });
+
+          const hasQuestions =
+            Array.isArray(dto.sessionQuestions) && dto.sessionQuestions.length > 0;
+          onHydrationCompleteRef.current?.(hasQuestions, levelToFetch);
+        })
+        .catch((err) => {
+          logger.warn("[useInterviewCloudSync] Initial hydration offline or failed:", err);
+          onHydrationCompleteRef.current?.(false, levelToFetch);
         });
-
-        applyProgress({
-          roleName: adoptedRole,
-          cefrLevel: adoptedLevel,
-          speechRate: adoptedRate,
-          currentQuestionIndex: sanitizedIndex,
-          userTranscript: dto.userTranscript,
-          savedErrorIds: adoptedSavedErrIds,
-          showAnalysisModal: dto.showAnalysisModal,
-          sessionQuestions: dto.sessionQuestions,
-          askedQuestions: dto.askedQuestions,
-          latestTurn: sanitizedTurn,
-        });
-      })
-      .catch((err) => {
-        logger.warn("[useInterviewCloudSync] Initial hydration offline or failed:", err);
-      });
-  }, [currentUserId, applyProgress, effectiveRoleName, activeCefrLevel]);
+    },
+    [currentUserId, applyProgress, effectiveRoleName, activeCefrLevel, speechRate],
+  );
 
   useEffect(() => {
     if (didHydrateRef.current) return;
     didHydrateRef.current = true;
-    syncFromBackend();
-  }, [syncFromBackend]);
+    syncFromBackend(activeCefrLevel);
+  }, [syncFromBackend, activeCefrLevel]);
+
+  // When active level changes, sync that specific level from backend
+  const prevActiveLevelRef = useRef<string>(activeCefrLevel);
+  useEffect(() => {
+    if (prevActiveLevelRef.current !== activeCefrLevel) {
+      prevActiveLevelRef.current = activeCefrLevel;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      syncFromBackend(activeCefrLevel, true);
+    }
+  }, [activeCefrLevel, syncFromBackend]);
 
   // Cross-device sync: When tab becomes visible, check backend for updates made from other devices
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        syncFromBackend();
+        syncFromBackend(activeCefrLevel);
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [syncFromBackend]);
+  }, [syncFromBackend, activeCefrLevel]);
+
+  // Immediate save bypasses debounce for critical lifecycle actions (questions generated, turn advance)
+  const saveProgressNow = useCallback(
+    (customPayload?: Partial<SaveProgressPayload>) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+
+      const role = customPayload?.roleName ?? effectiveRoleName;
+      const level = customPayload?.cefrLevel ?? activeCefrLevel;
+      const rate = customPayload?.speechRate ?? speechRate;
+      const index = customPayload?.currentQuestionIndex ?? currentQuestionIndex;
+      const transcript = customPayload?.userTranscript ?? userTranscript;
+      const errIds = customPayload?.savedErrorIds ?? Array.from(savedErrorIds);
+      const modal = customPayload?.showAnalysisModal ?? showAnalysisModal;
+      const questions = customPayload?.sessionQuestions ?? (sessionQuestions.length > 0 ? sessionQuestions : undefined);
+      const asked = customPayload?.askedQuestions ?? (askedQuestions.length > 0 ? askedQuestions : undefined);
+      const latestTurn = customPayload?.latestTurn ?? {
+        question: currentQuestionText,
+        transcript: userTranscript,
+        feedback: turnFeedback ?? {},
+      };
+
+      const payload: SaveProgressPayload = {
+        roleName: role,
+        cefrLevel: level,
+        speechRate: rate,
+        currentQuestionIndex: index,
+        userTranscript: transcript,
+        savedErrorIds: errIds,
+        showAnalysisModal: modal,
+        sessionQuestions: questions,
+        askedQuestions: asked,
+        latestTurn,
+      };
+
+      const snapshot: PersistedInterviewState = {
+        version: 2,
+        roleName: role,
+        cefrLevel: level,
+        speechRate: rate,
+        currentQuestionIndex: index,
+        userTranscript: transcript,
+        turnFeedback,
+        showAnalysisModal: modal,
+        savedErrorIds: errIds,
+        sessionQuestions: questions,
+        askedQuestions: asked,
+        updatedAt: Date.now(),
+      };
+      savePersistedInterview(snapshot, currentUserId);
+
+      return apiInterviewRepository.saveProgress(payload).catch((err) => {
+        logger.warn("[useInterviewCloudSync] Immediate save error:", err);
+      });
+    },
+    [
+      effectiveRoleName,
+      activeCefrLevel,
+      speechRate,
+      currentQuestionIndex,
+      userTranscript,
+      savedErrorIds,
+      showAnalysisModal,
+      sessionQuestions,
+      askedQuestions,
+      currentQuestionText,
+      turnFeedback,
+      currentUserId,
+    ],
+  );
 
   return {
     restoredRef,
     syncFromBackend,
+    saveProgressNow,
   };
 }

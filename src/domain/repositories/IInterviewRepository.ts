@@ -35,6 +35,6 @@ export interface IInterviewRepository {
   createSession(roleName?: string): Promise<InterviewSession>;
   getSession(sessionId: string): Promise<InterviewSession>;
   connectAudioStream(sessionId: string, onSpectrumFrame: (bars: number[]) => void): WebSocket;
-  getProgress(): Promise<InterviewProgressDTO | null>;
+  getProgress(cefrLevel?: string): Promise<InterviewProgressDTO | null>;
   saveProgress(payload: SaveProgressPayload): Promise<void>;
 }

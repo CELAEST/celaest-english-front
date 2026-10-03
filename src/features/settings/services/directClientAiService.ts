@@ -359,10 +359,10 @@ export const directClientAiService = {
       }
 
       // Groq's server-side grammar constraint engine (response_format: { type: "json_object" }) is notoriously
-      // brittle with Qwen models and Spanish narrative/quotation marks, triggering premature 'json_validate_failed' 400 errors.
-      // For Qwen on Groq, we rely on strict system prompting and client-side JSON parsing rather than the brittle server grammar constraint.
-      const isGroqQwen = activeProvider === "groq" && model.toLowerCase().includes("qwen");
-      const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode && !isGroqQwen;
+      // brittle with both Qwen and GPT-OSS models, triggering premature 'json_validate_failed' 400 errors.
+      // For all models on Groq, we rely on strict system prompting and client-side JSON parsing rather than the brittle server grammar constraint.
+      const isGroq = activeProvider === "groq";
+      const sendStrictJsonFormat = expectsJson && !params._relaxedJsonMode && !isGroq;
 
       const url = `${endpoint}/chat/completions`;
       const res = await fetch(url, {

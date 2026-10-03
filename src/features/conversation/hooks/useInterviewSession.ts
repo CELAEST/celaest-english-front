@@ -16,6 +16,7 @@ import {
   loadPersistedInterview,
   PersistedInterviewState,
 } from "../services/interviewPersistence";
+import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 
 export { __resetInterviewHydrationForTest };
 export type { InterviewStatus, ProcessingStage };
@@ -37,6 +38,17 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   // 2. Question Progression Sub-Hook
   // ──────────────────────────────────────────────
+  const evaluationRef = useRef<ReturnType<typeof useInterviewTurnEvaluation> | null>(null);
+
+  const handleAiInfrastructureError = useCallback((err: unknown) => {
+    const { scenario, cooldownSeconds } = classifyAiError(err);
+    if (evaluationRef.current) {
+      evaluationRef.current.setInfrastructureErrorScenario(scenario);
+      evaluationRef.current.setRecoveryCooldown(cooldownSeconds);
+      evaluationRef.current.setIsRecoveryModalOpen(true);
+    }
+  }, []);
+
   const questions = useInterviewQuestionManager({
     roleName,
     initialLevel,
@@ -45,6 +57,7 @@ export const useInterviewSession = (
     persistedRoleName: restored?.roleName,
     persistedIndex: restored?.currentQuestionIndex ?? 0,
     persistedAskedQuestions: restored?.askedQuestions,
+    onAiInfrastructureError: handleAiInfrastructureError,
   });
 
   // ──────────────────────────────────────────────
@@ -81,6 +94,16 @@ export const useInterviewSession = (
     setSpeechNotice: speech.setSpeechNotice,
     isMountedRef: speech.isMountedRef,
   });
+
+  evaluationRef.current = evaluation;
+
+  const resumeFromRecoveryModal = useCallback(() => {
+    evaluation.setIsRecoveryModalOpen(false);
+    if (questions.sessionQuestions.length === 0 || questions.currentQuestionIndex >= questions.sessionQuestions.length) {
+      questions.retryGeneration();
+    }
+    evaluation.resumeFromRecoveryModal();
+  }, [evaluation, questions]);
 
   // ──────────────────────────────────────────────
   // 5. Cloud Synchronization Sub-Hook
@@ -244,7 +267,7 @@ export const useInterviewSession = (
     setIsRecoveryModalOpen: evaluation.setIsRecoveryModalOpen,
     infrastructureErrorScenario: evaluation.infrastructureErrorScenario,
     recoveryCooldown: evaluation.recoveryCooldown,
-    resumeFromRecoveryModal: evaluation.resumeFromRecoveryModal,
+    resumeFromRecoveryModal,
 
     // Speech notice
     speechNotice: speech.speechNotice,

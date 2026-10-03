@@ -159,6 +159,12 @@ export function useInterviewQuestionManager({
       .then((freshQuestions) => {
         if (freshQuestions && freshQuestions.length > 0) {
           setSessionQuestions(freshQuestions);
+          setCurrentQuestionIndex((prevIdx) => {
+            if (prevIdx >= freshQuestions.length) {
+              return 0;
+            }
+            return prevIdx;
+          });
         }
       })
       .catch((err) => {
@@ -183,6 +189,9 @@ export function useInterviewQuestionManager({
       !isGeneratingRef.current
     ) {
       isReplenishingRef.current = true;
+      if (remaining <= 0) {
+        setIsGeneratingQuestions(true);
+      }
       const normLevel = normalizeCefr(activeCefrLevel);
       const allCurrentQuestionTexts = [
         ...askedQuestions,
@@ -209,9 +218,13 @@ export function useInterviewQuestionManager({
         })
         .catch((err) => {
           logger.warn("[useInterviewQuestionManager] Replenishment error:", err);
+          if (remaining <= 0) {
+            onAiInfrastructureErrorRef.current?.(err);
+          }
         })
         .finally(() => {
           isReplenishingRef.current = false;
+          setIsGeneratingQuestions(false);
         });
     }
   }, [isActive, sessionQuestions, currentQuestionIndex, effectiveRoleName, activeCefrLevel, askedQuestions]);
@@ -261,6 +274,44 @@ export function useInterviewQuestionManager({
     }
   }, [currentQuestion]);
 
+  const retryGeneration = useCallback(() => {
+    isGeneratingRef.current = false;
+    isReplenishingRef.current = false;
+    setIsGeneratingQuestions(true);
+    const normLevel = normalizeCefr(activeCefrLevel);
+    AiInterviewQuestionGenerator.generateSessionQuestions({
+      profession: effectiveRoleName,
+      cefrLevel: normLevel,
+      count: 5,
+      avoidQuestions: askedQuestions,
+      forceFresh: true,
+    })
+      .then((freshQuestions) => {
+        if (freshQuestions && freshQuestions.length > 0) {
+          setSessionQuestions((prev) => {
+            if (prev.length === 0) return freshQuestions;
+            const existingTexts = new Set(prev.map((p) => p.question.toLowerCase().trim()));
+            const deduplicated = freshQuestions.filter(
+              (f) => !existingTexts.has(f.question.toLowerCase().trim()),
+            );
+            return deduplicated.length > 0 ? [...prev, ...deduplicated] : prev;
+          });
+          setCurrentQuestionIndex((prevIdx) => {
+            if (sessionQuestions.length === 0 && prevIdx >= freshQuestions.length) {
+              return 0;
+            }
+            return prevIdx;
+          });
+        }
+      })
+      .catch((err) => {
+        onAiInfrastructureErrorRef.current?.(err);
+      })
+      .finally(() => {
+        setIsGeneratingQuestions(false);
+      });
+  }, [activeCefrLevel, effectiveRoleName, askedQuestions, sessionQuestions.length]);
+
   return {
     effectiveRoleName,
     activeCefrLevel,
@@ -278,5 +329,6 @@ export function useInterviewQuestionManager({
     totalQuestionsInRound,
     isGeneratingQuestions,
     markUserAdvanced,
+    retryGeneration,
   };
 }

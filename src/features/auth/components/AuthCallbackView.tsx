@@ -110,17 +110,28 @@ const AuthCallbackViewInner: React.FC = () => {
         })
         .catch((e) => logger.warn("[AuthCallback] supabase.auth.setSession background notice", e));
 
-      localStorage.setItem("lingua_onboarding_completed", "true");
-      if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
-      if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
-
       try {
-        apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
-      } catch {
-        // ignore
-      }
+        const profile = await apiSettingsRepository.getProfile().catch(() => null);
+        const isCompleted =
+          profile?.onboardingCompleted === true ||
+          Boolean(authUser.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
+          Boolean(authUser.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true");
 
-      if (isMounted) navigate(ROUTES.HOME, { replace: true });
+        if (isCompleted) {
+          localStorage.setItem("lingua_onboarding_completed", "true");
+          if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+          if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+          if (isMounted) navigate(ROUTES.HOME, { replace: true });
+        } else {
+          localStorage.removeItem("lingua_onboarding_completed");
+          if (authUser.id) localStorage.removeItem(`lingua_onboarding_completed_${authUser.id}`);
+          if (authUser.email) localStorage.removeItem(`lingua_onboarding_completed_${authUser.email}`);
+          if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
+        }
+      } catch (err) {
+        logger.warn("[AuthCallback] Error checking onboarding completion", err);
+        if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
+      }
     };
 
     // 1. Listen for Supabase auto-auth events (fired by detectSessionInUrl)

@@ -130,51 +130,51 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                 }
 
                 // 2. Returning User Login or Profile already completed
-                try {
-                  const profile = await apiSettingsRepository.getProfile();
-                  const isUserCompletedLocal =
-                    (authUser?.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
-                    (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
-                    authUser?.onboardingCompleted === true;
+                if (mode === "login") {
+                  try {
+                    const profile = await apiSettingsRepository.getProfile();
+                    const isUserCompletedLocal =
+                      (authUser?.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
+                      (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
+                      authUser?.onboardingCompleted === true;
 
-                  if (profile && (profile.onboardingCompleted || (mode === "login" && isUserCompletedLocal))) {
-                    updateLearnerProfile({
-                      name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
-                      email: (profile.email || authUser?.email || learnerProfile.email || "") as string,
-                      cefrLevel: profile.cefrLevel || learnerProfile.cefrLevel,
-                      dailyFocus: profile.dailyFocus || learnerProfile.dailyFocus,
-                      learningGoal: profile.learningGoal || learnerProfile.learningGoal,
-                      preferenceStyle: profile.preferenceStyle || learnerProfile.preferenceStyle,
-                      profession: profile.profession || learnerProfile.profession,
-                    });
-                    localStorage.setItem("lingua_onboarding_completed", "true");
-                    if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
-                    if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
-                    try {
-                      apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
-                    } catch {
-                      // ignore
+                    if (profile && (profile.onboardingCompleted || isUserCompletedLocal)) {
+                      updateLearnerProfile({
+                        name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
+                        email: (profile.email || authUser?.email || learnerProfile.email || "") as string,
+                        cefrLevel: profile.cefrLevel || learnerProfile.cefrLevel,
+                        dailyFocus: profile.dailyFocus || learnerProfile.dailyFocus,
+                        learningGoal: profile.learningGoal || learnerProfile.learningGoal,
+                        preferenceStyle: profile.preferenceStyle || learnerProfile.preferenceStyle,
+                        profession: profile.profession || learnerProfile.profession,
+                      });
+                      localStorage.setItem("lingua_onboarding_completed", "true");
+                      if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+                      if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+                      try {
+                        apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
+                      } catch {
+                        // ignore
+                      }
+                      if (onFinish) {
+                        onFinish();
+                        return;
+                      }
                     }
-                    if (onFinish) {
-                      onFinish();
-                      return;
-                    }
-                  }
-                } catch (err) {
-                  logger.warn("[OnboardingView] Could not fetch remote profile on login", err);
-                  // If login succeeded and backend is temporarily unreachable, let returning users in
-                  if (mode === "login") {
-                    localStorage.setItem("lingua_onboarding_completed", "true");
-                    if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
-                    if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
-                    try {
-                      apiSettingsRepository.updateSettings({ onboardingCompleted: true }).catch(() => {});
-                    } catch {
-                      // ignore
-                    }
-                    if (onFinish) {
-                      onFinish();
-                      return;
+                  } catch (err) {
+                    logger.warn("[OnboardingView] Could not fetch remote profile on login", err);
+                    const isUserCompletedLocal =
+                      (authUser?.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
+                      (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
+                      authUser?.onboardingCompleted === true;
+                    if (isUserCompletedLocal) {
+                      localStorage.setItem("lingua_onboarding_completed", "true");
+                      if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
+                      if (authUser?.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
+                      if (onFinish) {
+                        onFinish();
+                        return;
+                      }
                     }
                   }
                 }
@@ -208,17 +208,8 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   }
                 }
 
-                // 4. Fresh registration: Proceed straight into configuration, never bounce to "Begin"
-                const hasExistingKey =
-                  (await providerKeyVault.hasKey("groq")) ||
-                  (await providerKeyVault.hasKey("gemini")) ||
-                  (await providerKeyVault.hasKey("openai"));
-
-                if (hasExistingKey) {
-                  goToStep("beginner-check");
-                } else {
-                  goToStep("api-key");
-                }
+                // 4. Fresh registration: Proceed cleanly to Welcome ("Begin") screen
+                goToStep("welcome");
               }}
               onBackToWelcome={openAuth}
             />

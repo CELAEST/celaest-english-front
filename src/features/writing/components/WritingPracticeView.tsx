@@ -12,6 +12,7 @@ import { useWritingEvaluation } from "../hooks/useWritingEvaluation";
 import { DynamicWritingTaskService, WritingTaskItem } from "../services/dynamicWritingTaskService";
 import { WritingSubmission } from "../../../domain/entities/WritingSubmission";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
+import { apiWritingRepository } from "../../../infrastructure/repositories/ApiWritingRepository";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { validateSpeechIntelligibility } from "../../conversation/services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
@@ -23,6 +24,7 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import { LevelSelectorPill } from "../../conversation/components/LevelSelectorPill";
 import {
   getUserCefrLevel,
   setUserCefrLevel,
@@ -62,78 +64,77 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     );
     const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
     const [isGeneratingTask, setIsGeneratingTask] = useState<boolean>(false);
+    const [areHintsRevealed, setAreHintsRevealed] = useState<boolean>(false);
 
     const [activeCefrLevel, setActiveCefrLevel] = useState<string>(() => {
       if (userLevel) return normalizeCefrLevel(userLevel);
       const cached = getUserCefrLevel(currentUserId || "");
       return cached || "B1";
     });
+    const activeCefrLevelRef = useRef<string>(activeCefrLevel);
+    useEffect(() => {
+      activeCefrLevelRef.current = activeCefrLevel;
+    }, [activeCefrLevel]);
 
     const roleNameRef = useRef(roleName);
     const isReplenishingRef = useRef<boolean>(false);
+    const nextBatchCacheRef = useRef<WritingTaskItem[] | null>(null);
+    const seenPromptsRef = useRef<string[]>([]);
     useEffect(() => {
       roleNameRef.current = roleName;
     }, [roleName]);
 
+    // Load seen task prompts from session storage to prevent repetition across batches
+    useEffect(() => {
+      if (typeof window !== "undefined") {
+        try {
+          const raw = sessionStorage.getItem("celaest:writing:seenPrompts");
+          if (raw) {
+            seenPromptsRef.current = JSON.parse(raw);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }, []);
+
     const [taskBatch, setTaskBatch] = useState<WritingTaskItem[]>(() =>
       AiWritingTaskGenerator.getCachedOrSeedBatch(roleName, activeCefrLevel),
     );
-    const [taskIndex, setTaskIndex] = useState<number>(0);
+    const [taskIndex, setTaskIndex] = useState<number>(() => {
+      if (typeof window !== "undefined") {
+        const userKey = currentUserId && currentUserId !== "anon"
+          ? `celaest:user:${currentUserId}:writing:taskIndex`
+          : null;
+        const stored = (userKey && localStorage.getItem(userKey)) || sessionStorage.getItem("celaest:writing:taskIndex");
+        if (stored !== null && stored !== undefined) return Number(stored) || 0;
+      }
+      return 0;
+    });
 
     const [currentTask, setCurrentTask] = useState<WritingTaskItem>(() => {
       const active = DynamicWritingTaskService.getActiveTask(activeCefrLevel, roleName, currentUserId);
-      return active || taskBatch[0];
-    });
-
-    const handleSelectLevel = React.useCallback(
-      (newLevel: CefrLevelCode, source: "internal" | "external" = "internal") => {
-        const norm = normalizeCefrLevel(newLevel);
-        if (norm === activeCefrLevel) return;
-        prevUserLevelPropRef.current = norm;
-        setActiveCefrLevel(norm);
-        setUserCefrLevel(currentUserId || "", norm);
-        const curRole = roleNameRef.current || "Professional";
-        const newBatch = AiWritingTaskGenerator.getCachedOrSeedBatch(curRole, norm);
-        setTaskBatch(newBatch);
-        setTaskIndex(0);
-        const task = newBatch[0] || DynamicWritingTaskService.getActiveTask(norm, curRole, currentUserId);
-        setCurrentTask(task);
-        DynamicWritingTaskService.persistActiveTask(task, currentUserId);
-        setEditorText(DynamicWritingTaskService.loadDraft(task.id, currentUserId));
-        setPersistedSubmission(null);
-        DynamicWritingTaskService.clearActiveSubmission(currentUserId);
-        if (source === "internal" && onSelectLevel) {
-          onSelectLevel(norm as CefrLevelCode);
-        }
-      },
-      [onSelectLevel, activeCefrLevel, currentUserId],
-    );
-
-    // Synchronize ONLY when userLevel prop genuinely changes externally from parent (e.g. Settings)
-    const prevUserLevelPropRef = useRef<string | undefined>(userLevel ? normalizeCefr(userLevel) : undefined);
-    useEffect(() => {
-      if (userLevel) {
-        const norm = normalizeCefr(userLevel);
-        if (norm !== prevUserLevelPropRef.current && norm !== activeCefrLevel) {
-          prevUserLevelPropRef.current = norm;
-          handleSelectLevel(norm as CefrLevelCode, "external");
-        }
+      const activeDraft = DynamicWritingTaskService.loadDraft(active.id, currentUserId);
+      // If user was actively typing a draft on this task, preserve it!
+      if (activeDraft && activeDraft.trim().length > 0) {
+        return active;
       }
-    }, [userLevel, handleSelectLevel, activeCefrLevel]);
-
-    useEffect(() => {
-      const onLevelChanged = (e: Event) => {
-        const customEvent = e as CustomEvent<string>;
-        if (customEvent.detail) {
-          const norm = normalizeCefr(customEvent.detail) as CefrLevelCode;
-          if (norm !== activeCefrLevel) {
-            handleSelectLevel(norm, "external");
-          }
+      // If user had no draft in progress, synchronize with the current rotated task in the batch
+      if (taskBatch && taskBatch.length > 0) {
+        const userKey = currentUserId && currentUserId !== "anon"
+          ? `celaest:user:${currentUserId}:writing:taskIndex`
+          : null;
+        const stored = typeof window !== "undefined"
+          ? (userKey && localStorage.getItem(userKey)) || sessionStorage.getItem("celaest:writing:taskIndex")
+          : null;
+        const storedIdx = Number(stored || 0);
+        if (storedIdx >= 0 && storedIdx < taskBatch.length && taskBatch[storedIdx]) {
+          return taskBatch[storedIdx];
         }
-      };
-      window.addEventListener("celaest:level-changed", onLevelChanged);
-      return () => window.removeEventListener("celaest:level-changed", onLevelChanged);
-    }, [handleSelectLevel, activeCefrLevel]);
+        return taskBatch[0];
+      }
+      return active;
+    });
 
     // Restore the draft saved for the active task or submission content (survives page reloads)
     const [editorText, setEditorText] = useState<string>(() => {
@@ -142,6 +143,224 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       }
       return DynamicWritingTaskService.loadDraft(currentTask.id, currentUserId);
     });
+
+    const saveCloudProgress = React.useCallback(
+      (override?: {
+        batch?: WritingTaskItem[];
+        index?: number;
+        task?: WritingTaskItem;
+        draft?: string;
+      }) => {
+        if (!currentUserId || currentUserId === "anon") return;
+        const b = override?.batch ?? taskBatch;
+        const idx = override?.index ?? taskIndex;
+        const t = override?.task ?? currentTask;
+        const d = override?.draft ?? editorText;
+
+        const avoid = Array.from(new Set([...seenPromptsRef.current, t?.description].filter(Boolean) as string[]));
+
+        void apiWritingRepository.saveProgress({
+          cefrLevel: activeCefrLevel,
+          roleName: roleNameRef.current || "Professional",
+          taskIndex: idx,
+          taskBatch: b,
+          activeTask: t,
+          editorDraft: d,
+          seenPrompts: avoid,
+        });
+      },
+      [currentUserId, activeCefrLevel, taskBatch, taskIndex, currentTask, editorText],
+    );
+
+    // Hydrate writing progress & batch from cloud database (Cross-device PC <-> Mobile sync)
+    useEffect(() => {
+      if (!currentUserId || currentUserId === "anon") return;
+
+      let isMounted = true;
+      apiWritingRepository
+        .getProgress(activeCefrLevel)
+        .then((progress) => {
+          if (!isMounted || !progress) return;
+
+          // Restore seen prompts from server so anti-repetition is persistent across sessions and devices
+          if (Array.isArray(progress.seenPrompts) && progress.seenPrompts.length > 0) {
+            const merged = Array.from(new Set([...seenPromptsRef.current, ...progress.seenPrompts]));
+            seenPromptsRef.current = merged;
+            try {
+              sessionStorage.setItem("celaest:writing:seenPrompts", JSON.stringify(merged.slice(-40)));
+            } catch {
+              // ignore
+            }
+          }
+
+          // Restore task batch if valid
+          const serverBatch = progress.taskBatch as WritingTaskItem[] | undefined;
+          if (Array.isArray(serverBatch) && serverBatch.length > 0) {
+            setTaskBatch(serverBatch);
+            const sIdx =
+              typeof progress.taskIndex === "number" &&
+              progress.taskIndex >= 0 &&
+              progress.taskIndex < serverBatch.length
+                ? progress.taskIndex
+                : 0;
+            setTaskIndex(sIdx);
+            const serverTask = (progress.activeTask as WritingTaskItem) || serverBatch[sIdx];
+            if (serverTask && serverTask.title) {
+              setCurrentTask(serverTask);
+              DynamicWritingTaskService.persistActiveTask(serverTask, currentUserId);
+            }
+          }
+
+          // Restore editor draft if user has not already typed something
+          if (progress.editorDraft && typeof progress.editorDraft === "string" && progress.editorDraft.trim()) {
+            setEditorText((prev) => {
+              if (!prev || !prev.trim()) {
+                return progress.editorDraft;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch((err) => {
+          logger.warn("[WritingPracticeView] Failed to hydrate writing progress from cloud:", err);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [currentUserId, activeCefrLevel]);
+
+    // Cross-device sync when user returns to this tab
+    useEffect(() => {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible" && currentUserId && currentUserId !== "anon") {
+          apiWritingRepository
+            .getProgress(activeCefrLevel)
+            .then((progress) => {
+              if (!progress) return;
+              if (Array.isArray(progress.seenPrompts) && progress.seenPrompts.length > 0) {
+                seenPromptsRef.current = Array.from(new Set([...seenPromptsRef.current, ...progress.seenPrompts]));
+              }
+              const serverBatch = progress.taskBatch as WritingTaskItem[] | undefined;
+              if (Array.isArray(serverBatch) && serverBatch.length > 0) {
+                setTaskBatch(serverBatch);
+                if (typeof progress.taskIndex === "number") {
+                  setTaskIndex(progress.taskIndex);
+                  const t = (progress.activeTask as WritingTaskItem) || serverBatch[progress.taskIndex];
+                  if (t) setCurrentTask(t);
+                }
+              }
+            })
+            .catch(() => {});
+        }
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    }, [currentUserId, activeCefrLevel]);
+
+    // Track seen task descriptions so subsequent batches never repeat past questions
+    useEffect(() => {
+      if (currentTask?.description) {
+        if (!seenPromptsRef.current.includes(currentTask.description)) {
+          seenPromptsRef.current.push(currentTask.description);
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("celaest:writing:seenPrompts", JSON.stringify(seenPromptsRef.current.slice(-40)));
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+    }, [currentTask]);
+
+    useEffect(() => {
+      setAreHintsRevealed(false);
+    }, [currentTask?.id]);
+
+    const handleSelectLevel = React.useCallback(
+      (newLevel: CefrLevelCode, source: "internal" | "external" = "internal") => {
+        const norm = normalizeCefrLevel(newLevel);
+        if (norm === activeCefrLevelRef.current) return;
+        activeCefrLevelRef.current = norm;
+        prevUserLevelPropRef.current = norm;
+        setActiveCefrLevel(norm);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("celaest:writing:cefrLevel", norm);
+        }
+        if (source === "internal") {
+          setUserCefrLevel(currentUserId || "", norm);
+        }
+        const curRole = roleNameRef.current || "Professional";
+        const newBatch = AiWritingTaskGenerator.getCachedOrSeedBatch(curRole, norm);
+        setTaskBatch(newBatch);
+        setTaskIndex(0);
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("celaest:writing:taskIndex");
+        }
+        const task = newBatch[0] || DynamicWritingTaskService.getActiveTask(norm, curRole, currentUserId);
+        setCurrentTask(task);
+        DynamicWritingTaskService.persistActiveTask(task, currentUserId);
+        setEditorText(DynamicWritingTaskService.loadDraft(task.id, currentUserId));
+        setPersistedSubmission(null);
+        DynamicWritingTaskService.clearActiveSubmission(currentUserId);
+        saveCloudProgress({ batch: newBatch, index: 0, task, draft: "" });
+        if (source === "internal" && onSelectLevel) {
+          onSelectLevel(norm as CefrLevelCode);
+        }
+
+        // Background AI replenishment for selected level so future tasks are dynamically tailored
+        if (!isReplenishingRef.current) {
+          isReplenishingRef.current = true;
+          AiWritingTaskGenerator.generateBatchTasks({
+            profession: curRole,
+            cefrLevel: norm,
+            forceFresh: false,
+          })
+            .then((freshBatch) => {
+              if (freshBatch && freshBatch.length > 0) {
+                setTaskBatch(freshBatch);
+                saveCloudProgress({ batch: freshBatch });
+              }
+            })
+            .catch((err) => {
+              logger.warn("[WritingPracticeView] Batch replenishment error on level change:", err);
+            })
+            .finally(() => {
+              isReplenishingRef.current = false;
+            });
+        }
+      },
+      [onSelectLevel, currentUserId, saveCloudProgress],
+    );
+
+    // Synchronize ONLY when userLevel prop genuinely changes externally from parent (e.g. Settings)
+    const prevUserLevelPropRef = useRef<string | undefined>(userLevel ? normalizeCefr(userLevel) : undefined);
+    useEffect(() => {
+      if (userLevel) {
+        const norm = normalizeCefr(userLevel);
+        if (norm !== prevUserLevelPropRef.current && norm !== activeCefrLevelRef.current) {
+          prevUserLevelPropRef.current = norm;
+          handleSelectLevel(norm as CefrLevelCode, "external");
+        }
+      }
+    }, [userLevel, handleSelectLevel]);
+
+    useEffect(() => {
+      const onLevelChanged = (e: Event) => {
+        const customEvent = e as CustomEvent<string>;
+        if (customEvent.detail) {
+          const norm = normalizeCefr(customEvent.detail) as CefrLevelCode;
+          if (norm !== activeCefrLevelRef.current) {
+            handleSelectLevel(norm, "external");
+          }
+        }
+      };
+      window.addEventListener("celaest:level-changed", onLevelChanged);
+      return () => window.removeEventListener("celaest:level-changed", onLevelChanged);
+    }, [handleSelectLevel]);
+
   const [persistedSubmission, setPersistedSubmission] = useState<WritingSubmission | null>(
     () => initialStored?.submission ?? null,
   );
@@ -154,13 +373,14 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
 
   const activeSubmission = liveSubmission || persistedSubmission;
 
-  // Debounced draft persistence: never writes on every keystroke
+  // Debounced draft persistence: never writes on every keystroke, saves locally and syncs to cloud
   useEffect(() => {
     const timer = window.setTimeout(() => {
       DynamicWritingTaskService.saveDraft(currentTask.id, editorText, currentUserId);
-    }, 500);
+      saveCloudProgress({ draft: editorText });
+    }, 1200);
     return () => window.clearTimeout(timer);
-  }, [editorText, currentTask.id, currentUserId]);
+  }, [editorText, currentTask.id, currentUserId, saveCloudProgress]);
 
   const wordCount = editorText.trim().split(/\s+/).filter(Boolean).length;
   const minWordsRequired = Math.min(8, currentTask.minWords || 8);
@@ -332,12 +552,12 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     }
   };
 
-  // Advance to the next task in the pre-generated batch (0ms latency, zero token burn on click)
-  const advanceToNextBatchTask = (toastTitle?: string) => {
+  // Advance to next task in the batch; on the 6th question, generate the next batch, replace the old one, and reset to 1
+  const advanceOrFetchNextBatch = async (toastTitle?: string) => {
     setShowResultModal(false);
     setPersistedSubmission(null);
-    DynamicWritingTaskService.clearActiveSubmission();
-    DynamicWritingTaskService.clearDraft(currentTask.id);
+    DynamicWritingTaskService.clearActiveSubmission(currentUserId);
+    DynamicWritingTaskService.clearDraft(currentTask.id, currentUserId);
     setSavedErrorIds(new Set());
 
     if (!taskBatch || taskBatch.length === 0) {
@@ -345,52 +565,79 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       return;
     }
 
-    const nextIndex = (taskIndex + 1) % taskBatch.length;
-    setTaskIndex(nextIndex);
-    const nextTask = taskBatch[nextIndex];
-
-    if (nextTask) {
-      setCurrentTask(nextTask);
-      DynamicWritingTaskService.persistActiveTask(nextTask);
-      setEditorText(DynamicWritingTaskService.loadDraft(nextTask.id));
-      if (toastTitle) {
-        appToast.success(toastTitle, nextTask.title);
+    // 1. Advance within current batch (tasks 1 to 5 of 6) with 0ms latency and 0 tokens
+    if (taskIndex < taskBatch.length - 1) {
+      const nextIndex = taskIndex + 1;
+      setTaskIndex(nextIndex);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("celaest:writing:taskIndex", String(nextIndex));
+        if (currentUserId && currentUserId !== "anon") {
+          localStorage.setItem(`celaest:user:${currentUserId}:writing:taskIndex`, String(nextIndex));
+        }
       }
-    } else {
-      setEditorText("");
+      const nextTask = taskBatch[nextIndex];
+      if (nextTask) {
+        setCurrentTask(nextTask);
+        DynamicWritingTaskService.persistActiveTask(nextTask, currentUserId);
+        const nextDraft = DynamicWritingTaskService.loadDraft(nextTask.id, currentUserId);
+        setEditorText(nextDraft);
+        saveCloudProgress({ index: nextIndex, task: nextTask, draft: nextDraft });
+        if (toastTitle) {
+          appToast.success(toastTitle, nextTask.title);
+        }
+      } else {
+        setEditorText("");
+      }
+
+      // Silent background prefetch of next batch when reaching task 5 of 6 (index 4)
+      if (nextIndex >= taskBatch.length - 2 && !nextBatchCacheRef.current && !isReplenishingRef.current) {
+        isReplenishingRef.current = true;
+        const avoid = Array.from(new Set([...seenPromptsRef.current, ...taskBatch.map((t) => t.description)]));
+        AiWritingTaskGenerator.generateBatchTasks({
+          profession: roleName,
+          cefrLevel: activeCefrLevel,
+          count: 6,
+          forceFresh: true,
+          avoidTasks: avoid,
+        })
+          .then((fresh) => {
+            if (fresh && fresh.length > 0) {
+              nextBatchCacheRef.current = fresh;
+            }
+          })
+          .catch((err) => {
+            logger.warn("[WritingPracticeView] Next batch prefetch failed:", err);
+          })
+          .finally(() => {
+            isReplenishingRef.current = false;
+          });
+      }
+      return;
     }
 
-    // Trigger silent background replenishment ONLY after cycling through the entire batch (at the last task)
-    const isAiBatch = taskBatch.some((t) => t.id.startsWith("ai-"));
-    if (isAiBatch && nextIndex >= taskBatch.length - 1 && !isReplenishingRef.current) {
-      isReplenishingRef.current = true;
-      AiWritingTaskGenerator.generateBatchTasks({
-        profession: roleName,
-        cefrLevel: activeCefrLevel,
-        forceFresh: true,
-      })
-        .then((freshBatch) => {
-          if (freshBatch && freshBatch.length > 0) {
-            setTaskBatch(freshBatch);
-          }
-        })
-        .catch((err) => {
-          logger.warn("[WritingPracticeView] Batch replenishment error:", err);
-        })
-        .finally(() => {
-          isReplenishingRef.current = false;
-        });
+    // 2. We reached the end of the batch (task 6)!
+    // If the next batch was already prefetched, swap it in immediately (deleting old batch and storing new)
+    if (nextBatchCacheRef.current && nextBatchCacheRef.current.length > 0) {
+      const freshBatch = nextBatchCacheRef.current;
+      nextBatchCacheRef.current = null;
+      setTaskBatch(freshBatch);
+      setTaskIndex(0);
+      setCurrentTask(freshBatch[0]);
+      DynamicWritingTaskService.persistActiveTask(freshBatch[0], currentUserId);
+      const firstDraft = DynamicWritingTaskService.loadDraft(freshBatch[0].id, currentUserId);
+      setEditorText(firstDraft);
+      saveCloudProgress({ batch: freshBatch, index: 0, task: freshBatch[0], draft: firstDraft });
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("celaest:writing:taskIndex", "0");
+        if (currentUserId && currentUserId !== "anon") {
+          localStorage.setItem(`celaest:user:${currentUserId}:writing:taskIndex`, "0");
+        }
+      }
+      appToast.success("Nuevo lote de tareas listo", freshBatch[0].title);
+      return;
     }
-  };
 
-  // When clicking "Continue Practicing": Advance to the next task and clear the editor
-  const handleContinuePracticing = () => {
-    advanceToNextBatchTask();
-  };
-
-  const handleNewTask = async () => {
-    if (isEvaluatingActive || isGeneratingTask) return;
-
+    // 3. Otherwise, fetch the next fresh batch now
     try {
       const isCore = await providerKeyVault.isCentralCoreEnabled();
       const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
@@ -404,10 +651,13 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       }
 
       setIsGeneratingTask(true);
+      const avoid = Array.from(new Set([...seenPromptsRef.current, ...taskBatch.map((t) => t.description)]));
       const freshBatch = await AiWritingTaskGenerator.generateBatchTasks({
         profession: roleName,
         cefrLevel: activeCefrLevel,
+        count: 6,
         forceFresh: true,
+        avoidTasks: avoid,
         throwOnAuthError: true,
       });
 
@@ -415,15 +665,17 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         setTaskBatch(freshBatch);
         setTaskIndex(0);
         setCurrentTask(freshBatch[0]);
-        DynamicWritingTaskService.persistActiveTask(freshBatch[0]);
-        DynamicWritingTaskService.clearActiveSubmission();
-        DynamicWritingTaskService.clearDraft(currentTask.id);
-        setEditorText(DynamicWritingTaskService.loadDraft(freshBatch[0].id));
-        setPersistedSubmission(null);
-        setSavedErrorIds(new Set());
-        appToast.success("Nueva tarea lista", freshBatch[0].title);
-      } else {
-        advanceToNextBatchTask("Nueva tarea lista");
+        DynamicWritingTaskService.persistActiveTask(freshBatch[0], currentUserId);
+        const firstDraft = DynamicWritingTaskService.loadDraft(freshBatch[0].id, currentUserId);
+        setEditorText(firstDraft);
+        saveCloudProgress({ batch: freshBatch, index: 0, task: freshBatch[0], draft: firstDraft });
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("celaest:writing:taskIndex", "0");
+          if (currentUserId && currentUserId !== "anon") {
+            localStorage.setItem(`celaest:user:${currentUserId}:writing:taskIndex`, "0");
+          }
+        }
+        appToast.success("Nuevo lote de tareas listo", freshBatch[0].title);
       }
     } catch (err: any) {
       const { scenario, cooldownSeconds } = classifyAiError(err);
@@ -433,6 +685,16 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     } finally {
       setIsGeneratingTask(false);
     }
+  };
+
+  // When clicking "Continue Practicing": Advance to next task (or next batch if on the 6th)
+  const handleContinuePracticing = async () => {
+    await advanceOrFetchNextBatch();
+  };
+
+  const handleNewTask = async () => {
+    if (isEvaluatingActive || isGeneratingTask) return;
+    await advanceOrFetchNextBatch("Nueva tarea lista");
   };
 
   const handleOpenModal = () => {
@@ -520,8 +782,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                 category={`WRITING TASK · ${currentTask.category}`}
                 title={currentTask.title}
                 description={currentTask.description}
+                spanishDescription={currentTask.spanishDescription}
                 currentLevel={activeCefrLevel}
-                onSelectLevel={handleSelectLevel}
                 isActive={isActive}
               />
               <WritingEditor
@@ -534,27 +796,71 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                 isGeneratingTask={isGeneratingTask}
               />
               {/* Level-based Scaffolding & Starter Recommendations (Ergonomic Touch Chips) */}
-              {currentTask.starterPhrases && currentTask.starterPhrases.length > 0 && (
-                <div className="flex items-center gap-2 sm:gap-3 py-1 sm:py-1.5 px-0.5 sm:px-1 text-xs overflow-x-auto no-scrollbar shrink-0 w-full min-w-0 max-w-full">
-                  <span className="text-[10px] sm:text-[10.5px] font-mono uppercase tracking-wider text-white/40 shrink-0 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
-                    Pistas ({activeCefrLevel}):
-                  </span>
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-0.5 sm:px-1 text-xs shrink-0 w-full min-w-0 max-w-full">
+                {/* Modern Glassmorphic Pistas Badge with Integrated Level Selector */}
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#8B5CF6]/15 via-white/[0.04] to-white/[0.02] border border-[#8B5CF6]/35 shadow-[0_2px_12px_rgba(139,92,246,0.12)] shrink-0 select-none">
+                  {/* Interactive Clue Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setAreHintsRevealed((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 cursor-pointer text-white/95 hover:text-white transition-all active:scale-95 group/clue"
+                    title={areHintsRevealed ? "Ocultar pistas" : "Haz clic para ver las pistas"}
+                  >
+                    {areHintsRevealed ? (
+                      <svg className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5 text-[#A78BFA]/80 group-hover/clue:text-[#A78BFA] shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    )}
+                    <span className="text-[11px] sm:text-xs font-sans font-semibold tracking-wide text-white/95">
+                      Pistas
+                    </span>
+                  </button>
+                  <span className="h-3 w-px bg-white/20 mx-0.5 shrink-0" />
+                  <LevelSelectorPill
+                    currentLevel={activeCefrLevel}
+                    onSelectLevel={handleSelectLevel}
+                    direction="up"
+                    align="left"
+                    className="shrink-0"
+                  />
+                </div>
+
+                {/* Starter Phrases Chips with Clean Defocused Text (Zero Layout Shift) */}
+                {currentTask.starterPhrases && currentTask.starterPhrases.length > 0 && (
+                  <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar min-w-0 flex-1 py-0.5">
                     {currentTask.starterPhrases.map((phrase, idx) => (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => handleInsertPhrase(phrase)}
-                        className="group inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors whitespace-nowrap cursor-pointer px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.12] shrink-0 active:scale-95"
-                        title="Haz clic para insertar esta frase"
+                        onClick={() => {
+                          if (!areHintsRevealed) {
+                            setAreHintsRevealed(true);
+                          } else {
+                            handleInsertPhrase(phrase);
+                          }
+                        }}
+                        className="group inline-flex items-center gap-1 text-xs text-white/75 hover:text-white transition-all whitespace-nowrap cursor-pointer px-2.5 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] shrink-0 active:scale-95"
+                        title={!areHintsRevealed ? "Toca para revelar pistas" : "Haz clic para insertar esta frase"}
                       >
-                        <span className="font-sans">"{phrase}"</span>
+                        <span
+                          className={`font-sans font-medium text-white/85 group-hover:text-white transition-all duration-300 ${
+                            !areHintsRevealed
+                              ? "filter blur-[7px] select-none opacity-40 pointer-events-none"
+                              : "filter-none opacity-100"
+                          }`}
+                        >
+                          "{phrase}"
+                        </span>
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </React.Fragment>
           </div>
 

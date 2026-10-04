@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 
 export interface WritingEditorProps {
-  initialContent?: string;
-  onChangeContent?: (text: string) => void;
-  minWords?: number;
-  maxWords?: number;
-  onNewTask?: () => void;
-  isGeneratingTask?: boolean;
+  initialContent?: string | undefined;
+  onChangeContent?: ((text: string) => void) | undefined;
+  minWords?: number | undefined;
+  maxWords?: number | undefined;
+  onNewTask?: (() => void) | undefined;
+  isGeneratingTask?: boolean | undefined;
 }
 
 const FONT_SIZES = [
@@ -196,6 +196,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
               </span>
             </button>
           )}
+
 
           {onNewTask && <span className="h-3 sm:h-4 w-px bg-white/[0.12]" aria-hidden="true" />}
 

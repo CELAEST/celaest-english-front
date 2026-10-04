@@ -17,13 +17,14 @@ export interface WritingTaskItem {
   category: "EMAIL" | "LETTER" | "REPORT" | "PROPOSAL" | "REVIEW" | "MESSAGE";
   title: string;
   description: string;
+  spanishDescription?: string | undefined;
   toneHint: string;
   timeLimit: string;
   minWords: number;
   maxWords: number;
   level: CefrLevelCode;
   roleCategory: ProfessionCategory;
-  starterPhrases?: string[];
+  starterPhrases?: string[] | undefined;
 }
 
 export function getDefaultStarterPhrases(level: CefrLevelCode, _category?: string): string[] {
@@ -152,11 +153,37 @@ export class DynamicWritingTaskService {
         if (raw) {
           const parsed = JSON.parse(raw) as WritingTaskItem;
           if (parsed && parsed.id && parsed.level === targetCefr) {
-            const phrases =
-              parsed.starterPhrases && parsed.starterPhrases.length > 0
-                ? parsed.starterPhrases
-                : getDefaultStarterPhrases(parsed.level, parsed.category);
-            return { ...parsed, starterPhrases: phrases };
+            // Invalidate obsolete/uncalibrated tasks from prior sessions for A1
+            const pDesc = parsed.description.toLowerCase();
+            const isInvalidA1 =
+              targetCefr === "A1" &&
+              (parsed.maxWords > 28 ||
+                pDesc.includes("two parties") ||
+                pDesc.includes("mediation") ||
+                pDesc.includes("mediator") ||
+                pDesc.includes("upcoming") ||
+                pDesc.includes("confirming the date") ||
+                parsed.category === "REPORT" ||
+                parsed.category === "PROPOSAL" ||
+                parsed.category === "REVIEW" ||
+                parsed.category === "LETTER");
+
+            if (!isInvalidA1) {
+              const phrases =
+                parsed.starterPhrases && parsed.starterPhrases.length > 0
+                  ? parsed.starterPhrases
+                  : getDefaultStarterPhrases(parsed.level, parsed.category);
+              return { ...parsed, starterPhrases: phrases };
+            } else {
+              try {
+                window.localStorage.removeItem(key);
+                if (userId && userId !== "anon") {
+                  window.localStorage.removeItem(ACTIVE_TASK_STORAGE_KEY);
+                }
+              } catch {
+                // ignore
+              }
+            }
           }
         }
       }

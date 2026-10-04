@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { normalizeCefr, CefrLevelCode } from "../services/dynamicQuestionService";
 
 export interface LevelSelectorPillProps {
@@ -6,6 +7,7 @@ export interface LevelSelectorPillProps {
   onSelectLevel: (level: CefrLevelCode) => void;
   roleName?: string;
   align?: "left" | "right";
+  direction?: "up" | "down";
   className?: string;
 }
 
@@ -23,16 +25,130 @@ const CEFR_LEVELS: Array<{
 ];
 
 export const LevelSelectorPill: React.FC<LevelSelectorPillProps> = React.memo(
-  function LevelSelectorPill({ currentLevel, onSelectLevel, roleName, align = "left", className = "" }) {
+  function LevelSelectorPill({ currentLevel, onSelectLevel, roleName, align = "left", direction = "down", className = "" }) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const activeCode = normalizeCefr(currentLevel);
     const activeMeta = CEFR_LEVELS.find((l) => l.code === activeCode) || CEFR_LEVELS[2];
 
+    const [isMobile, setIsMobile] = useState<boolean>(() =>
+      typeof window !== "undefined" ? window.innerWidth < 640 : false
+    );
+
+    // Gestural swipe-down to dismiss refs (AppModal standard)
+    const sheetRef = useRef<HTMLDivElement>(null);
+    const handlePillRef = useRef<HTMLDivElement>(null);
+    const touchStartYRef = useRef(0);
+    const touchDeltaRef = useRef(0);
+    const isDraggingRef = useRef(false);
+    const isPullingFromBodyRef = useRef(false);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      touchStartYRef.current = e.touches[0].clientY;
+      touchDeltaRef.current = 0;
+      isDraggingRef.current = true;
+      if (handlePillRef.current) {
+        handlePillRef.current.style.width = "48px";
+        handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
+      }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (!isDraggingRef.current || !sheetRef.current) return;
+      const currentY = e.touches[0].clientY;
+      const delta = currentY - touchStartYRef.current;
+      touchDeltaRef.current = delta;
+
+      sheetRef.current.style.transition = "none";
+      if (delta > 0) {
+        sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        const opacity = Math.max(0.3, 1 - delta / 350);
+        sheetRef.current.style.opacity = `${opacity}`;
+      } else {
+        sheetRef.current.style.transform = `translate3d(0, ${delta * 0.15}px, 0)`;
+        sheetRef.current.style.opacity = "1";
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      isPullingFromBodyRef.current = false;
+      if (handlePillRef.current) {
+        handlePillRef.current.style.width = "40px";
+        handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.25)";
+      }
+
+      const delta = touchDeltaRef.current;
+      if (sheetRef.current) {
+        if (delta > 65) {
+          sheetRef.current.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out";
+          sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
+          sheetRef.current.style.opacity = "0";
+          setTimeout(() => {
+            setIsOpen(false);
+            if (sheetRef.current) {
+              sheetRef.current.style.transform = "";
+              sheetRef.current.style.opacity = "";
+              sheetRef.current.style.transition = "";
+            }
+          }, 200);
+        } else {
+          sheetRef.current.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out";
+          sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+          sheetRef.current.style.opacity = "1";
+        }
+      }
+      touchDeltaRef.current = 0;
+    };
+
+    const handleBodyTouchStart = (e: React.TouchEvent) => {
+      touchStartYRef.current = e.touches[0].clientY;
+      touchDeltaRef.current = 0;
+      if (sheetRef.current && sheetRef.current.scrollTop <= 0) {
+        isPullingFromBodyRef.current = true;
+      } else {
+        isPullingFromBodyRef.current = false;
+      }
+    };
+
+    const handleBodyTouchMove = (e: React.TouchEvent) => {
+      if (!isPullingFromBodyRef.current || !sheetRef.current) return;
+      if (sheetRef.current.scrollTop > 0) {
+        isPullingFromBodyRef.current = false;
+        return;
+      }
+      const currentY = e.touches[0].clientY;
+      const delta = currentY - touchStartYRef.current;
+      if (delta > 0) {
+        isDraggingRef.current = true;
+        touchDeltaRef.current = delta;
+        sheetRef.current.style.transition = "none";
+        sheetRef.current.style.transform = `translate3d(0, ${delta * 0.85}px, 0)`;
+        const opacity = Math.max(0.3, 1 - (delta * 0.85) / 350);
+        sheetRef.current.style.opacity = `${opacity}`;
+        if (handlePillRef.current) {
+          handlePillRef.current.style.width = "48px";
+          handlePillRef.current.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
+        }
+      }
+    };
+
+    useEffect(() => {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 640);
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
         if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-          setIsOpen(false);
+          const target = e.target as HTMLElement;
+          if (!target.closest?.("[role='menu']")) {
+            setIsOpen(false);
+          }
         }
       };
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,70 +196,175 @@ export const LevelSelectorPill: React.FC<LevelSelectorPillProps> = React.memo(
           </svg>
         </button>
 
-        {/* Dropdown Popover — 100% Borderless, Zero AI Dots, Pure Monochrome Typography */}
+        {/* Dropdown Popover — Native Mobile Bottom Sheet via Portal / Desktop Clean Floating Popover */}
         {isOpen && (
-          <div
-            role="menu"
-            aria-label="Selección de nivel adaptativo CEFR"
-            className={`absolute top-full mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#09090E] border border-white/10 backdrop-blur-3xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-1.5 z-50 flex flex-col gap-0.5 overflow-hidden animate-[fadeSlideDown_0.15s_ease-out] transition-all duration-200 ${
-              align === "right" ? "right-0" : "left-0"
-            }`}
-          >
-            {/* Header */}
-            <div className="px-3 py-2 flex items-center justify-between mb-0.5">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
-                Nivel Adaptativo
-              </span>
-              <span className="text-[10px] font-mono text-white/20">CEFR Standard</span>
-            </div>
+          <>
+            {isMobile && typeof document !== "undefined"
+              ? createPortal(
+                  <div>
+                    {/* Mobile Backdrop Overlay */}
+                    <div
+                      className="fixed inset-0 bg-black/65 backdrop-blur-sm z-[90] animate-[fadeIn_0.15s_ease-out]"
+                      onClick={() => setIsOpen(false)}
+                      aria-hidden="true"
+                    />
 
-            {/* Level Items — Pure Monochrome, Zero Borders, Zero AI Dots */}
-            {CEFR_LEVELS.map((item) => {
-              const isSelected = item.code === activeCode;
-              return (
-                <button
-                  key={item.code}
-                  role="menuitem"
-                  type="button"
-                  onClick={() => {
-                    onSelectLevel(item.code);
-                    setIsOpen(false);
-                  }}
-                  className={`group w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between transition-colors duration-150 cursor-pointer ${
-                    isSelected
-                      ? "bg-white/[0.08] text-white"
-                      : "text-white/60 hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span
-                      className={`text-xs ${
-                        isSelected ? "text-white font-medium" : "text-white/80 group-hover:text-white font-normal"
-                      }`}
+                    {/* Mobile Native Bottom Sheet (Docked to bottom-0 with swipe-down to dismiss) */}
+                    <div
+                      ref={sheetRef}
+                      role="menu"
+                      aria-modal="true"
+                      aria-label="Selección de nivel adaptativo CEFR"
+                      onTouchStart={handleBodyTouchStart}
+                      onTouchMove={handleBodyTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchCancel={handleTouchEnd}
+                      className="fixed inset-x-0 bottom-0 z-[100] w-full max-w-lg mx-auto rounded-t-[28px] rounded-b-none bg-[#09090E]/95 border-t border-white/15 backdrop-blur-3xl shadow-[0_-16px_48px_rgba(0,0,0,0.95)] px-4 pt-2 pb-[max(2rem,env(safe-area-inset-bottom,2rem))] flex flex-col gap-1 max-h-[85dvh] overflow-y-auto no-scrollbar animate-[fadeSlideUp_0.22s_ease-out]"
                     >
-                      {item.label}
-                    </span>
-                    <span
-                      className={`text-[11px] font-light leading-snug ${
-                        isSelected ? "text-white/40" : "text-white/25 group-hover:text-white/40"
-                      }`}
-                    >
-                      {item.sublabel}
-                    </span>
-                  </div>
+                      {/* Interactive Drag Bar & Accessibility Handle */}
+                      <div
+                        className="w-full flex flex-col items-center pt-1.5 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
+                        aria-label="Deslizar hacia abajo para cerrar"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") setIsOpen(false);
+                        }}
+                      >
+                        <div
+                          ref={handlePillRef}
+                          className="w-10 h-1.5 rounded-full bg-white/25 transition-all duration-200"
+                        />
+                      </div>
 
-                  {/* Clean Monospace Level Code — Pure typography, zero box, zero color */}
-                  <span
-                    className={`font-mono text-xs tracking-wider ${
-                      isSelected ? "text-white font-semibold" : "text-white/20 group-hover:text-white/50"
+                      {/* Header */}
+                      <div className="px-2 py-1 flex items-center justify-between mb-1 shrink-0">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                          Nivel Adaptativo
+                        </span>
+                        <span className="text-[10px] font-mono text-white/30">CEFR Standard</span>
+                      </div>
+
+                      {/* Level Items */}
+                      {CEFR_LEVELS.map((item) => {
+                        const isSelected = item.code === activeCode;
+                        return (
+                          <button
+                            key={item.code}
+                            role="menuitem"
+                            type="button"
+                            onClick={() => {
+                              onSelectLevel(item.code);
+                              setIsOpen(false);
+                            }}
+                            className={`group w-full text-left px-3.5 py-2.5 rounded-2xl text-xs flex items-center justify-between transition-colors duration-150 cursor-pointer min-h-[48px] active:scale-[0.98] ${
+                              isSelected
+                                ? "bg-white/[0.08] text-white"
+                                : "text-white/60 hover:text-white hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <div className="flex flex-col gap-0.5 min-w-0 pr-2">
+                              <span
+                                className={`text-xs ${
+                                  isSelected ? "text-white font-medium" : "text-white/80 group-hover:text-white font-normal"
+                                }`}
+                              >
+                                {item.label}
+                              </span>
+                              <span
+                                className={`text-[11px] font-light leading-snug truncate ${
+                                  isSelected ? "text-white/40" : "text-white/25 group-hover:text-white/40"
+                                }`}
+                              >
+                                {item.sublabel}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`font-mono text-xs tracking-wider shrink-0 ${
+                                isSelected ? "text-white font-semibold" : "text-white/20 group-hover:text-white/50"
+                              }`}
+                            >
+                              {item.code}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>,
+                  document.body
+                )
+              : (
+                  /* Desktop In-Place Popover (100% Unchanged Desktop Standard) */
+                  <div
+                    role="menu"
+                    aria-label="Selección de nivel adaptativo CEFR"
+                    className={`absolute w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#09090E] border border-white/10 backdrop-blur-3xl shadow-[0_24px_60px_rgba(0,0,0,0.95)] p-1.5 z-50 flex flex-col gap-0.5 overflow-hidden transition-all duration-200 ${
+                      direction === "up"
+                        ? `bottom-full mb-2 animate-[fadeIn_0.15s_ease-out] ${align === "right" ? "right-0" : "left-0"}`
+                        : `top-full mt-2 animate-[fadeSlideDown_0.15s_ease-out] ${align === "right" ? "right-0" : "left-0"}`
                     }`}
                   >
-                    {item.code}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    {/* Header */}
+                    <div className="px-3 py-2 flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
+                        Nivel Adaptativo
+                      </span>
+                      <span className="text-[10px] font-mono text-white/20">CEFR Standard</span>
+                    </div>
+
+                    {/* Level Items */}
+                    {CEFR_LEVELS.map((item) => {
+                      const isSelected = item.code === activeCode;
+                      return (
+                        <button
+                          key={item.code}
+                          role="menuitem"
+                          type="button"
+                          onClick={() => {
+                            onSelectLevel(item.code);
+                            setIsOpen(false);
+                          }}
+                          className={`group w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between transition-colors duration-150 cursor-pointer ${
+                            isSelected
+                              ? "bg-white/[0.08] text-white"
+                              : "text-white/60 hover:text-white hover:bg-white/[0.04]"
+                          }`}
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={`text-xs ${
+                                isSelected ? "text-white font-medium" : "text-white/80 group-hover:text-white font-normal"
+                              }`}
+                            >
+                              {item.label}
+                            </span>
+                            <span
+                              className={`text-[11px] font-light leading-snug ${
+                                isSelected ? "text-white/40" : "text-white/25 group-hover:text-white/40"
+                              }`}
+                            >
+                              {item.sublabel}
+                            </span>
+                          </div>
+
+                          <span
+                            className={`font-mono text-xs tracking-wider ${
+                              isSelected ? "text-white font-semibold" : "text-white/20 group-hover:text-white/50"
+                            }`}
+                          >
+                            {item.code}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+          </>
         )}
       </div>
     );

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WritingPracticeView } from "../WritingPracticeView";
 import { apiWritingRepository } from "../../../../infrastructure/repositories/ApiWritingRepository";
 import { apiMemoryRepository } from "../../../../infrastructure/repositories/ApiMemoryRepository";
+import { SupabaseAuthAdapter } from "../../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 const mockSubmission = {
   id: "sub-123",
@@ -333,6 +334,61 @@ describe("Writing Feature - Full Use Case Suite", () => {
     await waitFor(() => {
       const currentEditor = screen.getByPlaceholderText<HTMLTextAreaElement>(/Start writing here/i);
       expect(currentEditor.value).toContain("Furthermore, this aligns with");
+    });
+  });
+
+  it("Use Case 13: Starter hints (Pistas) are clean and difuminadas by default with zero layout shift, and reveal upon user click", async () => {
+    renderComponent();
+
+    // Verify initial state: Pistas badge is present, phrases are difuminadas with blur
+    expect(screen.getAllByText("Pistas").length).toBeGreaterThanOrEqual(1);
+
+    const clueBtn = screen.getByTitle(/Haz clic para ver las pistas/i);
+    expect(clueBtn).toBeInTheDocument();
+
+    // Phrases are present in DOM maintaining exact layout, with blur filter applied
+    const phraseElement = screen.getByText(/I am writing to provide an update/i);
+    expect(phraseElement).toHaveClass("blur-[7px]");
+
+    // Click Pistas toggle button to reveal hints
+    fireEvent.click(clueBtn);
+
+    // After click: button shows "Ocultar pistas" title and phrases smoothly unblur
+    await waitFor(() => {
+      expect(screen.getByTitle(/Ocultar pistas/i)).toBeInTheDocument();
+      expect(phraseElement).toHaveClass("filter-none");
+      expect(phraseElement).not.toHaveClass("blur-[7px]");
+    });
+  });
+
+  it("Use Case 14: Hydrates task progress from cloud repository on mount", async () => {
+    const authAdapter = SupabaseAuthAdapter.getInstance();
+    vi.spyOn(authAdapter, "getStoredUser").mockReturnValue({
+      id: "user-cloud-123",
+      email: "user@celaest.com",
+      name: "Cloud User",
+      role: "member",
+    } as any);
+
+    const getProgressSpy = vi.spyOn(apiWritingRepository, "getProgress").mockResolvedValueOnce({
+      userId: "user-cloud-123",
+      cefrLevel: "B1",
+      roleName: "Professional",
+      taskIndex: 1,
+      taskBatch: [
+        { id: "batch-1", title: "Cloud Task 1", description: "First cloud scenario" },
+        { id: "batch-2", title: "Cloud Task 2", description: "Second cloud scenario" },
+      ],
+      activeTask: { id: "batch-2", title: "Cloud Task 2", description: "Second cloud scenario" },
+      editorDraft: "Draft restored from cloud PostgreSQL.",
+      seenPrompts: ["First cloud scenario"],
+      updatedAt: new Date().toISOString(),
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(getProgressSpy).toHaveBeenCalled();
     });
   });
 });

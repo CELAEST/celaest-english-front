@@ -106,9 +106,6 @@ export const useCurrentUser = () => {
       const normBackend = profile.cefrLevel ? normalizeCefrLevel(profile.cefrLevel) : "";
       // Backend is authoritative; fallback to local cache only if backend gave empty
       const effectiveLevel = normBackend || cachedLevel || "B1";
-      if (user?.id) {
-        setUserCefrLevel(user.id, effectiveLevel);
-      }
       return {
         name: profile.name ?? user?.name ?? "",
         email: profile.email ?? user?.email ?? "",
@@ -136,6 +133,16 @@ export const useCurrentUser = () => {
       streakDays: 0,
     };
   }, [profile, user, cachedLevel]);
+
+  // Synchronize backend CEFR level to local store safely post-render to avoid render-phase setState warnings
+  useEffect(() => {
+    if (user?.id && profile?.cefrLevel) {
+      const normBackend = normalizeCefrLevel(profile.cefrLevel);
+      if (normBackend && normBackend !== cachedLevel) {
+        setUserCefrLevel(user.id, normBackend);
+      }
+    }
+  }, [user?.id, profile?.cefrLevel, cachedLevel]);
 
   const updateProfileSettings = useCallback(
     async (partial: Partial<UserSettings>) => {

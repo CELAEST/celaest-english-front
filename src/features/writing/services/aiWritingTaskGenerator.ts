@@ -11,7 +11,7 @@
  * 4. Resilient caching and instant procedural fallback.
  */
 
-import { WritingTaskItem } from "./dynamicWritingTaskService";
+import { WritingTaskItem, getDefaultStarterPhrases } from "./dynamicWritingTaskService";
 import { normalizeCefr, classifyProfession, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
@@ -31,9 +31,10 @@ export interface GenerateBatchTasksParams {
   count?: number | undefined;
   forceFresh?: boolean | undefined;
   throwOnAuthError?: boolean | undefined;
+  avoidTasks?: string[] | undefined;
 }
 
-const BATCH_STORAGE_PREFIX = "celaest:writing:ai_batch_tasks:v2";
+const BATCH_STORAGE_PREFIX = "celaest:writing:ai_batch_tasks:v3";
 
 function getBatchCacheKey(profession: string, cefrLevel: string): string {
   const normProf = (profession || "Professional").toLowerCase().trim().replace(/[^a-z0-9]+/g, "_");
@@ -62,7 +63,27 @@ export class AiWritingTaskGenerator {
         if (cached) {
           const parsed = JSON.parse(cached) as WritingTaskItem[];
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+            // Invalidate obsolete/uncalibrated tasks from prior sessions for A1
+            const hasInvalidA1 =
+              level === "A1" &&
+              parsed.some((t) => {
+                const desc = (t.description || "").toLowerCase();
+                return (
+                  t.maxWords > 28 ||
+                  desc.includes("two parties") ||
+                  desc.includes("mediation") ||
+                  desc.includes("mediator") ||
+                  desc.includes("upcoming") ||
+                  desc.includes("confirming the date") ||
+                  !["MESSAGE", "EMAIL"].includes(t.category)
+                );
+              });
+
+            if (!hasInvalidA1) {
+              return parsed;
+            } else {
+              localStorage.removeItem(getBatchCacheKey(role, level));
+            }
           }
         }
       } catch {
@@ -93,7 +114,7 @@ export class AiWritingTaskGenerator {
   public static async generateBatchTasks(
     params: GenerateBatchTasksParams,
   ): Promise<WritingTaskItem[]> {
-    const { profession, cefrLevel, count = 6, forceFresh = false } = params;
+    const { profession, cefrLevel, count = 6, forceFresh = false, avoidTasks = [] } = params;
     const level = normalizeCefr(cefrLevel);
     const role = profession?.trim() || "Professional";
     const cacheKey = getBatchCacheKey(role, level);
@@ -104,7 +125,26 @@ export class AiWritingTaskGenerator {
         if (cached) {
           const parsed = JSON.parse(cached) as WritingTaskItem[];
           if (Array.isArray(parsed) && parsed.length >= 3) {
-            return parsed;
+            const hasInvalidA1 =
+              level === "A1" &&
+              parsed.some((t) => {
+                const desc = (t.description || "").toLowerCase();
+                return (
+                  t.maxWords > 28 ||
+                  desc.includes("two parties") ||
+                  desc.includes("mediation") ||
+                  desc.includes("mediator") ||
+                  desc.includes("upcoming") ||
+                  desc.includes("confirming the date") ||
+                  !["MESSAGE", "EMAIL"].includes(t.category)
+                );
+              });
+
+            if (!hasInvalidA1) {
+              return parsed;
+            } else {
+              localStorage.removeItem(cacheKey);
+            }
           }
         }
       } catch {
@@ -112,13 +152,15 @@ export class AiWritingTaskGenerator {
       }
     }
 
-    // In-flight singleton promise lock: If a request for this exact (role, level) is already in progress,
+    // In-flight singleton promise lock: If a request for this exact (role, level, avoidCount) is already in progress,
     // immediately return the existing promise so zero concurrent duplicate requests occur!
-    if (this.inFlightBatchPromises.has(cacheKey)) {
-      return this.inFlightBatchPromises.get(cacheKey)!;
+    const inFlightKey = `${cacheKey}:${avoidTasks.length}`;
+    if (this.inFlightBatchPromises.has(inFlightKey)) {
+      return this.inFlightBatchPromises.get(inFlightKey)!;
     }
 
-    const { minWords, maxWords, timeLimit, levelDirectives } = this.getLevelParams(level);
+    const { minWords, maxWords, timeLimit, allowedCategories, levelDirectives } = this.getLevelParams(level);
+    const categoriesString = allowedCategories.map((c) => `"${c}"`).join(", ");
 
     const systemPrompt = `You are a world-class Cambridge and Oxford ESL examiner specializing in career-specific English language writing assessments.
 Generate an authentic, realistic batch of ${count} professional writing tasks for an individual working as a: "${role}".
@@ -128,21 +170,22 @@ Pedagogical Calibration (${level}):
 ${levelDirectives}
 
 Strict Quality Mandates:
-1. The scenario MUST be authentic, credible, and specific to the daily realities, procedures, clients, patients, or challenges of a "${role}".
-2. Category Diversity: Across the batch of ${count} tasks, distribute categories across distinct types: "EMAIL", "REPORT", "PROPOSAL", "MESSAGE", "REVIEW", "LETTER".
-3. Provide 3 to 4 realistic starter phrases in natural English that an authentic "${role}" at CEFR ${level} would use in each specific scenario.
-4. ABSOLUTELY DO NOT use generic software engineering jargon (such as 'sprint review', 'PR', 'hotfix', 'tech debt', 'API') unless the role is explicitly Software/IT.
-5. All instructions must be in clear English.
-6. Ultra-Concise Description Mandate: The "description" field for EACH task MUST be exactly ONE short, natural sentence (maximum 15 to 20 words). Absolutely NEVER write multiple sentences, lengthy paragraphs, bloated checklists, or overwhelming requirements. Keep it light, inspiring, and concise.
+1. The scenario MUST be authentic, credible, and specific to the daily realities of a "${role}" calibrated STRICTLY for CEFR ${level}.
+2. Category Restriction: Categories for this level MUST strictly be one of: [${categoriesString}]. Never use prohibited categories.
+3. Provide 3 to 4 realistic starter phrases in natural English strictly calibrated for CEFR ${level}.
+4. ABSOLUTELY DO NOT use generic software engineering jargon unless the role is explicitly Software/IT.
+5. All instructions must be in clear English. For CEFR A1 and A2, provide 'spanishDescription' as a helpful Spanish translation. For B1, B2, C1, and C2, 'spanishDescription' must be null or omitted.
+6. Ultra-Concise Description Mandate: The "description" field for EACH task MUST be exactly ONE short, natural sentence (maximum 12 to 18 words). Absolutely NEVER write multiple sentences, lengthy paragraphs, bloated checklists, or overwhelming requirements. Keep it light, inspiring, and concise.
 
 Output format: Return ONLY valid raw JSON with this exact structure:
 {
   "tasks": [
     {
-      "category": "EMAIL",
+      "category": "${allowedCategories[0]}",
       "title": "Clear and realistic scenario title",
-      "description": "Short, crisp 1-sentence prompt (max 15-20 words).",
-      "toneHint": "e.g. Professional, empathetic, clear",
+      "description": "Short, crisp 1-sentence prompt (max 12-18 words).",
+      "spanishDescription": ${level === "A1" || level === "A2" ? '"Traducción clara y pedagógica al español de la consigna para ayudar al estudiante."' : 'null'},
+      "toneHint": "e.g. Professional, friendly, clear",
       "timeLimit": "${timeLimit}",
       "minWords": ${minWords},
       "maxWords": ${maxWords},
@@ -156,7 +199,15 @@ Output format: Return ONLY valid raw JSON with this exact structure:
 }`;
 
     const nonce = Math.floor(Math.random() * 100000);
-    const userPrompt = `Generate a diverse batch of ${count} realistic professional writing tasks across varied categories for a ${role} at CEFR ${level} level (Entropy: ${Date.now()}-${nonce}). Ensure distinct scenarios across emails, reports, proposals, messages, reviews, and letters.`;
+    const avoidListText =
+      avoidTasks && avoidTasks.length > 0
+        ? `\n\nSTRICT ANTI-REPETITION MANDATE:
+The user has ALREADY completed or seen the following writing tasks. You MUST NOT repeat, rephrase, or duplicate any of them:
+${avoidTasks.slice(-30).map((t, idx) => `${idx + 1}. "${t}"`).join("\n")}
+Every task in this new batch MUST be completely brand new with different scenarios and goals.`
+        : "";
+
+    const userPrompt = `Generate a diverse batch of ${count} realistic professional writing tasks strictly calibrated for a ${role} at CEFR ${level} level (Entropy: ${Date.now()}-${nonce}). Distribute across allowed categories [${categoriesString}].${avoidListText}`;
 
     const executeBatchRequest = (async (): Promise<WritingTaskItem[]> => {
       try {
@@ -224,6 +275,8 @@ Output format: Return ONLY valid raw JSON with this exact structure:
 
         if (parsedBatch && parsedBatch.length > 0 && typeof window !== "undefined") {
           try {
+            // Delete old batch and store the fresh new batch
+            localStorage.removeItem(cacheKey);
             localStorage.setItem(cacheKey, JSON.stringify(parsedBatch));
           } catch {
             // ignore storage quota
@@ -240,12 +293,12 @@ Output format: Return ONLY valid raw JSON with this exact structure:
       }
     })();
 
-    this.inFlightBatchPromises.set(cacheKey, executeBatchRequest);
+    this.inFlightBatchPromises.set(inFlightKey, executeBatchRequest);
 
     try {
       return await executeBatchRequest;
     } finally {
-      this.inFlightBatchPromises.delete(cacheKey);
+      this.inFlightBatchPromises.delete(inFlightKey);
     }
   }
 
@@ -267,6 +320,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
     minWords: number;
     maxWords: number;
     timeLimit: string;
+    allowedCategories: string[];
     levelDirectives: string;
   } {
     switch (level) {
@@ -275,42 +329,60 @@ Output format: Return ONLY valid raw JSON with this exact structure:
           minWords: 8,
           maxWords: 25,
           timeLimit: "5 min",
-          levelDirectives: "- Ultra-short elementary message or introduction (8-25 words). Strictly Simple Present (verb to be, do/does, like, work, use). Zero past tense, zero subordinate clauses. Simple, friendly scenarios (introduce yourself, state your role/tools, simple 2-sentence greeting).",
+          allowedCategories: ["MESSAGE", "EMAIL"],
+          levelDirectives: `CRITICAL A1 CALIBRATION MANDATE (ABSOLUTE BEGINNER - 8 TO 25 WORDS ONLY):
+- The user can ONLY write 1 to 2 elementary sentences (8-25 words) using Simple Present ("I am...", "My name is...", "I work as a...", "I use...").
+- STRICT PROHIBITIONS:
+  * NEVER ask an A1 learner to arrange multi-party business meetings, write proposals, compile reports, negotiate, mediate legal issues, or handle complex workplace problems.
+  * Categories MUST ONLY be "MESSAGE" or "EMAIL" (short 2-sentence note/greeting). Absolutely NEVER use "REPORT", "PROPOSAL", "REVIEW", or "LETTER".
+  * Prompts MUST be elementary: "Write 2 short sentences introducing your name and your role as a ${level}.", "Write 2 simple sentences saying hello to your team and that you are ready to work.", "Write 2 short sentences about what tool or computer you use at work."
+  * Starter phrases MUST be elementary chunks: "Hello, my name is...", "I am a...", "I work at...", "Good morning!", "Thank you!". Never formal complex phrases like "Dear Mr. Smith, I am writing to mediate...".`,
         };
       case "A2":
         return {
-          minWords: 20,
-          maxWords: 45,
+          minWords: 15,
+          maxWords: 35,
           timeLimit: "8 min",
-          levelDirectives: "- Short routine message or note (20-45 words). Simple present/past, straightforward vocabulary, brief client or team update.",
+          allowedCategories: ["EMAIL", "MESSAGE"],
+          levelDirectives: `A2 CALIBRATION MANDATE (ELEMENTARY - 15 TO 35 WORDS):
+- Routine short messages and simple notes. Simple present, simple past, basic connectors (and, but, because).
+- Prompts: Confirming a meeting time, simple note to a coworker, brief progress update.
+- Categories MUST ONLY be "EMAIL" or "MESSAGE". No formal reports, proposals, or complex letters.`,
         };
       case "B1":
         return {
-          minWords: 45,
-          maxWords: 90,
-          timeLimit: "12 min",
-          levelDirectives: "- Professional email, case update, or client follow-up explaining a situation and proposing next steps (45-90 words).",
+          minWords: 35,
+          maxWords: 75,
+          timeLimit: "10 min",
+          allowedCategories: ["EMAIL", "MESSAGE", "REPORT"],
+          levelDirectives: `B1 CALIBRATION MANDATE (INTERMEDIATE - 35 TO 75 WORDS):
+- Standard professional email, client follow-up, or brief case/task update explaining a situation and next actions.`,
         };
       case "B2":
         return {
-          minWords: 70,
-          maxWords: 130,
-          timeLimit: "15 min",
-          levelDirectives: "- Formal consultation summary, treatment/project proposal, or detailed recommendation email (70-130 words). Clear narrative structure and professional collocations.",
+          minWords: 60,
+          maxWords: 110,
+          timeLimit: "12 min",
+          allowedCategories: ["EMAIL", "REPORT", "PROPOSAL", "REVIEW", "LETTER"],
+          levelDirectives: `B2 CALIBRATION MANDATE (UPPER INTERMEDIATE - 60 TO 110 WORDS):
+- Professional consultation, detailed client recommendation, project status proposal, or deliverable review.`,
         };
       case "C1":
       case "C2":
         return {
-          minWords: 100,
-          maxWords: 180,
-          timeLimit: "18 min",
-          levelDirectives: "- In-depth clinical or technical case report, executive briefing, or high-stakes consultation letter (100-180 words). Sophisticated discourse markers and authoritative tone.",
+          minWords: 90,
+          maxWords: 160,
+          timeLimit: "15 min",
+          allowedCategories: ["PROPOSAL", "REPORT", "LETTER", "REVIEW"],
+          levelDirectives: `C1/C2 CALIBRATION MANDATE (ADVANCED / EXECUTIVE - 90 TO 160 WORDS):
+- High-stakes executive briefing, comprehensive case analysis, strategic proposal, or authoritative recommendation letter.`,
         };
       default:
         return {
-          minWords: 45,
-          maxWords: 90,
-          timeLimit: "12 min",
+          minWords: 35,
+          maxWords: 75,
+          timeLimit: "10 min",
+          allowedCategories: ["EMAIL", "MESSAGE"],
           levelDirectives: "- Intermediate professional email or update.",
         };
     }
@@ -376,17 +448,14 @@ Output format: Return ONLY valid raw JSON with this exact structure:
           const starterPhrases =
             Array.isArray(item.starterPhrases) && item.starterPhrases.length > 0
               ? item.starterPhrases.map(String)
-              : [
-                  `Regarding the recent consultation about...`,
-                  `I would like to follow up on the recommended steps for...`,
-                  `Please find the detailed summary below...`,
-                ];
+              : getDefaultStarterPhrases(level, category);
 
           validTasks.push({
             id: `ai-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
             category,
             title: String(item.title).trim(),
             description: String(item.description).trim(),
+            spanishDescription: (level === "A1" || level === "A2") && item.spanishDescription ? String(item.spanishDescription).trim() : undefined,
             toneHint: String(item.toneHint || "Professional, concise, clear"),
             timeLimit: String(item.timeLimit || timeLimit),
             minWords: Number(item.minWords) || minWords,
@@ -551,6 +620,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Introduce Yourself to Clinic`,
         description: `Write 2 short sentences introducing your name and your role at the clinic.`,
+        spanishDescription: `Escribe 2 oraciones sencillas presentándote con tu nombre y tu trabajo en la clínica.`,
         starterPhrases: [
           `Hello! My name is...`,
           `I am a ${role} at this clinic.`,
@@ -561,6 +631,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Daily Work Routine Note`,
         description: `Write 2 simple sentences about what you do every day at work.`,
+        spanishDescription: `Escribe 2 oraciones sencillas sobre lo que haces cada día en el trabajo.`,
         starterPhrases: [
           `Every day, I help patients at the clinic.`,
           `I check appointments and prepare instruments.`,
@@ -571,6 +642,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "EMAIL" as const,
         title: `${role}: Clinic Equipment Note`,
         description: `Write 2 short sentences mentioning a computer or tool you use at work.`,
+        spanishDescription: `Escribe 2 oraciones sencillas mencionando una herramienta o computador que uses en tu trabajo.`,
         starterPhrases: [
           `In my work, I use a computer and basic tools.`,
           `Everything is clean and ready for patients.`,
@@ -581,6 +653,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Friendly Greeting to Patients`,
         description: `Write a short 2-sentence greeting welcoming a patient to the clinic.`,
+        spanishDescription: `Escribe un saludo corto de 2 oraciones dándole la bienvenida a un paciente a la clínica.`,
         starterPhrases: [
           `Welcome to our clinic!`,
           `Please take a seat and relax.`,
@@ -591,6 +664,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Note to Your Team`,
         description: `Write 2 simple sentences telling your team you are ready to work.`,
+        spanishDescription: `Escribe 2 oraciones sencillas diciéndole a tu equipo que estás listo para trabajar hoy.`,
         starterPhrases: [
           `Good morning, team!`,
           `I am at the office and ready to work today.`,
@@ -601,6 +675,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Favorite Part of Your Job`,
         description: `Write 2 short sentences about what you enjoy in your work.`,
+        spanishDescription: `Escribe 2 oraciones cortas sobre lo que te gusta de tu trabajo.`,
         starterPhrases: [
           `I like helping people feel better.`,
           `My team is very friendly and kind.`,
@@ -613,7 +688,8 @@ Output format: Return ONLY valid raw JSON with this exact structure:
       {
         category: "MESSAGE" as const,
         title: `${role}: Introduce Yourself to the Team`,
-        description: `Write 2 short sentences introducing your name and your job.`,
+        description: `Write 2 short sentences: your name and your job.`,
+        spanishDescription: `Escribe 2 oraciones sencillas presentándote con tu nombre y tu trabajo.`,
         starterPhrases: [
           `Hello everyone! My name is...`,
           `I work as a ${role}.`,
@@ -623,7 +699,8 @@ Output format: Return ONLY valid raw JSON with this exact structure:
       {
         category: "MESSAGE" as const,
         title: `${role}: Daily Work Tools`,
-        description: `Write 2 simple sentences about one tool or computer you use at work.`,
+        description: `Write 2 simple sentences about a tool or computer you use at work.`,
+        spanishDescription: `Escribe 2 oraciones sencillas sobre una herramienta o computador que uses en el trabajo.`,
         starterPhrases: [
           `Every day, I use my laptop and email.`,
           `I also use simple software tools for my work.`,
@@ -634,6 +711,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "EMAIL" as const,
         title: `${role}: Short Status Greeting`,
         description: `Write a short 2-sentence update saying you started your tasks today.`,
+        spanishDescription: `Escribe un saludo corto de 2 oraciones diciendo que ya comenzaste tus tareas de hoy.`,
         starterPhrases: [
           `Good morning!`,
           `I am working on my daily tasks today.`,
@@ -644,6 +722,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: Quick Question to a Teammate`,
         description: `Write 2 short sentences asking a coworker for quick help.`,
+        spanishDescription: `Escribe 2 oraciones cortas pidiéndole ayuda rápida a un compañero de equipo.`,
         starterPhrases: [
           `Hi! Do you have two minutes?`,
           `I have a quick question about this task.`,
@@ -654,6 +733,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: What I Like About My Job`,
         description: `Write 2 simple sentences about what you enjoy in your work.`,
+        spanishDescription: `Escribe 2 oraciones sencillas sobre lo que disfrutas de tu trabajo.`,
         starterPhrases: [
           `I like learning new things every day.`,
           `I enjoy working with my colleagues.`,
@@ -664,6 +744,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: "MESSAGE" as const,
         title: `${role}: End of Day Note`,
         description: `Write 2 short sentences saying you finished your work for the day.`,
+        spanishDescription: `Escribe 2 oraciones cortas diciendo que terminaste tu jornada de trabajo.`,
         starterPhrases: [
           `I finished my work for today.`,
           `See you tomorrow morning!`,
@@ -672,9 +753,58 @@ Output format: Return ONLY valid raw JSON with this exact structure:
       },
     ];
 
+    const generalA2Templates = [
+      {
+        category: "EMAIL" as const,
+        title: `${role}: Confirming a Meeting Time`,
+        description: `Write a short 3-sentence email confirming what day and time you can meet.`,
+        spanishDescription: `Escribe un correo corto de 3 oraciones confirmando qué día y a qué hora puedes reunirte.`,
+        starterPhrases: [
+          `Hi team, thank you for your message.`,
+          `I am available to meet on Tuesday at 10:00 AM.`,
+          `Please let me know if that time works for you.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Quick Progress Update`,
+        description: `Write a brief update to your supervisor about a task you finished today.`,
+        spanishDescription: `Escribe una actualización breve para tu supervisor sobre una tarea que terminaste hoy.`,
+        starterPhrases: [
+          `Good afternoon! I wanted to give you a quick update.`,
+          `I completed the first draft of the task this morning.`,
+          `I will start the next step after lunch.`,
+        ],
+      },
+      {
+        category: "MESSAGE" as const,
+        title: `${role}: Asking for Information`,
+        description: `Write a short note asking a colleague to send you a document or file.`,
+        spanishDescription: `Escribe una nota corta pidiéndole a un colega que te envíe un documento o archivo.`,
+        starterPhrases: [
+          `Hello! Could you please send me the updated file?`,
+          `I need to review the details for our project.`,
+          `Thank you very much for your help.`,
+        ],
+      },
+      {
+        category: "EMAIL" as const,
+        title: `${role}: Out of Office Note`,
+        description: `Write a short note informing your team that you will be away tomorrow morning.`,
+        spanishDescription: `Escribe una nota corta informando a tu equipo que estarás fuera mañana por la mañana.`,
+        starterPhrases: [
+          `Dear team, please note I will be away tomorrow morning.`,
+          `I will return to the office at 1:00 PM.`,
+          `For urgent questions, you can reach me by phone.`,
+        ],
+      },
+    ];
+
     let templates = category === "HEALTHCARE" ? healthcareTemplates : generalTemplates;
     if (level === "A1") {
       templates = category === "HEALTHCARE" ? healthcareA1Templates : generalA1Templates;
+    } else if (level === "A2") {
+      templates = generalA2Templates;
     }
     const result: WritingTaskItem[] = [];
 
@@ -685,6 +815,7 @@ Output format: Return ONLY valid raw JSON with this exact structure:
         category: t.category,
         title: t.title,
         description: t.description,
+        spanishDescription: (t as any).spanishDescription,
         toneHint: "Polite, authoritative, empathetic",
         timeLimit,
         minWords,

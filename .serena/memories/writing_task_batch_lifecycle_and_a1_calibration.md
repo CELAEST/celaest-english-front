@@ -1,0 +1,5 @@
+Implementación del ciclo de vida de lotes de tareas en Writing (CELAEST English):
+1. Cero repetición de tareas: Se implementó 'avoidTasks' pasando el historial de preguntas vistas (seenPromptsRef) para que la IA nunca repita escenarios previos.
+2. Transición entre lotes (Batch Lifecycle): Dentro del bloque de 6 preguntas, la navegación es instantánea (0ms y 0 tokens). Al llegar a la 6ª pregunta y avanzar, se genera automáticamente el nuevo bloque con la IA, se borra el lote anterior en storage (localStorage.removeItem) y se persiste el nuevo lote fresco.
+3. Diseño limpio y sin elementos intrusivos: Se retiró el contador tipo píldora (4/6) del toolbar, preservando el diseño editorial minimalista puro con tipografía Inter y specular hairline.
+4. Soporte bilingüe pedagógico para principiantes (A1/A2): Instrucción en español (spanishDescription) visible debajo del prompt en inglés con alto contraste y legibilidad para que cualquier usuario principiante entienda 100% de la consigna.

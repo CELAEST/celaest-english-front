@@ -52,6 +52,10 @@ export function setUserCefrLevel(userId: string, level: string): CanonicalCefr {
   const norm = normalizeCefrLevel(level);
   if (typeof window === "undefined") return norm;
   try {
+    const current = localStorage.getItem(getKey(userId));
+    if (current === norm && localStorage.getItem("celaest:cefrLevel") === norm) {
+      return norm;
+    }
     localStorage.setItem(getKey(userId), norm);
     // Also keep legacy key synced for backward compatibility with unmigrated views
     localStorage.setItem("celaest:cefrLevel", norm);

@@ -362,6 +362,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
     });
 
     it("auto-recovers from json_validate_failed max completion tokens cutoff by retrying in relaxed JSON mode with 8192 tokens", async () => {
+      await providerKeyVault.saveKey("openai", "sk_test_openai_key");
       await providerKeyVault.saveKey("groq", "gsk_test_groq_key");
 
       const capturedRequests: any[] = [];
@@ -397,7 +398,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       const result = await directClientAiService.chatCompletion({
         systemPrompt: "You must return valid raw JSON matching this schema",
         userPrompt: "Evaluate my essay in JSON",
-        providerId: "groq",
+        providerId: "openai",
       });
 
       expect(result).toBe('{"overallScore": 98, "summary": "Excelente recuperación"}');

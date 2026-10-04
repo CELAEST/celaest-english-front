@@ -17,6 +17,7 @@ import {
   PersistedInterviewState,
 } from "../services/interviewPersistence";
 import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
+import { normalizeCefrLevel } from "../../../shared/services/levelStore";
 
 export { __resetInterviewHydrationForTest };
 export type { InterviewStatus, ProcessingStage };
@@ -33,7 +34,10 @@ export const useInterviewSession = (
   // 1. Restore persisted state (read once on mount)
   // ──────────────────────────────────────────────
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
-  const [restored] = useState<PersistedInterviewState | null>(() => loadPersistedInterview(currentUserId));
+  const normInitialLevel = initialLevel ? normalizeCefrLevel(initialLevel) : undefined;
+  const [restored] = useState<PersistedInterviewState | null>(() =>
+    loadPersistedInterview(currentUserId, normInitialLevel),
+  );
   const [hasCloudHydrated, setHasCloudHydrated] = useState<boolean>(() => {
     return Boolean(restored?.sessionQuestions && restored.sessionQuestions.length > 0);
   });
@@ -44,9 +48,9 @@ export const useInterviewSession = (
 
   const handleLevelOrRoleReset = useCallback(() => {
     const uid = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
-    const local = loadPersistedInterview(uid);
+    const local = loadPersistedInterview(uid, normInitialLevel);
     setHasCloudHydrated(Boolean(local?.sessionQuestions && local.sessionQuestions.length > 0));
-  }, []);
+  }, [normInitialLevel]);
 
   // ──────────────────────────────────────────────
   // 2. Question Progression Sub-Hook
@@ -65,7 +69,7 @@ export const useInterviewSession = (
 
   const questions = useInterviewQuestionManager({
     roleName,
-    initialLevel,
+    initialLevel: normInitialLevel,
     isActive,
     hasHydrated: hasCloudHydrated,
     persistedQuestions: restored?.sessionQuestions,
@@ -185,8 +189,8 @@ export const useInterviewSession = (
   const { showAnalysisModal, turnFeedback } = evaluation;
 
   useEffect(() => {
-    if (!isActive) {
-      prevActiveRef.current = false;
+    if (!isActive || !hasCloudHydrated) {
+      if (!isActive) prevActiveRef.current = false;
       return;
     }
 
@@ -200,7 +204,7 @@ export const useInterviewSession = (
       lastSpokenQuestionRef.current = questionText;
       void speakQuestion().catch(() => {});
     }
-  }, [questionText, isActive, showAnalysisModal, turnFeedback, speakQuestion]);
+  }, [questionText, isActive, hasCloudHydrated, showAnalysisModal, turnFeedback, speakQuestion]);
 
   // ──────────────────────────────────────────────
   // 8. User actions
@@ -287,6 +291,9 @@ export const useInterviewSession = (
     isAiSpeaking: speech.status === "AI_SPEAKING",
     isThinking: speech.status === "THINKING",
     isPaused: speech.status === "PAUSED",
+    hasCloudHydrated,
+    isGeneratingQuestions: questions.isGeneratingQuestions,
+    sessionQuestions: questions.sessionQuestions,
 
     // Session context
     roleName: questions.effectiveRoleName,

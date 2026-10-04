@@ -71,6 +71,7 @@ globalThis.cancelAnimationFrame = ((id: number) =>
   clearTimeout(id)) as unknown as typeof cancelAnimationFrame;
 
 import { useInterviewSession } from "./useInterviewSession";
+import { SpeechSynthesisService } from "../services/speechSynthesisService";
 import { apiInterviewRepository } from "../../../infrastructure/repositories/ApiInterviewRepository";
 import { AudioCaptureService } from "../services/audioCaptureService";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
@@ -579,5 +580,74 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
       expect(result.current.currentQuestion?.question).toBe("B1 question 4");
     });
   });
+
+  it("gates auto-speak until cloud hydration confirms, preventing premature flash of previous questions", async () => {
+    localStorage.clear();
+    const speakSpy = vi.spyOn(SpeechSynthesisService, "speak");
+    speakSpy.mockClear();
+
+    let resolveGetProgress: ((val: any) => void) | null = null;
+    vi.mocked(apiInterviewRepository.getProgress).mockImplementation(() => {
+      return new Promise((resolve) => {
+        resolveGetProgress = resolve;
+      });
+    });
+
+    const { result } = renderHook(() => useInterviewSession("Software Engineer", "B2"));
+
+    // On initial mount before cloud hydration resolves, hasCloudHydrated must be false
+    expect(result.current.hasCloudHydrated).toBe(false);
+
+    // Auto-speak MUST NOT have triggered yet!
+    expect(speakSpy).not.toHaveBeenCalled();
+
+    // Now resolve cloud hydration with authoritative B2 question
+    await act(async () => {
+      resolveGetProgress?.({
+        userId: "user-1",
+        roleName: "Software Engineer",
+        speechRate: 0.95,
+        currentQuestionIndex: 1, // Question 2
+        userTranscript: "",
+        savedErrorIds: [],
+        showAnalysisModal: false,
+        latestTurn: null,
+        cefrLevel: "B2",
+        sessionQuestions: [
+          {
+            id: 1,
+            question: "Initial B2 question",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+          {
+            id: 2,
+            question: "Target B2 question 2",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+        ],
+        askedQuestions: ["Initial B2 question"],
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    // Hydration is now confirmed
+    await waitFor(() => {
+      expect(result.current.hasCloudHydrated).toBe(true);
+      expect(result.current.currentQuestion?.question).toBe("Target B2 question 2");
+      expect(result.current.overallQuestionIndex).toBe(2);
+    });
+
+    // Auto-speak should speak the definitive target question once, NEVER the preliminary or placeholder
+    await waitFor(() => {
+      expect(speakSpy).toHaveBeenCalled();
+    });
+  });
 });
+
 

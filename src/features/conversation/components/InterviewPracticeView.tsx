@@ -11,6 +11,7 @@ import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastruc
 import { InterviewAnalysisModal } from "./InterviewAnalysisModal";
 import { ResponsiveInterviewHUD } from "./ResponsiveInterviewHUD";
 import { SessionCardsSidenav } from "./SessionCardsSidenav";
+import { InterviewSkeleton } from "./InterviewSkeleton";
 import { useInterviewSession } from "../hooks/useInterviewSession";
 
 import { CefrLevelCode, normalizeCefr } from "../services/dynamicQuestionService";
@@ -37,6 +38,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     isAiSpeaking,
     isThinking,
     isPaused,
+    hasCloudHydrated,
+    sessionQuestions,
+    isGeneratingQuestions,
     currentRound,
     currentQuestionIndex,
     overallQuestionIndex,
@@ -203,6 +207,18 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     ],
   );
 
+  // Prevent flashing placeholder text or premature re-rendering during cold mount / question generation
+  const isSessionLoading =
+    sessionQuestions.length === 0 ||
+    ((!hasCloudHydrated || isGeneratingQuestions) &&
+      (!currentQuestion?.question ||
+        currentQuestion.question.startsWith("Preparing") ||
+        currentQuestion.question.startsWith("Generating")));
+
+  if (isSessionLoading) {
+    return <InterviewSkeleton />;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 1, y: 0 }}
@@ -239,7 +255,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
 
             {/* Question & Live Transcript */}
             <ConversationPromptArea
-              currentQuestionText={currentQuestion?.question || "Preparing your personalized challenge..."}
+              currentQuestionText={currentQuestion?.question || ""}
               currentQuestionIndex={overallQuestionIndex}
               userTranscript={userTranscript}
               isListening={isListening}

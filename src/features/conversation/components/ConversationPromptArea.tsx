@@ -120,13 +120,20 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
               </div>
             )}
           </div>
-          <h2
-            key={`question-${currentQuestionIndex}`}
-            aria-live="polite"
-            className="text-[clamp(15px,2.1vh,20px)] sm:text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.45] sm:leading-[1.6] select-text animate-[fadeSlideUp_0.3s_ease-out_both]"
-          >
-            {currentQuestionText}
-          </h2>
+          {currentQuestionText.startsWith("Preparing") || currentQuestionText.startsWith("Generating") ? (
+            <div className="flex flex-col gap-2 py-1 animate-pulse">
+              <div className="h-5 sm:h-6 bg-white/10 rounded-md w-3/4" />
+              <div className="h-5 sm:h-6 bg-white/10 rounded-md w-1/2" />
+            </div>
+          ) : (
+            <h2
+              key={`question-${currentQuestionIndex}`}
+              aria-live="polite"
+              className="text-[clamp(15px,2.1vh,20px)] sm:text-[clamp(18px,2.5vh,24px)] font-sans font-light text-white/95 tracking-normal leading-[1.45] sm:leading-[1.6] select-text animate-[fadeSlideUp_0.3s_ease-out_both]"
+            >
+              {currentQuestionText}
+            </h2>
+          )}
         </div>
       )}
 

@@ -94,24 +94,52 @@ export function useInterviewCloudSync({
       askedQuestions?: string[] | undefined;
       latestTurn?: Record<string, unknown> | null | undefined;
     }) => {
-      if (typeof p.speechRate === "number") setSpeechRate(p.speechRate);
-      if (typeof p.cefrLevel === "string" && p.cefrLevel) {
-        setActiveCefrLevel(p.cefrLevel);
+      if (typeof p.speechRate === "number" && p.speechRate !== speechRate) {
+        setSpeechRate(p.speechRate);
       }
-      if (typeof p.currentQuestionIndex === "number") {
+      if (typeof p.cefrLevel === "string" && p.cefrLevel) {
+        const norm = p.cefrLevel.toUpperCase().trim();
+        if (norm !== activeCefrLevel) {
+          setActiveCefrLevel(norm);
+        }
+      }
+      if (typeof p.currentQuestionIndex === "number" && p.currentQuestionIndex !== currentQuestionIndex) {
         setCurrentQuestionIndex(p.currentQuestionIndex);
       }
       if (Array.isArray(p.sessionQuestions) && p.sessionQuestions.length > 0) {
-        setSessionQuestions(p.sessionQuestions);
+        setSessionQuestions((prev) => {
+          if (
+            prev.length === p.sessionQuestions!.length &&
+            prev.every((q, idx) => q.question === p.sessionQuestions![idx]?.question)
+          ) {
+            return prev;
+          }
+          return p.sessionQuestions!;
+        });
       }
       if (Array.isArray(p.askedQuestions)) {
-        setAskedQuestions(p.askedQuestions);
+        setAskedQuestions((prev) => {
+          if (
+            prev.length === p.askedQuestions!.length &&
+            prev.every((q, idx) => q === p.askedQuestions![idx])
+          ) {
+            return prev;
+          }
+          return p.askedQuestions!;
+        });
       }
-      if (typeof p.userTranscript === "string") {
+      if (typeof p.userTranscript === "string" && p.userTranscript !== userTranscript) {
         setUserTranscript(p.userTranscript);
         userTranscriptRef.current = p.userTranscript;
       }
-      if (Array.isArray(p.savedErrorIds)) setSavedErrorIds(new Set(p.savedErrorIds));
+      if (Array.isArray(p.savedErrorIds)) {
+        const isSame =
+          p.savedErrorIds.length === savedErrorIds.size &&
+          p.savedErrorIds.every((id) => savedErrorIds.has(id));
+        if (!isSame) {
+          setSavedErrorIds(new Set(p.savedErrorIds));
+        }
+      }
 
       const fb = p.latestTurn?.feedback as any;
       const hasValidFeedback =
@@ -129,6 +157,38 @@ export function useInterviewCloudSync({
         setTurnFeedback(null);
         setShowAnalysisModal(false);
       }
+
+      // Persist the verified authoritative snapshot to localStorage so next mount is 100% synchronous
+      const targetLevel = (p.cefrLevel || activeCefrLevel).toUpperCase().trim();
+      const effectiveQuestions =
+        Array.isArray(p.sessionQuestions) && p.sessionQuestions.length > 0
+          ? p.sessionQuestions
+          : sessionQuestions.length > 0
+            ? sessionQuestions
+            : undefined;
+      const effectiveAsked =
+        Array.isArray(p.askedQuestions) && p.askedQuestions.length > 0
+          ? p.askedQuestions
+          : askedQuestions.length > 0
+            ? askedQuestions
+            : undefined;
+
+      const snapshot: PersistedInterviewState = {
+        version: 2,
+        roleName: p.roleName || effectiveRoleName,
+        cefrLevel: targetLevel,
+        speechRate: typeof p.speechRate === "number" ? p.speechRate : speechRate,
+        currentQuestionIndex:
+          typeof p.currentQuestionIndex === "number" ? p.currentQuestionIndex : currentQuestionIndex,
+        userTranscript: typeof p.userTranscript === "string" ? p.userTranscript : userTranscript,
+        turnFeedback: hasValidFeedback ? (fb as unknown as ComprehensiveTurnFeedback) : null,
+        showAnalysisModal: hasValidFeedback && typeof p.showAnalysisModal === "boolean" ? p.showAnalysisModal : false,
+        savedErrorIds: Array.isArray(p.savedErrorIds) ? p.savedErrorIds : Array.from(savedErrorIds),
+        sessionQuestions: effectiveQuestions,
+        askedQuestions: effectiveAsked,
+        updatedAt: Date.now(),
+      };
+      savePersistedInterview(snapshot, currentUserId);
     },
     [
       setSpeechRate,
@@ -141,6 +201,15 @@ export function useInterviewCloudSync({
       setSavedErrorIds,
       setShowAnalysisModal,
       setTurnFeedback,
+      activeCefrLevel,
+      sessionQuestions,
+      askedQuestions,
+      effectiveRoleName,
+      speechRate,
+      currentQuestionIndex,
+      userTranscript,
+      savedErrorIds,
+      currentUserId,
     ],
   );
 

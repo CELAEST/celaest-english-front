@@ -648,6 +648,79 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
       expect(speakSpy).toHaveBeenCalled();
     });
   });
+
+  it("stops speech immediately and resets speech state when switching CEFR level", async () => {
+    const stopSpy = vi.spyOn(SpeechSynthesisService, "stop");
+
+    vi.mocked(apiInterviewRepository.getProgress).mockImplementation((level?: string) => {
+      if (level === "A2") {
+        return Promise.resolve({
+          userId: "user-1",
+          roleName: "Professional",
+          speechRate: 0.95,
+          currentQuestionIndex: 0,
+          userTranscript: "",
+          savedErrorIds: [],
+          showAnalysisModal: false,
+          latestTurn: null,
+          cefrLevel: "A2",
+          sessionQuestions: [
+            {
+              id: 2,
+              question: "A2 Question 1",
+              category: "WARMUP",
+              starHint: "",
+              expectedKeywords: [],
+              round: 1,
+            },
+          ],
+          askedQuestions: [],
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      return Promise.resolve({
+        userId: "user-1",
+        roleName: "Professional",
+        speechRate: 0.95,
+        currentQuestionIndex: 0,
+        userTranscript: "",
+        savedErrorIds: [],
+        showAnalysisModal: false,
+        latestTurn: null,
+        cefrLevel: "B1",
+        sessionQuestions: [
+          {
+            id: 1,
+            question: "B1 Question 1",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+        ],
+        askedQuestions: [],
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    const { result } = renderHook(() =>
+      useInterviewSession("Professional", "B1", true),
+    );
+
+    await waitFor(() => {
+      expect(result.current.currentQuestion?.question).toBe("B1 Question 1");
+    });
+
+    stopSpy.mockClear();
+
+    // Act: switch level to A2
+    act(() => {
+      result.current.setActiveCefrLevel("A2");
+    });
+
+    // Assert: stop was called immediately when switching level
+    expect(stopSpy).toHaveBeenCalled();
+  });
 });
 
 

@@ -21,6 +21,7 @@ export interface UseInterviewQuestionManagerOptions {
   persistedIndex?: number | undefined;
   persistedAskedQuestions?: string[] | undefined;
   onLevelOrRoleReset?: (() => void) | undefined;
+  onLevelWillChange?: (() => void) | undefined;
   onAiInfrastructureError?: ((err: unknown) => void) | undefined;
   onQuestionsGenerated?: ((questions: InterviewQuestionItem[], level: string, targetIndex?: number) => void) | undefined;
 }
@@ -35,6 +36,7 @@ export function useInterviewQuestionManager({
   persistedIndex = 0,
   persistedAskedQuestions,
   onLevelOrRoleReset,
+  onLevelWillChange,
   onAiInfrastructureError,
   onQuestionsGenerated,
 }: UseInterviewQuestionManagerOptions) {
@@ -104,6 +106,11 @@ export function useInterviewQuestionManager({
     onLevelOrRoleResetRef.current = onLevelOrRoleReset;
   }, [onLevelOrRoleReset]);
 
+  const onLevelWillChangeRef = useRef(onLevelWillChange);
+  useEffect(() => {
+    onLevelWillChangeRef.current = onLevelWillChange;
+  }, [onLevelWillChange]);
+
   const onAiInfrastructureErrorRef = useRef(onAiInfrastructureError);
   useEffect(() => {
     onAiInfrastructureErrorRef.current = onAiInfrastructureError;
@@ -118,6 +125,7 @@ export function useInterviewQuestionManager({
     (level: string) => {
       const norm = normalizeCefrLevel(level);
       if (norm === activeCefrLevel) return;
+      onLevelWillChangeRef.current?.();
       setActiveCefrLevelState(norm);
       if (currentUserId) {
         setUserCefrLevel(currentUserId, norm);

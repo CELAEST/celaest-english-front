@@ -57,6 +57,24 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   const evaluationRef = useRef<ReturnType<typeof useInterviewTurnEvaluation> | null>(null);
   const cloudSyncRef = useRef<ReturnType<typeof useInterviewCloudSync> | null>(null);
+  const speechRef = useRef<ReturnType<typeof useInterviewSpeechAudio> | null>(null);
+  const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const lastSpokenQuestionRef = useRef<string>("");
+
+  const handleLevelWillChange = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current);
+      speakTimeoutRef.current = null;
+    }
+    SpeechSynthesisService.stop();
+    speechRef.current?.stopSpeakingAndReset();
+    lastSpokenQuestionRef.current = "";
+  }, []);
 
   const handleAiInfrastructureError = useCallback((err: unknown) => {
     const { scenario, cooldownSeconds } = classifyAiError(err);
@@ -77,6 +95,7 @@ export const useInterviewSession = (
     persistedIndex: restored?.currentQuestionIndex ?? 0,
     persistedAskedQuestions: restored?.askedQuestions,
     onLevelOrRoleReset: handleLevelOrRoleReset,
+    onLevelWillChange: handleLevelWillChange,
     onAiInfrastructureError: handleAiInfrastructureError,
     onQuestionsGenerated: (fresh, lvl, targetIndex) => {
       cloudSyncRef.current?.saveProgressNow({
@@ -99,6 +118,8 @@ export const useInterviewSession = (
     initialUserTranscript: restored?.userTranscript ?? "",
     initialSpeechRate: restored?.speechRate ?? 0.95,
   });
+
+  speechRef.current = speech;
 
   // ──────────────────────────────────────────────
   // 4. Turn Evaluation Sub-Hook
@@ -185,12 +206,22 @@ export const useInterviewSession = (
   // 7. Auto-speak question on activation / change
   // ──────────────────────────────────────────────
   const prevActiveRef = useRef<boolean>(false);
-  const lastSpokenQuestionRef = useRef<string>("");
   const { showAnalysisModal, turnFeedback } = evaluation;
 
   useEffect(() => {
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isActive || !hasCloudHydrated) {
-      if (!isActive) prevActiveRef.current = false;
+      if (!isActive) {
+        prevActiveRef.current = false;
+        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+      }
       return;
     }
 
@@ -199,18 +230,49 @@ export const useInterviewSession = (
 
     if (!questionText || showAnalysisModal || turnFeedback) return;
     if (questionText.startsWith("Generating") || questionText.startsWith("Preparing")) return;
+    if (questions.isGeneratingQuestions || questions.sessionQuestions.length === 0) return;
 
     if (justActivated || lastSpokenQuestionRef.current !== questionText) {
       lastSpokenQuestionRef.current = questionText;
-      void speakQuestion().catch(() => {});
+
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        speakTimeoutRef.current = setTimeout(() => {
+          void speakQuestion().catch(() => {});
+        }, 120);
+      });
     }
-  }, [questionText, isActive, hasCloudHydrated, showAnalysisModal, turnFeedback, speakQuestion]);
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current);
+        speakTimeoutRef.current = null;
+      }
+    };
+  }, [
+    questionText,
+    isActive,
+    hasCloudHydrated,
+    showAnalysisModal,
+    turnFeedback,
+    speakQuestion,
+    questions.isGeneratingQuestions,
+    questions.sessionQuestions.length,
+  ]);
 
   // ──────────────────────────────────────────────
   // 8. User actions
   // ──────────────────────────────────────────────
   const skipQuestion = useCallback(() => {
     if (evaluation.isBusy()) return;
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
     questions.markUserAdvanced();
     speech.stopSpeakingAndReset();
     speech.setUserTranscript("");
@@ -258,6 +320,8 @@ export const useInterviewSession = (
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {
       if (evaluation.isBusy()) return;
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
       const targetRate = slow ? Math.max(0.7, speech.speechRate - 0.2) : speech.speechRate;
       lastSpokenQuestionRef.current = "";
       void speech.speakQuestion(targetRate).catch(() => {});
@@ -271,13 +335,13 @@ export const useInterviewSession = (
 
   const setActiveCefrLevel = useCallback(
     (level: string) => {
-      speech.stopSpeakingAndReset();
+      handleLevelWillChange();
       speech.setUserTranscript("");
       evaluation.setTurnFeedback(null);
       evaluation.setShowAnalysisModal(false);
       questions.setActiveCefrLevel(level);
     },
-    [questions, speech, evaluation],
+    [questions, handleLevelWillChange, speech, evaluation],
   );
 
   // ──────────────────────────────────────────────

@@ -300,7 +300,7 @@ export const WritingEditor: React.FC<WritingEditorProps> = ({
           aria-describedby="writing-word-goal"
           lang="en"
           spellCheck={false}
-          className={`w-full h-full min-h-[140px] sm:min-h-[280px] lg:min-h-[340px] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 select-text cursor-text ${FONT_SIZES[fontSizeIndex].className}`}
+          className={`w-full h-full min-h-[140px] sm:min-h-[200px] lg:min-h-[220px] lg:max-h-[38vh] bg-transparent text-[#f8f8f8] font-sans font-light leading-relaxed resize-none focus:outline-none placeholder-white/20 no-scrollbar selection:bg-white/20 select-text cursor-text ${FONT_SIZES[fontSizeIndex].className}`}
           placeholder="Start writing here..."
         />
       </div>

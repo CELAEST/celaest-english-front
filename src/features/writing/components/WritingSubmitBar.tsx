@@ -30,7 +30,7 @@ export const WritingSubmitBar: React.FC<WritingSubmitBarProps> = ({
           : "Ready for feedback";
 
   return (
-    <div className="w-full flex items-center justify-between pt-2 sm:pt-6 pb-20 sm:pb-2 select-none shrink-0 animate-[slideUp_0.45s_ease-out_0.25s_both] gap-2 sm:gap-3">
+    <div className="w-full flex items-center justify-between pt-2 sm:pt-3 pb-20 lg:pb-2 select-none shrink-0 animate-[slideUp_0.45s_ease-out_0.25s_both] gap-2 sm:gap-3">
       {/* Left honest status */}
       <div className="flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-xs text-[#8a8a9e] font-light tracking-wide min-w-0 flex-1">
         <svg

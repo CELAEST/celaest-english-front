@@ -359,7 +359,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         {mountedTabs.has("reading") && (
           <div
             key="reading"
-            className={`w-full h-full bg-[#000001] ${activeTab === "reading" ? "block" : "hidden"}`}
+            className={`w-full h-full bg-[#000001] overflow-hidden ${activeTab === "reading" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "reading"}
           >
             <ErrorBoundary

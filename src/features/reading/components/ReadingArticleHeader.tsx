@@ -40,7 +40,7 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     onCycleFontSize,
   }) => {
     return (
-      <div className="w-full flex flex-col items-start text-left space-y-1 sm:space-y-1.5 select-none pt-0.5 sm:pt-2 mb-1 sm:mb-2 shrink-0 transition-all">
+      <div className="w-full flex flex-col items-start text-left space-y-1 sm:space-y-1.5 select-none pt-0.5 sm:pt-1.5 mb-0.5 sm:mb-1.5 shrink-0 transition-all">
         {/* Category, Level & Read Time + Audio Streaming Action */}
         <div className="w-full flex items-center justify-between min-h-[20px]">
           <span className="text-[9.5px] sm:text-[10.5px] font-semibold tracking-[0.18em] sm:tracking-[0.2em] text-[#8264C3] uppercase animate-[fadeSlideUp_0.45s_ease-out_both] block text-left leading-none truncate pr-2">

@@ -775,7 +775,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       {/* Main Workspace Content Canvas */}
       <div className="flex-1 w-full max-w-[1550px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3 gap-2 sm:gap-5 lg:gap-6 z-10 overflow-y-auto lg:overflow-hidden no-scrollbar">
         {/* Left Column: Task Header, Editor & Submit Bar */}
-        <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full overflow-y-auto lg:overflow-hidden no-scrollbar pb-3 lg:pb-0">
+        <div className="flex-1 min-w-0 w-full flex flex-col justify-start min-h-0 h-full overflow-y-auto lg:overflow-hidden no-scrollbar pb-3 lg:pb-0">
           <div className="flex flex-col flex-1 min-h-0 overflow-visible lg:overflow-hidden">
             <React.Fragment key={currentTask.id}>
               <WritingTaskHeader
@@ -795,6 +795,11 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                 onNewTask={handleNewTask}
                 isGeneratingTask={isGeneratingTask}
               />
+            </React.Fragment>
+          </div>
+
+          {/* Sticky footer: pills + submit, no choque */}
+          <div className="sticky bottom-0 z-20 shrink-0 bg-[#04040A]/90 backdrop-blur-md pt-1 pb-0 mt-3 -mx-1 px-1">
               {/* Level-based Scaffolding & Starter Recommendations (Ergonomic Touch Chips) */}
               <div className="flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-0.5 sm:px-1 text-xs shrink-0 w-full min-w-0 max-w-full">
                 {/* Modern Borderless Glassmorphic Pistas Badge with Integrated Level Selector */}
@@ -861,8 +866,6 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
                   </div>
                 )}
               </div>
-            </React.Fragment>
-          </div>
 
           <WritingSubmitBar
             hasContent={wordCount >= minWordsRequired}
@@ -873,6 +876,7 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
             onSubmit={handleSubmit}
             onViewAnalysis={handleOpenModal}
           />
+          </div>
         </div>
 
         {/* Right Column: 4 Cards Stack (Balanced & strictly clamped so it's 100% visible inside viewport) */}

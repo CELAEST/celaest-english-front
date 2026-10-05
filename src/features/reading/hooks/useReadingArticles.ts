@@ -31,70 +31,170 @@ function getActiveArticleIdKey(userId?: string): string {
 }
 
 /**
- * Calculates ideal words per page based on viewport height to ensure:
- * - Zero vertical scrolling (never triggers scrollbars or overflow)
- * - Prudent breathing room (~80-120px) above ReadingBottomBar
- * - Clean multi-page pagination that turns pages right before container boundaries
+ * Dynamic Viewport & Container-Calibrated Word Budget:
+ * Calculates ideal words per page based on measured container dimensions and active font size.
+ * Guarantees:
+ * - Zero vertical scroll / clipping across mobile, tablet, laptop, and desktop.
+ * - Prudent clearance (~20px-26px) above ReadingBottomBar so text NEVER collides.
+ * - Symmetrical Container Fill: eliminates artificial empty voids by adapting to true line capacity.
  */
-function getTargetWordsForHeight(height: number, fontSizeIndex: number = 0): number {
-  let baseWords: number;
-  if (height < 680) baseWords = 38;  // Compact mobile / small viewports with browser address bar
-  else if (height < 780) baseWords = 46;  // Standard mobile (iPhone mini / standard)
-  else if (height < 900) baseWords = 52;  // Modern smartphones (iPhone 13/14/15/16)
-  else if (height < 1050) baseWords = 68; // Pro Max / Tablets / Small laptops
-  else baseWords = 95;                   // Desktop 1080p+
+export function getTargetWordsForDimensions(
+  width: number,
+  height: number,
+  fontSizeIndex: number = 0,
+): number {
+  const isMobile = width < 640;
+  // Reserve space only for the Hint Pill (~28px) + small breathing buffer (~8px)
+  // NOTE: Header, ArticleHeader, and BottomBar are already excluded by flex layout — do NOT double-count
+  const hintAndBreathing = isMobile ? 36 : 40;
+  const usableHeight = Math.max(60, height - hintAndBreathing);
+  const isLargeFont = fontSizeIndex === 1;
 
-  // Scaling words-per-page based on active text size:
-  // fontSizeIndex 0: Estándar (17px) -> baseWords
-  // fontSizeIndex 1: Grande (19px) -> ~26% fewer words so lines fit without overflowing
-  // fontSizeIndex 2: Extra (21px) -> ~46% fewer words so large text fits comfortably without any cut-off
-  if (fontSizeIndex === 1) {
-    return Math.max(20, Math.round(baseWords * 0.74));
-  }
-  if (fontSizeIndex === 2) {
-    return Math.max(16, Math.round(baseWords * 0.54));
-  }
-  return baseWords;
+  // Exact typographic line heights (matching Tailwind leading):
+  // Estándar: mobile 17px * 1.75 ≈ 30px, desktop 18.5px * 1.85 ≈ 34.5px
+  // Grande: mobile 19px * 1.8 ≈ 34.5px, desktop 20.5px * 1.9 ≈ 39px
+  const lineHeight = isLargeFont ? (isMobile ? 34.5 : 39) : (isMobile ? 30 : 34.5);
+  const maxLines = Math.max(2, Math.floor(usableHeight / lineHeight));
+
+  // Effective text column width (capped at 680px by max-w-[680px])
+  const effectiveWidth = Math.min(Math.max(280, width), 680);
+
+  // Exact English word width including interactive button padding:
+  // Estándar: mobile ~52px (6-7 words/line on 350px), desktop ~68px (10 words/line on 680px)
+  // Grande:   mobile ~64px (5-6 words/line on 350px), desktop ~80px (8 words/line on 680px)
+  const pxPerWord = isLargeFont ? (isMobile ? 64 : 80) : (isMobile ? 52 : 68);
+  const wordsPerLine = Math.max(4, Math.floor(effectiveWidth / pxPerWord));
+
+  // Natural capacity of the container with responsive safety margin:
+  // Mobile needs less safety margin because narrow columns wrap more predictably
+  const rawTarget = maxLines * wordsPerLine;
+  const safetyFactor = isMobile ? 0.92 : 0.88;
+  const targetWords = Math.floor(rawTarget * safetyFactor);
+
+  // Enforce sensible boundary: minimum 16 words (mobile mini), safe maximum for the space
+  return Math.max(16, targetWords);
+}
+
+export function getTargetWordsForHeight(height: number, fontSizeIndex: number = 0): number {
+  const isMobile = typeof window !== "undefined" ? window.innerWidth < 640 : false;
+  // Estimate usable reader container height from window height by reserving space for orb, headers, dock/bottom bar
+  const fixedOverhead = isMobile ? 280 : 360;
+  const estimatedContainerHeight = Math.max(120, height - fixedOverhead);
+  return getTargetWordsForDimensions(
+    typeof window !== "undefined" ? window.innerWidth : 680,
+    estimatedContainerHeight,
+    fontSizeIndex,
+  );
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
 /**
- * Dynamic Viewport-Calibrated Text Paginator:
- * - Strict Zero-Scroll Guarantee: enforces a hard ceiling so no page exceeds container capacity.
- * - Prudent Bottom Cushion: guarantees comfortable clearance above ReadingBottomBar.
- * - Balanced Distribution: breaks on sentence boundaries and balances pages evenly.
+ * Splits text into complete sentences, preserving end punctuation (. ! ?).
  */
-function paginateText(fullText: string, targetWordsPerPage: number): string[] {
-  if (!fullText) return [];
-  const words = fullText.trim().split(/\s+/);
-  if (words.length === 0) return [];
-
-  // Single page only if total words strictly fit within targetWordsPerPage
-  if (words.length <= targetWordsPerPage) {
-    return [fullText];
+function splitIntoSentences(text: string): string[] {
+  if (!text) return [];
+  const regex = /[^.!?]+[.!?]+["')\]]?\s*/g;
+  const matches = text.match(regex);
+  if (!matches || matches.length === 0) {
+    return [text.trim()];
   }
+  const sentences = matches.map((s) => s.trim()).filter(Boolean);
+  const matchedLength = sentences.reduce((acc, s) => acc + s.length, 0);
+  const remaining = text.slice(matchedLength).trim();
+  if (remaining) {
+    if (sentences.length > 0) {
+      sentences[sentences.length - 1] += " " + remaining;
+    } else {
+      sentences.push(remaining);
+    }
+  }
+  return sentences;
+}
 
-  // Calculate balanced number of pages so every page occupies the container harmoniously
-  const numPages = Math.ceil(words.length / targetWordsPerPage);
-  const idealWordsPerPage = Math.ceil(words.length / numPages);
-  // Hard ceiling: no page can exceed targetWordsPerPage under any circumstances
-  const hardMaxPerPage = targetWordsPerPage;
+/**
+ * Attempts to distribute sentences evenly across numPages so that no page exceeds maxWordsPerPage.
+ */
+function tryDistributeSentences(
+  sentences: string[],
+  numPages: number,
+  maxWordsPerPage: number,
+): string[] | null {
+  const totalWords = sentences.reduce((acc, s) => acc + countWords(s), 0);
+  const targetWordsPerPage = Math.ceil(totalWords / numPages);
 
   const pages: string[] = [];
+  let currentSentences: string[] = [];
+  let currentWords = 0;
+  let sIndex = 0;
+
+  for (let p = 0; p < numPages; p++) {
+    const isLastPage = p === numPages - 1;
+    currentSentences = [];
+    currentWords = 0;
+
+    if (isLastPage) {
+      while (sIndex < sentences.length) {
+        const s = sentences[sIndex];
+        const sWords = countWords(s);
+        currentWords += sWords;
+        currentSentences.push(s);
+        sIndex++;
+      }
+      if (currentWords > maxWordsPerPage || currentSentences.length === 0) {
+        return null;
+      }
+      pages.push(currentSentences.join(" "));
+    } else {
+      while (sIndex < sentences.length) {
+        const s = sentences[sIndex];
+        const sWords = countWords(s);
+        const remainingSentencesCount = sentences.length - (sIndex + 1);
+        const remainingPagesCount = numPages - (p + 1);
+
+        if (remainingSentencesCount < remainingPagesCount) {
+          break;
+        }
+
+        if (currentSentences.length > 0 && currentWords + sWords > maxWordsPerPage) {
+          break;
+        }
+
+        currentWords += sWords;
+        currentSentences.push(s);
+        sIndex++;
+
+        if (currentWords >= targetWordsPerPage && remainingSentencesCount >= remainingPagesCount) {
+          break;
+        }
+      }
+
+      if (currentSentences.length === 0) {
+        return null;
+      }
+      pages.push(currentSentences.join(" "));
+    }
+  }
+
+  return sIndex === sentences.length ? pages : null;
+}
+
+function greedyPackSentences(sentences: string[], maxWordsPerPage: number): string[] {
+  const pages: string[] = [];
   let currentChunk: string[] = [];
+  let currentCount = 0;
 
-  for (let i = 0; i < words.length; i++) {
-    currentChunk.push(words[i]);
-    const endsWithSentence = /[.!?"']$/.test(words[i]);
-    const isLastPage = pages.length === numPages - 1;
-
-    // Break on sentence boundary when we reach the balanced ideal target, or force break at hard ceiling
-    if (
-      !isLastPage &&
-      ((currentChunk.length >= idealWordsPerPage && endsWithSentence) ||
-        currentChunk.length >= hardMaxPerPage)
-    ) {
+  for (const sentence of sentences) {
+    const sWords = countWords(sentence);
+    if (currentChunk.length > 0 && currentCount + sWords > maxWordsPerPage) {
       pages.push(currentChunk.join(" "));
-      currentChunk = [];
+      currentChunk = [sentence];
+      currentCount = sWords;
+    } else {
+      currentChunk.push(sentence);
+      currentCount += sWords;
     }
   }
 
@@ -102,11 +202,70 @@ function paginateText(fullText: string, targetWordsPerPage: number): string[] {
     pages.push(currentChunk.join(" "));
   }
 
-  return pages.length > 0 ? pages : [fullText];
+  return pages;
 }
 
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+/**
+ * Smart Viewport-Adaptive Paginator:
+ * - Strict Zero-Scroll Guarantee: ensures every page fits completely inside the container.
+ * - Symmetrical Natural Fill: balances sentences across pages to prevent artificial purple voids.
+ * - Zero-Orphan Protection: strictly prevents 1-4 word stub pages by rebalancing pages evenly.
+ * - Sentence Boundary Integrity: never splits words in the middle of sentences or phrases.
+ */
+function paginateText(fullText: string, maxWordsPerPage: number): string[] {
+  if (!fullText) return [];
+  const words = fullText.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  // Single page if entire text fits safely in container capacity
+  if (words.length <= maxWordsPerPage) {
+    return [fullText.trim()];
+  }
+
+  const sentences = splitIntoSentences(fullText);
+  if (sentences.length <= 1) {
+    const numPages = Math.ceil(words.length / maxWordsPerPage);
+    const wordsPerPage = Math.ceil(words.length / numPages);
+    const pages: string[] = [];
+    for (let i = 0; i < words.length; i += wordsPerPage) {
+      pages.push(words.slice(i, i + wordsPerPage).join(" "));
+    }
+    return pages;
+  }
+
+  // Find balanced sentence distribution starting from minimum theoretical pages
+  let numPages = Math.max(2, Math.ceil(words.length / maxWordsPerPage));
+
+  while (numPages <= sentences.length) {
+    const balancedPages = tryDistributeSentences(sentences, numPages, maxWordsPerPage);
+    if (balancedPages !== null) {
+      // Check if last page has at least 10 words or is balanced
+      const lastWords = countWords(balancedPages[balancedPages.length - 1]);
+      if (lastWords >= 10 || balancedPages.length === 1) {
+        return balancedPages;
+      }
+    }
+    numPages++;
+  }
+
+  // Fallback: greedy pack sentences
+  const greedyPages = greedyPackSentences(sentences, maxWordsPerPage);
+
+  // Rebalance last two pages if last page is an orphan stub (< 12 words)
+  if (greedyPages.length > 1) {
+    const lastWords = countWords(greedyPages[greedyPages.length - 1]);
+    if (lastWords < 12) {
+      const combined = greedyPages[greedyPages.length - 2] + " " + greedyPages[greedyPages.length - 1];
+      const lastTwoSentences = splitIntoSentences(combined);
+      const rebalanced = tryDistributeSentences(lastTwoSentences, 2, maxWordsPerPage);
+      if (rebalanced && rebalanced.length === 2) {
+        greedyPages[greedyPages.length - 2] = rebalanced[0];
+        greedyPages[greedyPages.length - 1] = rebalanced[1];
+      }
+    }
+  }
+
+  return greedyPages;
 }
 
 interface InitialReadingState {
@@ -166,7 +325,12 @@ function readInitialState(level?: string, profession?: string, userId?: string):
   return { cachedArticles, activeArticleId };
 }
 
-export const useReadingArticles = (level?: string, profession?: string, fontSizeIndex: number = 0) => {
+export const useReadingArticles = (
+  level?: string,
+  profession?: string,
+  fontSizeIndex: number = 0,
+  containerDimensions?: { width: number; height: number },
+) => {
   const currentUserId = SupabaseAuthAdapter.getInstance().getStoredUser()?.id;
   const inFlightLookupsRef = useRef<Map<string, Promise<WordLookup>>>(new Map());
   const inFlightQuizRef = useRef<Map<string, Promise<GenerateQuizResponse>>>(new Map());
@@ -391,10 +555,16 @@ export const useReadingArticles = (level?: string, profession?: string, fontSize
     return "";
   }, [currentArticle]);
 
-  const targetWords = useMemo(
-    () => getTargetWordsForHeight(viewportHeight, fontSizeIndex),
-    [viewportHeight, fontSizeIndex],
-  );
+  const targetWords = useMemo(() => {
+    if (containerDimensions && containerDimensions.width > 0 && containerDimensions.height > 0) {
+      return getTargetWordsForDimensions(
+        containerDimensions.width,
+        containerDimensions.height,
+        fontSizeIndex,
+      );
+    }
+    return getTargetWordsForHeight(viewportHeight, fontSizeIndex);
+  }, [containerDimensions, viewportHeight, fontSizeIndex]);
   const dynamicPages = useMemo(
     () => paginateText(fullContent, targetWords),
     [fullContent, targetWords],

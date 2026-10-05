@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ReadingHeader } from "./ReadingHeader";
 import { ReadingArticleHeader } from "./ReadingArticleHeader";
 import { ReadingArticleReader } from "./ReadingArticleReader";
@@ -23,27 +23,17 @@ import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
-import {
-  getUserCefrLevel,
-  normalizeCefrLevel,
-} from "../../../shared/services/levelStore";
+import { getUserCefrLevel, normalizeCefrLevel } from "../../../shared/services/levelStore";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 export const READING_FONT_SIZES = [
   {
     label: "Estándar",
-    className:
-      "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]",
+    className: "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]",
   },
   {
     label: "Grande",
-    className:
-      "text-[19px] sm:text-[20px] lg:text-[20.5px] leading-[1.8] sm:leading-[1.9]",
-  },
-  {
-    label: "Extra",
-    className:
-      "text-[21px] sm:text-[22px] lg:text-[22.5px] leading-[1.85] sm:leading-[1.95]",
+    className: "text-[19px] sm:text-[20px] lg:text-[20.5px] leading-[1.8] sm:leading-[1.9]",
   },
 ] as const;
 
@@ -107,7 +97,11 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     if (roleName && roleName.trim() && roleName.toLowerCase() !== "professional") {
       return roleName.trim();
     }
-    if (profile?.profession && profile.profession.trim() && profile.profession.toLowerCase() !== "professional") {
+    if (
+      profile?.profession &&
+      profile.profession.trim() &&
+      profile.profession.toLowerCase() !== "professional"
+    ) {
       return profile.profession.trim();
     }
     if (typeof window !== "undefined") {
@@ -142,6 +136,40 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
   const activeFontSize = READING_FONT_SIZES[fontSizeIndex] || READING_FONT_SIZES[0];
 
+  const readerContainerRef = useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = useState<{ width: number; height: number }>(() => {
+    if (typeof window !== "undefined") {
+      const isMobile = window.innerWidth < 640;
+      return {
+        width: Math.min(window.innerWidth - (isMobile ? 32 : 80), 680),
+        height: Math.max(160, window.innerHeight - (isMobile ? 340 : 340)),
+      };
+    }
+    return { width: 680, height: 400 };
+  });
+
+  useEffect(() => {
+    const el = readerContainerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setContainerDimensions((prev) => {
+            if (Math.abs(prev.width - width) < 6 && Math.abs(prev.height - height) < 6) {
+              return prev;
+            }
+            return { width, height };
+          });
+        }
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const {
     currentArticle,
     currentPageIndex,
@@ -163,7 +191,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     getOrFetchQuiz,
     instantWordLookup,
     translateWordDirect,
-  } = useReadingArticles(userLevel, effectiveProfession, fontSizeIndex);
+  } = useReadingArticles(userLevel, effectiveProfession, fontSizeIndex, containerDimensions);
 
   const {
     isPlaying: isPlayingAudio,
@@ -315,7 +343,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
   );
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col select-none z-10 animate-[fadeIn_0.5s_ease-out_both] overflow-hidden">
+    <div className="relative w-full h-full max-h-full bg-[#000001] text-white flex flex-col select-none z-10 animate-[fadeIn_0.5s_ease-out_both] overflow-hidden">
       {/* Top Left Return to Workspace Action (Oculto en mobile porque el dock inferior ya tiene el acceso, visible en sm:) */}
       {onBackToWorkspace && (
         <button
@@ -330,7 +358,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
       )}
 
       {/* Main Workspace Layout Canvas (Aligned with Writing standard 1:1) */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-4 sm:px-10 lg:px-14 py-1.5 sm:py-5 pt-1.5 sm:pt-4 gap-2 sm:gap-8 z-10 overflow-hidden">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row items-stretch justify-between px-3 sm:px-8 lg:px-12 pt-1 sm:pt-3 pb-[68px] lg:pb-3 gap-2 sm:gap-4 z-10 overflow-hidden">
         {/* Left / Central Column: Strictly aligned to the left */}
         <main
           role="main"
@@ -342,8 +370,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
           {/* Content wrapper: centered in the viewport under the Orb, with internal text flush left */}
           <div
-            className={`flex flex-col w-full max-w-[680px] mx-auto flex-1 min-h-0 ${
-              isSpecialView ? "items-center justify-center" : "items-start justify-between"
+            className={`flex flex-col w-full max-w-[680px] mx-auto flex-1 min-h-0 max-h-full ${
+              isSpecialView ? "items-center justify-center" : "items-start justify-start"
             }`}
           >
             {/* Article Header only shown when reading active */}
@@ -370,6 +398,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
             {/* Central Reader / Completion / Loading Switcher */}
             <div
+              ref={readerContainerRef}
               className={`w-full flex-1 min-h-0 flex flex-col overflow-hidden ${
                 isSpecialView
                   ? "items-center justify-center"

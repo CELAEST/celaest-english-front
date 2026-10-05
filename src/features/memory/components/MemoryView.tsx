@@ -285,7 +285,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   );
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-2.5 xs:p-3 sm:p-5 lg:px-8 pt-1.5 xs:pt-2 sm:pt-4 pb-20 sm:pb-26 lg:pb-5">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-[#000001] text-white flex flex-col justify-between select-none overflow-hidden p-2.5 xs:p-3 sm:p-5 lg:px-8 pt-1.5 xs:pt-2 sm:pt-4 pb-24 sm:pb-24 lg:pb-5">
       {/* ── Subtle Permanent Ambient Background Illuminations (GPU-optimized for mobile) ── */}
       {/* Violet core glow — center-left, anchors the card area */}
       <div
@@ -421,7 +421,7 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.99 }}
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 min-h-0 flex items-center justify-center my-auto py-1 sm:py-2"
+                className="flex-1 min-h-0 flex items-center justify-center my-auto py-2 sm:py-3 pb-2 lg:pb-4 overflow-hidden"
               >
                 <MemoryCardCarousel
                   cards={filteredCards}

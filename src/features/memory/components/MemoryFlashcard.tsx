@@ -189,7 +189,7 @@ export const MemoryFlashcard: React.FC<MemoryFlashcardProps> = React.memo(
         onClick={handleCardClick}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[415px] xs:h-[435px] sm:h-[460px] lg:h-[490px] max-h-[calc(100dvh-180px)] min-h-[380px] cursor-pointer select-none [perspective:1400px] group mx-auto"
+        className="relative w-full max-w-[640px] lg:max-w-[690px] h-[415px] xs:h-[435px] sm:h-[460px] lg:h-[460px] max-h-[calc(100dvh-320px)] lg:max-h-[calc(100dvh-280px)] min-h-[260px] cursor-pointer select-none [perspective:1400px] group mx-auto"
       >
         {/* ── Subtle Atmospheric Backlight Aura (Soft Whisper Shading) ── */}
         <div

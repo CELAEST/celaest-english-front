@@ -195,7 +195,12 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         const bottomSafetyPadding = isMobile ? 86 : 24; // 86px clears the mobile floating navigation dock cleanly
         const topSafetyPadding = isMobile ? 12 : 16;
         const verticalGap = 8;
-        const estimatedHeight = isMobile ? 320 : 340;
+        // The modal's CSS max-height is calc(100dvh - 95px) mobile / calc(100dvh - 40px) desktop
+        const modalMaxH = isMobile
+          ? window.innerHeight - 95
+          : window.innerHeight - 40;
+        // Estimate a reasonable initial height — but clamp to the CSS max
+        const estimatedHeight = Math.min(isMobile ? 320 : 340, modalMaxH);
 
         const spaceAbove = rect.top - topSafetyPadding;
         const spaceBelow = window.innerHeight - bottomSafetyPadding - rect.bottom;
@@ -207,7 +212,7 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
           top = rect.bottom + verticalGap;
         }
 
-        // Clamp so the modal never pushes under the floating mobile dock or off top edge
+        // Clamp so the modal is fully visible: the bottom edge (top + modalMaxH) must not exceed viewport - safetyPadding
         const maxTop = Math.max(topSafetyPadding, window.innerHeight - bottomSafetyPadding - estimatedHeight);
         top = Math.max(topSafetyPadding, Math.min(top, maxTop));
 
@@ -417,17 +422,17 @@ export const ReadingArticleReader: React.FC<ReadingArticleReaderProps> = React.m
         className={`w-full flex-1 min-h-0 flex flex-col justify-start items-start text-[#d1d2dc] font-sans ${
           fontSizeClassName ||
           "text-[17px] sm:text-[18px] lg:text-[18.5px] leading-[1.75] sm:leading-[1.85]"
-        } font-light select-text overflow-y-auto no-scrollbar relative transition-all pt-0.5 pb-1 sm:pb-2`}
+        } font-light select-text overflow-hidden relative transition-all pt-2 sm:pt-3 pb-1 sm:pb-2`}
       >
         {/* Mobile-Friendly Word Affordance Hint Pill */}
-        <div className="w-full flex items-center justify-between pb-2 pt-0.5 select-none animate-[fadeIn_0.4s_ease-out]">
+        <div className="w-full flex items-center justify-between pb-1 pt-0.5 select-none shrink-0 animate-[fadeIn_0.4s_ease-out]">
           <div className="inline-flex items-center gap-1.5 text-[11.5px] sm:text-xs text-[#A27FF3] font-sans tracking-wide">
             <VocabloTranslateIcon className="w-3.5 h-3.5 text-[#A27FF3]" />
             <span>Toca cualquier palabra para ver traducción y fonética</span>
           </div>
         </div>
 
-        <div className="w-full relative z-10 text-justify [text-align:justify] [text-align-last:left] [text-wrap:pretty] tracking-[-0.006em] sm:tracking-[0.01em] text-[#d1d2dc] leading-[inherit] animate-[fadeSlideUp_0.4s_ease-out_both]">
+        <div className="w-full pt-1.5 sm:pt-2.5 pb-2 relative z-10 text-justify [text-align:justify] [text-align-last:left] [text-wrap:pretty] tracking-[-0.006em] sm:tracking-[0.01em] text-[#d1d2dc] leading-[inherit] animate-[fadeSlideUp_0.4s_ease-out_both]">
           {rawWords.map((rawWord, idx) => {
             const cleanWord = cleanTokens[idx];
             const phrasalMatch = phrasalSpans.get(idx);

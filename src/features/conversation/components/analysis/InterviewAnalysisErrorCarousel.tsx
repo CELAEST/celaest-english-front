@@ -47,7 +47,7 @@ const InterviewAnalysisErrorCarouselInner: React.FC<InterviewAnalysisErrorCarous
 
   if (errors.length === 0) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl border border-[#18152e] bg-[#070611] shadow-2xl flex items-center justify-center gap-3.5 sm:gap-4 mt-6 sm:mt-8">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl border border-[#18152e] bg-[#070611] shadow-2xl flex items-center justify-center gap-3.5 sm:gap-4 mt-1 sm:mt-2">
         <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-[#16122e] border border-[#271f4f]">
           <CircleCheck className="h-5 w-5 sm:h-6 sm:w-6 text-[#6ce2a3]" strokeWidth={2.5} />
         </span>
@@ -61,7 +61,7 @@ const InterviewAnalysisErrorCarouselInner: React.FC<InterviewAnalysisErrorCarous
   }
 
   return (
-    <div className="mt-6 sm:mt-8">
+    <div className="mt-1 sm:mt-2">
       {/* Header */}
       <div className="mb-3.5 sm:mb-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5">

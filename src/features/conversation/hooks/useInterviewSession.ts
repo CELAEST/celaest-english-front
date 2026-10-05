@@ -308,14 +308,15 @@ export const useInterviewSession = (
 
   const closeAnalysisModal = useCallback(() => {
     evaluation.setShowAnalysisModal(false);
-    evaluation.setTurnFeedback(null);
-    speech.setUserTranscript("");
     cloudSyncRef.current?.saveProgressNow({
       showAnalysisModal: false,
-      userTranscript: "",
-      latestTurn: {},
+      latestTurn: {
+        question: questions.currentQuestion?.question ?? "",
+        transcript: speech.userTranscriptRef.current || speech.userTranscript || evaluation.turnFeedback?.userSpokenText || "",
+        feedback: (evaluation.turnFeedback ?? {}) as unknown as Record<string, unknown>,
+      },
     });
-  }, [evaluation, speech]);
+  }, [evaluation, speech, questions]);
 
   const repeatQuestion = useCallback(
     (slow: boolean = false) => {

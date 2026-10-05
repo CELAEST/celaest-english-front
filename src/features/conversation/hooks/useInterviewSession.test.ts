@@ -381,6 +381,44 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
     expect(result.current.currentQuestionIndex).toBe(2);
   });
 
+  it("preserves turnFeedback and saves latestTurn to backend when closeAnalysisModal is called", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+    const saveSpy = vi.mocked(apiInterviewRepository.saveProgress);
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    await act(async () => {
+      await result.current.finishTurnManual("I usually start my day by checking project tasks and team updates.");
+    });
+
+    expect(result.current.showAnalysisModal).toBe(true);
+    expect(result.current.turnFeedback?.overallScore).toBe(88);
+
+    saveSpy.mockClear();
+
+    // Act: close the modal
+    act(() => {
+      result.current.closeAnalysisModal();
+    });
+
+    // Assert: modal is closed but feedback is NOT destroyed
+    expect(result.current.showAnalysisModal).toBe(false);
+    expect(result.current.turnFeedback).not.toBeNull();
+    expect(result.current.turnFeedback?.overallScore).toBe(88);
+
+    // Assert: latestTurn saved with feedback in the persistence layer
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        showAnalysisModal: false,
+        latestTurn: expect.objectContaining({
+          feedback: expect.objectContaining({
+            overallScore: 88,
+          }),
+        }),
+      }),
+    );
+  });
+
   it("stops active microphone and uses captured transcript when finishTurnManual is called during recording", async () => {
     vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
     vi.mocked(AudioCaptureService.stopAndGetAudio).mockResolvedValueOnce({

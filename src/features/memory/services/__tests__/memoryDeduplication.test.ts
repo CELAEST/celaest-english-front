@@ -97,6 +97,68 @@ describe("memoryDeduplication", () => {
 
       expect(areCardsDuplicate(cardA, cardB)).toBe(false);
     });
+
+    it("does NOT duplicate multiple distinct writing errors in the same sentence/betterWay", () => {
+      const sentence = "Yesterday I go to market and I buyed two apple.";
+      const betterWay = "Yesterday I went to the market and I bought two apples.";
+
+      const err1: Partial<MemoryCard> = {
+        category: "WRITING",
+        userSaid: sentence,
+        betterWay,
+        errorWord: "go",
+        correctWord: "went",
+      };
+      const err2: Partial<MemoryCard> = {
+        category: "WRITING",
+        userSaid: sentence,
+        betterWay,
+        errorWord: "buyed",
+        correctWord: "bought",
+      };
+      const err3: Partial<MemoryCard> = {
+        category: "WRITING",
+        userSaid: sentence,
+        betterWay,
+        errorWord: "two apple",
+        correctWord: "two apples",
+      };
+
+      expect(areCardsDuplicate(err1, err2)).toBe(false);
+      expect(areCardsDuplicate(err1, err3)).toBe(false);
+      expect(areCardsDuplicate(err2, err3)).toBe(false);
+    });
+
+    it("does NOT duplicate multiple distinct speaking errors in the same interview turn", () => {
+      const userSaid = "In my last job, I has many responsability and I was work with clients.";
+      const betterWay = "In my last job, I had many responsibilities and I worked with clients.";
+
+      const speakErr1: Partial<MemoryCard> = {
+        category: "SPEAKING",
+        userSaid,
+        betterWay,
+        errorWord: "has",
+        correctWord: "had",
+      };
+      const speakErr2: Partial<MemoryCard> = {
+        category: "SPEAKING",
+        userSaid,
+        betterWay,
+        errorWord: "responsability",
+        correctWord: "responsibilities",
+      };
+      const speakErr3: Partial<MemoryCard> = {
+        category: "SPEAKING",
+        userSaid,
+        betterWay,
+        errorWord: "was work",
+        correctWord: "worked",
+      };
+
+      expect(areCardsDuplicate(speakErr1, speakErr2)).toBe(false);
+      expect(areCardsDuplicate(speakErr1, speakErr3)).toBe(false);
+      expect(areCardsDuplicate(speakErr2, speakErr3)).toBe(false);
+    });
   });
 
   describe("deduplicateMemoryCards", () => {

@@ -72,25 +72,27 @@ export function areCardsDuplicate(
   }
 
   // SPEAKING & WRITING Categories:
-  // 1. Exact match on both user context and better way
+  // A card targets a specific linguistic correction.
+  const hasDiscreteErrorA = Boolean(errA || corrA);
+  const hasDiscreteErrorB = Boolean(errB || corrB);
+
+  // If at least one card has discrete error/correct words, they are only duplicates
+  // if BOTH errorWord and correctWord match. If they differ, they are distinct errors
+  // (e.g., two different mistakes occurring within the same sentence/betterWay).
+  if (hasDiscreteErrorA || hasDiscreteErrorB) {
+    if (errA !== errB || corrA !== corrB) {
+      return false;
+    }
+    // When both errorWord and correctWord match, they are duplicates if they share context
+    if (betterA === betterB || userA === userB || !userA || !userB) {
+      return true;
+    }
+    return false;
+  }
+
+  // For free-form sentence rewrites without discrete error words:
+  // Both the original sentence (userSaid) and the native correction (betterWay) must match.
   if (betterA && betterB && betterA === betterB && userA && userB && userA === userB) {
-    return true;
-  }
-
-  // 2. Exact match on errorWord and correctWord pair
-  if (errA && errB && errA === errB && corrA && corrB && corrA === corrB) {
-    return true;
-  }
-
-  // 3. Exact match on betterWay with errorWord or sub-sentence alignment
-  if (betterA && betterB && betterA === betterB) {
-    if (!userA || !userB || userA === userB || userA.includes(userB) || userB.includes(userA)) {
-      return true;
-    }
-    if (errA && errB && errA === errB) {
-      return true;
-    }
-    // Identical suggested correction in the same category is the same flashcard
     return true;
   }
 

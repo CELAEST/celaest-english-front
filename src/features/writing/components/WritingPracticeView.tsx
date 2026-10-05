@@ -709,7 +709,10 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     }
   };
 
-  const saveSpecificErrorToMemory = async (errorItem: WritingErrorItem): Promise<boolean> => {
+  const saveSpecificErrorToMemory = async (
+    errorItem: WritingErrorItem,
+    skipInvalidate = false,
+  ): Promise<boolean> => {
     try {
       await apiMemoryRepository.createCard({
         category: "WRITING",
@@ -722,8 +725,10 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         cefrLevel: errorItem.cefrLevel || "B2",
       });
 
-      // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
-      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+      if (!skipInvalidate) {
+        // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+      }
 
       setSavedErrorIds((prev) => {
         const next = new Set([...prev, errorItem.id]);
@@ -749,13 +754,22 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     const errors = activeSubmission.feedback?.extractedErrors || [];
     if (errors.length === 0) return 0;
 
-    let savedCount = 0;
-    for (let i = 0; i < errors.length; i++) {
-      const id = getWritingErrorId(activeSubmission.id, i);
-      if (!savedErrorIds.has(id)) {
-        const success = await saveSpecificErrorToMemory({ ...errors[i], id });
-        if (success) savedCount++;
-      }
+    const candidates = errors
+      .map((err, i) => ({ ...err, id: getWritingErrorId(activeSubmission.id, i) }))
+      .filter((err) => !savedErrorIds.has(err.id));
+
+    if (candidates.length === 0) return 0;
+
+    const results = await Promise.allSettled(
+      candidates.map((item) => saveSpecificErrorToMemory(item, true)),
+    );
+
+    const savedCount = results.filter(
+      (res) => res.status === "fulfilled" && res.value === true,
+    ).length;
+
+    if (savedCount > 0) {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
     }
 
     return savedCount;

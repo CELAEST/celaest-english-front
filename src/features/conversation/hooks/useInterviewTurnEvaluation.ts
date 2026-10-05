@@ -281,7 +281,7 @@ export function useInterviewTurnEvaluation({
   );
 
   const saveSpecificErrorToMemory = useCallback(
-    async (errorItem: SpecificErrorItem): Promise<boolean> => {
+    async (errorItem: SpecificErrorItem, skipInvalidate = false): Promise<boolean> => {
       if (savedErrorIds.has(errorItem.id) || savingItemIdsRef.current.has(errorItem.id)) {
         return true;
       }
@@ -298,8 +298,10 @@ export function useInterviewTurnEvaluation({
           cefrLevel: errorItem.cefrLevel || "B2",
         });
 
-        // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
-        void queryClient?.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+        if (!skipInvalidate) {
+          // Zero-Reload Reactivity: Invalidate Memory Vault cache across all categories
+          void queryClient?.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
+        }
 
         setSavedErrorIds((prev) => new Set([...prev, errorItem.id]));
         return true;
@@ -315,17 +317,25 @@ export function useInterviewTurnEvaluation({
 
   const saveAllErrorsToMemory = useCallback(async (): Promise<number> => {
     if (!turnFeedback || turnFeedback.unclearOrErrorWords.length === 0) return 0;
-    let savedCount = 0;
+    const candidates = turnFeedback.unclearOrErrorWords.filter(
+      (item) => !savedErrorIds.has(item.id) && !savingItemIdsRef.current.has(item.id),
+    );
+    if (candidates.length === 0) return 0;
 
-    for (const item of turnFeedback.unclearOrErrorWords) {
-      if (!savedErrorIds.has(item.id) && !savingItemIdsRef.current.has(item.id)) {
-        const success = await saveSpecificErrorToMemory(item);
-        if (success) savedCount++;
-      }
+    const results = await Promise.allSettled(
+      candidates.map((item) => saveSpecificErrorToMemory(item, true)),
+    );
+
+    const savedCount = results.filter(
+      (res) => res.status === "fulfilled" && res.value === true,
+    ).length;
+
+    if (savedCount > 0) {
+      void queryClient?.invalidateQueries({ queryKey: QUERY_KEYS.memory.all });
     }
 
     return savedCount;
-  }, [turnFeedback, savedErrorIds, saveSpecificErrorToMemory]);
+  }, [turnFeedback, savedErrorIds, saveSpecificErrorToMemory, queryClient]);
 
   const resumeFromRecoveryModal = useCallback(() => {
     setIsRecoveryModalOpen(false);

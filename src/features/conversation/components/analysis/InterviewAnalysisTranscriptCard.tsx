@@ -70,13 +70,19 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
           </div>
         </div>
 
-        {feedback.userAudioUrl && !hasAudioLoadError && (
+        {feedback.userAudioUrl && (
           <button
-            onClick={onToggleUserAudio}
-            className="flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium text-[#8f71ee] hover:text-[#c4b5fd] transition-colors cursor-pointer"
+            type="button"
+            onClick={hasAudioLoadError ? undefined : onToggleUserAudio}
+            disabled={hasAudioLoadError}
+            className={`flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium transition-colors ${
+              hasAudioLoadError
+                ? "text-white/30 cursor-not-allowed"
+                : "text-[#8f71ee] hover:text-[#c4b5fd] cursor-pointer"
+            }`}
           >
-            <Volume2 className={`h-4 w-4 ${isPlayingUserAudio ? "text-emerald-400 animate-pulse" : "text-[#8f71ee]"}`} />
-            <span>{isPlayingUserAudio ? "Pausar audio" : "Escuchar audio"}</span>
+            <Volume2 className={`h-4 w-4 ${isPlayingUserAudio ? "text-emerald-400 animate-pulse" : hasAudioLoadError ? "text-white/30" : "text-[#8f71ee]"}`} />
+            <span>{hasAudioLoadError ? "Audio no disponible" : isPlayingUserAudio ? "Pausar audio" : "Escuchar audio"}</span>
           </button>
         )}
       </div>
@@ -92,13 +98,14 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
       </div>
 
       {/* Audio Player Controls & Interactive Waveform */}
-      {feedback.userAudioUrl && !hasAudioLoadError ? (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 pl-1 sm:pl-5 pr-1 sm:pr-8 max-w-[760px] pt-1">
+      {feedback.userAudioUrl ? (
+        <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 pl-1 sm:pl-5 pr-1 sm:pr-8 max-w-[760px] pt-1 transition-opacity duration-300 ${hasAudioLoadError ? "opacity-35 pointer-events-none select-none" : "opacity-100"}`}>
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
+              disabled={hasAudioLoadError}
               onClick={() => onSkipUserAudio(-5)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Retroceder 5 segundos"
               aria-label="Retroceder 5 segundos"
             >
@@ -109,8 +116,9 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
 
             <button
               type="button"
+              disabled={hasAudioLoadError}
               onClick={onToggleUserAudio}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.15)]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-white/90 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_2px_12px_rgba(255,255,255,0.15)] disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label={isPlayingUserAudio ? "Pausar mi audio" : "Reproducir mi audio"}
             >
               {isPlayingUserAudio ? <Pause className="h-4 w-4 fill-black text-black" /> : <Play className="h-4 w-4 ml-0.5 fill-black text-black" />}
@@ -118,8 +126,9 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
 
             <button
               type="button"
+              disabled={hasAudioLoadError}
               onClick={() => onSkipUserAudio(5)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white border border-white/[0.08] transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Adelantar 5 segundos"
               aria-label="Adelantar 5 segundos"
             >
@@ -132,6 +141,7 @@ const InterviewAnalysisTranscriptCardInner: React.FC<InterviewAnalysisTranscript
           <div
             className="flex-1 flex items-center justify-between gap-[2px] sm:gap-[2.5px] h-7 px-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/[0.1] overflow-hidden cursor-pointer group transition-colors"
             onClick={(e) => {
+              if (hasAudioLoadError) return;
               const rect = e.currentTarget.getBoundingClientRect();
               const clickX = e.clientX - rect.left;
               const fraction = Math.max(0, Math.min(1, clickX / rect.width));

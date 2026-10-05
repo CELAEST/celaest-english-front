@@ -23,8 +23,11 @@ class OrbVideoCacheServiceImpl {
   private isDecoderWarmed = false;
 
   private constructor() {
-    // Eagerly initiate preload in browser environments when idle
-    if (typeof window !== "undefined") {
+    // Eagerly initiate preload in browser environments when idle (skip in unit test runner)
+    if (
+      typeof window !== "undefined" &&
+      !(typeof process !== "undefined" && process.env?.NODE_ENV === "test")
+    ) {
       const schedulePreload = () => {
         void this.preload("/assets/orve.mp4");
         void this.preload("/assets/orve.webm");

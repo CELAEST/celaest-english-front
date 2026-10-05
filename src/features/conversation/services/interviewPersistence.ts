@@ -74,6 +74,11 @@ export function loadPersistedInterview(
       return null;
     }
 
+    // Discard dead in-memory blob URLs that cannot survive page reload
+    if (parsed.turnFeedback?.userAudioUrl?.startsWith("blob:")) {
+      parsed.turnFeedback.userAudioUrl = undefined;
+    }
+
     return parsed;
   } catch {
     return null;
@@ -83,15 +88,27 @@ export function loadPersistedInterview(
 export function savePersistedInterview(state: PersistedInterviewState, userId?: string): void {
   try {
     if (typeof localStorage === "undefined") return;
-    const jsonStr = JSON.stringify(state);
+
+    // Ephemeral in-memory blob URLs die with tab/heap and must NEVER be stored to disk
+    const sanitizedState: PersistedInterviewState = state.turnFeedback?.userAudioUrl?.startsWith("blob:")
+      ? {
+          ...state,
+          turnFeedback: {
+            ...state.turnFeedback,
+            userAudioUrl: undefined,
+          },
+        }
+      : state;
+
+    const jsonStr = JSON.stringify(sanitizedState);
 
     // Save to general key (latest state)
     const generalKey = getInterviewStorageKey(userId);
     localStorage.setItem(generalKey, jsonStr);
 
     // Save to level-specific key
-    if (state.cefrLevel) {
-      const levelKey = getInterviewStorageKey(userId, state.cefrLevel);
+    if (sanitizedState.cefrLevel) {
+      const levelKey = getInterviewStorageKey(userId, sanitizedState.cefrLevel);
       localStorage.setItem(levelKey, jsonStr);
     }
   } catch {

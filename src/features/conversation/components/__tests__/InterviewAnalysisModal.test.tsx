@@ -78,4 +78,53 @@ describe("InterviewAnalysisModal", () => {
 
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
+
+  it("handles audio load failure gracefully without collapsing the modal layout", () => {
+    const handleClose = vi.fn();
+
+    render(
+      <InterviewAnalysisModal
+        feedback={mockFeedback}
+        savedErrorIds={new Set()}
+        onClose={handleClose}
+        onSaveSpecificError={vi.fn(() => Promise.resolve(true))}
+        onSaveAllErrors={vi.fn(() => Promise.resolve(0))}
+      />,
+    );
+
+    const audioElement = document.body.querySelector("audio");
+    expect(audioElement).toBeDefined();
+    if (audioElement) {
+      fireEvent.error(audioElement);
+    }
+
+    // Header button transitions to disabled "Audio no disponible" without crashing
+    const disabledAudioBtn = screen.getByRole("button", {
+      name: /audio no disponible/i,
+    });
+    expect(disabledAudioBtn).toBeDefined();
+    expect(disabledAudioBtn.hasAttribute("disabled")).toBe(true);
+
+    // Transcript text remains fully visible
+    expect(
+      screen.getByText(/"I worked on leading the distributed systems migration."/i),
+    ).toBeDefined();
+  });
+
+  it("renders gracefully when turn was text-only without user audio", () => {
+    const handleClose = vi.fn();
+    const textOnlyFeedback = { ...mockFeedback, userAudioUrl: undefined };
+
+    render(
+      <InterviewAnalysisModal
+        feedback={textOnlyFeedback}
+        savedErrorIds={new Set()}
+        onClose={handleClose}
+        onSaveSpecificError={vi.fn(() => Promise.resolve(true))}
+        onSaveAllErrors={vi.fn(() => Promise.resolve(0))}
+      />,
+    );
+
+    expect(screen.getByText(/respuesta ingresada por texto/i)).toBeDefined();
+  });
 });

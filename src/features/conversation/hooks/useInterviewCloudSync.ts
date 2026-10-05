@@ -150,7 +150,12 @@ export function useInterviewCloudSync({
         fb.overallScore > 0;
 
       if (hasValidFeedback) {
-        setTurnFeedback(fb as unknown as ComprehensiveTurnFeedback);
+        // Ephemeral blob URLs from old sessions cannot be replayed across page reloads
+        const cleanFb: ComprehensiveTurnFeedback = { ...fb };
+        if (cleanFb.userAudioUrl?.startsWith("blob:")) {
+          cleanFb.userAudioUrl = undefined;
+        }
+        setTurnFeedback(cleanFb);
         if (typeof p.showAnalysisModal === "boolean") setShowAnalysisModal(p.showAnalysisModal);
       } else {
         // Blindaje contra modal fantasma con NaN: si la BD no tiene feedback numérico real, jamás abrir el modal
@@ -476,10 +481,16 @@ export function useInterviewCloudSync({
       const modal = customPayload?.showAnalysisModal ?? showAnalysisModal;
       const questions = customPayload?.sessionQuestions ?? (sessionQuestions.length > 0 ? sessionQuestions : undefined);
       const asked = customPayload?.askedQuestions ?? (askedQuestions.length > 0 ? askedQuestions : undefined);
+      const rawFeedback = (customPayload?.latestTurn?.feedback ?? turnFeedback) as any;
+      let sanitizedFeedback = rawFeedback;
+      if (rawFeedback && typeof rawFeedback === "object" && rawFeedback.userAudioUrl?.startsWith("blob:")) {
+        sanitizedFeedback = { ...rawFeedback, userAudioUrl: undefined };
+      }
+
       const latestTurn = customPayload?.latestTurn ?? {
         question: currentQuestionText,
         transcript: userTranscript,
-        feedback: turnFeedback ?? {},
+        feedback: sanitizedFeedback ?? {},
       };
 
       const payload: SaveProgressPayload = {

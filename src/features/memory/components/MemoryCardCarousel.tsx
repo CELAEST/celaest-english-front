@@ -56,6 +56,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
     if (total === 0) return null;
 
     const current = cards[activeIndex] || cards[0];
+    if (!current) return null;
 
     // Side peek cards are only shown when there are at least 3 distinct cards in the deck
     // to avoid duplicated cards when total is 2, and collapse to 1 card when small.
@@ -81,12 +82,12 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
       const isWriting = cat === "WRITING";
 
       if (isReading) {
-        const term = card.errorWord || card.betterWay || card.userSaid || "Vocabulary";
-        let context = card.userSaid && card.userSaid !== term ? card.userSaid : "";
+        const term = String(card.errorWord || card.betterWay || card.userSaid || "Vocabulary");
+        let context = card.userSaid && card.userSaid !== term ? String(card.userSaid) : "";
         if (!context && card.grammarExplanation && card.grammarExplanation !== term) {
-          context = card.grammarExplanation;
+          context = String(card.grammarExplanation);
         } else if (!context && card.translationSpanish) {
-          context = card.translationSpanish;
+          context = String(card.translationSpanish);
         } else if (!context) {
           context = "Reading contextual entry";
         }
@@ -105,18 +106,18 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
         return {
           category: "WRITING",
           topLabel: "DRAFT",
-          topText: card.userSaid || "Initial draft",
+          topText: String(card.userSaid || "Initial draft"),
           bottomLabel: "POLISHED",
-          bottomText: card.betterWay || card.correctWord || "Polished expression",
+          bottomText: String(card.betterWay || card.correctWord || "Polished expression"),
         };
       }
 
       return {
         category: "SPEAKING",
         topLabel: "YOU SAID",
-        topText: card.userSaid || card.errorWord || "Your phrase",
+        topText: String(card.userSaid || card.errorWord || "Your phrase"),
         bottomLabel: "BETTER WAY",
-        bottomText: card.betterWay || card.correctWord || "Optimal phrasing",
+        bottomText: String(card.betterWay || card.correctWord || "Optimal phrasing"),
       };
     };
 
@@ -317,7 +318,7 @@ export const MemoryCardCarousel: React.FC<MemoryCardCarouselProps> = React.memo(
           >
             <AnimatePresence mode="popLayout" custom={direction} initial={false}>
               <motion.div
-                key={current.id}
+                key={current.id || `card-${activeIndex}`}
                 custom={direction}
                 variants={slideVariants}
                 initial="enter"

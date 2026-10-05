@@ -11,6 +11,7 @@ import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMem
 import { MemoryCard } from "../../../domain/entities/MemoryCard";
 import { deduplicateMemoryCards } from "../services/memoryDeduplication";
 import { MemorySkeleton } from "./MemorySkeleton";
+import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { logger } from "../../../shared/utils/logger";
 
 export interface MemoryViewProps {
@@ -87,7 +88,8 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
   }, [cardList]);
 
   const totalCards = filteredCards.length;
-  const activeCard: MemoryCard | undefined = filteredCards[selectedIdx];
+  const safeActiveIndex = Math.min(selectedIdx, Math.max(0, totalCards - 1));
+  const activeCard: MemoryCard | undefined = filteredCards[safeActiveIndex];
 
   const hasAnyCardsInOtherTabs = useMemo(
     () =>
@@ -110,10 +112,13 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     if (currentCount === 0) {
       if (readingCount > 0) {
         setActiveTab(1);
+        setSelectedIdx(0);
       } else if (writingCount > 0) {
         setActiveTab(2);
+        setSelectedIdx(0);
       } else if (speakingCount > 0) {
         setActiveTab(0);
+        setSelectedIdx(0);
       }
       hasAutoSelectedTabRef.current = true;
     }
@@ -132,12 +137,15 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
     const upper = initialCategory.toUpperCase().trim();
     if (upper === "SPEAKING" || upper === "INTERVIEW" || upper === "CONVERSATION") {
       setActiveTab(0);
+      setSelectedIdx(0);
       hasAutoSelectedTabRef.current = true;
     } else if (upper === "READING") {
       setActiveTab(1);
+      setSelectedIdx(0);
       hasAutoSelectedTabRef.current = true;
     } else if (upper === "WRITING") {
       setActiveTab(2);
+      setSelectedIdx(0);
       hasAutoSelectedTabRef.current = true;
     }
   }, [initialCategory]);
@@ -416,26 +424,41 @@ export const MemoryView: React.FC<MemoryViewProps> = ({
               </motion.div>
             ) : (
               <motion.div
-                key={`deck-${activeTab}`}
-                initial={{ opacity: 0, y: 12, scale: 0.99 }}
+                key="deck-container"
+                initial={{ opacity: 0, y: 8, scale: 0.99 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.99 }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                exit={{ opacity: 0, y: -8, scale: 0.99 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 min-h-0 flex items-center justify-center my-auto py-2 sm:py-3 pb-2 lg:pb-4 overflow-hidden"
               >
-                <MemoryCardCarousel
-                  cards={filteredCards}
-                  activeIndex={selectedIdx}
-                  isFlipped={isFlipped}
-                  onFlip={onFlip}
-                  onPrev={handlePrevCard}
-                  onNext={handleNextCard}
-                  onBookmark={onBookmark}
-                  onDelete={handleDeleteCard}
-                  onReviewScore={handleReviewScore}
-                  direction={slideDirection}
-                  onSelectIndex={handleSelectCard}
-                />
+                <ErrorBoundary
+                  fallback={
+                    <div className="flex flex-col items-center justify-center p-6 text-center text-white/60 space-y-2">
+                      <p className="text-sm">Reiniciando tarjeta de memoria...</p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedIdx(0)}
+                        className="text-xs text-[#A27FF3] hover:underline cursor-pointer"
+                      >
+                        Reintentar mazo
+                      </button>
+                    </div>
+                  }
+                >
+                  <MemoryCardCarousel
+                    cards={filteredCards}
+                    activeIndex={safeActiveIndex}
+                    isFlipped={isFlipped}
+                    onFlip={onFlip}
+                    onPrev={handlePrevCard}
+                    onNext={handleNextCard}
+                    onBookmark={onBookmark}
+                    onDelete={handleDeleteCard}
+                    onReviewScore={handleReviewScore}
+                    direction={slideDirection}
+                    onSelectIndex={handleSelectCard}
+                  />
+                </ErrorBoundary>
               </motion.div>
             )}
           </AnimatePresence>

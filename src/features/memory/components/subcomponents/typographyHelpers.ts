@@ -3,9 +3,10 @@
  * Adjusts font sizes responsively based on string length to maximize impact and prevent overflow.
  */
 
-export const sanitizeQuotes = (text?: string): string => {
+export const sanitizeQuotes = (text?: unknown): string => {
   if (!text) return "";
-  return text.replace(/^["'“”«»\s]+|["'“”«»\s]+$/g, "").trim();
+  const str = typeof text === "string" ? text : String(text);
+  return str.replace(/^["'“”«»\s]+|["'“”«»\s]+$/g, "").trim();
 };
 
 export const getDynamicDefinitionClass = (text: string): string => {

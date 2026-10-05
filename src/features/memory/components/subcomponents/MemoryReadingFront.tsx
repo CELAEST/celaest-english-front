@@ -14,16 +14,17 @@ export const MemoryReadingFront: React.FC<MemoryReadingFrontProps> = ({
   isPlayingAudio,
   onPlayVoice,
 }) => {
-  const term =
+  const term = String(
     card.errorWord ||
-    (card.betterWay && card.betterWay.length < 30 ? card.betterWay : card.userSaid) ||
-    "Vocabulary Term";
+    (card.betterWay && String(card.betterWay).length < 30 ? card.betterWay : card.userSaid) ||
+    "Vocabulary Term",
+  );
 
   const rawContext =
-    card.userSaid && card.userSaid !== term
-      ? card.userSaid
-      : card.betterWay && card.betterWay !== term
-        ? card.betterWay
+    card.userSaid && String(card.userSaid) !== term
+      ? String(card.userSaid)
+      : card.betterWay && String(card.betterWay) !== term
+        ? String(card.betterWay)
         : "";
 
   const cleanedSentence = rawContext

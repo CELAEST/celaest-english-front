@@ -797,8 +797,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
               />
               {/* Level-based Scaffolding & Starter Recommendations (Ergonomic Touch Chips) */}
               <div className="flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-0.5 sm:px-1 text-xs shrink-0 w-full min-w-0 max-w-full">
-                {/* Modern Glassmorphic Pistas Badge with Integrated Level Selector */}
-                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#8B5CF6]/15 via-white/[0.04] to-white/[0.02] border border-[#8B5CF6]/35 shadow-[0_2px_12px_rgba(139,92,246,0.12)] shrink-0 select-none">
+                {/* Modern Borderless Glassmorphic Pistas Badge with Integrated Level Selector */}
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.06] transition-colors shrink-0 select-none">
                   {/* Interactive Clue Toggle Button */}
                   <button
                     type="button"

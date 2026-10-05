@@ -419,6 +419,35 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
     );
   });
 
+  it("suppresses duplicate AI evaluation when submitting the exact same answer already evaluated", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    await act(async () => {
+      await result.current.finishTurnManual("I usually start my day by checking project tasks and team updates.");
+    });
+
+    expect(CoreAiEvaluatorService.evaluate).toHaveBeenCalledTimes(1);
+
+    // Close the modal
+    act(() => {
+      result.current.closeAnalysisModal();
+    });
+    expect(result.current.showAnalysisModal).toBe(false);
+
+    // Re-submit the exact same answer
+    await act(async () => {
+      await result.current.finishTurnManual("I usually start my day by checking project tasks and team updates.");
+    });
+
+    // CoreAiEvaluatorService.evaluate should STILL have been called only once!
+    expect(CoreAiEvaluatorService.evaluate).toHaveBeenCalledTimes(1);
+    // Modal re-opens with the existing feedback without token consumption
+    expect(result.current.showAnalysisModal).toBe(true);
+    expect(result.current.turnFeedback?.overallScore).toBe(88);
+  });
+
   it("stops active microphone and uses captured transcript when finishTurnManual is called during recording", async () => {
     vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
     vi.mocked(AudioCaptureService.stopAndGetAudio).mockResolvedValueOnce({

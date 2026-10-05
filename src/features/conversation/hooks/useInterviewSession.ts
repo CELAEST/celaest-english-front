@@ -308,11 +308,13 @@ export const useInterviewSession = (
 
   const closeAnalysisModal = useCallback(() => {
     evaluation.setShowAnalysisModal(false);
+    speech.setUserTranscript("");
     cloudSyncRef.current?.saveProgressNow({
       showAnalysisModal: false,
+      userTranscript: "",
       latestTurn: {
         question: questions.currentQuestion?.question ?? "",
-        transcript: speech.userTranscriptRef.current || speech.userTranscript || evaluation.turnFeedback?.userSpokenText || "",
+        transcript: evaluation.turnFeedback?.userSpokenText || speech.userTranscriptRef.current || "",
         feedback: (evaluation.turnFeedback ?? {}) as unknown as Record<string, unknown>,
       },
     });

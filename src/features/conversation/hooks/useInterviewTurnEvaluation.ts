@@ -236,6 +236,19 @@ export function useInterviewTurnEvaluation({
           return;
         }
 
+        // Anti-Duplicate AI Consumption Guard:
+        // If this question was already evaluated and the text is identical, do NOT consume AI tokens again.
+        const alreadySpoken = (turnFeedback?.userSpokenText || turnFeedback?.reconciledTranscript || "").trim().toLowerCase();
+        if (turnFeedback && alreadySpoken && alreadySpoken === validation.cleanTranscript.trim().toLowerCase()) {
+          logger.info("[useInterviewTurnEvaluation] Duplicate evaluation suppressed — showing existing feedback without AI call");
+          setShowAnalysisModal(true);
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setProcessingStage("IDLE");
+          }
+          return;
+        }
+
         setSpeechNotice(null);
         await processTurn(validation.cleanTranscript, audioUrl, durationSeconds);
       } catch (err) {
@@ -262,6 +275,8 @@ export function useInterviewTurnEvaluation({
       processTurn,
       setStatus,
       isMountedRef,
+      turnFeedback,
+      setShowAnalysisModal,
     ],
   );
 

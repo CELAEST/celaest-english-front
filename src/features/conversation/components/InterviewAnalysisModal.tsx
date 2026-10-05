@@ -223,15 +223,6 @@ const InterviewAnalysisModalInner: React.FC<InterviewAnalysisModalProps> = ({
       <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-5">
         <InterviewAnalysisScorecard feedback={feedback} />
 
-        <InterviewAnalysisErrorCarousel
-          errors={errors}
-          userSpokenText={feedback.userSpokenText}
-          savedErrorIds={savedErrorIds}
-          onSaveSpecificError={onSaveSpecificError}
-          onSaveAllErrors={onSaveAllErrors}
-          onNavigateToMemory={onNavigateToMemory}
-        />
-
         <InterviewAnalysisStrategyGrid
           feedback={feedback}
           isPlayingRecommendationAudio={isPlayingRecommendationAudio}
@@ -275,6 +266,15 @@ const InterviewAnalysisModalInner: React.FC<InterviewAnalysisModalProps> = ({
             onPlayModelAnswer={handlePlayModelAnswer}
           />
         </div>
+
+        <InterviewAnalysisErrorCarousel
+          errors={errors}
+          userSpokenText={feedback.userSpokenText}
+          savedErrorIds={savedErrorIds}
+          onSaveSpecificError={onSaveSpecificError}
+          onSaveAllErrors={onSaveAllErrors}
+          onNavigateToMemory={onNavigateToMemory}
+        />
       </div>
     </AppModal>
   );

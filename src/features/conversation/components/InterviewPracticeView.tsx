@@ -40,7 +40,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     sessionQuestions,
     currentRound,
     currentQuestionIndex,
-    overallQuestionIndex,
     currentQuestion,
     totalQuestions,
     remainingSeconds,
@@ -262,7 +261,6 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             {/* Question & Live Transcript */}
             <ConversationPromptArea
               currentQuestionText={currentQuestion?.question || ""}
-              currentQuestionIndex={overallQuestionIndex}
               isGenerating={isWaitingForInitialQuestion}
               roleName={roleName}
               userLevel={activeCefrLevel}

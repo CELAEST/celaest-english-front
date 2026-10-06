@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 export interface ConversationPromptAreaProps {
   currentQuestionText?: string;
   currentQuestionIndex?: number;
+  totalQuestions?: number;
   isGenerating?: boolean;
   roleName?: string;
   userLevel?: string;
@@ -19,7 +20,7 @@ export interface ConversationPromptAreaProps {
 
 const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
   currentQuestionText = "",
-  currentQuestionIndex = 0,
+  currentQuestionIndex = 1,
   isGenerating = false,
   roleName = "Professional",
   userLevel = "B1",
@@ -105,7 +106,7 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.22em] uppercase font-sans text-[#8264C3]">
-              QUESTION {currentQuestionIndex > 0 && !displayWaiting ? `· 0${currentQuestionIndex}` : ""}
+              QUESTION
             </span>
             <span className="h-px w-8 bg-gradient-to-r from-[#8264C3]/50 to-transparent inline-block" />
             {displayWaiting && (

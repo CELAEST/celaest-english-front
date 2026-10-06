@@ -20,6 +20,13 @@ const isProd = import.meta.env.PROD;
 const isTest = import.meta.env.MODE === "test";
 const isBrowser = typeof window !== "undefined";
 
+const isLocalhost =
+  isBrowser &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname.endsWith(".localhost") ||
+    window.location.hostname.startsWith("192.168."));
+
 const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
 const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
@@ -28,38 +35,42 @@ const resolvedApiUrl = trimTrailingSlash(
   apiUrl ||
     (isTest
       ? "http://localhost:8080/api/v1"
-      : isProd
-        ? defaultProdApiUrl
+      : isLocalhost
+        ? `${window.location.origin}/api/v1`
         : isBrowser
           ? `${window.location.origin}/api/v1`
           : defaultProdApiUrl),
+);
+
+const resolvedCelaestBackUrl = trimTrailingSlash(
+  celaestBackUrl ||
+    (isTest
+      ? "http://localhost:3101/api/v1"
+      : isLocalhost
+        ? `${window.location.origin}/celaest-back`
+        : isBrowser
+          ? `${window.location.origin}/celaest-back`
+          : defaultProdCelaestBackUrl),
+);
+
+const resolvedCoreAiUrl = trimTrailingSlash(
+  coreAiUrl ||
+    (isTest
+      ? "http://127.0.0.1:8085/api/v1"
+      : isLocalhost
+        ? `${window.location.origin}/core-ai`
+        : isBrowser
+          ? `${window.location.origin}/core-ai`
+          : defaultProdCoreAiUrl),
 );
 
 export const ENV = {
   /** Backend REST API base URL (no trailing slash). */
   apiUrl: resolvedApiUrl,
   /** CELAEST Core Auth & Billing Backend (no trailing slash). */
-  celaestBackUrl: trimTrailingSlash(
-    celaestBackUrl ||
-      (isTest
-        ? "http://localhost:3101/api/v1"
-        : isProd
-          ? defaultProdCelaestBackUrl
-          : isBrowser
-            ? `${window.location.origin}/celaest-back`
-            : defaultProdCelaestBackUrl),
-  ),
+  celaestBackUrl: resolvedCelaestBackUrl,
   /** CELAEST-CORE IA-Mesh base URL for AI chat/transcription (no trailing slash). */
-  coreAiUrl: trimTrailingSlash(
-    coreAiUrl ||
-      (isTest
-        ? "http://127.0.0.1:8085/api/v1"
-        : isProd
-          ? defaultProdCoreAiUrl
-          : isBrowser
-            ? `${window.location.origin}/core-ai`
-            : defaultProdCoreAiUrl),
-  ),
+  coreAiUrl: resolvedCoreAiUrl,
   /** Supabase Project URL for Direct OAuth & Storage */
   supabaseUrl: trimTrailingSlash(supabaseUrl),
   /** Supabase Public Anon Key */

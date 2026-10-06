@@ -101,11 +101,11 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
 
         {/* Middle: Question Content (Pure typography & borderless pills) */}
         <div className="flex-1 flex flex-col justify-center max-w-xl min-h-0 my-auto py-1">
-          {/* Progress Indicator: 01 / 04 (25%) */}
+          {/* Progress Indicator: Dynamic based on active question */}
           <OnboardingStepProgress
-            currentStep={1}
+            currentStep={subStep + 1}
             totalSteps={4}
-            percentage={25}
+            percentage={Math.round(((subStep + 1) / 4) * 100)}
             className="mb-3 sm:mb-4"
           />
 

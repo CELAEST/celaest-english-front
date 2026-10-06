@@ -93,6 +93,7 @@ graph TD
 3. **Decoupled Architecture (SRP & DIP)**: Depend on abstract interfaces, never create monolithic components.
 4. **Semgrep in Quality Gate**: Run Semgrep security scans during the post-implementation Quality Gate stage ($F$), avoiding latency in the initial analysis phase ($B$).
 5. **Self-Healing Quality Gate ($F \xrightarrow{\text{Fallo}} E$)**:
-   - Run `npx tsc --noEmit` + `vitest` + `go test`.
+   - Run `npx tsc --noEmit` + `vitest` + `go test` strictly when modifying domain logic, types, services, or APIs.
+   - **UI / Styling Fast-Track**: Para cambios de UI, CSS, Tailwind, espaciados, tamaños o assets visuales donde Vite HMR actualiza en caliente, **PROHIBIDO** correr builds pesados (`npm run build`) o tests unitarios (`vitest`). Ir directo al grano con cambios quirúrgicos en caliente.
    - If any compiler/linter error occurs, analyze the error output and apply targeted auto-repair diffs before concluding the turn.
 6. **Persistent Memory Gate**: Update Serena project memories and knowledge items upon completing major architectural changes so all future sessions retain context.

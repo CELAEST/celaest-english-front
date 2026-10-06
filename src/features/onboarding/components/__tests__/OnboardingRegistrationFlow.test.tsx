@@ -25,7 +25,7 @@ describe("Onboarding Registration Flow - Begin Screen Contract", () => {
     localStorage.clear();
   });
 
-  it("fresh registration directs user to Welcome ('Begin') screen instead of auto-finishing or defaulting to Professional", async () => {
+  it("fresh registration directs user directly to API Key setup instead of bouncing to Begin", async () => {
     const authAdapter = SupabaseAuthAdapter.getInstance();
     // Simulate user registered: authenticated but not completed onboarding
     vi.spyOn(authAdapter, "isAuthenticated").mockReturnValue(true);
@@ -59,9 +59,8 @@ describe("Onboarding Registration Flow - Begin Screen Contract", () => {
     // onFinish MUST NOT be called for a fresh unonboarded user
     expect(onFinish).not.toHaveBeenCalled();
 
-    // The user MUST see the "Begin" screen
-    expect(screen.getByText("Your AI Language Mentor")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Begin/i })).toBeInTheDocument();
+    // The user MUST see the "Conecta tu Motor de IA" (api-key) screen directly
+    expect(screen.getByText("Conecta tu Motor de IA")).toBeInTheDocument();
   });
 
   it("returning user with onboardingCompleted=true triggers onFinish to direct to dashboard", async () => {

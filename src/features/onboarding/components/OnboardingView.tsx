@@ -78,6 +78,7 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
 
   const isCenteredHeroLayout = step === "welcome" || step === "auth";
   const showRightVideo =
+    step === "api-key" ||
     step === "questions" ||
     step === "dna-analysis" ||
     step === "placement-quiz" ||
@@ -86,15 +87,19 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
 
   return (
     <div className="relative w-full h-[100dvh] max-h-screen bg-[#000003] text-slate-100 font-sans flex flex-col justify-between overflow-hidden select-none">
-      {/* 🌟 Right-Side Video — ask — only on questionnaire & assessment steps */}
+      {/* 🌟 Right-Side AI Mentor Sphere Video — ask — visible only on desktop (lg+), grande e imponente para apreciar todos los detalles */}
       {showRightVideo && (
         <>
-          <OptimizedVideo
-            src="/assets/ask"
-            className="absolute top-[4%] left-1/2 -translate-x-1/2 w-[94%] h-[32vh] opacity-30 rounded-2xl sm:rounded-none sm:top-1/2 sm:left-auto sm:right-0 sm:right-[1%] lg:right-[2%] xl:right-[3%] sm:translate-x-0 sm:-translate-y-1/2 sm:scale-[1.4] sm:w-[85%] lg:w-[58%] xl:w-[54%] 2xl:w-[50%] sm:h-[85vh] lg:h-[94vh] sm:max-w-[1100px] sm:opacity-90 object-contain pointer-events-none z-0 mix-blend-screen"
-          />
+          <div className="hidden lg:flex absolute inset-y-0 right-0 w-[55vw] items-center justify-center pointer-events-none z-0 overflow-hidden">
+            <div className="scale-[1.25] xl:scale-[1.4] 2xl:scale-[1.5] transition-transform duration-300 flex items-center justify-center">
+              <OptimizedVideo
+                src="/assets/ask"
+                className="w-[780px] xl:w-[920px] 2xl:w-[1080px] h-auto object-contain mix-blend-screen opacity-95 pointer-events-none"
+              />
+            </div>
+          </div>
           {/* Gradiente protector legibilidad */}
-          <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#000003] via-[#000003]/95 to-transparent" style={{ width: "54%" }} />
+          <div className="absolute inset-0 pointer-events-none z-[1] hidden lg:block bg-gradient-to-r from-[#000003] via-[#000003]/90 to-transparent" style={{ width: "45%" }} />
         </>
       )}
 
@@ -208,17 +213,16 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   }
                 }
 
-                // 4. Fresh registration: Proceed cleanly to Welcome ("Begin") screen
-                goToStep("welcome");
+                // 4. Fresh registration: Proceed cleanly to API Key screen
+                goToStep("api-key");
               }}
-              onBackToWelcome={openAuth}
             />
           )}
           {step === "welcome" && (
             <OnboardingWelcomeStep onBegin={nextStep} onOpenLogin={openAuth} />
           )}
           {step === "api-key" && (
-            <OnboardingApiKeyStep onNext={nextStep} onPrev={prevStep} />
+            <OnboardingApiKeyStep onNext={nextStep} />
           )}
           {step === "beginner-check" && (
             <OnboardingBeginnerCheckStep

@@ -4,15 +4,18 @@ import { useApiKeySetup } from "../hooks/useApiKeySetup";
 import { OnboardingProviderGrid } from "./api-key/OnboardingProviderGrid";
 import { OnboardingKeyInputCard } from "./api-key/OnboardingKeyInputCard";
 import { OnboardingApiKeyActions } from "./api-key/OnboardingApiKeyActions";
+import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 interface OnboardingApiKeyStepProps {
   onNext: () => void;
-  onPrev: () => void;
+  onPrev?: () => void;
+  onLogout?: () => void;
 }
 
 export const OnboardingApiKeyStep: React.FC<OnboardingApiKeyStepProps> = ({
   onNext,
   onPrev,
+  onLogout,
 }) => {
   const {
     selectedProvider,
@@ -26,6 +29,18 @@ export const OnboardingApiKeyStep: React.FC<OnboardingApiKeyStepProps> = ({
     hasExistingKey,
     verifyAndSave,
   } = useApiKeySetup();
+
+  const handleLogout = async () => {
+    if (onLogout) {
+      onLogout();
+      return;
+    }
+    try {
+      await SupabaseAuthAdapter.getInstance().logout();
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <div className="relative w-full h-full flex flex-col mx-auto select-none overflow-hidden">
@@ -60,6 +75,7 @@ export const OnboardingApiKeyStep: React.FC<OnboardingApiKeyStepProps> = ({
 
           <OnboardingApiKeyActions
             onPrev={onPrev}
+            onLogout={handleLogout}
             onConfirm={() => verifyAndSave(onNext)}
             isVerifying={isVerifying}
             hasExistingKey={hasExistingKey}

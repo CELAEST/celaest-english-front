@@ -17,7 +17,7 @@ export const useOnboardingFlow = () => {
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (!isAuth) return "auth";
     if (isCompleted) return "ready";
-    return "welcome";
+    return "api-key";
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -82,7 +82,7 @@ export const useOnboardingFlow = () => {
   const prevStep = () => {
     if (step === "welcome") {
       if (!isAuth) setStep("auth");
-    } else if (step === "api-key") setStep("welcome");
+    } else if (step === "api-key") setStep("auth");
     else if (step === "beginner-check") setStep("api-key");
     else if (step === "questions") setStep("beginner-check");
     else if (step === "dna-analysis") setStep("questions");

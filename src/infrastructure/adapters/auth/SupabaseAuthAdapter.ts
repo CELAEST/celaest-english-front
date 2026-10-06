@@ -17,16 +17,19 @@ const REFRESH_TOKEN_KEY = "lingua_refresh_token";
 const USER_KEY = "lingua_auth_user";
 
 export function formatAuthErrorMessage(rawMsg: string): string {
-  if (!rawMsg) return "Error de autenticación. Verifica tus credenciales.";
+  if (!rawMsg) return "Authentication error. Please verify your credentials.";
   const lower = rawMsg.toLowerCase();
   if (lower.includes("user_already_exists") || lower.includes("already registered") || lower.includes("already exists")) {
-    return "Este correo ya está registrado. Por favor, pulsa 'Sign In' para iniciar sesión.";
+    return "This email is already registered. Please sign in instead.";
   }
   if (lower.includes("invalid_credentials") || lower.includes("invalid login credentials") || lower.includes("invalid email or password")) {
-    return "Correo o contraseña incorrectos. Verifica tus credenciales.";
+    return "Incorrect email or password. Please verify your credentials.";
   }
   if (lower.includes("weak_password") || lower.includes("at least 6 characters")) {
-    return "La contraseña debe tener al menos 6 caracteres.";
+    return "Password must be at least 6 characters long.";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "Too many attempts. Please wait a moment before trying again.";
   }
   try {
     const jsonMatch = rawMsg.match(/\{.*\}/);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useApiKeySetup } from "../useApiKeySetup";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 import * as providerConnectivity from "../../../settings/services/providerConnectivity";
@@ -24,12 +24,9 @@ describe("useApiKeySetup - Resilient Non-Blocking Verification", () => {
 
     const { result } = renderHook(() => useApiKeySetup());
 
-    // Allow mount effect to detect existing key
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 50));
+    await waitFor(() => {
+      expect(result.current.hasExistingKey).toBe(true);
     });
-
-    expect(result.current.hasExistingKey).toBe(true);
     expect(result.current.keyInput).toBe("");
 
     const onSuccess = vi.fn();

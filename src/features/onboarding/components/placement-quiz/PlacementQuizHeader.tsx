@@ -13,9 +13,9 @@ export const PlacementQuizHeader: React.FC<PlacementQuizHeaderProps> = ({
   return (
     <div className="space-y-1.5 mb-3 sm:mb-4 shrink-0">
       <OnboardingStepProgress
-        currentStep={3}
-        totalSteps={4}
-        percentage={60}
+        currentStep={currentQuestionIndex + 1}
+        totalSteps={totalQuestions}
+        percentage={Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)}
         className="mb-2 sm:mb-3"
       />
       <div className="flex items-center justify-between">

@@ -2,7 +2,8 @@ import React from "react";
 import { Loader2, ArrowRight } from "lucide-react";
 
 interface OnboardingApiKeyActionsProps {
-  onPrev: () => void;
+  onPrev?: (() => void) | undefined;
+  onLogout?: (() => void) | undefined;
   onConfirm: () => void;
   isVerifying: boolean;
   hasExistingKey: boolean;
@@ -11,6 +12,7 @@ interface OnboardingApiKeyActionsProps {
 
 export const OnboardingApiKeyActions: React.FC<OnboardingApiKeyActionsProps> = ({
   onPrev,
+  onLogout,
   onConfirm,
   isVerifying,
   hasExistingKey,
@@ -20,16 +22,28 @@ export const OnboardingApiKeyActions: React.FC<OnboardingApiKeyActionsProps> = (
 
   return (
     <div className="flex items-center justify-between pt-3">
-      <button
-        type="button"
-        onClick={onPrev}
-        className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
-      >
-        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Atrás
-      </button>
+      {onLogout ? (
+        <button
+          type="button"
+          onClick={onLogout}
+          className="text-xs font-light text-[#71719A] hover:text-[#A27FF3] transition-colors cursor-pointer outline-none focus-visible:underline"
+        >
+          Cerrar sesión
+        </button>
+      ) : onPrev ? (
+        <button
+          type="button"
+          onClick={onPrev}
+          className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
+        >
+          <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Atrás
+        </button>
+      ) : (
+        <div />
+      )}
 
       <button
         type="button"

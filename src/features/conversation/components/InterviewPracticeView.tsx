@@ -11,7 +11,6 @@ import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastruc
 import { InterviewAnalysisModal } from "./InterviewAnalysisModal";
 import { ResponsiveInterviewHUD } from "./ResponsiveInterviewHUD";
 import { SessionCardsSidenav } from "./SessionCardsSidenav";
-import { InterviewSkeleton } from "./InterviewSkeleton";
 import { useInterviewSession } from "../hooks/useInterviewSession";
 
 import { CefrLevelCode, normalizeCefr } from "../services/dynamicQuestionService";
@@ -38,9 +37,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     isAiSpeaking,
     isThinking,
     isPaused,
-    hasCloudHydrated,
     sessionQuestions,
-    isGeneratingQuestions,
     currentRound,
     currentQuestionIndex,
     overallQuestionIndex,
@@ -219,17 +216,14 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     ],
   );
 
-  // Prevent flashing placeholder text or premature re-rendering during cold mount / question generation
-  const isSessionLoading =
-    sessionQuestions.length === 0 ||
-    ((!hasCloudHydrated || isGeneratingQuestions) &&
-      (!currentQuestion?.question ||
-        currentQuestion.question.startsWith("Preparing") ||
-        currentQuestion.question.startsWith("Generating")));
-
-  if (isSessionLoading) {
-    return <InterviewSkeleton />;
-  }
+  // Instantly render real design without blocking full page on AI cold start.
+  // ONLY activate the generating indicator on the initial first call of the session.
+  // Subsequent questions (2, 3, 4, etc.) and future rounds happen silently in the background ("por detrás").
+  const isWaitingForInitialQuestion =
+    sessionQuestions.length === 0 &&
+    (!currentQuestion?.question ||
+      currentQuestion.question.startsWith("Preparing") ||
+      currentQuestion.question.startsWith("Generating"));
 
   return (
     <motion.div
@@ -269,6 +263,9 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             <ConversationPromptArea
               currentQuestionText={currentQuestion?.question || ""}
               currentQuestionIndex={overallQuestionIndex}
+              isGenerating={isWaitingForInitialQuestion}
+              roleName={roleName}
+              userLevel={activeCefrLevel}
               userTranscript={userTranscript}
               isListening={isListening}
               isThinking={isThinking}
@@ -294,7 +291,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
             <ConversationMicControl
               isListening={isListening}
               isAiSpeaking={isAiSpeaking}
-              isThinking={isThinking}
+              isThinking={isThinking || isWaitingForInitialQuestion}
               hasText={userTranscript.trim().length > 0}
               onToggleListening={toggleListening}
               onFinishTurn={handleSubmitAnswer}

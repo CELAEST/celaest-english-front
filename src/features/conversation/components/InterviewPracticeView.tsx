@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { ConversationRightPanel } from "./ConversationRightPanel";
 import { ConversationOrbHero } from "./ConversationOrbHero";
@@ -128,11 +128,23 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     }
   }, [onBackToWorkspace]);
 
-  const handleOpenAnalysisModal = useCallback(() => setShowAnalysisModal(true), []);
+  const lastClosedModalTimeRef = useRef<number>(0);
+
+  const handleOpenAnalysisModal = useCallback(() => {
+    // Ghost click / event bleed protection: Ignore open requests within 400ms of modal closing
+    if (Date.now() - lastClosedModalTimeRef.current < 400) {
+      return;
+    }
+    setShowAnalysisModal(true);
+  }, [setShowAnalysisModal]);
+
   const handleCloseAnalysisModal = useCallback(() => {
+    lastClosedModalTimeRef.current = Date.now();
     closeAnalysisModal();
   }, [closeAnalysisModal]);
+
   const handleContinueNextQuestion = useCallback(() => {
+    lastClosedModalTimeRef.current = Date.now();
     closeAnalysisModal();
     skipQuestion();
   }, [closeAnalysisModal, skipQuestion]);

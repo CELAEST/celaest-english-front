@@ -81,6 +81,8 @@ export function useInterviewCloudSync({
     onHydrationCompleteRef.current = onHydrationComplete;
   }, [onHydrationComplete]);
 
+  const userDismissedModalRef = useRef<boolean>(false);
+
   const applyProgress = useCallback(
     (p: {
       roleName?: string | undefined;
@@ -93,6 +95,7 @@ export function useInterviewCloudSync({
       sessionQuestions?: InterviewQuestionItem[] | undefined;
       askedQuestions?: string[] | undefined;
       latestTurn?: Record<string, unknown> | null | undefined;
+      skipModalSync?: boolean | undefined;
     }) => {
       if (typeof p.speechRate === "number" && p.speechRate !== speechRate) {
         setSpeechRate(p.speechRate);
@@ -156,7 +159,14 @@ export function useInterviewCloudSync({
           cleanFb.userAudioUrl = undefined;
         }
         setTurnFeedback(cleanFb);
-        if (typeof p.showAnalysisModal === "boolean") setShowAnalysisModal(p.showAnalysisModal);
+        // Never allow background sync or server responses to resurrect a modal the learner explicitly dismissed
+        if (
+          !userDismissedModalRef.current &&
+          !p.skipModalSync &&
+          typeof p.showAnalysisModal === "boolean"
+        ) {
+          setShowAnalysisModal(p.showAnalysisModal);
+        }
       } else {
         // Blindaje contra modal fantasma con NaN: si la BD no tiene feedback numérico real, jamás abrir el modal
         setTurnFeedback(null);
@@ -232,6 +242,12 @@ export function useInterviewCloudSync({
   // (index change, feedback received, modal toggled, level changed, questions updated)
   // NEVER on each spoken character of userTranscript!
   useEffect(() => {
+    if (showAnalysisModal) {
+      userDismissedModalRef.current = false;
+    } else {
+      userDismissedModalRef.current = true;
+    }
+
     const snapshot: PersistedInterviewState = {
       version: 2,
       roleName: effectiveRoleName,
@@ -327,6 +343,7 @@ export function useInterviewCloudSync({
 
   // Server-Wins Hydration from backend on mount and level change
   const didHydrateRef = useRef(false);
+  const isInitialSyncRef = useRef(true);
   const syncFromBackend = useCallback(
     (targetLevel?: string, force: boolean = false) => {
       const levelToFetch = (targetLevel || activeCefrLevel).toUpperCase().trim();
@@ -385,10 +402,14 @@ export function useInterviewCloudSync({
             saveTimeoutRef.current = null;
           }
 
+          const isBackgroundSync = !isInitialSyncRef.current;
+          isInitialSyncRef.current = false;
+
           const adoptedRole = dto.roleName || effectiveRoleName;
           const adoptedLevel = dto.cefrLevel || levelToFetch;
           const adoptedRate = dto.speechRate ?? speechRate;
           const adoptedSavedErrIds = dto.savedErrorIds || [];
+          const effectiveModal = isBackgroundSync ? showAnalysisModal : Boolean(dto.showAnalysisModal);
 
           lastSavedSnapshotRef.current = JSON.stringify({
             version: 2,
@@ -399,7 +420,7 @@ export function useInterviewCloudSync({
             turnFeedback: sanitizedTurn?.feedback
               ? (sanitizedTurn.feedback as any).overallScore
               : null,
-            showAnalysisModal: Boolean(dto.showAnalysisModal),
+            showAnalysisModal: effectiveModal,
             savedErrorIds: Array.from(adoptedSavedErrIds),
             questionsCount: dto.sessionQuestions?.length ?? 0,
             askedCount: dto.askedQuestions?.length ?? 0,
@@ -412,10 +433,11 @@ export function useInterviewCloudSync({
             currentQuestionIndex: sanitizedIndex,
             userTranscript: dto.userTranscript,
             savedErrorIds: adoptedSavedErrIds,
-            showAnalysisModal: dto.showAnalysisModal,
+            showAnalysisModal: effectiveModal,
             sessionQuestions: dto.sessionQuestions,
             askedQuestions: dto.askedQuestions,
             latestTurn: sanitizedTurn,
+            skipModalSync: isBackgroundSync,
           });
 
           const hasQuestions =
@@ -449,7 +471,7 @@ export function useInterviewCloudSync({
     }
   }, [activeCefrLevel, syncFromBackend]);
 
-  // Cross-device sync: When tab becomes visible or window gains focus, check backend for updates
+  // Cross-device sync: When tab becomes visible (NOT on window DOM focus shifts), check backend for updates
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -457,10 +479,8 @@ export function useInterviewCloudSync({
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("focus", onVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("focus", onVisibilityChange);
     };
   }, [syncFromBackend, activeCefrLevel]);
 
@@ -479,6 +499,13 @@ export function useInterviewCloudSync({
       const transcript = customPayload?.userTranscript ?? userTranscript;
       const errIds = customPayload?.savedErrorIds ?? Array.from(savedErrorIds);
       const modal = customPayload?.showAnalysisModal ?? showAnalysisModal;
+
+      if (customPayload?.showAnalysisModal === false) {
+        userDismissedModalRef.current = true;
+      } else if (customPayload?.showAnalysisModal === true) {
+        userDismissedModalRef.current = false;
+      }
+
       const questions = customPayload?.sessionQuestions ?? (sessionQuestions.length > 0 ? sessionQuestions : undefined);
       const asked = customPayload?.askedQuestions ?? (askedQuestions.length > 0 ? askedQuestions : undefined);
       const rawFeedback = (customPayload?.latestTurn?.feedback ?? turnFeedback) as any;
@@ -522,6 +549,20 @@ export function useInterviewCloudSync({
         updatedAt: Date.now(),
       };
       savePersistedInterview(snapshot, currentUserId);
+
+      // Immediately synchronize the baseline snapshot to prevent race conditions with debounced effect
+      lastSavedSnapshotRef.current = JSON.stringify({
+        version: 2,
+        roleName: role,
+        cefrLevel: level,
+        speechRate: rate,
+        currentQuestionIndex: index,
+        turnFeedback: turnFeedback ? turnFeedback.overallScore : null,
+        showAnalysisModal: modal,
+        savedErrorIds: Array.from(errIds),
+        questionsCount: questions?.length ?? sessionQuestions.length,
+        askedCount: asked?.length ?? askedQuestions.length,
+      });
 
       return apiInterviewRepository
         .saveProgress(payload)

@@ -79,6 +79,29 @@ describe("InterviewAnalysisModal", () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
+  it("invokes onClose when the learner clicks the close 'X' button", () => {
+    const handleClose = vi.fn();
+
+    render(
+      <InterviewAnalysisModal
+        feedback={mockFeedback}
+        savedErrorIds={new Set()}
+        onClose={handleClose}
+        onSaveSpecificError={vi.fn(() => Promise.resolve(true))}
+        onSaveAllErrors={vi.fn(() => Promise.resolve(0))}
+      />,
+    );
+
+    const closeBtn = screen.getByRole("button", {
+      name: /close/i,
+    });
+    expect(closeBtn).toBeDefined();
+
+    fireEvent.click(closeBtn);
+
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
   it("handles audio load failure gracefully without collapsing the modal layout", () => {
     const handleClose = vi.fn();
 

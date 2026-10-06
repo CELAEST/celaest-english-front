@@ -74,12 +74,17 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
 
     return () => {
       // Restore focus to the element that was focused before trap activation
-      if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === "function") {
-        try {
-          previouslyFocusedRef.current.focus();
-        } catch {
-          // Element may have been removed from DOM
-        }
+      const el = previouslyFocusedRef.current;
+      if (el && typeof el.focus === "function") {
+        setTimeout(() => {
+          try {
+            if (document.contains(el)) {
+              el.focus({ preventScroll: true });
+            }
+          } catch {
+            // Element may have been removed from DOM
+          }
+        }, 50);
       }
     };
   }, [isActive]);

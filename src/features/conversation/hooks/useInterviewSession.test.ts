@@ -419,6 +419,50 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
     );
   });
 
+  it("does not resurrect or reopen showAnalysisModal when background cloud sync occurs after learner closed modal", async () => {
+    vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
+    const { result } = renderHook(() => useInterviewSession("Product Manager", "B1"));
+
+    await act(async () => {
+      await result.current.finishTurnManual("I usually start my day by checking project tasks and team updates.");
+    });
+
+    expect(result.current.showAnalysisModal).toBe(true);
+
+    // Learner closes the modal
+    act(() => {
+      result.current.closeAnalysisModal();
+    });
+    expect(result.current.showAnalysisModal).toBe(false);
+
+    // Simulate background visibility change returning stale showAnalysisModal: true
+    vi.mocked(apiInterviewRepository.getProgress).mockResolvedValueOnce({
+      userId: "user-1",
+      roleName: "Product Manager",
+      cefrLevel: "B1",
+      speechRate: 0.95,
+      currentQuestionIndex: 0,
+      userTranscript: "",
+      savedErrorIds: [],
+      showAnalysisModal: true,
+      sessionQuestions: [],
+      askedQuestions: [],
+      latestTurn: {
+        feedback: fakeFeedback as unknown as Record<string, unknown>,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Fire visibility change
+    await act(async () => {
+      Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    // The modal MUST remain closed!
+    expect(result.current.showAnalysisModal).toBe(false);
+  });
+
   it("suppresses duplicate AI evaluation when submitting the exact same answer already evaluated", async () => {
     vi.mocked(CoreAiEvaluatorService.evaluate).mockResolvedValueOnce(fakeFeedback);
 

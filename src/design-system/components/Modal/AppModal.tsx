@@ -219,7 +219,9 @@ const AppModalInner: React.FC<AppModalProps> = ({
           role="button"
           tabIndex={0}
           aria-label="Deslizar hacia abajo para cerrar"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (trapRef.current) {
               trapRef.current.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
               trapRef.current.style.transform = "translate3d(0, 100%, 0)";
@@ -267,7 +269,14 @@ const AppModalInner: React.FC<AppModalProps> = ({
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+              }}
               aria-label="Close"
               className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center text-white/40 hover:text-white transition-colors duration-200 cursor-pointer rounded-lg hover:bg-white/[0.05]"
             >

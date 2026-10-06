@@ -540,8 +540,11 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
     }
   };
 
+  const lastClosedModalTimeRef = useRef<number>(0);
+
   // When clicking the X button in the modal: Keep the text, keep the task, just hide modal and allow reopening
   const handleCloseModal = () => {
+    lastClosedModalTimeRef.current = Date.now();
     setShowResultModal(false);
     if (activeSubmission) {
       DynamicWritingTaskService.saveActiveSubmission(
@@ -698,6 +701,9 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   };
 
   const handleOpenModal = () => {
+    if (Date.now() - lastClosedModalTimeRef.current < 400) {
+      return;
+    }
     if (activeSubmission) {
       setShowResultModal(true);
       DynamicWritingTaskService.saveActiveSubmission(

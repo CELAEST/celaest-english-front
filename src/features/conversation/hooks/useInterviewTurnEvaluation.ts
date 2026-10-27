@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CoreAiEvaluatorService } from "../services/coreAiEvaluatorService";
 import { ComprehensiveTurnFeedback } from "../services/masterAiFeedbackEngine";
 import { SpecificErrorItem, InterviewQuestionItem } from "../services/interviewEngineService";
-import { AudioCaptureService } from "../services/audioCaptureService";
+import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
@@ -156,8 +156,55 @@ export function useInterviewTurnEvaluation({
             }
           }
 
-          // If audio was captured via MediaRecorder, transcribe via Whisper AI for verbatim ESL accuracy
-          if (audioResult.audioBlob) {
+          // If Mobile Utterance-Window Engine already confirmed utterances, transcribe ONLY the unflushed tail
+          if (audioResult.confirmedMobileTranscript !== undefined && typeof customText !== "string") {
+            let mobileMerged = audioResult.confirmedMobileTranscript.trim() || textToSubmit;
+            if (audioResult.pendingTailBlob) {
+              setStatus("THINKING");
+              setProcessingStage("TRANSCRIBING");
+              try {
+                const tailResult = await AudioCaptureService.transcribeAudio(audioResult.pendingTailBlob, {
+                  roleName: effectiveRoleName,
+                  question: currentQuestion.question,
+                });
+                if (tailResult && tailResult.text.trim().length > 0) {
+                  mobileMerged = mobileMerged
+                    ? mergePhrasesCleanly(mobileMerged, tailResult.text.trim())
+                    : tailResult.text.trim();
+                  detectedLang = tailResult.language;
+                  lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+                  lastCapturedAudioRef.current.avgLogprob = tailResult.avgLogprob;
+                  lastCapturedAudioRef.current.noSpeechProb = tailResult.noSpeechProb;
+                }
+              } catch (err) {
+                logger.warn("Mobile tail transcription fallback on submit:", err);
+              }
+            } else if (!mobileMerged && audioResult.audioBlob) {
+              setStatus("THINKING");
+              setProcessingStage("TRANSCRIBING");
+              try {
+                const fullFallback = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
+                  roleName: effectiveRoleName,
+                  question: currentQuestion.question,
+                });
+                if (fullFallback && fullFallback.text.trim().length > 0) {
+                  mobileMerged = fullFallback.text.trim();
+                  detectedLang = fullFallback.language;
+                  lastCapturedAudioRef.current.detectedLanguage = detectedLang;
+                  lastCapturedAudioRef.current.avgLogprob = fullFallback.avgLogprob;
+                  lastCapturedAudioRef.current.noSpeechProb = fullFallback.noSpeechProb;
+                }
+              } catch (err) {
+                logger.warn("Mobile full fallback transcription on submit:", err);
+              }
+            }
+            if (mobileMerged) {
+              textToSubmit = mobileMerged;
+              setUserTranscript(textToSubmit);
+              userTranscriptRef.current = textToSubmit;
+            }
+          } else if (audioResult.audioBlob) {
+            // Desktop PC: If audio was captured via MediaRecorder, transcribe via Whisper AI for verbatim ESL accuracy
             setStatus("THINKING");
             setProcessingStage("TRANSCRIBING");
             try {

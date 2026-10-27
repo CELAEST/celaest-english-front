@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from "react";
+import { useKineticTranscriptStream } from "../hooks/useKineticTranscriptStream";
 
 export interface ConversationPromptAreaProps {
   currentQuestionText?: string;
@@ -35,13 +36,18 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
   onSubmitAnswer,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const displayedTranscript = useKineticTranscriptStream(
+    userTranscript,
+    Boolean(isListening) && !isTextareaFocused,
+  );
 
   // Auto-scroll textarea to bottom when speech is dictated
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
     }
-  }, [userTranscript]);
+  }, [displayedTranscript]);
 
   // Only trigger waiting mode if parent specifically marked this initial generation
   const isWaitingForQuestion =
@@ -241,7 +247,8 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
             </span>
             <span className="h-px w-8 bg-gradient-to-r from-white/20 to-transparent inline-block shrink-0" />
             {isListening && (
-              <span className="text-[10px] sm:text-[10.5px] font-medium tracking-[0.18em] uppercase font-sans text-white/45 select-none transition-opacity duration-200">
+              <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[10.5px] font-medium tracking-[0.18em] uppercase font-sans text-[#C084FC]/90 select-none transition-opacity duration-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A27FF3] animate-pulse shrink-0" aria-hidden="true" />
                 Live
               </span>
             )}
@@ -272,11 +279,13 @@ const ConversationPromptAreaInner: React.FC<ConversationPromptAreaProps> = ({
           id="interview-user-transcript"
           name="interviewUserTranscript"
           aria-label="Tu respuesta en inglés"
-          value={userTranscript}
+          value={displayedTranscript}
           spellCheck={false}
           autoCapitalize="sentences"
           autoComplete="off"
           autoCorrect="off"
+          onFocus={() => setIsTextareaFocused(true)}
+          onBlur={() => setIsTextareaFocused(false)}
           onChange={(e) => onTranscriptChange && onTranscriptChange(e.target.value)}
           onKeyDown={(e) => {
             // Prevent Space or other typing keys from leaking to global window listeners

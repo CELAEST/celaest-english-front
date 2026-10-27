@@ -171,8 +171,35 @@ export function useInterviewRecording({
       lastCapturedAudioRef.current = audioResult;
 
       let currentLive = (userTranscriptRef.current || "").trim();
-      // Safety net for brief (<1.8s) spoken phrases stopped before interim tick when Web Speech was deaf
-      if (
+      if (audioResult.confirmedMobileTranscript !== undefined) {
+        let baseMobile = audioResult.confirmedMobileTranscript.trim() || currentLive;
+        if (audioResult.pendingTailBlob) {
+          const tailRes = await AudioCaptureService.transcribeAudio(audioResult.pendingTailBlob, {
+            roleName: effectiveRoleName,
+            question: currentQuestionText,
+          });
+          if (tailRes?.text?.trim()) {
+            baseMobile = baseMobile
+              ? mergePhrasesCleanly(baseMobile, tailRes.text.trim())
+              : tailRes.text.trim();
+          }
+        } else if (
+          !baseMobile &&
+          audioResult.hadVoicedSpeech &&
+          audioResult.audioBlob &&
+          audioResult.audioBlob.size > 800
+        ) {
+          const fallbackRes = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
+            roleName: effectiveRoleName,
+            question: currentQuestionText,
+          });
+          if (fallbackRes?.text?.trim()) {
+            baseMobile = fallbackRes.text.trim();
+          }
+        }
+        currentLive = baseMobile;
+      } else if (
+        // Safety net for brief (<1.8s) spoken phrases stopped before interim tick when Web Speech was deaf
         !currentLive &&
         audioResult.hadVoicedSpeech &&
         audioResult.audioBlob &&

@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/v1/health",
+      "destination": "https://celaest-english-back.onrender.com/health"
+    },
+    {
       "source": "/api/v1/:path*",
       "destination": "https://celaest-english-back.onrender.com/api/v1/:path*"
     },

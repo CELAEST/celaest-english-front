@@ -116,6 +116,11 @@ export default defineConfig(({ command, mode }) => ({
     port: 3000,
     open: true,
     proxy: {
+      "/api/v1/health": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: () => "/health",
+      },
       "/api/v1": {
         target: "http://localhost:8080",
         changeOrigin: true,

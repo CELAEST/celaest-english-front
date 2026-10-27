@@ -13,6 +13,8 @@ import {
   isVirtualLoopbackMicLabel,
   measureAnalyserVoiceEnergy,
 } from "./audioHardwareSelector";
+import { transcribeWithGeminiEdge } from "./geminiAudioFallback";
+import { MobileLiveStreamEngine } from "./mobileLiveStreamEngine";
 import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
 
 export {
@@ -77,6 +79,8 @@ export interface AudioCaptureResult {
   audioUrl: string | null;
   durationSeconds: number;
   hadVoicedSpeech?: boolean | undefined;
+  confirmedMobileTranscript?: string | undefined;
+  pendingTailBlob?: Blob | null | undefined;
 }
 
 export interface AudioTranscriptionResult {
@@ -89,7 +93,8 @@ export interface AudioTranscriptionResult {
 
 /**
  * Detects whether the current device is a mobile phone or tablet.
- * Excludes Windows/Linux touchscreen laptops so desktop OSes always use native Web Speech live dictation.
+ * Excludes Windows touchscreen laptops so desktop OSes always use native Web Speech live dictation,
+ * while covering Android/iOS both in standard mobile UA and "Desktop site" mode (maxTouchPoints > 1).
  */
 export function isMobileDevice(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
@@ -97,13 +102,18 @@ export function isMobileDevice(): boolean {
   if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
     return true;
   }
+  const uaDataMobile = (navigator as unknown as { userAgentData?: { mobile?: boolean } })
+    .userAgentData?.mobile;
+  if (uaDataMobile === true) {
+    return true;
+  }
   if (/Windows NT/i.test(ua)) {
     return false;
   }
-  // iPadOS 13+ requests desktop sites with a Macintosh UA + multi-touch hardware (>1 touch points)
+  // Covers iPadOS 13+ (MacIntel + multi-touch) AND Android Chrome "Desktop site" (Linux x86_64 + multi-touch)
   return (
-    (/Macintosh|MacIntel/i.test(ua) || navigator.platform === "MacIntel") &&
-    navigator.maxTouchPoints > 1
+    navigator.maxTouchPoints > 1 &&
+    !("MSStream" in (window as unknown as Record<string, unknown>))
   );
 }
 
@@ -195,15 +205,23 @@ export class AudioCaptureService {
   private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Enterprise Adaptive Phrase-Chunked Whisper streaming & Desktop VAD fields
+  // Enterprise Adaptive Phrase-Chunked Whisper streaming, Mobile Utterance Engine & Desktop VAD fields
+  private static mobileStreamEngine: MobileLiveStreamEngine | null = null;
+  private static lastTranscribeAllProvidersFailed: boolean = false;
   private static interimInterval: ReturnType<typeof setInterval> | null = null;
   private static vadInterval: ReturnType<typeof setInterval> | null = null;
   private static isTranscribingInterim: boolean = false;
-  private static lastWebSpeechTimestamp: number = 0;
   private static webSpeechEmittedInSession: boolean = false;
   private static voicedFramesDetected: number = 0;
   private static hadVoicedSpeechInSession: boolean = false;
   private static desktopMicVerifiedOptimal: boolean = false;
+
+  /**
+   * Returns whether the last real transcribeAudio() call failed across all configured providers/proxies
+   */
+  public static didLastTranscribeFailAllProviders(): boolean {
+    return this.lastTranscribeAllProvidersFailed;
+  }
 
   /**
    * Returns whether native Web Speech Recognition API is supported in current browser
@@ -235,6 +253,37 @@ export class AudioCaptureService {
       const isMobile = isMobileDevice();
       const stream = await acquireOptimalMicStream(isMobile);
       this.desktopMicVerifiedOptimal = !isMobile;
+
+      if (isMobile) {
+        if (this.micStream && this.micStream !== stream) {
+          try {
+            this.micStream.getTracks().forEach((t) => t.stop());
+          } catch {
+            // ignore
+          }
+        }
+        this.micStream = stream;
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          try {
+            if (!this.audioContext || this.audioContext.state === "closed") {
+              this.audioContext = new AudioCtx();
+            }
+            // Do NOT force audioContext.resume() on Mobile: prevents iOS WebKit / Android AudioFlinger session hijack
+            const source = this.audioContext.createMediaStreamSource(stream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 128;
+            this.analyser.smoothingTimeConstant = 0.72;
+            source.connect(this.analyser);
+          } catch (ctxErr) {
+            logger.warn("Passive mobile AudioContext notice:", ctxErr);
+          }
+        }
+        return true;
+      }
+
       this.setMicStream(stream);
       return true;
     } catch (err) {
@@ -268,6 +317,7 @@ export class AudioCaptureService {
   public static hasActiveMic(): boolean {
     if (this.isListening) return true;
     if (!!this.recognizer) return true;
+    if (this.mobileStreamEngine) return true;
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") return true;
     if (!this.micStream || !this.micStream.active) return false;
     const tracks = this.micStream.getAudioTracks();
@@ -295,7 +345,7 @@ export class AudioCaptureService {
         if (!this.audioContext || this.audioContext.state === "closed") {
           this.audioContext = new AudioCtx();
         }
-        if (this.audioContext.state === "suspended") {
+        if (!isMobileDevice() && this.audioContext.state === "suspended") {
           void this.audioContext.resume();
         }
         const source = this.audioContext.createMediaStreamSource(stream);
@@ -381,20 +431,25 @@ export class AudioCaptureService {
     this.recordingStartTime = Date.now();
     const isMobile = isMobileDevice();
 
-    if (this.audioContext && this.audioContext.state === "suspended") {
+    if (this.mobileStreamEngine) {
+      this.mobileStreamEngine.stopImmediate();
+      this.mobileStreamEngine = null;
+    }
+
+    if (!isMobile && this.audioContext && this.audioContext.state === "suspended") {
       void this.audioContext.resume().catch(() => {});
     }
 
     // 1. Dual-Stream Audio Capture: Start MediaRecorder unconditionally across all devices (Desktop, iOS Safari, Android Chrome).
     // MediaRecorder runs continuously in the background collecting high-fidelity raw audio chunks for Whisper AI transcription.
     // This guarantees a 100% reliable safety net and produces the verídico audioBlob for final AI evaluation.
+    const preferredMimeType = getBestAudioMimeType();
     if (this.micStream && typeof MediaRecorder !== "undefined") {
       try {
-        const mimeType = getBestAudioMimeType();
         let recorder: MediaRecorder;
         try {
-          recorder = mimeType
-            ? new MediaRecorder(this.micStream, { mimeType })
+          recorder = preferredMimeType
+            ? new MediaRecorder(this.micStream, { mimeType: preferredMimeType })
             : new MediaRecorder(this.micStream);
         } catch {
           recorder = new MediaRecorder(this.micStream);
@@ -415,7 +470,6 @@ export class AudioCaptureService {
     this.isListening = true;
     this.confirmedHistory = (options.initialTranscript || "").trim();
     this.latestTranscript = this.confirmedHistory;
-    this.lastWebSpeechTimestamp = Date.now();
     this.isTranscribingInterim = false;
     this.webSpeechEmittedInSession = false;
     this.voicedFramesDetected = 0;
@@ -430,47 +484,53 @@ export class AudioCaptureService {
       this.vadInterval = null;
     }
 
+    let mobileEngineStarted = false;
+    let triggerExclusiveMobileWebSpeech: (() => void) | null = null;
+
     // Platform-Isolated Live Transcription Engine:
-    // - Mobile: Android HAL / iOS restricts concurrent MediaRecorder + Web Speech access, so AI chunked
-    //   transcription drives the live transcript every 2.5s (100% preserved mobile production behavior).
+    // - Mobile: Dedicated Utterance-Window Live Stream Engine (1.15s initial partial, 1.25s continuous stream,
+    //   instant 420ms micro-pause commit + O(1) segment rotation) WITHOUT concurrent SpeechRecognition HAL contention.
+    //   If all AI audio providers are unconfigured/unreachable on the phone, hands over cleanly to Exclusive Native Web Speech.
     // - Desktop PC: Native browser SpeechRecognition is primary (0 API calls during speech or silence).
     //   A lightweight 100ms acoustic VAD samples real hardware voice energy ONLY while Web Speech has emitted 0 words:
     //   * Silence / pauses -> 0 /transcribe calls (eliminates image.png spam).
     //   * Real human voice on physical mic + deaf Web Speech (e.g. virtual OS default mic like ASUS Utility, or Firefox/Brave)
     //     -> self-healing Whisper updates the live transcript ONLY during voiced speech windows.
     if (isMobile) {
-      this.interimInterval = setInterval(() => {
-        if (!this.isListening) return;
-        const timeSinceWebSpeech = Date.now() - this.lastWebSpeechTimestamp;
-        // If Web Speech emitted results within the last 2200ms, it is actively dictating (0 extra API calls needed)
-        if (timeSinceWebSpeech < 2200) return;
-        // If Web Speech is silent/blocked/dead, and we have audio recorded, transcribe interim chunks with Whisper
-        if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
-          const mime = getBestAudioMimeType() || "audio/webm";
-          const interimBlob = new Blob(this.recordedChunks, { type: mime });
-          if (interimBlob.size > 800) {
-            this.isTranscribingInterim = true;
-            void AudioCaptureService.transcribeAudio(interimBlob, {
-              roleName: options.roleName,
-              question: options.question,
-            })
-              .then((res) => {
-                if (!this.isListening) return;
-                if (res && res.text.trim()) {
-                  const text = res.text.trim();
-                  this.latestTranscript = text;
-                  options.onTranscript(text, false);
-                }
-              })
-              .catch(() => {
-                // ignore interim error, next interval will try with fuller audio
-              })
-              .finally(() => {
-                this.isTranscribingInterim = false;
-              });
-          }
+      if (this.micStream && typeof MediaRecorder !== "undefined") {
+        const engine = new MobileLiveStreamEngine({
+          micStream: this.micStream,
+          mimeType: preferredMimeType,
+          initialTranscript: options.initialTranscript,
+          roleName: options.roleName,
+          question: options.question,
+          getAnalyser: () => this.analyser,
+          mergePhrases: mergePhrasesCleanly,
+          transcribeFn: (blob, ctx) => AudioCaptureService.transcribeAudio(blob, ctx),
+          didAllProvidersFail: () => AudioCaptureService.didLastTranscribeFailAllProviders(),
+          onAllProvidersUnavailable: () => {
+            if (triggerExclusiveMobileWebSpeech) {
+              triggerExclusiveMobileWebSpeech();
+            }
+          },
+          onTranscript: (text, isFinal) => {
+            if (!this.isListening) return;
+            this.hadVoicedSpeechInSession = true;
+            this.latestTranscript = text;
+            options.onTranscript(text, isFinal);
+          },
+          onSpanishDetected: (message) => {
+            this.isListening = false;
+            if (options.onSpanishDetected) {
+              options.onSpanishDetected(message);
+            }
+          },
+        });
+        mobileEngineStarted = engine.start();
+        if (mobileEngineStarted) {
+          this.mobileStreamEngine = engine;
         }
-      }, 2500);
+      }
     } else {
       this.vadInterval = setInterval(() => {
         if (!this.isListening || this.webSpeechEmittedInSession) return;
@@ -581,7 +641,6 @@ export class AudioCaptureService {
         let currentSessionFinal = "";
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
-          this.lastWebSpeechTimestamp = Date.now();
           consecutiveNetworkErrors = 0;
           let currentFinal = "";
           let currentInterim = "";
@@ -747,6 +806,37 @@ export class AudioCaptureService {
       }
     };
 
+    if (isMobile && mobileEngineStarted) {
+      triggerExclusiveMobileWebSpeech = () => {
+        if (!this.isListening || !SpeechRecognitionAPI) return;
+        logger.info(
+          "[AudioCaptureService] Mobile AI audio providers unreachable; releasing MediaStream for Exclusive Native SpeechRecognition",
+        );
+        if (this.mobileStreamEngine) {
+          this.mobileStreamEngine.stopImmediate();
+          this.mobileStreamEngine = null;
+        }
+        if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+          try {
+            this.mediaRecorder.stop();
+          } catch {
+            // ignore
+          }
+          this.mediaRecorder = null;
+        }
+        this.recordedChunks = [];
+        this.releaseMicStream();
+        if (this.restartTimeout) clearTimeout(this.restartTimeout);
+        this.restartTimeout = setTimeout(() => {
+          if (this.isListening) {
+            createAndStartRecognizer();
+          }
+        }, 80);
+      };
+      // Do NOT start SpeechRecognition concurrently with MediaRecorder on Mobile (prevents Android/iOS HAL contention)
+      return null;
+    }
+
     return createAndStartRecognizer();
   }
 
@@ -755,6 +845,19 @@ export class AudioCaptureService {
    */
   public static async stopAndGetAudio(): Promise<AudioCaptureResult> {
     this.isListening = false;
+    let confirmedMobileTranscript: string | undefined;
+    let pendingTailBlob: Blob | null | undefined;
+    if (this.mobileStreamEngine) {
+      const engine = this.mobileStreamEngine;
+      this.mobileStreamEngine = null;
+      try {
+        const mobileStop = await engine.stopAndExtractTail();
+        confirmedMobileTranscript = mobileStop.latestCombinedTranscript;
+        pendingTailBlob = mobileStop.pendingTailBlob;
+      } catch {
+        // ignore
+      }
+    }
     if (this.interimInterval) {
       clearInterval(this.interimInterval);
       this.interimInterval = null;
@@ -799,14 +902,35 @@ export class AudioCaptureService {
         const blob = new Blob(this.recordedChunks, { type: mime });
         const url = URL.createObjectURL(blob);
         this.lastAudioUrl = url;
-        return { audioBlob: blob, audioUrl: url, durationSeconds, hadVoicedSpeech };
+        return {
+          audioBlob: blob,
+          audioUrl: url,
+          durationSeconds,
+          hadVoicedSpeech,
+          confirmedMobileTranscript,
+          pendingTailBlob,
+        };
       }
-      return { audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech };
+      return {
+        audioBlob: null,
+        audioUrl: null,
+        durationSeconds,
+        hadVoicedSpeech,
+        confirmedMobileTranscript,
+        pendingTailBlob,
+      };
     }
 
     return new Promise<AudioCaptureResult>((resolve) => {
       if (!this.mediaRecorder) {
-        resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
+        resolve({
+          audioBlob: null,
+          audioUrl: null,
+          durationSeconds,
+          hadVoicedSpeech,
+          confirmedMobileTranscript,
+          pendingTailBlob,
+        });
         return;
       }
 
@@ -817,32 +941,55 @@ export class AudioCaptureService {
           const url = URL.createObjectURL(blob);
           this.lastAudioUrl = url;
           this.mediaRecorder = null;
-          resolve({ audioBlob: blob, audioUrl: url, durationSeconds, hadVoicedSpeech });
+          resolve({
+            audioBlob: blob,
+            audioUrl: url,
+            durationSeconds,
+            hadVoicedSpeech,
+            confirmedMobileTranscript,
+            pendingTailBlob,
+          });
         } catch (err) {
           logger.warn("Error creating audio blob:", err);
-          resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
+          resolve({
+            audioBlob: null,
+            audioUrl: null,
+            durationSeconds,
+            hadVoicedSpeech,
+            confirmedMobileTranscript,
+            pendingTailBlob,
+          });
         }
       };
 
       try {
         this.mediaRecorder.stop();
       } catch {
-        resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
+        resolve({
+          audioBlob: null,
+          audioUrl: null,
+          durationSeconds,
+          hadVoicedSpeech,
+          confirmedMobileTranscript,
+          pendingTailBlob,
+        });
       }
     });
   }
 
   /**
-   * Transcribes recorded audio via Whisper Large V3 Turbo.
+   * Transcribes recorded audio via Whisper Large V3 Turbo / Edge Multimodal Audio.
    * Multi-Tier Architecture:
    * 1. Direct Edge Groq Whisper (client-to-cloud, ~150ms, zero server proxy bottleneck)
    * 2. Direct Edge OpenAI Whisper (fallback if user configured OpenAI key)
-   * 3. Backend Proxies (ENV.apiUrl / CELAEST-CORE) with multi-provider failover
+   * 3. Direct Edge Gemini Flash Audio (fallback if user configured Google Gemini key)
+   * 4. Backend Proxies (ENV.apiUrl / CELAEST-CORE) with multi-provider failover
    */
   public static async transcribeAudio(
     audioBlob: Blob,
     _context?: { roleName?: string | undefined; question?: string | undefined },
   ): Promise<AudioTranscriptionResult | null> {
+    this.lastTranscribeAllProvidersFailed = false;
     if (!audioBlob || audioBlob.size < 200) return null;
 
     const extension = audioBlob.type.includes("mp4")
@@ -980,7 +1127,19 @@ export class AudioCaptureService {
       logger.warn("[AudioCaptureService] Edge OpenAI Whisper attempt failed:", edgeOpenAiErr);
     }
 
-    // 3. Backend Proxies: Try apiUrl first, then direct Render backend, then coreAiUrl
+    // 3. Direct Edge Gemini Multimodal Audio (if user configured a Google Gemini key)
+    const geminiResult = await transcribeWithGeminiEdge(audioBlob, cleanVerbatimTranscription);
+    if (geminiResult.reachedProvider) {
+      if (geminiResult.text) {
+        return {
+          text: geminiResult.text,
+          language: "en",
+        };
+      }
+      return null;
+    }
+
+    // 4. Backend Proxies: Try apiUrl first, then direct Render backend, then coreAiUrl
     const candidateEndpoints: string[] = [];
     if (ENV.apiUrl) {
       candidateEndpoints.push(`${ENV.apiUrl}/interview/transcribe`);
@@ -1065,6 +1224,7 @@ export class AudioCaptureService {
       }
     }
 
+    this.lastTranscribeAllProvidersFailed = true;
     return null;
   }
 
@@ -1073,6 +1233,10 @@ export class AudioCaptureService {
    */
   public static stop(): void {
     this.isListening = false;
+    if (this.mobileStreamEngine) {
+      this.mobileStreamEngine.stopImmediate();
+      this.mobileStreamEngine = null;
+    }
     if (this.interimInterval) {
       clearInterval(this.interimInterval);
       this.interimInterval = null;

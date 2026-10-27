@@ -208,6 +208,7 @@ export class AudioCaptureService {
   // Enterprise Adaptive Phrase-Chunked Whisper streaming, Mobile Utterance Engine & Desktop VAD fields
   private static mobileStreamEngine: MobileLiveStreamEngine | null = null;
   private static lastTranscribeAllProvidersFailed: boolean = false;
+  private static lastFailedMobileKeyFingerprint: string | null = null;
   private static interimInterval: ReturnType<typeof setInterval> | null = null;
   private static vadInterval: ReturnType<typeof setInterval> | null = null;
   private static isTranscribingInterim: boolean = false;
@@ -215,6 +216,50 @@ export class AudioCaptureService {
   private static voicedFramesDetected: number = 0;
   private static hadVoicedSpeechInSession: boolean = false;
   private static desktopMicVerifiedOptimal: boolean = false;
+
+  private static getMobileAudioKeyFingerprintSync(): string {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
+    try {
+      let userId = "";
+      const rawUser = localStorage.getItem("lingua_auth_user");
+      if (rawUser) {
+        try {
+          userId = JSON.parse(rawUser)?.id || "";
+        } catch {
+          userId = "";
+        }
+      }
+      const prefixes = userId
+        ? [`celaest:user:${userId}:provider-key:`, "celaest:session:provider-key:"]
+        : ["celaest:session:provider-key:"];
+      const audioProviders = ["groq", "openai", "gemini"] as const;
+      const found: string[] = [];
+      for (const prefix of prefixes) {
+        for (const p of audioProviders) {
+          const val = localStorage.getItem(`${prefix}${p}`);
+          if (val && val.startsWith("v2:")) {
+            found.push(`${p}:${val.slice(0, 24)}`);
+          }
+        }
+      }
+      return found.join("|");
+    } catch {
+      return "";
+    }
+  }
+
+  /**
+   * Synchronously checks (0ms, preserving mobile tap gesture activation) whether this device
+   * has a local Edge AI audio key (Groq, OpenAI, or Gemini) that has not failed in this session.
+   */
+  public static hasLocalAudioTranscriptionKeySync(): boolean {
+    const fp = this.getMobileAudioKeyFingerprintSync();
+    if (!fp) return false;
+    if (this.lastFailedMobileKeyFingerprint && this.lastFailedMobileKeyFingerprint === fp) {
+      return false;
+    }
+    return true;
+  }
 
   /**
    * Returns whether the last real transcribeAudio() call failed across all configured providers/proxies
@@ -504,11 +549,20 @@ export class AudioCaptureService {
           initialTranscript: options.initialTranscript,
           roleName: options.roleName,
           question: options.question,
+          getRecordedBlob: () => {
+            if (this.recordedChunks.length === 0) return null;
+            const mime = this.mediaRecorder?.mimeType || preferredMimeType || "audio/webm";
+            return new Blob(this.recordedChunks, { type: mime });
+          },
           getAnalyser: () => this.analyser,
           mergePhrases: mergePhrasesCleanly,
           transcribeFn: (blob, ctx) => AudioCaptureService.transcribeAudio(blob, ctx),
           didAllProvidersFail: () => AudioCaptureService.didLastTranscribeFailAllProviders(),
           onAllProvidersUnavailable: () => {
+            const currentFp = AudioCaptureService.getMobileAudioKeyFingerprintSync();
+            if (currentFp) {
+              this.lastFailedMobileKeyFingerprint = currentFp;
+            }
             if (triggerExclusiveMobileWebSpeech) {
               triggerExclusiveMobileWebSpeech();
             }
@@ -1296,6 +1350,7 @@ export class AudioCaptureService {
    * Completely cleans up audio stream and object URLs on unmount
    */
   public static cleanup(): void {
+    this.lastFailedMobileKeyFingerprint = null;
     this.stop();
     if (this.lastAudioUrl) {
       try {

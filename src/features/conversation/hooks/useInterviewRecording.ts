@@ -1,6 +1,10 @@
 import { useRef, useCallback } from "react";
 import { SpeechSynthesisService } from "../services/speechSynthesisService";
-import { AudioCaptureService, mergePhrasesCleanly } from "../services/audioCaptureService";
+import {
+  AudioCaptureService,
+  isMobileDevice,
+  mergePhrasesCleanly,
+} from "../services/audioCaptureService";
 import { validateSpeechIntelligibility } from "../services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
@@ -81,26 +85,42 @@ export function useInterviewRecording({
       // ignore storage errors
     }
 
-    // Ensure hardware microphone stream is initialized across all devices (Desktop, iOS Safari, Android Chrome).
-    // Requesting getUserMedia on user tap guarantees proper browser origin permissions,
-    // connects AudioContext for real-time waveform animation, and fuels MediaRecorder for Whisper AI.
-    const hasReadyMic =
-      typeof AudioCaptureService.hasLiveMicStream === "function"
-        ? AudioCaptureService.hasLiveMicStream()
-        : AudioCaptureService.hasActiveMic();
-    if (!hasReadyMic) {
-      let granted = false;
-      try {
-        granted = await AudioCaptureService.initMicrophone();
-      } catch {
-        granted = false;
+    // Mobile Exclusive Speech Protocol (Incognito / Zero Local Audio Key):
+    // When on Mobile without a local Edge audio key (Groq/OpenAI/Gemini) and native SpeechRecognition is supported,
+    // DO NOT await getUserMedia() or open MediaRecorder:
+    // 1. Preserves 100% synchronous user-tap gesture activation required by iOS Safari & Android Chrome Incognito.
+    // 2. Prevents Android AudioFlinger / iOS AVAudioSession hardware mic locking so native SpeechRecognition streams live at 60fps.
+    const useExclusiveMobileWebSpeech =
+      isMobileDevice() &&
+      typeof AudioCaptureService.isSpeechRecognitionSupported === "function" &&
+      AudioCaptureService.isSpeechRecognitionSupported() &&
+      (typeof AudioCaptureService.hasLocalAudioTranscriptionKeySync !== "function" ||
+        !AudioCaptureService.hasLocalAudioTranscriptionKeySync());
+
+    if (useExclusiveMobileWebSpeech) {
+      if (typeof AudioCaptureService.releaseMicStream === "function") {
+        AudioCaptureService.releaseMicStream();
       }
-      if (!granted) {
-        if (isMountedRef.current) {
-          setStatus("IDLE");
-          setIsMicRecoveryModalOpen(true);
+    } else {
+      // Ensure hardware microphone stream is initialized across Desktop and Edge-AI Mobile sessions.
+      const hasReadyMic =
+        typeof AudioCaptureService.hasLiveMicStream === "function"
+          ? AudioCaptureService.hasLiveMicStream()
+          : AudioCaptureService.hasActiveMic();
+      if (!hasReadyMic) {
+        let granted = false;
+        try {
+          granted = await AudioCaptureService.initMicrophone();
+        } catch {
+          granted = false;
         }
-        return;
+        if (!granted) {
+          if (isMountedRef.current) {
+            setStatus("IDLE");
+            setIsMicRecoveryModalOpen(true);
+          }
+          return;
+        }
       }
     }
 

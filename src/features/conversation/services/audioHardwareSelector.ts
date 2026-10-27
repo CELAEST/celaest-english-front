@@ -30,14 +30,18 @@ export function isVirtualLoopbackMicLabel(label: string): boolean {
  */
 export async function acquireOptimalMicStream(isMobile: boolean): Promise<MediaStream> {
   if (isMobile) {
-    return navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: false,
-        channelCount: 1,
-      },
-    });
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
+    } catch {
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }
   }
 
   let stream = await navigator.mediaDevices.getUserMedia({

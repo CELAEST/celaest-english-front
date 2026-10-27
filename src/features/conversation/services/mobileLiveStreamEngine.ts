@@ -1,23 +1,20 @@
 /**
- * Mobile Utterance-Window Live Stream Engine
- * Isolated exclusively for Mobile (Android / iOS) to deliver ultra-fluid live transcription:
- * - Fast 1.15s initial partial + 1.25s continuous streaming while speaking
- * - Instant 420ms micro-pause utterance commit + segment recorder rotation (O(1) ~15-40KB payloads)
- * - Zero API calls during silence when AnalyserNode is active, with automatic time-based fallback if passive
+ * Mobile Hybrid Continuous + Micro-Pause Live Stream Engine
+ * Isolated exclusively for Mobile (Android / iOS) when Edge AI Audio keys are configured:
+ * - Operates on a SINGLE MediaRecorder stream (zero dual-MediaRecorder WebKit/Blink conflict)
+ * - Fast 1.1s initial live partial + 1.2s continuous streaming while speaking (never blocked by passive AnalyserNode)
+ * - Instant 420ms micro-pause flush + dynamic silence gate (0 calls during long pauses)
  */
 
 import { logger } from "../../../shared/utils/logger";
 import { measureAnalyserVoiceEnergy } from "./audioHardwareSelector";
 import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
 
-const MOBILE_VOICE_ONSET_THRESHOLD = 0.032;
 const TICK_MS = 80;
-const INITIAL_PARTIAL_VAD_MS = 1150;
-const PARTIAL_STEP_VAD_MS = 1250;
-const PASSIVE_FALLBACK_STEP_MS = 1350;
-const MICRO_PAUSE_COMMIT_MS = 420;
-const MIN_SPEECH_BEFORE_COMMIT_MS = 320;
-const MAX_UTTERANCE_DURATION_MS = 6500;
+const INITIAL_PARTIAL_MS = 1100;
+const CONTINUOUS_STEP_MS = 1200;
+const MICRO_PAUSE_FLUSH_MS = 420;
+const MIN_VOICED_FOR_PAUSE_MS = 240;
 
 export interface MobileStreamStopResult {
   confirmedTranscript: string;
@@ -31,6 +28,8 @@ export interface MobileLiveStreamOptions {
   initialTranscript?: string | undefined;
   roleName?: string | undefined;
   question?: string | undefined;
+  /** Optional external single-MediaRecorder blob provider to avoid dual MediaRecorder instances on mobile */
+  getRecordedBlob?: (() => Blob | null) | undefined;
   getAnalyser: () => AnalyserNode | null;
   mergePhrases: (history: string, nextPhrase: string) => string;
   transcribeFn: (
@@ -45,36 +44,67 @@ export interface MobileLiveStreamOptions {
 
 export class MobileLiveStreamEngine {
   private isActive = false;
-  private segmentRecorder: MediaRecorder | null = null;
-  private utteranceChunks: Blob[] = [];
-  private utteranceByteSize = 0;
-  private lastPartialByteSize = 0;
-  private lastPartialAt = 0;
-  private segmentStartedAt = 0;
-  private utteranceId = 0;
+  private internalRecorder: MediaRecorder | null = null;
+  private internalChunks: Blob[] = [];
+  private startedAt = 0;
+  private lastDispatchAt = 0;
+  private lastDispatchedByteSize = 0;
+  private lastCompletedByteSize = 0;
 
-  private analyserConfirmedAlive = false;
-  private utteranceVoicedMs = 0;
+  private noiseFloor = 0.008;
+  private peakEnergy = 0;
+  private dynamicSpeechPeaks = 0;
+  private voicedStreakMs = 0;
   private silenceAfterSpeechMs = 0;
-  private isPartialInFlight = false;
-  private providerUnavailableTriggered = false;
-  private pendingCommitPromises: Set<Promise<void>> = new Set();
+  private flushedAfterPause = false;
+  private unchangedCount = 0;
 
-  private confirmedHistory = "";
-  private activeUtteranceText = "";
+  private isInFlight = false;
+  private inFlightPromise: Promise<void> | null = null;
+  private providerUnavailableTriggered = false;
+
+  private initialPrefix = "";
+  private latestMergedText = "";
+
   private tickInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly opts: MobileLiveStreamOptions) {
-    this.confirmedHistory = (opts.initialTranscript || "").trim();
+    this.initialPrefix = (opts.initialTranscript || "").trim();
+    this.latestMergedText = this.initialPrefix;
   }
 
   public start(): boolean {
-    if (typeof MediaRecorder === "undefined") return false;
+    this.startedAt = Date.now();
+    this.lastDispatchAt = this.startedAt;
     this.isActive = true;
-    const started = this.startFreshSegmentRecorder();
-    if (!started) {
-      this.isActive = false;
-      return false;
+
+    if (!this.opts.getRecordedBlob) {
+      if (typeof MediaRecorder === "undefined") {
+        this.isActive = false;
+        return false;
+      }
+      try {
+        let recorder: MediaRecorder;
+        try {
+          recorder = this.opts.mimeType
+            ? new MediaRecorder(this.opts.micStream, { mimeType: this.opts.mimeType })
+            : new MediaRecorder(this.opts.micStream);
+        } catch {
+          recorder = new MediaRecorder(this.opts.micStream);
+        }
+        this.internalChunks = [];
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) {
+            this.internalChunks.push(ev.data);
+          }
+        };
+        recorder.start(100);
+        this.internalRecorder = recorder;
+      } catch (err) {
+        logger.warn("[MobileLiveStreamEngine] Internal MediaRecorder start notice:", err);
+        this.isActive = false;
+        return false;
+      }
     }
 
     this.tickInterval = setInterval(() => {
@@ -83,43 +113,17 @@ export class MobileLiveStreamEngine {
     return true;
   }
 
-  private startFreshSegmentRecorder(): boolean {
-    try {
-      let recorder: MediaRecorder;
-      try {
-        recorder = this.opts.mimeType
-          ? new MediaRecorder(this.opts.micStream, { mimeType: this.opts.mimeType })
-          : new MediaRecorder(this.opts.micStream);
-      } catch {
-        recorder = new MediaRecorder(this.opts.micStream);
-      }
-
-      this.utteranceId += 1;
-      const capturedId = this.utteranceId;
-      this.utteranceChunks = [];
-      this.utteranceByteSize = 0;
-      this.lastPartialByteSize = 0;
-      this.utteranceVoicedMs = 0;
-      this.silenceAfterSpeechMs = 0;
-      this.activeUtteranceText = "";
-      this.segmentStartedAt = Date.now();
-      this.lastPartialAt = this.segmentStartedAt;
-
-      recorder.ondataavailable = (ev) => {
-        if (capturedId !== this.utteranceId) return;
-        if (ev.data && ev.data.size > 0) {
-          this.utteranceChunks.push(ev.data);
-          this.utteranceByteSize += ev.data.size;
-        }
-      };
-
-      recorder.start(100);
-      this.segmentRecorder = recorder;
-      return true;
-    } catch (err) {
-      logger.warn("[MobileLiveStreamEngine] Segment MediaRecorder start notice:", err);
-      return false;
+  private currentBlob(): Blob | null {
+    if (this.opts.getRecordedBlob) {
+      return this.opts.getRecordedBlob();
     }
+    if (this.internalChunks.length === 0) return null;
+    const mime = this.internalRecorder?.mimeType || this.opts.mimeType || "audio/webm";
+    return new Blob(this.internalChunks, { type: mime });
+  }
+
+  private getSpeechThreshold(): number {
+    return Math.max(0.022, Math.min(0.045, this.noiseFloor * 2.1));
   }
 
   private onTick(): void {
@@ -127,73 +131,82 @@ export class MobileLiveStreamEngine {
 
     const now = Date.now();
     const energy = measureAnalyserVoiceEnergy(this.opts.getAnalyser());
+    const threshold = this.getSpeechThreshold();
 
-    if (energy >= MOBILE_VOICE_ONSET_THRESHOLD) {
-      this.analyserConfirmedAlive = true;
-      this.utteranceVoicedMs += TICK_MS;
+    if (energy >= threshold) {
+      this.peakEnergy = Math.max(this.peakEnergy, energy);
+      this.voicedStreakMs += TICK_MS;
       this.silenceAfterSpeechMs = 0;
-    } else if (this.utteranceVoicedMs > 0) {
-      this.silenceAfterSpeechMs += TICK_MS;
-    }
-
-    const segmentAge = now - this.segmentStartedAt;
-
-    // 1. Instant Micro-Pause Commit (420ms breath/pause after real voiced phrase)
-    if (
-      this.analyserConfirmedAlive &&
-      this.utteranceVoicedMs >= MIN_SPEECH_BEFORE_COMMIT_MS &&
-      this.silenceAfterSpeechMs >= MICRO_PAUSE_COMMIT_MS &&
-      this.utteranceByteSize > 600
-    ) {
-      this.rotateAndCommitSegment();
-      return;
-    }
-
-    // 2. Long Continuous Monologue Cap (6.5s) -> keeps uploads O(1) lightweight on mobile networks
-    if (segmentAge >= MAX_UTTERANCE_DURATION_MS && this.utteranceByteSize > 800) {
-      if (!this.analyserConfirmedAlive || this.utteranceVoicedMs >= MIN_SPEECH_BEFORE_COMMIT_MS) {
-        this.rotateAndCommitSegment();
-      } else {
-        // Pure silence for 6.5s -> reset empty buffer cleanly without API call
-        this.rotateSilentSegment();
+      this.flushedAfterPause = false;
+      this.unchangedCount = 0;
+      if (this.voicedStreakMs >= MIN_VOICED_FOR_PAUSE_MS) {
+        this.dynamicSpeechPeaks += 1;
       }
+    } else {
+      if (energy > 0) {
+        this.noiseFloor = this.noiseFloor * 0.92 + energy * 0.08;
+      }
+      if (this.voicedStreakMs > 0) {
+        this.silenceAfterSpeechMs += TICK_MS;
+      }
+    }
+
+    if (this.isInFlight) return;
+
+    const blob = this.currentBlob();
+    if (!blob || blob.size <= 600) return;
+
+    // 1. Instant 420ms Micro-Pause Flush: when speaker pauses after real voiced speech, flush immediately
+    if (
+      !this.flushedAfterPause &&
+      this.voicedStreakMs >= MIN_VOICED_FOR_PAUSE_MS &&
+      this.silenceAfterSpeechMs >= MICRO_PAUSE_FLUSH_MS &&
+      blob.size > this.lastDispatchedByteSize
+    ) {
+      this.flushedAfterPause = true;
+      this.voicedStreakMs = 0;
+      this.silenceAfterSpeechMs = 0;
+      this.dispatchTranscription(blob, now);
       return;
     }
 
-    // 3. Continuous Live Partial Update while user is actively speaking
-    if (this.isPartialInFlight || this.utteranceByteSize <= 800) return;
-
-    if (this.analyserConfirmedAlive) {
-      if (this.utteranceVoicedMs < 240) return;
-      const hasFirstPartial = this.lastPartialByteSize > 0;
-      const requiredElapsed = hasFirstPartial ? PARTIAL_STEP_VAD_MS : INITIAL_PARTIAL_VAD_MS;
-      if (now - this.lastPartialAt < requiredElapsed) return;
-      if (this.utteranceByteSize <= this.lastPartialByteSize + 300) return;
-    } else {
-      if (now - this.lastPartialAt < PASSIVE_FALLBACK_STEP_MS) return;
-      if (this.utteranceByteSize <= this.lastPartialByteSize) return;
+    // 2. Dynamic Silence Suppression: if AnalyserNode has confirmed dynamic contrast (real peaks vs quiet floor)
+    //    and we already flushed the pause, make 0 API calls while the room stays silent
+    const hasReliableDynamicVad =
+      this.dynamicSpeechPeaks >= 3 && this.peakEnergy > Math.max(0.026, this.noiseFloor * 2.0);
+    if (hasReliableDynamicVad && this.flushedAfterPause && energy < threshold) {
+      return;
     }
 
-    this.dispatchPartialTranscription(now);
+    // 3. Continuous Live Streaming while speaking (never blocked if AnalyserNode is passive/low-gain!)
+    if (blob.size <= this.lastDispatchedByteSize) return;
+    if (this.lastDispatchedByteSize > 0 && blob.size < this.lastDispatchedByteSize + 240) return;
+
+    const baseInterval = this.lastDispatchedByteSize === 0 ? INITIAL_PARTIAL_MS : CONTINUOUS_STEP_MS;
+    const adaptiveInterval =
+      this.unchangedCount >= 2
+        ? Math.min(3600, baseInterval + this.unchangedCount * 900)
+        : baseInterval;
+
+    if (now - this.lastDispatchAt < adaptiveInterval) return;
+
+    this.dispatchTranscription(blob, now);
   }
 
-  private dispatchPartialTranscription(now: number): void {
-    const targetUtteranceId = this.utteranceId;
-    const mime = this.segmentRecorder?.mimeType || this.opts.mimeType || "audio/webm";
-    const partialBlob = new Blob(this.utteranceChunks, { type: mime });
-    const snapshotBytes = this.utteranceByteSize;
+  private dispatchTranscription(blob: Blob, now: number): void {
+    const snapshotSize = blob.size;
+    this.lastDispatchAt = now;
+    this.lastDispatchedByteSize = snapshotSize;
+    this.isInFlight = true;
 
-    this.lastPartialAt = now;
-    this.lastPartialByteSize = snapshotBytes;
-    this.isPartialInFlight = true;
-
-    void this.opts
-      .transcribeFn(partialBlob, {
+    const p = this.opts
+      .transcribeFn(blob, {
         roleName: this.opts.roleName,
         question: this.opts.question,
       })
       .then((res) => {
         if (!this.isActive) return;
+
         if (
           res === null &&
           !this.providerUnavailableTriggered &&
@@ -204,133 +217,51 @@ export class MobileLiveStreamEngine {
           this.opts.onAllProvidersUnavailable();
           return;
         }
-        if (targetUtteranceId !== this.utteranceId) return;
-        const clean = res?.text?.trim() || "";
-        if (!clean) return;
-        this.activeUtteranceText = clean;
-        const combined = this.confirmedHistory
-          ? this.opts.mergePhrases(this.confirmedHistory, clean)
-          : clean;
-        if (this.checkSpanishGuard(combined)) return;
+
+        const spoken = res?.text?.trim() || "";
+        if (!spoken) {
+          this.unchangedCount += 1;
+          return;
+        }
+
+        this.lastCompletedByteSize = Math.max(this.lastCompletedByteSize, snapshotSize);
+        const combined = this.initialPrefix
+          ? this.opts.mergePhrases(this.initialPrefix, spoken)
+          : spoken;
+
+        if (combined === this.latestMergedText) {
+          this.unchangedCount += 1;
+          return;
+        }
+
+        this.unchangedCount = 0;
+        this.latestMergedText = combined;
+
+        const liveCheck = detectLiveSpanishOrFiller(combined);
+        if (liveCheck.isSpanishOrFiller) {
+          this.stopImmediate();
+          if (this.opts.onSpanishDetected) {
+            this.opts.onSpanishDetected(
+              liveCheck.message ||
+                "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista.",
+            );
+          }
+          return;
+        }
+
         this.opts.onTranscript(combined, false);
       })
       .catch(() => {
-        // ignore transient mobile network hiccup; next step or commit will recover
+        // transient cellular hiccup; next tick recovers cleanly
       })
       .finally(() => {
-        this.isPartialInFlight = false;
-      });
-  }
-
-  private rotateSilentSegment(): void {
-    const oldRecorder = this.segmentRecorder;
-    this.startFreshSegmentRecorder();
-    if (oldRecorder && oldRecorder.state !== "inactive") {
-      try {
-        oldRecorder.stop();
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  private rotateAndCommitSegment(): void {
-    const oldRecorder = this.segmentRecorder;
-    const chunksSnapshot = [...this.utteranceChunks];
-    const fallbackActiveText = this.activeUtteranceText;
-    const mime = oldRecorder?.mimeType || this.opts.mimeType || "audio/webm";
-
-    // Start next utterance recorder immediately (0ms gap during pause)
-    this.startFreshSegmentRecorder();
-
-    const commitPromise = new Promise<void>((resolve) => {
-      const finalizeBlob = (blob: Blob) => {
-        if (blob.size <= 600) {
-          if (fallbackActiveText) {
-            this.confirmedHistory = this.confirmedHistory
-              ? this.opts.mergePhrases(this.confirmedHistory, fallbackActiveText)
-              : fallbackActiveText;
-          }
-          resolve();
-          return;
+        this.isInFlight = false;
+        if (this.inFlightPromise === p) {
+          this.inFlightPromise = null;
         }
-        void this.opts
-          .transcribeFn(blob, {
-            roleName: this.opts.roleName,
-            question: this.opts.question,
-          })
-          .then((res) => {
-            if (
-              this.isActive &&
-              res === null &&
-              !fallbackActiveText &&
-              !this.providerUnavailableTriggered &&
-              this.opts.didAllProvidersFail?.() &&
-              this.opts.onAllProvidersUnavailable
-            ) {
-              this.providerUnavailableTriggered = true;
-              this.opts.onAllProvidersUnavailable();
-              return;
-            }
-            const phrase = res?.text?.trim() || fallbackActiveText;
-            if (phrase) {
-              this.confirmedHistory = this.confirmedHistory
-                ? this.opts.mergePhrases(this.confirmedHistory, phrase)
-                : phrase;
-              if (this.isActive && !this.checkSpanishGuard(this.confirmedHistory)) {
-                const display = this.activeUtteranceText
-                  ? this.opts.mergePhrases(this.confirmedHistory, this.activeUtteranceText)
-                  : this.confirmedHistory;
-                this.opts.onTranscript(display, false);
-              }
-            }
-          })
-          .catch(() => {
-            if (fallbackActiveText) {
-              this.confirmedHistory = this.confirmedHistory
-                ? this.opts.mergePhrases(this.confirmedHistory, fallbackActiveText)
-                : fallbackActiveText;
-            }
-          })
-          .finally(() => resolve());
-      };
+      });
 
-      if (!oldRecorder || oldRecorder.state === "inactive") {
-        finalizeBlob(new Blob(chunksSnapshot, { type: mime }));
-        return;
-      }
-
-      const finalChunks = chunksSnapshot;
-      oldRecorder.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) finalChunks.push(ev.data);
-      };
-      oldRecorder.onstop = () => {
-        finalizeBlob(new Blob(finalChunks, { type: mime }));
-      };
-      try {
-        oldRecorder.stop();
-      } catch {
-        finalizeBlob(new Blob(finalChunks, { type: mime }));
-      }
-    });
-
-    this.pendingCommitPromises.add(commitPromise);
-    void commitPromise.finally(() => {
-      this.pendingCommitPromises.delete(commitPromise);
-    });
-  }
-
-  private checkSpanishGuard(text: string): boolean {
-    const liveCheck = detectLiveSpanishOrFiller(text);
-    if (!liveCheck.isSpanishOrFiller) return false;
-    this.stopImmediate();
-    if (this.opts.onSpanishDetected) {
-      this.opts.onSpanishDetected(
-        liveCheck.message ||
-          "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista.",
-      );
-    }
-    return true;
+    this.inFlightPromise = p;
   }
 
   public stopImmediate(): void {
@@ -339,71 +270,64 @@ export class MobileLiveStreamEngine {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
-    if (this.segmentRecorder && this.segmentRecorder.state !== "inactive") {
+    if (this.internalRecorder && this.internalRecorder.state !== "inactive") {
       try {
-        this.segmentRecorder.stop();
+        this.internalRecorder.stop();
       } catch {
         // ignore
       }
     }
-    this.segmentRecorder = null;
+    this.internalRecorder = null;
   }
 
   public async stopAndExtractTail(): Promise<MobileStreamStopResult> {
-    this.isActive = false;
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
 
-    const activeRec = this.segmentRecorder;
-    this.segmentRecorder = null;
-    const mime = activeRec?.mimeType || this.opts.mimeType || "audio/webm";
-    const hadUnflushedSpeech = this.analyserConfirmedAlive
-      ? this.utteranceVoicedMs >= 160 && this.utteranceByteSize > this.lastPartialByteSize
-      : this.utteranceByteSize > this.lastPartialByteSize || !this.activeUtteranceText;
-
-    let tailBlob: Blob | null = null;
-    if (activeRec && activeRec.state !== "inactive") {
-      tailBlob = await new Promise<Blob | null>((resolve) => {
-        activeRec.onstop = () => {
-          const b = new Blob(this.utteranceChunks, { type: mime });
+    let finalInternalBlob: Blob | null = null;
+    if (this.internalRecorder && this.internalRecorder.state !== "inactive") {
+      const rec = this.internalRecorder;
+      this.internalRecorder = null;
+      const mime = rec.mimeType || this.opts.mimeType || "audio/webm";
+      finalInternalBlob = await new Promise<Blob | null>((resolve) => {
+        rec.onstop = () => {
+          const b = new Blob(this.internalChunks, { type: mime });
           resolve(b.size > 600 ? b : null);
         };
         try {
-          activeRec.stop();
+          rec.stop();
         } catch {
-          const b = new Blob(this.utteranceChunks, { type: mime });
+          const b = new Blob(this.internalChunks, { type: mime });
           resolve(b.size > 600 ? b : null);
         }
       });
-    } else if (this.utteranceChunks.length > 0) {
-      const b = new Blob(this.utteranceChunks, { type: mime });
-      tailBlob = b.size > 600 ? b : null;
     }
 
-    // Wait briefly (max 1.2s) if a recent pause-commit request is finishing in flight
-    if (this.pendingCommitPromises.size > 0) {
+    // Allow an already-running partial/pause commit up to 1.2s to settle before deciding whether a tail call is needed
+    if (this.inFlightPromise) {
       await Promise.race([
-        Promise.allSettled(Array.from(this.pendingCommitPromises)),
+        this.inFlightPromise.catch(() => {}),
         new Promise<void>((r) => setTimeout(r, 1200)),
       ]);
     }
+    this.isActive = false;
 
-    const latestCombined = this.activeUtteranceText
-      ? this.confirmedHistory
-        ? this.opts.mergePhrases(this.confirmedHistory, this.activeUtteranceText)
-        : this.activeUtteranceText
-      : this.confirmedHistory;
-
-    const needsTailTranscription = Boolean(
-      tailBlob && (hadUnflushedSpeech || (!latestCombined && (!this.analyserConfirmedAlive || this.utteranceVoicedMs >= 160))),
+    const latestBlob = finalInternalBlob || this.currentBlob();
+    const hasReliableDynamicVad =
+      this.dynamicSpeechPeaks >= 3 && this.peakEnergy > Math.max(0.026, this.noiseFloor * 2.0);
+    const hasUnflushedAudio = Boolean(
+      latestBlob &&
+        latestBlob.size > 600 &&
+        !(hasReliableDynamicVad && this.flushedAfterPause && this.voicedStreakMs === 0) &&
+        (latestBlob.size > this.lastCompletedByteSize + 350 || !this.latestMergedText),
     );
 
     return {
-      confirmedTranscript: this.confirmedHistory,
-      latestCombinedTranscript: latestCombined,
-      pendingTailBlob: needsTailTranscription ? tailBlob : null,
+      confirmedTranscript: this.latestMergedText,
+      latestCombinedTranscript: this.latestMergedText,
+      pendingTailBlob: hasUnflushedAudio ? latestBlob : null,
     };
   }
 }

@@ -363,4 +363,102 @@ describe("MobileLiveStreamEngine & Mobile Platform Resilience", () => {
     Object.defineProperty(navigator, "maxTouchPoints", { value: 10, configurable: true });
     expect(isMobileDevice()).toBe(false);
   });
+
+  it("never deadlocks after an 80ms screen-tap spike and spawns ONLY ONE MediaRecorder on mobile", async () => {
+    vi.useFakeTimers();
+
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+      configurable: true,
+    });
+
+    let recorderInstancesCreated = 0;
+    const recHolder: {
+      current: { pushBytes: (n: number) => void } | null;
+    } = { current: null };
+
+    class SingleCheckMediaRecorder {
+      state = "inactive";
+      mimeType = "audio/mp4";
+      ondataavailable: ((e: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      static isTypeSupported = () => true;
+      constructor() {
+        recorderInstancesCreated += 1;
+      }
+      start() {
+        this.state = "recording";
+        recHolder.current = this;
+      }
+      stop() {
+        this.state = "inactive";
+        if (this.onstop) this.onstop();
+      }
+      pushBytes(n: number) {
+        if (this.ondataavailable) {
+          this.ondataavailable({ data: new Blob([new Uint8Array(n)], { type: "audio/mp4" }) });
+        }
+      }
+    }
+    (globalThis as unknown as { MediaRecorder: unknown }).MediaRecorder = SingleCheckMediaRecorder;
+
+    const mockStream = {
+      active: true,
+      getAudioTracks: () => [{ readyState: "live", enabled: true, stop: vi.fn() }],
+      getTracks: () => [{ readyState: "live", enabled: true, stop: vi.fn() }],
+    } as unknown as MediaStream;
+
+    AudioCaptureService.setMicStream(mockStream);
+
+    // Simulate 1-tick finger tap spike (50) followed by quiet un-amplified mobile speech (4)
+    let tickNum = 0;
+    Object.assign(AudioCaptureService, {
+      analyser: {
+        frequencyBinCount: 64,
+        getByteFrequencyData: (arr: Uint8Array) => {
+          arr.fill(tickNum === 0 ? 50 : 4);
+          tickNum += 1;
+        },
+      },
+    });
+
+    const transcribeSpy = vi
+      .spyOn(AudioCaptureService, "transcribeAudio")
+      .mockResolvedValueOnce({ text: "I handle daily logistics" })
+      .mockResolvedValueOnce({ text: "I handle daily logistics across five clinics" });
+
+    const onTranscript = vi.fn();
+    AudioCaptureService.startRecognition({
+      lang: "en-US",
+      onTranscript,
+    });
+
+    // CRITICAL: Must create ONLY 1 MediaRecorder instance on mobile (never 2!)
+    expect(recorderInstancesCreated).toBe(1);
+
+    recHolder.current?.pushBytes(1600);
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(onTranscript).toHaveBeenLastCalledWith("I handle daily logistics", false);
+
+    recHolder.current?.pushBytes(1600);
+    await vi.advanceTimersByTimeAsync(1300);
+    expect(onTranscript).toHaveBeenLastCalledWith(
+      "I handle daily logistics across five clinics",
+      false,
+    );
+    expect(transcribeSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("synchronously detects Incognito / zero local audio keys vs sealed BYOK audio keys on mobile", () => {
+    localStorage.clear();
+    expect(AudioCaptureService.hasLocalAudioTranscriptionKeySync()).toBe(false);
+
+    localStorage.setItem("celaest:session:provider-key:deepseek", "v2:encrypted_deepseek_only");
+    // Text-only providers (DeepSeek) do NOT offer Whisper/audio transcription -> still false!
+    expect(AudioCaptureService.hasLocalAudioTranscriptionKeySync()).toBe(false);
+
+    localStorage.setItem("celaest:session:provider-key:groq", "v2:encrypted_groq_audio_key");
+    expect(AudioCaptureService.hasLocalAudioTranscriptionKeySync()).toBe(true);
+    localStorage.clear();
+  });
 });

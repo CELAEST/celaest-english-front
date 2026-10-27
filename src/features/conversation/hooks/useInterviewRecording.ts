@@ -84,7 +84,11 @@ export function useInterviewRecording({
     // Ensure hardware microphone stream is initialized across all devices (Desktop, iOS Safari, Android Chrome).
     // Requesting getUserMedia on user tap guarantees proper browser origin permissions,
     // connects AudioContext for real-time waveform animation, and fuels MediaRecorder for Whisper AI.
-    if (!AudioCaptureService.hasActiveMic()) {
+    const hasReadyMic =
+      typeof AudioCaptureService.hasLiveMicStream === "function"
+        ? AudioCaptureService.hasLiveMicStream()
+        : AudioCaptureService.hasActiveMic();
+    if (!hasReadyMic) {
       let granted = false;
       try {
         granted = await AudioCaptureService.initMicrophone();
@@ -131,7 +135,11 @@ export function useInterviewRecording({
           errCode.includes("not-allowed") ||
           errCode.includes("NotAllowedError")
         ) {
-          if (AudioCaptureService.hasActiveMic()) return;
+          const hasReadyStream =
+            typeof AudioCaptureService.hasLiveMicStream === "function"
+              ? AudioCaptureService.hasLiveMicStream()
+              : AudioCaptureService.hasActiveMic();
+          if (hasReadyStream) return;
           if (isMountedRef.current) {
             setStatus("IDLE");
             setIsMicRecoveryModalOpen(true);
@@ -162,7 +170,23 @@ export function useInterviewRecording({
       const audioResult = await AudioCaptureService.stopAndGetAudio();
       lastCapturedAudioRef.current = audioResult;
 
-      const currentLive = (userTranscriptRef.current || "").trim();
+      let currentLive = (userTranscriptRef.current || "").trim();
+      // Safety net for brief (<1.8s) spoken phrases stopped before interim tick when Web Speech was deaf
+      if (
+        !currentLive &&
+        audioResult.hadVoicedSpeech &&
+        audioResult.audioBlob &&
+        audioResult.audioBlob.size > 800
+      ) {
+        const fallbackRes = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
+          roleName: effectiveRoleName,
+          question: currentQuestionText,
+        });
+        if (fallbackRes?.text?.trim()) {
+          currentLive = fallbackRes.text.trim();
+        }
+      }
+
       if (currentLive) {
         const validation = validateSpeechIntelligibility(
           currentLive,
@@ -202,6 +226,8 @@ export function useInterviewRecording({
     }
   }, [
     status,
+    effectiveRoleName,
+    currentQuestionText,
     activeCefrLevel,
     onTurnTranscribed,
     setStatus,

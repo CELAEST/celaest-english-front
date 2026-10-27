@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, Volume2, CheckCircle2, ShieldAlert } from "lucide-react";
-import { AudioCaptureService } from "../services/audioCaptureService";
+import { AudioCaptureService, acquireOptimalMicStream, isMobileDevice } from "../services/audioCaptureService";
 import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 export interface MicHardwareRecoveryModalProps {
@@ -166,14 +166,8 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
         return;
       }
 
-      // Solicitud real al hardware del sistema operativo a través del navegador
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-        },
-      });
+      // Solicitud real al hardware óptimo del sistema operativo (evita wrappers virtuales mudos como ASUS Utility)
+      const stream = await acquireOptimalMicStream(isMobileDevice());
 
       streamRef.current = stream;
       const track = stream.getAudioTracks()[0];
@@ -185,6 +179,9 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") {
+        void audioCtx.resume().catch(() => {});
+      }
       audioCtxRef.current = audioCtx;
 
       const analyser = audioCtx.createAnalyser();
@@ -280,7 +277,9 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
 
   const handleResume = () => {
     if (streamRef.current) {
-      AudioCaptureService.setMicStream(streamRef.current);
+      const activeStream = streamRef.current;
+      streamRef.current = null;
+      AudioCaptureService.setMicStream(activeStream);
     }
     onResume();
   };

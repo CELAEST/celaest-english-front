@@ -7,7 +7,20 @@
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import {
+  acquireOptimalMicStream,
+  DESKTOP_SPEECH_ENERGY_THRESHOLD,
+  isVirtualLoopbackMicLabel,
+  measureAnalyserVoiceEnergy,
+} from "./audioHardwareSelector";
 import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
+
+export {
+  acquireOptimalMicStream,
+  DESKTOP_SPEECH_ENERGY_THRESHOLD,
+  isVirtualLoopbackMicLabel,
+  measureAnalyserVoiceEnergy,
+};
 
 export interface SpeechRecognitionResultItem {
   transcript: string;
@@ -63,6 +76,7 @@ export interface AudioCaptureResult {
   audioBlob: Blob | null;
   audioUrl: string | null;
   durationSeconds: number;
+  hadVoicedSpeech?: boolean | undefined;
 }
 
 export interface AudioTranscriptionResult {
@@ -74,14 +88,31 @@ export interface AudioTranscriptionResult {
 }
 
 /**
- * Detects whether the current device is a mobile phone or tablet
+ * Detects whether the current device is a mobile phone or tablet.
+ * Excludes Windows/Linux touchscreen laptops so desktop OSes always use native Web Speech live dictation.
  */
 export function isMobileDevice(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return true;
+  }
+  if (/Windows NT/i.test(ua)) {
+    return false;
+  }
+  // iPadOS 13+ requests desktop sites with a Macintosh UA + multi-touch hardware (>1 touch points)
   return (
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints > 1 && !("MSStream" in (window as unknown as Record<string, unknown>)))
+    (/Macintosh|MacIntel/i.test(ua) || navigator.platform === "MacIntel") &&
+    navigator.maxTouchPoints > 1
   );
+}
+
+/**
+ * Determines whether live interim transcription should be powered by AI chunked streaming (Mobile / non-WebSpeech)
+ * or exclusively by the browser's native SpeechRecognition engine (Desktop PC).
+ */
+export function shouldUseAiLiveTranscription(isMobile: boolean, hasWebSpeechApi: boolean): boolean {
+  return isMobile || !hasWebSpeechApi;
 }
 
 /**
@@ -140,8 +171,9 @@ export function mergePhrasesCleanly(history: string, newPhrase: string): string 
 export function cleanVerbatimTranscription(rawText: string): string {
   if (!rawText) return "";
   let text = rawText.trim();
-  // Strip Whisper prompt regurgitations or hallucinated interview metadata
+  // Strip Whisper prompt regurgitations or hallucinated interview metadata across any dynamic role
   text = text.replace(/interview\s+(response|answer)\s+in\s+english\s*(answering\s*:?)?/gi, "");
+  text = text.replace(/^(professional\s+)?english\s+interview\s+(response|answer)(\s+for\s+[^.?!]+)?[.?!]?$/gi, "");
   // Strip common Whisper silence/closing hallucinations
   text = text.replace(/^(thank you(\s+for watching)?\.?|subtitles? by.*|transcription by.*|watching\.?)$/gi, "");
   return text.replace(/\s+/g, " ").trim();
@@ -163,10 +195,15 @@ export class AudioCaptureService {
   private static latestTranscript: string = "";
   private static restartTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Enterprise Adaptive Phrase-Chunked Whisper streaming fields
+  // Enterprise Adaptive Phrase-Chunked Whisper streaming & Desktop VAD fields
   private static interimInterval: ReturnType<typeof setInterval> | null = null;
+  private static vadInterval: ReturnType<typeof setInterval> | null = null;
   private static isTranscribingInterim: boolean = false;
   private static lastWebSpeechTimestamp: number = 0;
+  private static webSpeechEmittedInSession: boolean = false;
+  private static voicedFramesDetected: number = 0;
+  private static hadVoicedSpeechInSession: boolean = false;
+  private static desktopMicVerifiedOptimal: boolean = false;
 
   /**
    * Returns whether native Web Speech Recognition API is supported in current browser
@@ -187,7 +224,7 @@ export class AudioCaptureService {
   }
 
   /**
-   * Requests microphone permission and initializes live audio analyser
+   * Requests microphone permission, selects optimal hardware input, and initializes live audio analyser
    */
   public static async initMicrophone(): Promise<boolean> {
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
@@ -195,33 +232,34 @@ export class AudioCaptureService {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-          channelCount: 1,
-        },
-      });
-      this.micStream = stream;
-
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        this.audioContext = new AudioCtx();
-        const source = this.audioContext.createMediaStreamSource(stream);
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 128;
-        this.analyser.smoothingTimeConstant = 0.72;
-        source.connect(this.analyser);
-      }
-
+      const isMobile = isMobileDevice();
+      const stream = await acquireOptimalMicStream(isMobile);
+      this.desktopMicVerifiedOptimal = !isMobile;
+      this.setMicStream(stream);
       return true;
     } catch (err) {
       logger.warn("Microphone access permission notice:", err);
       return false;
     }
+  }
+
+  /**
+   * Returns whether a physical live MediaStream track is actively connected (independent of recognizer flags)
+   */
+  public static hasLiveMicStream(): boolean {
+    if (!this.micStream || !this.micStream.active) return false;
+    const tracks = this.micStream.getAudioTracks();
+    if (tracks.length === 0) return false;
+    const hasLiveTrack = tracks.some((t) => t.readyState === "live" && t.enabled !== false);
+    if (!hasLiveTrack) return false;
+    if (
+      !isMobileDevice() &&
+      !this.desktopMicVerifiedOptimal &&
+      tracks.some((t) => Boolean(t.label) && isVirtualLoopbackMicLabel(t.label))
+    ) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -343,6 +381,10 @@ export class AudioCaptureService {
     this.recordingStartTime = Date.now();
     const isMobile = isMobileDevice();
 
+    if (this.audioContext && this.audioContext.state === "suspended") {
+      void this.audioContext.resume().catch(() => {});
+    }
+
     // 1. Dual-Stream Audio Capture: Start MediaRecorder unconditionally across all devices (Desktop, iOS Safari, Android Chrome).
     // MediaRecorder runs continuously in the background collecting high-fidelity raw audio chunks for Whisper AI transcription.
     // This guarantees a 100% reliable safety net and produces the verídico audioBlob for final AI evaluation.
@@ -375,52 +417,133 @@ export class AudioCaptureService {
     this.latestTranscript = this.confirmedHistory;
     this.lastWebSpeechTimestamp = Date.now();
     this.isTranscribingInterim = false;
+    this.webSpeechEmittedInSession = false;
+    this.voicedFramesDetected = 0;
+    this.hadVoicedSpeechInSession = false;
 
     if (this.interimInterval) {
       clearInterval(this.interimInterval);
       this.interimInterval = null;
     }
+    if (this.vadInterval) {
+      clearInterval(this.vadInterval);
+      this.vadInterval = null;
+    }
 
-    // Enterprise Adaptive Phrase-Chunked Whisper Timer:
-    // If Web Speech is inactive, silent, or blocked by Android HAL / iOS restrictions,
-    // this timer automatically transcribes accumulated audio from MediaRecorder every 2.5s via Groq Whisper Turbo.
-    this.interimInterval = setInterval(() => {
-      if (!this.isListening) return;
-      const timeSinceWebSpeech = Date.now() - this.lastWebSpeechTimestamp;
-      // If Web Speech emitted results within the last 2200ms, it is actively dictating (0 extra API calls needed)
-      if (timeSinceWebSpeech < 2200) return;
-      // If Web Speech is silent/blocked/dead, and we have audio recorded, transcribe interim chunks with Whisper
-      if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
-        const mime = getBestAudioMimeType() || "audio/webm";
-        const interimBlob = new Blob(this.recordedChunks, { type: mime });
-        if (interimBlob.size > 800) {
-          this.isTranscribingInterim = true;
-          void AudioCaptureService.transcribeAudio(interimBlob, {
-            roleName: options.roleName,
-            question: options.question,
-          })
-            .then((res) => {
-              if (res && res.text.trim()) {
-                const text = res.text.trim();
-                this.latestTranscript = text;
-                options.onTranscript(text, false);
-              }
+    // Platform-Isolated Live Transcription Engine:
+    // - Mobile: Android HAL / iOS restricts concurrent MediaRecorder + Web Speech access, so AI chunked
+    //   transcription drives the live transcript every 2.5s (100% preserved mobile production behavior).
+    // - Desktop PC: Native browser SpeechRecognition is primary (0 API calls during speech or silence).
+    //   A lightweight 100ms acoustic VAD samples real hardware voice energy ONLY while Web Speech has emitted 0 words:
+    //   * Silence / pauses -> 0 /transcribe calls (eliminates image.png spam).
+    //   * Real human voice on physical mic + deaf Web Speech (e.g. virtual OS default mic like ASUS Utility, or Firefox/Brave)
+    //     -> self-healing Whisper updates the live transcript ONLY during voiced speech windows.
+    if (isMobile) {
+      this.interimInterval = setInterval(() => {
+        if (!this.isListening) return;
+        const timeSinceWebSpeech = Date.now() - this.lastWebSpeechTimestamp;
+        // If Web Speech emitted results within the last 2200ms, it is actively dictating (0 extra API calls needed)
+        if (timeSinceWebSpeech < 2200) return;
+        // If Web Speech is silent/blocked/dead, and we have audio recorded, transcribe interim chunks with Whisper
+        if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
+          const mime = getBestAudioMimeType() || "audio/webm";
+          const interimBlob = new Blob(this.recordedChunks, { type: mime });
+          if (interimBlob.size > 800) {
+            this.isTranscribingInterim = true;
+            void AudioCaptureService.transcribeAudio(interimBlob, {
+              roleName: options.roleName,
+              question: options.question,
             })
-            .catch(() => {
-              // ignore interim error, next interval will try with fuller audio
-            })
-            .finally(() => {
-              this.isTranscribingInterim = false;
-            });
+              .then((res) => {
+                if (!this.isListening) return;
+                if (res && res.text.trim()) {
+                  const text = res.text.trim();
+                  this.latestTranscript = text;
+                  options.onTranscript(text, false);
+                }
+              })
+              .catch(() => {
+                // ignore interim error, next interval will try with fuller audio
+              })
+              .finally(() => {
+                this.isTranscribingInterim = false;
+              });
+          }
         }
-      }
-    }, 2500);
+      }, 2500);
+    } else {
+      this.vadInterval = setInterval(() => {
+        if (!this.isListening || this.webSpeechEmittedInSession) return;
+        const energy = measureAnalyserVoiceEnergy(this.analyser);
+        if (energy >= DESKTOP_SPEECH_ENERGY_THRESHOLD) {
+          this.voicedFramesDetected += 1;
+          if (this.voicedFramesDetected >= 2) {
+            this.hadVoicedSpeechInSession = true;
+          }
+        }
+      }, 100);
+
+      const useDirectAiFallback = shouldUseAiLiveTranscription(false, Boolean(SpeechRecognitionAPI));
+      this.interimInterval = setInterval(() => {
+        if (!this.isListening || this.webSpeechEmittedInSession) return;
+        const hasConfirmedVoice = useDirectAiFallback
+          ? this.analyser
+            ? this.voicedFramesDetected >= 2
+            : true
+          : this.voicedFramesDetected >= 2;
+        if (!hasConfirmedVoice) return;
+
+        if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
+          const mime = getBestAudioMimeType() || "audio/webm";
+          const interimBlob = new Blob(this.recordedChunks, { type: mime });
+          if (interimBlob.size > 800) {
+            this.voicedFramesDetected = 0;
+            this.isTranscribingInterim = true;
+            const initialPrefix = (options.initialTranscript || "").trim();
+            void AudioCaptureService.transcribeAudio(interimBlob, {
+              roleName: options.roleName,
+              question: options.question,
+            })
+              .then((res) => {
+                if (!this.isListening || this.webSpeechEmittedInSession) return;
+                if (res && res.text.trim()) {
+                  const segmentText = res.text.trim();
+                  const combined = initialPrefix
+                    ? mergePhrasesCleanly(initialPrefix, segmentText)
+                    : segmentText;
+                  const liveCheck = detectLiveSpanishOrFiller(combined);
+                  if (liveCheck.isSpanishOrFiller) {
+                    this.isListening = false;
+                    if (options.onSpanishDetected) {
+                      options.onSpanishDetected(
+                        liveCheck.message ||
+                          "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista.",
+                      );
+                    }
+                    return;
+                  }
+                  this.latestTranscript = combined;
+                  options.onTranscript(combined, false);
+                }
+              })
+              .catch(() => {
+                // ignore interim error
+              })
+              .finally(() => {
+                this.isTranscribingInterim = false;
+              });
+          }
+        }
+      }, 1800);
+    }
 
     // 2. Prepare Web Speech Recognition (Instant 60fps streaming preview)
     if (!SpeechRecognitionAPI) {
-      logger.info("[AudioCaptureService] Web Speech API not present; audio will transcribe on turn finish via Whisper.");
+      logger.info("[AudioCaptureService] Web Speech API not present; audio will transcribe via VAD-gated Whisper.");
       return null;
     }
+
+    let consecutiveNetworkErrors = 0;
 
     const createAndStartRecognizer = (): SpeechRecognitionInstance | null => {
       try {
@@ -459,6 +582,7 @@ export class AudioCaptureService {
 
         recognizer.onresult = (event: SpeechRecognitionEventLike) => {
           this.lastWebSpeechTimestamp = Date.now();
+          consecutiveNetworkErrors = 0;
           let currentFinal = "";
           let currentInterim = "";
 
@@ -473,6 +597,21 @@ export class AudioCaptureService {
               currentFinal = currentFinal ? mergePhrasesCleanly(currentFinal, text) : text;
             } else {
               currentInterim = currentInterim ? mergePhrasesCleanly(currentInterim, text) : text;
+            }
+          }
+
+          if (currentFinal || currentInterim) {
+            this.webSpeechEmittedInSession = true;
+            this.hadVoicedSpeechInSession = true;
+            if (!isMobile) {
+              if (this.vadInterval) {
+                clearInterval(this.vadInterval);
+                this.vadInterval = null;
+              }
+              if (this.interimInterval) {
+                clearInterval(this.interimInterval);
+                this.interimInterval = null;
+              }
             }
           }
 
@@ -517,10 +656,15 @@ export class AudioCaptureService {
           }
           logger.warn("Speech recognition notice:", errCode || e);
 
+          if (errCode === "network") {
+            consecutiveNetworkErrors += 1;
+            return;
+          }
+
           // If user explicitly revoked or denied microphone permission
           if (errCode === "not-allowed" || errCode === "service-not-allowed") {
-            if (AudioCaptureService.hasActiveMic()) {
-              // If hardware mic is active and recording audio, Web Speech failure (e.g. in incognito/Safari)
+            if (AudioCaptureService.hasLiveMicStream()) {
+              // If hardware mic is active and recording audio, Web Speech failure (e.g. in incognito/Safari/Brave)
               // must not crash or terminate the active recording session.
               return;
             }
@@ -553,14 +697,14 @@ export class AudioCaptureService {
           }
 
           // Auto-restart: maintain uninterrupted live dictation across natural pauses
-          if (this.isListening) {
+          if (this.isListening && consecutiveNetworkErrors < 2) {
             if (this.restartTimeout) {
               clearTimeout(this.restartTimeout);
             }
             // Allow 120ms on mobile for Android Audio Server to cycle between utterances cleanly
             const restartDelay = isMobile ? 120 : 60;
             this.restartTimeout = setTimeout(() => {
-              if (this.isListening) {
+              if (this.isListening && consecutiveNetworkErrors < 2) {
                 try {
                   recognizer.start();
                 } catch {
@@ -596,7 +740,7 @@ export class AudioCaptureService {
       } catch (err) {
         logger.warn("Failed to start SpeechRecognition:", err);
         // Do not crash the recording session if mic hardware is actively capturing
-        if (!AudioCaptureService.hasActiveMic() && options.onError) {
+        if (!AudioCaptureService.hasLiveMicStream() && options.onError) {
           options.onError(err);
         }
         return null;
@@ -615,11 +759,19 @@ export class AudioCaptureService {
       clearInterval(this.interimInterval);
       this.interimInterval = null;
     }
+    if (this.vadInterval) {
+      clearInterval(this.vadInterval);
+      this.vadInterval = null;
+    }
     this.isTranscribingInterim = false;
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
+    const hadVoicedSpeech = this.hadVoicedSpeechInSession || this.voicedFramesDetected >= 1;
+    this.hadVoicedSpeechInSession = false;
+    this.voicedFramesDetected = 0;
+    this.webSpeechEmittedInSession = false;
     this.confirmedHistory = "";
     this.latestTranscript = "";
     if (this.recognizer) {
@@ -647,14 +799,14 @@ export class AudioCaptureService {
         const blob = new Blob(this.recordedChunks, { type: mime });
         const url = URL.createObjectURL(blob);
         this.lastAudioUrl = url;
-        return { audioBlob: blob, audioUrl: url, durationSeconds };
+        return { audioBlob: blob, audioUrl: url, durationSeconds, hadVoicedSpeech };
       }
-      return { audioBlob: null, audioUrl: null, durationSeconds };
+      return { audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech };
     }
 
     return new Promise<AudioCaptureResult>((resolve) => {
       if (!this.mediaRecorder) {
-        resolve({ audioBlob: null, audioUrl: null, durationSeconds });
+        resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
         return;
       }
 
@@ -665,17 +817,17 @@ export class AudioCaptureService {
           const url = URL.createObjectURL(blob);
           this.lastAudioUrl = url;
           this.mediaRecorder = null;
-          resolve({ audioBlob: blob, audioUrl: url, durationSeconds });
+          resolve({ audioBlob: blob, audioUrl: url, durationSeconds, hadVoicedSpeech });
         } catch (err) {
           logger.warn("Error creating audio blob:", err);
-          resolve({ audioBlob: null, audioUrl: null, durationSeconds });
+          resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
         }
       };
 
       try {
         this.mediaRecorder.stop();
       } catch {
-        resolve({ audioBlob: null, audioUrl: null, durationSeconds });
+        resolve({ audioBlob: null, audioUrl: null, durationSeconds, hadVoicedSpeech });
       }
     });
   }
@@ -689,7 +841,7 @@ export class AudioCaptureService {
    */
   public static async transcribeAudio(
     audioBlob: Blob,
-    context?: { roleName?: string | undefined; question?: string | undefined },
+    _context?: { roleName?: string | undefined; question?: string | undefined },
   ): Promise<AudioTranscriptionResult | null> {
     if (!audioBlob || audioBlob.size < 200) return null;
 
@@ -756,6 +908,10 @@ export class AudioCaptureService {
                 noSpeechProb: data.no_speech_prob,
               };
             }
+            // Authoritative 200 OK silence/empty result: do not cascade silent audio across 5 backup endpoints
+            if (data && typeof data === "object" && "text" in data) {
+              return null;
+            }
           } else {
             const errBody = await groqResp.text().catch(() => "");
             logger.warn(`[AudioCaptureService] Groq Whisper returned ${groqResp.status}:`, errBody);
@@ -812,6 +968,9 @@ export class AudioCaptureService {
                 noSpeechProb: data.no_speech_prob,
               };
             }
+            if (data && typeof data === "object" && "text" in data) {
+              return null;
+            }
           }
         } catch (openAiErr) {
           logger.warn("[AudioCaptureService] Direct OpenAI key error:", openAiErr);
@@ -858,7 +1017,6 @@ export class AudioCaptureService {
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, `recording.${extension}`);
-        if (context?.roleName) formData.append("role", context.roleName);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6500);
@@ -878,19 +1036,28 @@ export class AudioCaptureService {
 
         if (response.ok) {
           const raw = (await response.json()) as any;
-          const data =
-            raw && typeof raw === "object" && "data" in raw && raw.data
-              ? raw.data
-              : raw;
-          const text = cleanVerbatimTranscription(data.transcript || data.text || "");
-          if (text) {
-            return {
-              text,
-              language: (data.language || "").toLowerCase().trim(),
-              duration: data.duration,
-              avgLogprob: data.avg_logprob ?? data.avgLogprob,
-              noSpeechProb: data.no_speech_prob ?? data.noSpeechProb,
-            };
+          const isExplicitFailure =
+            raw && typeof raw === "object" && "success" in raw && raw.success === false;
+          if (!isExplicitFailure) {
+            const data =
+              raw && typeof raw === "object" && "data" in raw && raw.data
+                ? raw.data
+                : raw;
+            const hasTranscriptField =
+              data && typeof data === "object" && ("transcript" in data || "text" in data);
+            const text = cleanVerbatimTranscription(data?.transcript || data?.text || "");
+            if (text) {
+              return {
+                text,
+                language: (data.language || "").toLowerCase().trim(),
+                duration: data.duration,
+                avgLogprob: data.avg_logprob ?? data.avgLogprob,
+                noSpeechProb: data.no_speech_prob ?? data.noSpeechProb,
+              };
+            }
+            if (hasTranscriptField) {
+              return null;
+            }
           }
         }
       } catch (proxyErr) {
@@ -910,7 +1077,14 @@ export class AudioCaptureService {
       clearInterval(this.interimInterval);
       this.interimInterval = null;
     }
+    if (this.vadInterval) {
+      clearInterval(this.vadInterval);
+      this.vadInterval = null;
+    }
     this.isTranscribingInterim = false;
+    this.voicedFramesDetected = 0;
+    this.hadVoicedSpeechInSession = false;
+    this.webSpeechEmittedInSession = false;
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
@@ -943,6 +1117,7 @@ export class AudioCaptureService {
    * Releases hardware microphone MediaStream tracks so browser/OS recording indicators turn off
    */
   public static releaseMicStream(): void {
+    this.desktopMicVerifiedOptimal = false;
     if (this.micStream) {
       try {
         this.micStream.getTracks().forEach((track) => track.stop());

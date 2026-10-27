@@ -20,6 +20,7 @@ export * from "./services/speechSynthesisService";
 export * from "./services/interviewEngineService";
 export * from "./services/dynamicLanguageAnalyzer";
 export * from "./services/audioCaptureService";
+export * from "./services/audioHardwareSelector";
 export * from "./services/deepLinguisticEngine";
 export * from "./services/aiLinguisticEvaluator";
 export * from "./services/masterAiFeedbackEngine";

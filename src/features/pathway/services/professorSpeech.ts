@@ -175,11 +175,11 @@ export function buildProfessorSpeech(ctx: ProfessorSpeechContext): ProfessorSpee
   }
 
   const cases = resolveFormulaCases(lesson);
-  if (cases.length > 1) {
+  if (cases.length >= 1) {
     const idx = Math.min(ctx.activeFormulaCaseIndex ?? 0, cases.length - 1);
     const activeCase = cases[idx]!;
     return {
-      eyebrow: `${baseLabel} · Uso ${idx + 1} de ${cases.length}`,
+      eyebrow: cases.length > 1 ? `${baseLabel} · Uso ${idx + 1} de ${cases.length}` : `${baseLabel} · Fórmula`,
       headline: node.title.replace(/[«»"']/g, "").trim(),
       text: activeCase.explanationSpanish,
       sampleAudioText: activeCase.exampleEnglish ?? lesson.examples[0]?.english ?? null,
@@ -213,6 +213,6 @@ function getConnectedIntroSpeech(node: PathwayNode): ProfessorSpeech {
     eyebrow: baseLabel,
     headline: topicTitle,
     text: introText,
-    sampleAudioText: introText,
+    sampleAudioText: null,
   };
 }

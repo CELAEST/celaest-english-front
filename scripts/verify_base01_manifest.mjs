@@ -19,6 +19,8 @@ const MANIFEST_PATH = path.resolve('src', 'features', 'pathway', 'data', 'a1Audi
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
 
 const TEST_PHRASES = [
+  "¡Hola! Qué gusto saludarte. Soy Liam, tu mentor personal en CELAEST. Te voy a acompañar cara a cara en cada paso para que hables inglés con total seguridad. Aquí debajo de mí tienes tu tarjeta interactiva con la regla visual, el armado de fichas y el reto de voz, todo sin salir de esta pantalla. Arriba tienes la Guía de Estudio: ábrela cuando quieras para consultar los 14 Bloques de inglés y el Alfabeto Fonético con audios reales. Y aquí mismo tienes Preguntar para resolver cualquier duda. ¡Entremos directo a la clase!",
+  "¡Hola! Qué gusto saludarte. Soy Liam, tu mentor personal en CELAEST. Te voy a acompañar en cada paso para que hables inglés con total seguridad. Mira tu pantalla: a la izquierda tienes tu pizarra de clase con la regla visual, el ensamblaje de bloques y la certificación de tu voz. Arriba en tu cabecera tienes una ayuda clave: la Guía de Estudio. Ábrela en cualquier momento para consultar la Estructura de los 14 Bloques de inglés y el Alfabeto Fonético completo con audios reales. Y aquí a tu derecha estaré siempre a tu lado para resolver tus dudas con el botón Preguntar. Esta orientación te la comparto solo esta vez para que conozcas tus herramientas. ¡Entremos directo a la clase!",
   "El reto de hoy es El Orden Mágico: Quién + Acción. Sujeto obligatorio + Verbo. Fíjate bien en la diferencia clave en tu pantalla.",
   "El reto de esta base es El Orden Mágico: Quién + Acción. En inglés el verbo nunca va solo: siempre nombra primero quién realiza la acción. Mira cómo se ilumina la fórmula pieza por pieza aquí debajo en tu tarjeta: primero quién, luego acción, luego cuándo.",
   "El reto de esta base es El Orden Mágico: Quién + Acción. En inglés el verbo nunca va solo: siempre nombra primero quién realiza la acción. Mira cómo se ilumina la fórmula pieza por pieza en tu pizarra: primero quién, luego acción, luego cuándo.",
@@ -41,7 +43,10 @@ const TEST_PHRASES = [
   "Casi lo tienes. Escucha el modelo de nuevo con atención y dilo con calma para certificar tu avance.",
   "¡Excelente pronunciación! Dijiste cada palabra en orden natural y con cadencia limpia. Base conquistada con éxito.",
   "¡Impecable! Base conquistada con éxito. Ya estás listo para el siguiente reto.",
-  "No te escuché con claridad. Di conmigo: I learn English today. Toca el micrófono para intentarlo."
+  "No te escuché con claridad. Di conmigo: I learn English today. Toca el micrófono para intentarlo.",
+  "I work every day.",
+  "Work every day.",
+  "No pude activar tu micrófono. Verifica el permiso del navegador o usa el modo silencioso."
 ];
 
 let allOk = true;
@@ -81,3 +86,4 @@ if (allOk) {
   console.error("\n>>> SOME AUDIO PHRASES FAILED VERIFICATION! <<<");
   process.exit(1);
 }
+

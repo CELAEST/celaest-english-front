@@ -153,7 +153,7 @@ export function usePathwayStageSession(
       if (!hasSpokenInSpeakRef.current) {
         hasSpokenInSpeakRef.current = true;
         if (!speakingText && !SpeechSynthesisService.isAiPlaying()) {
-          const sentence = activeNode.lessonPayload.voicePractice.sentenceEnglish;
+          const sentence = activeNode.lessonPayload.voicePractice.sentenceEnglish.replace(/[.!?]+$/, "");
           const instruction = `Escucha con atención cómo lo pronuncio yo: ${sentence}. Ahora activa tu micrófono y dilo tú para certificar tu avance.`;
           playAudio(instruction);
         }

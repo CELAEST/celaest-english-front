@@ -208,6 +208,7 @@ export class AudioCaptureService {
   // Enterprise Adaptive Phrase-Chunked Whisper streaming, Mobile Utterance Engine & Desktop VAD fields
   private static mobileStreamEngine: MobileLiveStreamEngine | null = null;
   private static lastTranscribeAllProvidersFailed: boolean = false;
+  public static backendSTTUnavailable: boolean = false;
   private static lastFailedMobileKeyFingerprint: string | null = null;
   private static interimInterval: ReturnType<typeof setInterval> | null = null;
   private static vadInterval: ReturnType<typeof setInterval> | null = null;
@@ -541,7 +542,16 @@ export class AudioCaptureService {
     //   * Silence / pauses -> 0 /transcribe calls (eliminates image.png spam).
     //   * Real human voice on physical mic + deaf Web Speech (e.g. virtual OS default mic like ASUS Utility, or Firefox/Brave)
     //     -> self-healing Whisper updates the live transcript ONLY during voiced speech windows.
-    if (isMobile) {
+    const hasLocalAIKey = AudioCaptureService.hasLocalAudioTranscriptionKeySync();
+    const isLocalhostEnv =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local"));
+    const shouldRunMobileAIEngine =
+      isMobile && (hasLocalAIKey || (!isLocalhostEnv && !AudioCaptureService.backendSTTUnavailable));
+
+    if (shouldRunMobileAIEngine) {
       if (this.micStream && typeof MediaRecorder !== "undefined") {
         const engine = new MobileLiveStreamEngine({
           micStream: this.micStream,
@@ -1195,33 +1205,36 @@ export class AudioCaptureService {
 
     // 4. Backend Proxies: Try apiUrl first, then direct Render backend, then coreAiUrl
     const candidateEndpoints: string[] = [];
-    if (ENV.apiUrl) {
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local"));
+
+    if (ENV.apiUrl && !isLocalhost && !AudioCaptureService.backendSTTUnavailable) {
       candidateEndpoints.push(`${ENV.apiUrl}/interview/transcribe`);
       candidateEndpoints.push(`${ENV.apiUrl}/ai/audio/transcribe`);
     }
 
-    const defaultBackTranscribe = "https://celaest-english-back.onrender.com/api/v1/interview/transcribe";
-    if (!candidateEndpoints.includes(defaultBackTranscribe)) {
-      candidateEndpoints.push(defaultBackTranscribe);
-    }
+    if (!isLocalhost) {
+      const defaultBackTranscribe = "https://celaest-english-back.onrender.com/api/v1/interview/transcribe";
+      if (!candidateEndpoints.includes(defaultBackTranscribe)) {
+        candidateEndpoints.push(defaultBackTranscribe);
+      }
 
-    const publicBackTranscribe = "https://celaest-english-back.onrender.com/ai/audio/transcribe";
-    if (!candidateEndpoints.includes(publicBackTranscribe)) {
-      candidateEndpoints.push(publicBackTranscribe);
-    }
+      const publicBackTranscribe = "https://celaest-english-back.onrender.com/ai/audio/transcribe";
+      if (!candidateEndpoints.includes(publicBackTranscribe)) {
+        candidateEndpoints.push(publicBackTranscribe);
+      }
 
-    const isLocalhostInProd =
-      typeof window !== "undefined" &&
-      window.location.protocol === "https:" &&
-      ENV.coreAiUrl.includes("127.0.0.1");
+      if (ENV.coreAiUrl && !candidateEndpoints.includes(`${ENV.coreAiUrl}/ai/audio/transcribe`)) {
+        candidateEndpoints.push(`${ENV.coreAiUrl}/ai/audio/transcribe`);
+      }
 
-    if (ENV.coreAiUrl && !isLocalhostInProd && !candidateEndpoints.includes(`${ENV.coreAiUrl}/ai/audio/transcribe`)) {
-      candidateEndpoints.push(`${ENV.coreAiUrl}/ai/audio/transcribe`);
-    }
-
-    const defaultCoreTranscribe = "https://celaest-core.onrender.com/api/v1/ai/audio/transcribe";
-    if (!candidateEndpoints.includes(defaultCoreTranscribe)) {
-      candidateEndpoints.push(defaultCoreTranscribe);
+      const defaultCoreTranscribe = "https://celaest-core.onrender.com/api/v1/ai/audio/transcribe";
+      if (!candidateEndpoints.includes(defaultCoreTranscribe)) {
+        candidateEndpoints.push(defaultCoreTranscribe);
+      }
     }
 
     const activeToken = typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null;
@@ -1272,8 +1285,15 @@ export class AudioCaptureService {
               return null;
             }
           }
+        } else {
+          if (response.status === 503 || response.status === 404 || response.status === 500) {
+            AudioCaptureService.backendSTTUnavailable = true;
+          }
         }
       } catch (proxyErr) {
+        if (isLocalhost) {
+          AudioCaptureService.backendSTTUnavailable = true;
+        }
         logger.warn(`[AudioCaptureService] Proxy transcription failed for ${endpoint}:`, proxyErr);
       }
     }

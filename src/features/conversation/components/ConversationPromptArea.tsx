@@ -11,8 +11,8 @@ export interface ConversationPromptAreaProps {
   userTranscript?: string;
   isListening?: boolean;
   isThinking?: boolean;
-  selectedVoice?: "en-US-AriaNeural" | "en-US-ChristopherNeural";
-  onSelectVoice?: (voice: "en-US-AriaNeural" | "en-US-ChristopherNeural") => void;
+  selectedVoice?: any;
+  onSelectVoice?: (voice: any) => void;
   onRepeatQuestion?: () => void;
   onClearTranscript?: () => void;
   onTranscriptChange?: (text: string) => void;

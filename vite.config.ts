@@ -61,6 +61,8 @@ function createSecurityPolicy(mode: string, command: string): string {
     "https://*.unpkg.com",
     "https://raw.githubusercontent.com",
     "https://*.githubusercontent.com",
+    "blob:",
+    "data:",
   ];
   if (isDev) {
     // HMR websocket + local service discovery + AI model CDNs + local network mobile devices during development
@@ -113,7 +115,7 @@ export default defineConfig(({ command, mode }) => ({
   },
   server: {
     host: true,
-    port: 3000,
+    port: Number(process.env.PORT) || 3001,
     open: true,
     proxy: {
       "/api/v1/health": {
@@ -137,6 +139,10 @@ export default defineConfig(({ command, mode }) => ({
         rewrite: (path) => path.replace(/^\/celaest-back/, "/api/v1"),
       },
     },
+  },
+  preview: {
+    host: true,
+    port: Number(process.env.PORT) || 3001,
   },
   build: {
     target: "es2020",

@@ -31,8 +31,8 @@ export interface AppModalProps {
   onClose: () => void;
   /** Raw icon node — the shell wraps it in the standard violet badge tile. */
   icon?: React.ReactNode;
-  title?: string;
-  subtitle?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
   size?: AppModalSize;
   /** Accessible label when no visible title exists. */
   ariaLabel?: string;

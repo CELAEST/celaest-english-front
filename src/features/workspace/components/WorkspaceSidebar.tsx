@@ -69,6 +69,44 @@ export const CyberWorkspaceIcon = ({
   </svg>
 );
 
+export const CyberPathwayIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polygon
+      points="8,2.2 13.4,6.1 11.3,12.8 4.7,12.8 2.6,6.1"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.3 : 0}
+    />
+    <circle
+      cx="8"
+      cy="8"
+      r="1.4"
+      fill={isActive ? "currentColor" : "none"}
+      opacity={isActive ? 1 : 0.7}
+    />
+  </svg>
+);
+
 export const CyberMemoryIcon = ({
   isActive,
   className = "w-5 h-5 shrink-0",
@@ -316,7 +354,8 @@ const CelaestLogoMark: React.FC<{ className?: string }> = ({ className = "w-5 h-
 
 // Mobile Floating Glass Bottom Dock (Visible only on viewports < lg)
 const prefetchTabRoute = (id: string) => {
-  if (id === "writing") void import("../../writing");
+  if (id === "pathway") void import("../../pathway");
+  else if (id === "writing") void import("../../writing");
   else if (id === "memory") void import("../../memory");
   else if (id === "settings") void import("../../settings");
   void orbVideoCacheService.preload("/assets/orve.mp4");
@@ -332,7 +371,7 @@ const MobileBottomDock: React.FC<{
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none"
+      className="lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-1.5 sm:px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none"
       style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
     >
       {navItems.map((item) => {
@@ -358,7 +397,7 @@ const MobileBottomDock: React.FC<{
               prefetchTabRoute(item.id);
             }}
             onFocus={() => prefetchTabRoute(item.id)}
-            className={`relative w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
+            className={`relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
               isActive ? "text-white" : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -422,6 +461,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       id: "workspace",
       label: "WORKSPACE",
       renderIcon: (active: boolean) => <CyberWorkspaceIcon isActive={active} />,
+    },
+    {
+      id: "pathway",
+      label: "MASTERY PATH",
+      renderIcon: (active: boolean) => <CyberPathwayIcon isActive={active} />,
     },
     {
       id: "memory",
@@ -507,12 +551,13 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
                 { id: "workspace", num: "01", label: "BRIEF" },
-                { id: "memory", num: "02", label: "VAULT" },
-                { id: "interview", num: "03", label: "VOICE" },
-                { id: "reading", num: "04", label: "PAGES" },
-                { id: "writing", num: "05", label: "QUILL" },
-                ...(import.meta.env.DEV ? [{ id: "lab", num: "06", label: "FORGE" }] : []),
-                { id: "settings", num: "07", label: "SYSTEM" },
+                { id: "pathway", num: "02", label: "PATHWAY" },
+                { id: "memory", num: "03", label: "VAULT" },
+                { id: "interview", num: "04", label: "VOICE" },
+                { id: "reading", num: "05", label: "PAGES" },
+                { id: "writing", num: "06", label: "QUILL" },
+                ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "FORGE" }] : []),
+                { id: "settings", num: "08", label: "SYSTEM" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (
@@ -634,12 +679,13 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
                 { id: "workspace", num: "01", label: "WORKSPACE" },
-                { id: "memory", num: "02", label: "MEMORY VAULT" },
-                { id: "interview", num: "03", label: "INTERVIEW" },
-                { id: "reading", num: "04", label: "READING" },
-                { id: "writing", num: "05", label: "WRITING STUDIO" },
-                ...(import.meta.env.DEV ? [{ id: "lab", num: "06", label: "DESIGN LAB" }] : []),
-                { id: "settings", num: "07", label: "SETTINGS" },
+                { id: "pathway", num: "02", label: "MASTERY PATH" },
+                { id: "memory", num: "03", label: "MEMORY VAULT" },
+                { id: "interview", num: "04", label: "INTERVIEW" },
+                { id: "reading", num: "05", label: "READING" },
+                { id: "writing", num: "06", label: "WRITING STUDIO" },
+                ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "DESIGN LAB" }] : []),
+                { id: "settings", num: "08", label: "SETTINGS" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (

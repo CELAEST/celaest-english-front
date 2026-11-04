@@ -48,6 +48,10 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
 
     // Remember what was focused before the trap activated
     previouslyFocusedRef.current = document.activeElement as HTMLElement;
+    // Release focus from background elements immediately to prevent browser aria-hidden retention errors
+    if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.blur === "function") {
+      previouslyFocusedRef.current.blur();
+    }
 
     // Auto-focus the first focusable element inside the container
     if (autoFocus) {

@@ -1,5 +1,8 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { PathwayHeaderEnterpriseShowcase } from "./PathwayHeaderEnterpriseShowcase";
+import { PracticeCtaShowcase } from "./PracticeCtaShowcase";
+import { CyberVisorFaceStudioShowcase } from "./CyberVisorFaceStudioShowcase";
 import { CleanSkeletonStudioShowcase } from "./CleanSkeletonStudioShowcase";
 import { AuthCallbackLuxuryShowcase } from "./AuthCallbackLuxuryShowcase";
 import { AiEngineErrorsLuxuryStudio } from "./AiEngineErrorsLuxuryStudio";
@@ -41,6 +44,21 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
       <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
+
+        {/* SECTION 00.PATHWAY_HEADER_STUDIO: Enterprise Pathway Header Laboratory */}
+        <div className="flex flex-col space-y-4">
+          <PathwayHeaderEnterpriseShowcase />
+        </div>
+
+        {/* SECTION 00.PRACTICE_CTA_STUDIO: Anti-AI & Zero-Box Practice CTA Suite */}
+        <div className="flex flex-col space-y-4">
+          <PracticeCtaShowcase />
+        </div>
+
+        {/* SECTION 00.VISOR_FACE_STUDIO: CELAEST Cyber Visor Emissive Face & Identity Matrix (TOP PRIORITY) */}
+        <div className="flex flex-col space-y-4">
+          <CyberVisorFaceStudioShowcase />
+        </div>
 
         {/* SECTION 00.SKELETON_STUDIO: Clean Intelligent Skeletons Studio (TOP PRIORITY FOR APPROVAL) */}
         <div className="flex flex-col space-y-4">

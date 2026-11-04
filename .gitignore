@@ -10,3 +10,9 @@ scratch/
 public/assets/backup_originals/
 certs/
 *.pem
+*.blend
+public/Meshy_AI_necesitop_crear_un_pe_All_Animations.glb
+public/audio/*_backup/
+public/audio/walter_*.mp3
+public/audio/test_*.mp3
+

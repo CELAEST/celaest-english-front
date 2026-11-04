@@ -1,7 +1,15 @@
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 
-export type FlagshipVoiceId = "en-US-AriaNeural" | "en-US-ChristopherNeural";
+export type FlagshipVoiceId = "liam" | "en-US-ChristopherNeural" | "en-US-AriaNeural";
+export type SupportedTtsVoice =
+  | FlagshipVoiceId
+  | "liam"
+  | "es-CO-GonzaloNeural"
+  | "es-US-AlonsoNeural"
+  | "es-ES-AlvaroNeural"
+  | "es-MX-JorgeNeural"
+  | string;
 
 export interface WordBoundaryTimestamp {
   offsetMs: number;
@@ -27,14 +35,14 @@ class ReadingAudioPrefetcher {
   private inFlight = new Map<string, Promise<CachedAudioItem | null>>();
   private maxCacheEntries = 50;
 
-  private makeKey(text: string, voice: FlagshipVoiceId): string {
+  private makeKey(text: string, voice: string): string {
     return `${text.trim()}::${voice}`;
   }
 
   /**
    * Check if audio for a specific text & voice is already preloaded in memory.
    */
-  public has(text: string, voice: FlagshipVoiceId): boolean {
+  public has(text: string, voice: string): boolean {
     const key = this.makeKey(text, voice);
     return this.cache.has(key);
   }
@@ -42,7 +50,7 @@ class ReadingAudioPrefetcher {
   /**
    * Get cached audio element & blob URL if preloaded.
    */
-  public get(text: string, voice: FlagshipVoiceId): CachedAudioItem | null {
+  public get(text: string, voice: string): CachedAudioItem | null {
     const key = this.makeKey(text, voice);
     return this.cache.get(key) ?? null;
   }
@@ -52,7 +60,7 @@ class ReadingAudioPrefetcher {
    */
   public async prefetchText(
     text: string,
-    voice: FlagshipVoiceId = "en-US-AriaNeural",
+    voice: SupportedTtsVoice = "liam",
   ): Promise<CachedAudioItem | null> {
     const trimmed = text.trim();
     if (!trimmed) return null;

@@ -12,7 +12,7 @@ type LogMethod = (...args: unknown[]) => void;
 
 const noop: LogMethod = () => undefined;
 
-const isDev = import.meta.env.DEV;
+const isDev = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
 
 export const logger = {
   log: isDev ? (...args: unknown[]) => console.log("[Lingua]", ...args) : noop,

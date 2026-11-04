@@ -1,0 +1,81 @@
+import React, { useEffect, useState } from "react";
+import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
+import { BridgeModuleTarget } from "../../../domain/entities/LearningPathway";
+import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import { useIsDesktopViewport } from "../hooks/useIsDesktopViewport";
+import { useLearningPathway } from "../hooks/useLearningPathway";
+import { usePathwayStageSession } from "../hooks/usePathwayStageSession";
+import { GuideSection } from "./knowledge/GuideHeaderTitle";
+import { PathwayAnatomyModal } from "./knowledge/PathwayAnatomyModal";
+import { PathwayCurriculumSheet } from "./PathwayCurriculumSheet";
+import { PathwayDesktopClassroom } from "./PathwayDesktopClassroom";
+import { PathwayMobileTopBar } from "./PathwayMobileTopBar";
+import { PathwayProfessorStage } from "./PathwayProfessorStage";
+import { PathwaySkeleton } from "./PathwaySkeleton";
+
+export interface PathwayStudioViewProps {
+  roleName?: string | undefined; userLevel?: string | undefined; learningGoal?: string | undefined;
+  onSelectLevel?: ((level: CefrLevelCode) => void) | undefined; onBackToWorkspace?: (() => void) | undefined;
+  onNavigateModule?: ((target: BridgeModuleTarget) => void) | undefined; isActive?: boolean | undefined;
+}
+
+export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
+  roleName = "Professional", userLevel = "A1", learningGoal = "Professional Communication & Fluency",
+  onSelectLevel, onNavigateModule, isActive = true,
+}) => {
+  const isDesktop = useIsDesktopViewport();
+  const [curriculumOpen, setCurriculumOpen] = useState(false);
+  const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
+  const [openAsking, setOpenAsking] = useState(false);
+  const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
+
+  const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
+  useEffect(() => { warmProfessorModelCache(); }, []);
+  if (!activeNode?.lessonPayload) return <PathwaySkeleton />;
+
+  const masteredCount = pathway.nodes.filter((n) => n.status === "MASTERED" || n.status === "CONSOLIDATED").length;
+  const nextUnlocked = pathway.nodes[activeNodeIndex + 1];
+  const canAdvanceNode = Boolean(nextUnlocked && nextUnlocked.status !== "LOCKED");
+  const isConquered = session.isCompletedBanner || activeNode.status === "MASTERED";
+  const handleNextFoundation = canAdvanceNode ? () => selectNode(nextUnlocked!.id) : undefined;
+
+  const handlePrev =
+    session.step === "SPEAK" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("RULE") : activeNodeIndex > 0 ? () => selectNode(pathway.nodes[activeNodeIndex - 1]!.id) : undefined;
+  const handleNext =
+    session.step === "RULE" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("SPEAK") : handleNextFoundation;
+
+  return (
+    <div className="relative flex flex-col lg:flex-row h-full w-full bg-[#000001] px-3 sm:px-6 lg:px-8 xl:px-10 pt-2 sm:pt-4 pb-0 lg:pb-4 gap-2 lg:gap-6 xl:gap-8 overflow-hidden select-none">
+      {isDesktop ? (
+        <PathwayDesktopClassroom
+          pathway={pathway} activeNode={activeNode} activeNodeIndex={activeNodeIndex} masteredCount={masteredCount}
+          roleName={roleName} session={session} canAdvanceNode={canAdvanceNode} onSelectLevel={onSelectLevel}
+          onOpenCurriculum={() => setCurriculumOpen(true)} onOpenAskTutor={() => setOpenAsking((p) => !p)}
+          onOpenGuideSection={setGuideSection} onNextNode={handleNextFoundation}
+          onPrevAction={handlePrev} onNextAction={handleNext} onNavigateModule={onNavigateModule}
+        />
+      ) : (
+        <PathwayMobileTopBar
+          nodeIndex={activeNodeIndex} currentLevel={pathway.cefrLevel} activeStep={session.step}
+          onSelectStep={session.setStep} onOpenCurriculum={() => setCurriculumOpen(true)}
+          onOpenGuide={() => setGuideSection("structure")} onSelectLevel={onSelectLevel}
+        />
+      )}
+
+      <PathwayProfessorStage
+        node={activeNode} step={session.step} isActive={isActive} isSpeakingAudio={session.speakingText !== null}
+        isRecordingMic={session.isRecording} isEvaluatingVoice={session.isEvaluatingVoice}
+        isBuildCorrect={session.isBuildCorrect} hasBuildMistake={session.hasBuildMistake}
+        isConquered={isConquered} isMobileUnified={!isDesktop}
+        mobileContext={!isDesktop ? { session, isConquered, onNextFoundation: handleNextFoundation, onBridgeNavigate: onNavigateModule } : undefined}
+        onPlaySample={session.playAudio} onStepChange={session.setStep}
+        initialOpenAsking={openAsking} onSwitchToPractice={() => { setOpenAsking(false); session.setStep("BUILD"); }}
+        className="order-2 flex-1 lg:flex-none"
+      />
+
+      <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={selectNode} onPersonalizeAi={() => void personalizeWithAi()} />
+      <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
+    </div>
+  );
+};
+export default PathwayStudioView;

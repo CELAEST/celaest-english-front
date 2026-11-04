@@ -8,16 +8,17 @@
 
 const trimTrailingSlash = (url: string): string => url.replace(/\/+$/, "");
 
-const apiUrl = import.meta.env.VITE_API_URL ?? "";
-const celaestBackUrl = import.meta.env.VITE_CELAEST_BACK_URL ?? "";
-const coreAiUrl = import.meta.env.VITE_CORE_AI_URL ?? "";
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "https://wcfrqjulnbtmmakirdic.supabase.co";
+const metaEnv = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+const apiUrl = metaEnv?.VITE_API_URL ?? "";
+const celaestBackUrl = metaEnv?.VITE_CELAEST_BACK_URL ?? "";
+const coreAiUrl = metaEnv?.VITE_CORE_AI_URL ?? "";
+const supabaseUrl = metaEnv?.VITE_SUPABASE_URL ?? "https://wcfrqjulnbtmmakirdic.supabase.co";
 const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ??
+  metaEnv?.VITE_SUPABASE_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZnJxanVsbmJ0bW1ha2lyZGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NTU5MTgsImV4cCI6MjA4NDQzMTkxOH0.TkGfRo3MwJZDdDZa88UscX3q7QYPMBYw9GdOgj2AMTg";
 
-const isProd = import.meta.env.PROD;
-const isTest = import.meta.env.MODE === "test";
+const isProd = Boolean(metaEnv?.PROD);
+const isTest = metaEnv?.MODE === "test";
 const isBrowser = typeof window !== "undefined";
 
 const isLocalhost =

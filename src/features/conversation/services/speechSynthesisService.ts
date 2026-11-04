@@ -4,14 +4,39 @@ import {
   readingAudioPrefetcher,
   FlagshipVoiceId,
 } from "../../reading/services/readingAudioPrefetcher";
+import a1AudioManifest from "../../pathway/data/a1AudioManifest.json";
 
 export interface SpeakOptions {
   rate?: number; // 0.75 to 1.25
   pitch?: number;
   voice?: FlagshipVoiceId | string;
+  lang?: "en" | "es" | string;
+  preventSyntheticFallback?: boolean;
   onStart?: () => void;
   onEnd?: () => void;
   onError?: (err: unknown) => void;
+}
+
+export function sanitizeSpeechForVoice(text: string): string {
+  if (!text) return "";
+  return text
+    // Remove all types of quotes that TTS engines verbalize as literal words
+    .replace(/[\u00ab\u00bb\u201c\u201d\u2018\u2019"'\`]/g, " ")
+    // Remove asterisks, brackets, braces, hashes, tildes, markdown markers
+    .replace(/[\[\]\(\)\{\}\*\#\_\~\<\>]/g, " ")
+    // Replace em dashes, en dashes and semicolons with natural breath pauses (commas)
+    .replace(/[\u2014\u2013;]/g, ", ")
+    // Replace forward/backward slashes with natural word "o" or space
+    .replace(/\s*[\/\\]\s*/g, " o ")
+    // Replace ampersand with "y"
+    .replace(/&/g, " y ")
+    // Replace colons with comma pauses
+    .replace(/:\s*/g, ", ")
+    // Remove numerical step badges like "1.", "2.", "Paso 1:"
+    .replace(/^\s*\d+\.\s*/gm, "")
+    // Collapse whitespace and trim
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export class SpeechSynthesisService {
@@ -21,19 +46,27 @@ export class SpeechSynthesisService {
   /**
    * Proactively prefetch text with high-fidelity neural voice into memory.
    */
-  public static prefetch(text: string, voice?: FlagshipVoiceId): void {
-    const v: FlagshipVoiceId = voice === "en-US-ChristopherNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
-    readingAudioPrefetcher.prefetchText(text, v);
+  public static prefetch(text: string, voice?: FlagshipVoiceId | string): Promise<any> {
+    const raw = text ? text.trim() : "";
+    const sanitized = sanitizeSpeechForVoice(raw);
+    if (!sanitized) return Promise.resolve(null);
+    const manifest = (a1AudioManifest || {}) as Record<string, string>;
+    if (manifest[sanitized] || manifest[raw]) {
+      return Promise.resolve(null);
+    }
+    const v = voice || "liam";
+    return readingAudioPrefetcher.prefetchText(sanitized, v);
   }
 
   /**
    * Speaks given text with human-like pace and pitch.
-   * Prioritizes high-definition Microsoft Edge / Azure Neural TTS (Aria / Christopher),
+   * Prioritizes high-definition Microsoft Edge / Azure Neural TTS (Gonzalo / Aria / Christopher / Alonso),
    * with seamless fallback to browser speech synthesis if offline.
    */
   public static async speak(text: string, options: SpeakOptions = {}): Promise<void> {
-    const trimmed = text ? text.trim() : "";
-    if (!trimmed) {
+    const raw = text ? text.trim() : "";
+    const sanitized = sanitizeSpeechForVoice(raw);
+    if (!sanitized) {
       if (options.onEnd) options.onEnd();
       return;
     }
@@ -42,13 +75,29 @@ export class SpeechSynthesisService {
     this.stop();
     const playbackId = this.activePlaybackId;
 
-    const voiceId: FlagshipVoiceId =
-      options.voice === "en-US-ChristopherNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
+    const isSpanish = options.lang === "es" || (typeof options.voice === "string" && options.voice.startsWith("es"));
+    const voiceId = options.voice
+      ? options.voice
+      : isSpanish
+      ? "liam"
+      : "liam";
 
-    const cached = readingAudioPrefetcher.get(trimmed, voiceId);
-    const audioSource = cached
+    // Strictly enforce neural Liam: never allow browser synthetic SAPI voices for Liam
+    const isLiam = voiceId === "liam" || options.voice === "liam";
+    if (isLiam) {
+      options.preventSyntheticFallback = true;
+    }
+
+    // 0. Check pre-baked static local asset (100% owned local disk asset, 0ms, 0 API spend)
+    const manifest = (a1AudioManifest || {}) as Record<string, string>;
+    const staticLocalAudio = manifest[sanitized] || manifest[raw];
+
+    const cached = staticLocalAudio ? null : readingAudioPrefetcher.get(sanitized, voiceId);
+    const audioSource = staticLocalAudio
+      ? staticLocalAudio
+      : cached
       ? cached.blobUrl
-      : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
+      : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(sanitized)}&voice=${encodeURIComponent(
           voiceId,
         )}&rate=%2B0%25&volume=%2B100%25`;
 
@@ -102,8 +151,14 @@ export class SpeechSynthesisService {
           if (played) return;
         } catch {}
         this.currentAudio = null;
-        if (options.onError) options.onError(e);
-        if (options.onEnd) options.onEnd();
+        if (options.preventSyntheticFallback) {
+          logger.warn("[SpeechSynthesisService] Neural playback failed and synthetic fallback is disabled. Skipping browser TTS.");
+          if (options.onError) options.onError(e);
+          else if (options.onEnd) options.onEnd();
+          return;
+        }
+        logger.warn("[SpeechSynthesisService] Neural playback failed, activating browser speech synthesis fallback");
+        void this.speakFallback(sanitized, options, playbackId);
       };
 
       await audio.play();
@@ -129,8 +184,14 @@ export class SpeechSynthesisService {
         logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
       }
 
-      if (options.onError) options.onError(err);
-      if (options.onEnd) options.onEnd();
+      if (options.preventSyntheticFallback) {
+        logger.warn("[SpeechSynthesisService] Direct & buffer audio play failed and synthetic fallback is disabled. Skipping browser TTS.");
+        if (options.onError) options.onError(err);
+        else if (options.onEnd) options.onEnd();
+        return;
+      }
+      logger.warn("[SpeechSynthesisService] Direct & buffer audio play failed, activating browser speech synthesis fallback");
+      void this.speakFallback(sanitized, options, playbackId);
     }
   }
 
@@ -245,6 +306,63 @@ export class SpeechSynthesisService {
   }
 
   /**
+   * Selects the most natural Spanish voice available on device for fallback
+   */
+  public static async getBestSpanishVoice(preferredGender?: "male" | "female"): Promise<SpeechSynthesisVoice | null> {
+    const voices = await this.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    const spanishVoices = voices.filter(
+      (v) => v.lang.startsWith("es-") || v.lang.startsWith("es_") || v.lang === "es",
+    );
+
+    if (spanishVoices.length === 0) return voices[0] || null;
+
+    // 1. Gender-specific high-fidelity neural voices
+    if (preferredGender === "male") {
+      const maleKeywords = ["gonzalo", "alonso", "alvaro", "jorge", "antonio", "manuel", "enrique", "carlos", "miguel", "male"];
+      for (const kw of maleKeywords) {
+        const match = spanishVoices.find((v) => v.name.toLowerCase().includes(kw));
+        if (match) return match;
+      }
+    } else if (preferredGender === "female") {
+      const femaleKeywords = ["dalia", "elvira", "paloma", "sabina", "paulina", "monica", "helena", "laura", "female"];
+      for (const kw of femaleKeywords) {
+        const match = spanishVoices.find((v) => v.name.toLowerCase().includes(kw));
+        if (match) return match;
+      }
+    }
+
+    // 2. High-fidelity neural keywords
+    const priorityKeywords = [
+      "gonzalo",
+      "alonso",
+      "alvaro",
+      "dalia",
+      "elvira",
+      "paloma",
+      "natural",
+      "neural",
+      "online",
+      "multilingual",
+      "microsoft",
+      "enhanced",
+      "premium",
+      "paulina",
+      "monica",
+      "jorge",
+    ];
+
+    for (const keyword of priorityKeywords) {
+      const match = spanishVoices.find((v) => v.name.toLowerCase().includes(keyword));
+      if (match) return match;
+    }
+
+    const nonGoogleEs = spanishVoices.find((v) => !v.name.toLowerCase().includes("google"));
+    return nonGoogleEs || spanishVoices[0];
+  }
+
+  /**
    * Browser Speech Synthesis Fallback if backend TTS is unreachable
    */
   public static async speakFallback(
@@ -253,6 +371,14 @@ export class SpeechSynthesisService {
     playbackId: number = this.activePlaybackId,
   ): Promise<void> {
     if (this.activePlaybackId !== playbackId) return;
+
+    const voiceId = String(options.voice || "").toLowerCase();
+    if (options.preventSyntheticFallback || voiceId.includes("liam")) {
+      logger.warn("[SpeechSynthesisService] Synthetic fallback strictly blocked for Liam.");
+      if (options.onEnd) options.onEnd();
+      return;
+    }
+
     if (
       typeof window === "undefined" ||
       !("speechSynthesis" in window) ||
@@ -264,9 +390,17 @@ export class SpeechSynthesisService {
 
     window.speechSynthesis.cancel();
 
-    const voiceId = String(options.voice || "en-US-AriaNeural");
-    const isMale = voiceId.toLowerCase().includes("christopher") || voiceId.toLowerCase().includes("male") || voiceId.toLowerCase().includes("chris");
-    const voice = await this.getBestVoice(isMale ? "male" : "female");
+    const isSpanish = options.lang === "es" || voiceId.startsWith("es");
+    const isFemale =
+      voiceId.toLowerCase().includes("female") ||
+      voiceId.toLowerCase().includes("aria") ||
+      voiceId.toLowerCase().includes("jenny") ||
+      voiceId.toLowerCase().includes("samantha") ||
+      voiceId.toLowerCase().includes("zira");
+    const isMale = !isFemale;
+    const voice = isSpanish
+      ? await this.getBestSpanishVoice(isMale ? "male" : "female")
+      : await this.getBestVoice(isMale ? "male" : "female");
     if (this.activePlaybackId !== playbackId) return;
     const utterance = new SpeechSynthesisUtterance(text);
 
@@ -274,7 +408,7 @@ export class SpeechSynthesisService {
       utterance.voice = voice;
       utterance.lang = voice.lang;
     } else {
-      utterance.lang = "en-US";
+      utterance.lang = isSpanish ? "es-MX" : "en-US";
     }
 
     utterance.rate = options.rate ?? 0.95;

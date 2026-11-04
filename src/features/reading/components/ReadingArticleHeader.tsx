@@ -10,8 +10,8 @@ export interface ReadingArticleHeaderProps {
   isPlayingAudio?: boolean | undefined;
   isPausedAudio?: boolean | undefined;
   playbackRate?: number | undefined;
-  selectedVoice?: "en-US-AriaNeural" | "en-US-ChristopherNeural" | undefined;
-  onSelectVoice?: ((voice: "en-US-AriaNeural" | "en-US-ChristopherNeural") => void) | undefined;
+  selectedVoice?: any;
+  onSelectVoice?: ((voice: any) => void) | undefined;
   onToggleVoice?: (() => void) | undefined;
   onToggleAudio?: (() => void) | undefined;
   onRestartAudio?: (() => void) | undefined;

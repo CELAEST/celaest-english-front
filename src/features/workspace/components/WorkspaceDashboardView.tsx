@@ -17,6 +17,9 @@ import { clearPersistedInterview } from "../../conversation/services/interviewPe
 import { InterviewPracticeView } from "../../conversation/components/InterviewPracticeView";
 import { ReadingPracticeView } from "../../reading";
 
+const PathwayStudioView = lazy(() =>
+  import("../../pathway").then((m) => ({ default: m.PathwayStudioView })),
+);
 const WritingPracticeView = lazy(() =>
   import("../../writing").then((m) => ({ default: m.WritingPracticeView })),
 );
@@ -31,6 +34,7 @@ const LabView = lazy(() =>
 );
 
 // Intelligent Skeletons adapted 1:1 to each feature anatomy (zero generic spinners)
+import { PathwaySkeleton } from "../../pathway/components/PathwaySkeleton";
 import { WritingSkeleton } from "../../writing/components/WritingSkeleton";
 import { MemorySkeleton } from "../../memory/components/MemorySkeleton";
 import { SettingsSkeleton } from "../../settings/components/SettingsSkeleton";
@@ -73,6 +77,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   React.useEffect(() => {
     const prefetchTimer = setTimeout(() => {
       void Promise.allSettled([
+        import("../../pathway"),
         import("../../writing"),
         import("../../memory"),
         import("../../settings"),
@@ -185,6 +190,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const handleSelectNav = React.useCallback(
     (route: string, categoryHint?: string) => {
+      // Release focus from any button/input in current tab so hidden elements don't retain focus
+      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
       // Synchronously unlock mobile audio hardware on user navigation gesture
       MobileAudioUnlocker.unlock();
       if (route === "lab" && !import.meta.env.DEV) {
@@ -293,6 +302,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             key="interview"
             className={`w-full h-full bg-[#000001] ${activeTab === "interview" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "interview"}
+            {...(activeTab !== "interview" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -329,6 +339,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             key="writing"
             className={`w-full h-full bg-[#000001] ${activeTab === "writing" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "writing"}
+            {...(activeTab !== "writing" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -356,11 +367,47 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           </div>
         )}
 
+        {mountedTabs.has("pathway") && (
+          <div
+            key="pathway"
+            className={`w-full h-full bg-[#000001] overflow-hidden ${activeTab === "pathway" ? "block" : "hidden"}`}
+            aria-hidden={activeTab !== "pathway"}
+            {...(activeTab !== "pathway" ? ({ inert: "" } as Record<string, unknown>) : {})}
+          >
+            <ErrorBoundary
+              fallback={
+                <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#000001] p-8 text-center">
+                  <p className="text-sm text-white/70">Foundations Guide se recuperó de un error inesperado.</p>
+                  <button
+                    onClick={() => handleBackToWorkspace()}
+                    className="rounded-full bg-[#8B5CF6] px-5 py-2 text-sm text-white cursor-pointer"
+                  >
+                    Volver al Workspace
+                  </button>
+                </div>
+              }
+            >
+              <Suspense fallback={<PathwaySkeleton />}>
+                <PathwayStudioView
+                  roleName={userProfession}
+                  userLevel={activeUserLevel}
+                  learningGoal={profile?.learningGoal}
+                  onSelectLevel={handleGlobalSelectLevel}
+                  onBackToWorkspace={handleBackToWorkspace}
+                  onNavigateModule={handleSelectNav}
+                  isActive={activeTab === "pathway"}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        )}
+
         {mountedTabs.has("reading") && (
           <div
             key="reading"
             className={`w-full h-full bg-[#000001] overflow-hidden ${activeTab === "reading" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "reading"}
+            {...(activeTab !== "reading" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -390,6 +437,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             key="memory"
             className={`w-full h-full bg-[#000001] ${activeTab === "memory" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "memory"}
+            {...(activeTab !== "memory" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -421,6 +469,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             key="lab"
             className={`w-full h-full bg-[#000001] ${activeTab === "lab" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "lab"}
+            {...(activeTab !== "lab" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -449,14 +498,19 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
               activeTab === "workspace" ? "flex animate-[fadeIn_0.4s_ease-out_both]" : "hidden"
             }`}
             aria-hidden={activeTab !== "workspace"}
+            {...(activeTab !== "workspace" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between w-full max-w-[1520px] mx-auto px-1 sm:px-6 lg:px-10 pt-1 sm:pt-3 gap-3.5 sm:gap-6 relative z-10 shrink-0">
               <WorkspaceHeroSection
                 userName={activeUserName}
+                userLevel={activeUserLevel}
                 learningGoal={profile?.learningGoal}
                 profession={profile?.profession}
                 dailyFocus={profile?.dailyFocus}
+                isActive={activeTab === "workspace"}
                 onContinueTopic={() => handleSelectNav("interview")}
+                onOpenPathway={() => handleSelectNav("pathway")}
+                onNavigateModule={handleSelectNav}
               />
 
               {/* Protected central clearance corridor for the glowing sphere */}
@@ -483,6 +537,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             key="settings"
             className={`w-full h-full bg-[#000001] ${activeTab === "settings" ? "block" : "hidden"}`}
             aria-hidden={activeTab !== "settings"}
+            {...(activeTab !== "settings" ? ({ inert: "" } as Record<string, unknown>) : {})}
           >
             <ErrorBoundary
               fallback={
@@ -511,6 +566,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
         {/* Fallback for other tabs */}
         {activeTab !== "workspace" &&
+          activeTab !== "pathway" &&
           activeTab !== "interview" &&
           activeTab !== "writing" &&
           activeTab !== "reading" &&

@@ -120,14 +120,23 @@ export function usePathwayStageSession(
     };
   }, []);
 
-  const playAudio = useCallback((text: string) => {
-    if (!text.trim()) return;
+  const playAudio = useCallback((text: string, onComplete?: () => void) => {
+    if (!text.trim()) {
+      onComplete?.();
+      return;
+    }
     setSpeakingText(text);
     void SpeechSynthesisService.speak(text, {
       voice: "liam",
       preventSyntheticFallback: true,
-      onEnd: () => setSpeakingText(null),
-      onError: () => setSpeakingText(null),
+      onEnd: () => {
+        setSpeakingText(null);
+        onComplete?.();
+      },
+      onError: () => {
+        setSpeakingText(null);
+        onComplete?.();
+      },
     });
   }, []);
 
@@ -178,11 +187,17 @@ export function usePathwayStageSession(
           const targetNaturalSentence = challenge.targetTokens.join(" ");
           if (sentence.toLowerCase() === targetNaturalSentence.toLowerCase()) {
             const successText = `¡Excelente! Lo armaste en orden natural: ${targetNaturalSentence}. Ahora vamos a certificar tu voz.`;
-            playAudio(successText);
+            playAudio(successText, () => {
+              if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+              autoAdvanceTimerRef.current = setTimeout(() => {
+                setStep("SPEAK");
+              }, 400);
+            });
+            // Generous safety fallback in case audio device hangs or errors
             if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
             autoAdvanceTimerRef.current = setTimeout(() => {
               setStep("SPEAK");
-            }, 3200);
+            }, 15000);
           } else {
             const errorHint = challenge.mistakeHintSpanish || "Casi lo tienes. Revisa el orden de las fichas y toca una para reorganizarla.";
             playAudio(errorHint);
@@ -244,7 +259,7 @@ export function usePathwayStageSession(
 
           if (evalResult.passed) {
             setFailedVoiceAttempts(0);
-            playAudio(evalResult.feedbackSpanish);
+            playAudio("¡Excelente pronunciación! Dijiste cada palabra en orden natural y con cadencia limpia. Base conquistada con éxito.");
             await finishLesson(captured, {
               overallScore: evalResult.overallScore,
               structureScore: evalResult.completenessScore,
@@ -268,15 +283,15 @@ export function usePathwayStageSession(
             });
           } else {
             setFailedVoiceAttempts((prev) => prev + 1);
-            playAudio(evalResult.feedbackSpanish);
+            playAudio("Casi lo tienes. Escucha el modelo de nuevo con atención y dilo con calma para certificar tu avance.");
           }
         } else {
           setFailedVoiceAttempts((prev) => prev + 1);
-          if (targetVoice) {
-            playAudio(
-              `No te escuché con claridad. Di conmigo: “${targetVoice}”. Toca el micrófono para intentarlo.`,
-            );
-          }
+          playAudio(
+            targetVoice
+              ? `No te escuché con claridad. Di conmigo: ${targetVoice}. Toca el micrófono para intentarlo.`
+              : "No te escuché con claridad. Di conmigo: I learn English today. Toca el micrófono para intentarlo.",
+          );
         }
       } finally {
         setIsEvaluatingVoice(false);

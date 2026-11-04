@@ -180,16 +180,17 @@ export function useLiveClassChoreography({
       if (examplesIdx >= 0) startLectureAt(examplesIdx);
     };
 
-    resumeTimerRef.current = setTimeout(proceed, 3800);
+    // Generous 15s safety fallback only in case playback errors or fails completely
+    resumeTimerRef.current = setTimeout(proceed, 15000);
     void SpeechSynthesisService.speak("¡Exacto! Cazaste la trampa. Escucha ahora cómo suena en ejemplos reales.", {
       lang: "es", voice: "liam", rate: 0.97, preventSyntheticFallback: true,
       onEnd: () => {
         if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-        resumeTimerRef.current = setTimeout(proceed, 300);
+        resumeTimerRef.current = setTimeout(proceed, 350);
       },
       onError: () => {
         if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-        resumeTimerRef.current = setTimeout(proceed, 900);
+        proceed();
       },
     });
   };

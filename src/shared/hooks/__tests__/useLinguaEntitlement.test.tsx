@@ -129,5 +129,43 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     );
     expect(onCheckout).toHaveBeenCalledTimes(1);
   });
+
+  it("renders expired license state in modal and disables Central Core AI", async () => {
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    const centralCoreSpy = vi.spyOn(providerKeyVault, "setCentralCoreEnabled").mockResolvedValue();
+
+    vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValue({
+      ...DEFAULT_FREE_ENTITLEMENT,
+      hasAccess: false,
+      accessType: "purchase",
+      status: "expired",
+      aiCloudIncluded: true,
+    });
+
+    render(<Harness />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("access").textContent).toBe("false");
+    });
+    expect(centralCoreSpy).toHaveBeenCalledWith(false);
+
+    render(
+      <LinguaMarketplacePaywallModal
+        isOpen={true}
+        entitlement={{
+          ...DEFAULT_FREE_ENTITLEMENT,
+          status: "expired",
+          productName: "CELAEST Lingua AI",
+          basePrice: 29.99,
+          currency: "USD",
+        }}
+        onClose={vi.fn()}
+        onCheckout={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Tu Licencia ha Expirado/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Renovar Acceso Ahora/i })).toBeTruthy();
+  });
 });
 

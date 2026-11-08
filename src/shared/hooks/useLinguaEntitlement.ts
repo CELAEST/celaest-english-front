@@ -18,6 +18,7 @@ export function useLinguaEntitlement() {
   const refreshEntitlement = useCallback(async () => {
     if (!SupabaseAuthAdapter.getInstance().isAuthenticated()) {
       setEntitlement(DEFAULT_FREE_ENTITLEMENT);
+      await providerKeyVault.setCentralCoreEnabled(false);
       setIsLoading(false);
       return DEFAULT_FREE_ENTITLEMENT;
     }
@@ -25,12 +26,16 @@ export function useLinguaEntitlement() {
     try {
       const resolved = await ApiEntitlementRepository.getEntitlement("lingua");
       setEntitlement(resolved);
-      if (resolved.hasAccess && resolved.aiCloudIncluded) {
-        await providerKeyVault.setCentralCoreEnabled(true);
-      }
+      const isEligibleForCloud =
+        resolved.hasAccess &&
+        resolved.aiCloudIncluded &&
+        resolved.status !== "expired" &&
+        resolved.status !== "revoked";
+      await providerKeyVault.setCentralCoreEnabled(isEligibleForCloud);
       return resolved;
     } catch {
       setEntitlement(DEFAULT_FREE_ENTITLEMENT);
+      await providerKeyVault.setCentralCoreEnabled(false);
       return DEFAULT_FREE_ENTITLEMENT;
     } finally {
       setIsLoading(false);

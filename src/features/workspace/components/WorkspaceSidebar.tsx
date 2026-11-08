@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Lock } from "lucide-react";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 import { orbVideoCacheService } from "../../../design-system/components/Orb";
 
@@ -8,7 +9,10 @@ export interface WorkspaceSidebarProps {
   userLevel?: string;
   activeItem?: string;
   onSelectNav?: (route: string) => void;
+  hasAccess?: boolean;
 }
+
+const GATED_ITEMS = new Set(["interview", "writing", "reading"]);
 
 // ============================================================================
 // CYBER MINIMALIST SUITE (Bespoke Feature-Referent Vector Primitives)
@@ -423,6 +427,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   userLevel: _userLevel = "A1 Elementary",
   activeItem = "workspace",
   onSelectNav,
+  hasAccess = true,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [activeVariant, setActiveVariant] = useState<string>(() => {
@@ -579,8 +584,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                         isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
                       }`}
                     >
-                      <span className="text-xs font-light tracking-[0.18em] uppercase whitespace-nowrap">
+                      <span className="text-xs font-light tracking-[0.18em] uppercase whitespace-nowrap flex items-center gap-1.5">
                         {item.label}
+                        {GATED_ITEMS.has(item.id) && !hasAccess && (
+                          <Lock className="w-2.5 h-2.5 text-stone-500 shrink-0" />
+                        )}
                       </span>
                       {isActive && (
                         <motion.span
@@ -708,11 +716,14 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                       }`}
                     >
                       <span
-                        className={`text-xs tracking-wider uppercase font-light whitespace-nowrap relative ${
+                        className={`text-xs tracking-wider uppercase font-light whitespace-nowrap relative flex items-center gap-1.5 ${
                           isActive ? "font-normal" : ""
                         }`}
                       >
                         {item.label}
+                        {GATED_ITEMS.has(item.id) && !hasAccess && (
+                          <Lock className="w-2.5 h-2.5 text-zinc-500 shrink-0" />
+                        )}
                         {isActive && (
                           <motion.div
                             layoutId="activeSwissUnderline"
@@ -856,8 +867,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                       isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
                     }`}
                   >
-                    <span className="text-xs uppercase tracking-[0.14em] font-light whitespace-nowrap">
+                    <span className="text-xs uppercase tracking-[0.14em] font-light whitespace-nowrap flex items-center gap-1.5">
                       {item.label}
+                      {GATED_ITEMS.has(item.id) && !hasAccess && (
+                        <Lock className="w-2.5 h-2.5 text-white/40 shrink-0" />
+                      )}
                     </span>
                   </div>
                 </button>

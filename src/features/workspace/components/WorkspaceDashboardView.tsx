@@ -3,6 +3,7 @@ import { WorkspaceSidebar } from "./WorkspaceSidebar";
 import { WorkspaceHeroSection } from "./WorkspaceHeroSection";
 import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
 import { WorkspacePromptBar } from "./WorkspacePromptBar";
+import { LinguaMarketplacePaywallModal } from "./LinguaMarketplacePaywallModal";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
@@ -46,6 +47,12 @@ const TabLoadingFallback: React.FC = () => (
   </div>
 );
 
+const GATED_FEATURE_NAMES: Record<string, string> = {
+  interview: "Entrevistas de Voz en Vivo",
+  writing: "Estudio de Escritura IA",
+  reading: "Lecturas Interactivas",
+};
+
 export interface WorkspaceDashboardViewProps {
   userName?: string | undefined;
   userLevel?: string | undefined;
@@ -63,7 +70,16 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  useLinguaEntitlement();
+  const {
+    entitlement,
+    isLoading: isEntitlementLoading,
+    hasFullAccess,
+    refreshEntitlement,
+    startDirectCheckout,
+    isCheckoutLoading,
+  } = useLinguaEntitlement();
+  const [paywallOpen, setPaywallOpen] = useState<boolean>(false);
+  const [paywallFeature, setPaywallFeature] = useState<string | undefined>();
 
   const handleHomeVideoLoaded = React.useCallback(() => {
     setIsHomeVideoLoaded(true);
@@ -190,6 +206,14 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const [memoryInitialCategory, setMemoryInitialCategory] = useState<string | undefined>();
 
+  useEffect(() => {
+    if (!isEntitlementLoading && !hasFullAccess && GATED_FEATURE_NAMES[activeTab]) {
+      setPaywallFeature(GATED_FEATURE_NAMES[activeTab]);
+      setPaywallOpen(true);
+      setActiveTab("workspace");
+    }
+  }, [isEntitlementLoading, hasFullAccess, activeTab]);
+
   const handleSelectNav = React.useCallback(
     (route: string, categoryHint?: string) => {
       // Release focus from any button/input in current tab so hidden elements don't retain focus
@@ -202,6 +226,11 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         setActiveTab("workspace");
         return;
       }
+      if (GATED_FEATURE_NAMES[route] && !isEntitlementLoading && !hasFullAccess) {
+        setPaywallFeature(GATED_FEATURE_NAMES[route]);
+        setPaywallOpen(true);
+        return;
+      }
       if (route === "memory" && categoryHint) {
         setMemoryInitialCategory(categoryHint);
       }
@@ -210,7 +239,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       setActiveTab(route);
       if (onNavigate) onNavigate(route);
     },
-    [onNavigate],
+    [isEntitlementLoading, hasFullAccess, onNavigate],
   );
 
   const handleBackToWorkspace = React.useCallback(() => {
@@ -295,6 +324,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         userLevel={activeUserLevel}
         activeItem={activeTab}
         onSelectNav={handleSelectNav}
+        hasAccess={hasFullAccess}
       />
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
@@ -586,6 +616,17 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
               </button>
             </div>
           )}
+
+        <LinguaMarketplacePaywallModal
+          isOpen={paywallOpen}
+          entitlement={entitlement}
+          featureName={paywallFeature}
+          isCheckoutLoading={isCheckoutLoading}
+          isRefreshing={isEntitlementLoading}
+          onClose={() => setPaywallOpen(false)}
+          onCheckout={() => void startDirectCheckout()}
+          onRefreshEntitlement={() => void refreshEntitlement()}
+        />
       </main>
     </div>
   );

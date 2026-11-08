@@ -52,9 +52,10 @@ export const providerKeyVault = {
     const entry = await EncryptedLocalStorageVault.getItem<{ enabled: boolean }>(
       USE_CENTRAL_CORE_KEY,
     );
-    // Raíz: si el usuario nunca tocó el toggle, usar CORE por defecto si está levantado (evita fallback procedural innecesario)
-    if (entry === null || entry === undefined) return true;
-    return entry.enabled ?? true;
+    // Anti-fuga de costos: por defecto Central Core está apagado a menos que
+    // el usuario cuente con una licencia activa con AI Cloud confirmada.
+    if (entry === null || entry === undefined) return false;
+    return entry.enabled === true;
   },
 
   async setCentralCoreEnabled(enabled: boolean): Promise<void> {

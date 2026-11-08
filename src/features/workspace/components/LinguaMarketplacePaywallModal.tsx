@@ -20,9 +20,15 @@ export const LinguaMarketplacePaywallModal: React.FC<LinguaMarketplacePaywallMod
 }) => {
   if (!isOpen) return null;
   const isExpired = entitlement.status === "expired";
-  const desc = isExpired
-    ? `Tu acceso finalizó${entitlement.expiresAt ? ` el ${new Date(entitlement.expiresAt).toLocaleDateString()}` : ""}. Renueva tu suscripción para continuar usando Lingua.`
-    : featureName ? `Accede a ${featureName} y a todo el ecosistema de IA adquiriendo tu licencia en CELAEST Marketplace.` : "Completaste la prueba de Base 01. Adquiere tu licencia en CELAEST Marketplace para continuar.";
+  const isRevoked = entitlement.status === "revoked" || entitlement.status === "suspended" || entitlement.status === "cancelled";
+  const badgeStyle = isRevoked ? "bg-rose-500/10 border border-rose-500/30 text-rose-300" : isExpired ? "bg-amber-500/10 border border-amber-500/25 text-amber-300" : "bg-violet-500/10 border border-violet-500/25 text-violet-300";
+  const badgeText = isRevoked ? "Licencia Revocada / Suspendida" : isExpired ? "Licencia Expirada" : "CELAEST Marketplace · Licencia";
+  const titleText = isRevoked ? "Tu Licencia ha sido Revocada" : isExpired ? "Tu Licencia ha Expirado" : `Desbloquea ${featureName || entitlement.productName || "CELAEST Lingua AI"}`;
+  const desc = isRevoked
+    ? "Tu licencia de acceso fue revocada o suspendida por el administrador. Adquiere o reactiva tu licencia en CELAEST Marketplace para continuar avanzando."
+    : isExpired
+      ? `Tu acceso finalizó${entitlement.expiresAt ? ` el ${new Date(entitlement.expiresAt).toLocaleDateString()}` : ""}. Renueva tu suscripción para continuar usando Lingua.`
+      : featureName ? `Accede a ${featureName} y a todo el ecosistema de IA adquiriendo tu licencia en CELAEST Marketplace.` : "Completaste la prueba de Base 01. Adquiere tu licencia en CELAEST Marketplace para continuar.";
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-[fadeIn_0.2s_ease-out]" onClick={onClose}>
@@ -30,13 +36,11 @@ export const LinguaMarketplacePaywallModal: React.FC<LinguaMarketplacePaywallMod
         <button type="button" onClick={onClose} aria-label="Cerrar modal" className="absolute top-4 right-4 p-2 rounded-full text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer">
           <X className="w-4 h-4" />
         </button>
-        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider mb-3 ${isExpired ? "bg-amber-500/10 border border-amber-500/25 text-amber-300" : "bg-violet-500/10 border border-violet-500/25 text-violet-300"}`}>
+        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider mb-3 ${badgeStyle}`}>
           <Lock className="w-3.5 h-3.5" />
-          <span>{isExpired ? "Licencia Expirada" : "CELAEST Marketplace · Licencia"}</span>
+          <span>{badgeText}</span>
         </div>
-        <h2 className="text-xl font-bold tracking-tight text-white">
-          {isExpired ? "Tu Licencia ha Expirado" : `Desbloquea ${featureName || entitlement.productName || "CELAEST Lingua AI"}`}
-        </h2>
+        <h2 className="text-xl font-bold tracking-tight text-white">{titleText}</h2>
         <p className="mt-1 text-xs text-white/60 leading-relaxed">{desc}</p>
         <div className="mt-4 space-y-2 border-y border-white/[0.07] py-3">
           {INCLUDED_BENEFITS.map((item) => (

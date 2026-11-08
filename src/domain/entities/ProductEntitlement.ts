@@ -10,6 +10,8 @@ export type EntitlementStatus =
   | "trial"
   | "expired"
   | "revoked"
+  | "suspended"
+  | "cancelled"
   | "none";
 
 export interface ProductEntitlement {

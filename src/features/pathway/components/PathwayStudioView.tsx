@@ -35,13 +35,26 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
   useEffect(() => { warmProfessorModelCache(); }, []);
-  useEffect(() => { if (entitlement.hasAccess && paywallOpen) setPaywallOpen(false); }, [entitlement.hasAccess, paywallOpen]);
+  useEffect(() => {
+    if (entitlement.hasAccess) { setPaywallOpen(false); return; }
+    if (!isEntitlementLoading && activeNodeIndex > 0 && pathway.nodes[0]) {
+      selectNode(pathway.nodes[0].id);
+      setPaywallOpen(true);
+    } else if (!isEntitlementLoading && (entitlement.status === "revoked" || entitlement.status === "suspended" || entitlement.status === "cancelled" || entitlement.status === "expired")) {
+      setPaywallOpen(true);
+    }
+  }, [entitlement.hasAccess, entitlement.status, isEntitlementLoading, activeNodeIndex, pathway.nodes, selectNode]);
   if (!activeNode?.lessonPayload) return <PathwaySkeleton />;
 
   const handleSelectNodeGated = (nodeId: string) => {
     const idx = pathway.nodes.findIndex((n) => n.id === nodeId);
     if (idx > 0 && !canAccessNode(idx)) { setPaywallOpen(true); return; }
     selectNode(nodeId);
+    if (idx > 0) {
+      void refreshEntitlement().then((fresh) => {
+        if (!fresh.hasAccess && pathway.nodes[0]) { selectNode(pathway.nodes[0].id); setPaywallOpen(true); }
+      });
+    }
   };
 
   const masteredCount = pathway.nodes.filter((n) => n.status === "MASTERED" || n.status === "CONSOLIDATED").length;

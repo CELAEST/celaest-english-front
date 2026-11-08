@@ -11,7 +11,6 @@ import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
 import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
 import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
-import { ENV } from "../../../shared/constants/env";
 import { InterviewStatus, ProcessingStage } from "./useInterviewSpeechAudio";
 import type { CapturedAudioMeta } from "./useInterviewRecording";
 
@@ -386,10 +385,6 @@ export function useInterviewTurnEvaluation({
 
   const resumeFromRecoveryModal = useCallback(() => {
     setIsRecoveryModalOpen(false);
-    // Best-effort reset of exhausted key pool on the backend
-    fetch(`${ENV.coreAiUrl}/ai/keys/reset`, { method: "POST" }).catch((err) => {
-      logger.warn("[useInterviewTurnEvaluation] Key pool reset failed:", err);
-    });
     setTimeout(() => {
       const text = userTranscriptRef.current || userTranscript;
       if (text && text.trim()) {

@@ -167,9 +167,12 @@ Output format: Return ONLY valid raw JSON with the following structure:
               const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 6000);
+              const token = HttpClient.getAuthToken();
+              const headers: Record<string, string> = { "Content-Type": "application/json" };
+              if (token) headers["Authorization"] = `Bearer ${token}`;
               const response = await fetch(CORE_AI_URL, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({
                   system: systemPrompt,
                   message: userPrompt,

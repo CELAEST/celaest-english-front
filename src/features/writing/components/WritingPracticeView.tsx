@@ -31,7 +31,6 @@ import {
   normalizeCefrLevel,
 } from "../../../shared/services/levelStore";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
-import { ENV } from "../../../shared/constants/env";
 
 export interface WritingPracticeViewProps {
   onBackToWorkspace?: () => void;
@@ -954,11 +953,6 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         onClose={() => setIsRecoveryModalOpen(false)}
         onImmediateResume={() => {
           setIsRecoveryModalOpen(false);
-          try {
-            void fetch(`${ENV.coreAiUrl}/ai/keys/reset`, { method: "POST" }).catch(() => {});
-          } catch {
-            // ignore
-          }
           setTimeout(() => {
             void handleSubmit();
           }, 350);

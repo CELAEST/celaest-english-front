@@ -8,6 +8,7 @@
  * with zero closed static taxonomies, cached seamlessly in session storage.
  */
 
+import { HttpClient } from "../../../infrastructure/http/HttpClient";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 
@@ -327,9 +328,13 @@ CRITICAL: Return ONLY the normalized English title in title-case, absolutely not
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
 
+      const token = HttpClient.getAuthToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const response = await fetch(coreAiEndpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ message: prompt }),
         signal: controller.signal,
       });

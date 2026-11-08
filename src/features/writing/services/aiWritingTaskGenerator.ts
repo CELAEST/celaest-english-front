@@ -15,6 +15,7 @@ import { WritingTaskItem, getDefaultStarterPhrases } from "./dynamicWritingTaskS
 import { normalizeCefr, classifyProfession, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { HttpClient } from "../../../infrastructure/http/HttpClient";
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 
@@ -236,9 +237,13 @@ Every task in this new batch MUST be completely brand new with different scenari
             const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 25000);
+            const token = HttpClient.getAuthToken();
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const response = await fetch(CORE_AI_URL, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers,
               body: JSON.stringify({
                 system: systemPrompt,
                 message: userPrompt,

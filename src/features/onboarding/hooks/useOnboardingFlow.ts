@@ -19,11 +19,10 @@ export const useOnboardingFlow = () => {
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (!isAuth) return "auth";
     if (isCompleted) return "ready";
-    return "api-key";
+    return "beginner-check";
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [hasCloudAiEntitlement, setHasCloudAiEntitlement] = useState(false);
 
   // Smart AI Onboarding Bypass: if the user acquired Lingua via CELAEST Marketplace
   // or active Plan (aiCloudIncluded === true), enable Central Core and skip API-Key step.
@@ -34,7 +33,6 @@ export const useOnboardingFlow = () => {
       .then(async (ent) => {
         if (!active) return;
         if (ent.hasAccess && ent.aiCloudIncluded) {
-          setHasCloudAiEntitlement(true);
           await providerKeyVault.setCentralCoreEnabled(true);
           setStep((current) => (current === "api-key" ? "beginner-check" : current));
         }
@@ -88,8 +86,8 @@ export const useOnboardingFlow = () => {
   };
 
   const nextStep = () => {
-    if (step === "auth") setStep(hasCloudAiEntitlement ? "beginner-check" : "api-key");
-    else if (step === "welcome") setStep(hasCloudAiEntitlement ? "beginner-check" : "api-key");
+    if (step === "auth") setStep("beginner-check");
+    else if (step === "welcome") setStep("beginner-check");
     else if (step === "api-key") setStep("beginner-check");
     else if (step === "beginner-check") setStep("questions");
     else if (step === "questions") {
@@ -108,7 +106,7 @@ export const useOnboardingFlow = () => {
     if (step === "welcome") {
       if (!isAuth) setStep("auth");
     } else if (step === "api-key") setStep("auth");
-    else if (step === "beginner-check") setStep(hasCloudAiEntitlement ? "auth" : "api-key");
+    else if (step === "beginner-check") setStep("auth");
     else if (step === "questions") setStep("beginner-check");
     else if (step === "dna-analysis") setStep("questions");
     else if (step === "placement-quiz") setStep("dna-analysis");

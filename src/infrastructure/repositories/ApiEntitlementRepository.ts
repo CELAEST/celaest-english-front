@@ -65,10 +65,15 @@ export class ApiEntitlementRepository {
   static async createCheckoutSession(
     productId: string,
     returnUrl: string,
+    couponCode?: string,
   ): Promise<MarketplaceCheckoutSession> {
     const raw = await HttpClient.post<RawCheckoutResponse>(
       `${ENV.celaestBackUrl}/user/marketplace/checkout`,
-      { product_id: productId, return_url: returnUrl },
+      {
+        product_id: productId,
+        return_url: returnUrl,
+        ...(couponCode && couponCode.trim() ? { coupon_code: couponCode.trim() } : {}),
+      },
     );
     return {
       sessionId: raw.session_id,

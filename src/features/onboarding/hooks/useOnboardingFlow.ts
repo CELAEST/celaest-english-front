@@ -19,7 +19,7 @@ export const useOnboardingFlow = () => {
   const [step, setStep] = useState<OnboardingStep>(() => {
     if (!isAuth) return "auth";
     if (isCompleted) return "ready";
-    return "beginner-check";
+    return "api-key";
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -35,6 +35,12 @@ export const useOnboardingFlow = () => {
         if (ent.hasAccess && ent.aiCloudIncluded) {
           await providerKeyVault.setCentralCoreEnabled(true);
           setStep((current) => (current === "api-key" ? "beginner-check" : current));
+        } else if (ent.hasAccess && !ent.aiCloudIncluded) {
+          await providerKeyVault.setCentralCoreEnabled(false);
+          const hasKey = await providerKeyVault.hasAnyConfiguredKey();
+          if (hasKey) {
+            setStep((current) => (current === "api-key" ? "beginner-check" : current));
+          }
         }
       })
       .catch(() => {
@@ -43,7 +49,7 @@ export const useOnboardingFlow = () => {
     return () => {
       active = false;
     };
-  }, [authAdapter, isCompleted, step]);
+  }, [authAdapter, isCompleted]);
 
   // Global listener for session expiration / 401: instantly route to login form
   useEffect(() => {
@@ -86,8 +92,8 @@ export const useOnboardingFlow = () => {
   };
 
   const nextStep = () => {
-    if (step === "auth") setStep("beginner-check");
-    else if (step === "welcome") setStep("beginner-check");
+    if (step === "auth") setStep("api-key");
+    else if (step === "welcome") setStep("api-key");
     else if (step === "api-key") setStep("beginner-check");
     else if (step === "beginner-check") setStep("questions");
     else if (step === "questions") {

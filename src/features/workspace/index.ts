@@ -13,3 +13,5 @@ export * from "./components/TodaysFocusCard";
 export * from "./components/InterviewStreakCard";
 export * from "./components/WeeklyProgressCard";
 export * from "./components/JourneyTimelineCard";
+export * from "./components/LinguaMarketplacePaywallModal";
+export * from "./components/LinguaByokRequiredModal";

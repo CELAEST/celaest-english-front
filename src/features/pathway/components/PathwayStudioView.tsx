@@ -4,6 +4,8 @@ import { BridgeModuleTarget } from "../../../domain/entities/LearningPathway";
 import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { LinguaMarketplacePaywallModal } from "../../workspace/components/LinguaMarketplacePaywallModal";
+import { LinguaByokRequiredModal } from "../../workspace/components/LinguaByokRequiredModal";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { useIsDesktopViewport } from "../hooks/useIsDesktopViewport";
 import { useLearningPathway } from "../hooks/useLearningPathway";
 import { usePathwayStageSession } from "../hooks/usePathwayStageSession";
@@ -30,11 +32,19 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
   const [openAsking, setOpenAsking] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading } = useLinguaEntitlement();
+  const [byokOpen, setByokOpen] = useState(false);
+  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, isByokMode } = useLinguaEntitlement();
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
   useEffect(() => { warmProfessorModelCache(); }, []);
+  useEffect(() => {
+    if (isByokMode) {
+      void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
+        if (!hasKey) setByokOpen(true);
+      });
+    }
+  }, [isByokMode]);
   useEffect(() => {
     if (entitlement.hasAccess) { setPaywallOpen(false); return; }
     if (!isEntitlementLoading && activeNodeIndex > 0 && pathway.nodes[0]) {
@@ -90,7 +100,8 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
       />
       <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={() => void personalizeWithAi()} />
       <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
-      <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={() => void startDirectCheckout()} onRefreshEntitlement={() => void refreshEntitlement()} />
+      <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={(code) => void startDirectCheckout(code)} onRefreshEntitlement={() => void refreshEntitlement()} />
+      <LinguaByokRequiredModal isOpen={byokOpen} onClose={() => setByokOpen(false)} onConfigured={() => setByokOpen(false)} />
     </div>
   );
 };

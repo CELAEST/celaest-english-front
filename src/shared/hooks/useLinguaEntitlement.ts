@@ -126,28 +126,32 @@ export function useLinguaEntitlement() {
     };
   }, [refreshEntitlement]);
 
-  const startDirectCheckout = useCallback(async () => {
-    setIsCheckoutLoading(true);
-    try {
-      const returnUrl =
-        typeof window !== "undefined" ? window.location.origin : "";
-      if (entitlement.productId) {
-        const session = await ApiEntitlementRepository.createCheckoutSession(
-          entitlement.productId,
-          returnUrl,
-        );
-        if (session.checkoutUrl && typeof window !== "undefined") {
-          window.location.assign(session.checkoutUrl);
-          return;
+  const startDirectCheckout = useCallback(
+    async (couponCode?: string) => {
+      setIsCheckoutLoading(true);
+      try {
+        const returnUrl =
+          typeof window !== "undefined" ? window.location.origin : "";
+        if (entitlement.productId) {
+          const session = await ApiEntitlementRepository.createCheckoutSession(
+            entitlement.productId,
+            returnUrl,
+            couponCode,
+          );
+          if (session.checkoutUrl && typeof window !== "undefined") {
+            window.location.assign(session.checkoutUrl);
+            return;
+          }
         }
+        if (typeof window !== "undefined") {
+          window.open(ENV.marketplaceDashboardUrl, "_blank", "noopener,noreferrer");
+        }
+      } finally {
+        setIsCheckoutLoading(false);
       }
-      if (typeof window !== "undefined") {
-        window.open(ENV.marketplaceDashboardUrl, "_blank", "noopener,noreferrer");
-      }
-    } finally {
-      setIsCheckoutLoading(false);
-    }
-  }, [entitlement.productId]);
+    },
+    [entitlement.productId],
+  );
 
   const canAccessNode = useCallback(
     (nodeIndex: number) => nodeIndex === 0 || entitlement.hasAccess,
@@ -158,6 +162,7 @@ export function useLinguaEntitlement() {
     entitlement,
     isLoading,
     hasFullAccess: entitlement.hasAccess,
+    isByokMode: entitlement.hasAccess && !entitlement.aiCloudIncluded,
     canAccessNode,
     refreshEntitlement,
     startDirectCheckout,

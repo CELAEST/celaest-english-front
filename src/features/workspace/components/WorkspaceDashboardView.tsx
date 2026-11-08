@@ -4,6 +4,8 @@ import { WorkspaceHeroSection } from "./WorkspaceHeroSection";
 import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
 import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { LinguaMarketplacePaywallModal } from "./LinguaMarketplacePaywallModal";
+import { LinguaByokRequiredModal } from "./LinguaByokRequiredModal";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
@@ -77,9 +79,19 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     refreshEntitlement,
     startDirectCheckout,
     isCheckoutLoading,
+    isByokMode,
   } = useLinguaEntitlement();
   const [paywallOpen, setPaywallOpen] = useState<boolean>(false);
   const [paywallFeature, setPaywallFeature] = useState<string | undefined>();
+  const [byokOpen, setByokOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isByokMode) {
+      void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
+        if (!hasKey) setByokOpen(true);
+      });
+    }
+  }, [isByokMode]);
 
   const handleHomeVideoLoaded = React.useCallback(() => {
     setIsHomeVideoLoaded(true);
@@ -624,8 +636,13 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           isCheckoutLoading={isCheckoutLoading}
           isRefreshing={isEntitlementLoading}
           onClose={() => setPaywallOpen(false)}
-          onCheckout={() => void startDirectCheckout()}
+          onCheckout={(code) => void startDirectCheckout(code)}
           onRefreshEntitlement={() => void refreshEntitlement()}
+        />
+        <LinguaByokRequiredModal
+          isOpen={byokOpen}
+          onClose={() => setByokOpen(false)}
+          onConfigured={() => setByokOpen(false)}
         />
       </main>
     </div>

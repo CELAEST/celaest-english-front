@@ -183,6 +183,23 @@ export const providerKeyVault = {
     return keys.length > 0;
   },
 
+  async hasAnyConfiguredKey(): Promise<boolean> {
+    const allProviders: AiProviderId[] = [
+      "groq",
+      "gemini",
+      "openai",
+      "anthropic",
+      "grok",
+      "deepseek",
+      "openrouter",
+    ];
+    for (const pid of allProviders) {
+      const keys = await this.getKeys(pid);
+      if (keys.length > 0) return true;
+    }
+    return false;
+  },
+
   async getKey(providerId: AiProviderId, index = 0): Promise<string | null> {
     const keys = await this.getKeys(providerId);
     return keys[index] ?? keys[0] ?? null;

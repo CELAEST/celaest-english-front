@@ -475,6 +475,7 @@ Candidate Spoken Answer: "${cleanText}"`;
             const token = HttpClient.getAuthToken();
             const headers: Record<string, string> = {
               "Content-Type": "application/json",
+              "X-Internal-Service": "celaest-english-front",
             };
             if (token) {
               headers["Authorization"] = `Bearer ${token}`;

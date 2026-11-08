@@ -329,7 +329,10 @@ CRITICAL: Return ONLY the normalized English title in title-case, absolutely not
       const timeoutId = setTimeout(() => controller.abort(), 3500);
 
       const token = HttpClient.getAuthToken();
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-Internal-Service": "celaest-english-front",
+      };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const response = await fetch(coreAiEndpoint, {

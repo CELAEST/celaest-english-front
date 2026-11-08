@@ -68,19 +68,32 @@ export class HttpClient {
   }
 
   static getAuthToken(): string | null {
-    return (
-      this.token ||
-      (typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null)
-    );
+    if (this.token) return this.token;
+    if (typeof window === "undefined") return null;
+    const direct = localStorage.getItem("lingua_access_token");
+    if (direct) return direct;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.access_token) return parsed.access_token;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
   }
 
   private static getHeaders(): HeadersInit {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    const activeToken =
-      this.token ||
-      (typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null);
+    const activeToken = this.getAuthToken();
     if (activeToken) {
       headers["Authorization"] = `Bearer ${activeToken}`;
     }

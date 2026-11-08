@@ -1269,7 +1269,9 @@ export class AudioCaptureService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6500);
 
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+          "X-Internal-Service": "celaest-english-front",
+        };
         if (activeToken) {
           headers["Authorization"] = `Bearer ${activeToken.trim()}`;
         }

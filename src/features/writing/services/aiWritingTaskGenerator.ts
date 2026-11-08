@@ -238,7 +238,10 @@ Every task in this new batch MUST be completely brand new with different scenari
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 25000);
             const token = HttpClient.getAuthToken();
-            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            const headers: Record<string, string> = {
+              "Content-Type": "application/json",
+              "X-Internal-Service": "celaest-english-front",
+            };
             if (token) headers["Authorization"] = `Bearer ${token}`;
 
             const response = await fetch(CORE_AI_URL, {

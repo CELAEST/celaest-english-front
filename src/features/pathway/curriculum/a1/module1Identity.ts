@@ -1,8 +1,8 @@
 import { FoundationUnitSpec } from "../a1Foundations";
 
 export function buildModule1Identity(
-  roleExampleNoun: string,
-  roleExampleEsp: string,
+  _roleExampleNoun: string,
+  _roleExampleEsp: string,
 ): FoundationUnitSpec[] {
   return [
     // BASE 1: EL ORDEN MÁGICO (Sujeto Obligatorio + Verbo)
@@ -44,9 +44,9 @@ export function buildModule1Identity(
             pronunciationHint: "ai lérn ínglish step bai step",
           },
           {
-            english: `I work ${roleExampleNoun} every morning.`,
-            spanish: `Yo trabajo ${roleExampleEsp} cada mañana.`,
-            pronunciationHint: "ai uórk évri mórning",
+            english: "I work with my team every morning.",
+            spanish: "Yo trabajo con mi equipo cada mañana.",
+            pronunciationHint: "ai uórk uiz mai tím évri mórning",
           },
         ],
         blockChallenge: {

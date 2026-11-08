@@ -8,14 +8,14 @@ Built with **React 18**, **TypeScript (strict)**, **Vite 5** and **TailwindCSS 3
 ```bash
 npm install
 cp .env.example .env.local   # adjust backend URLs if needed
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:3001
 ```
 
 ## Scripts
 
 | Script                 | Purpose                                        |
 | ---------------------- | ---------------------------------------------- |
-| `npm run dev`          | Start the Vite dev server (port 3000)          |
+| `npm run dev`          | Start the Vite dev server (port 3001)          |
 | `npm run build`        | Type-check + production build to `dist/`       |
 | `npm run preview`      | Preview the production build                   |
 | `npm test`             | Run unit tests once (Vitest + Testing Library) |

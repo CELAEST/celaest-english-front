@@ -1,0 +1,215 @@
+{
+ "base": "base_05",
+ "source": "generate_fase1_base05_via_a.py",
+ "count": 26,
+ "items": [
+  {
+   "n": 1,
+   "label": "",
+   "files": [
+    "¡Bienvenido a tu clase! Hoy vas a dominar cómo negar y cómo preguntar con el verbo tu bi sin enredos... Toca Comenzar Clase para escuchar la explicación paso a paso, dominar la regla y pasar a tu práctica guiada."
+   ],
+   "text": "lesson_intro.mp3"
+  },
+  {
+   "n": 2,
+   "label": "",
+   "files": [
+    "El reto de esta base es dominar negativos y preguntas... Para decir que alguien no está o no es algo, simplemente agregamos la palabra not después del verbo tu bi... Por ejemplo, para él decimos:"
+   ],
+   "text": "seg_01_case1_intro.mp3"
+  },
+  {
+   "n": 3,
+   "label": "",
+   "files": [
+    "He isn't busy right now."
+   ],
+   "text": "seg_01_case1_model.mp3"
+  },
+  {
+   "n": 4,
+   "label": "",
+   "files": [
+    "Y para hacer una pregunta en inglés no necesitas una palabra adicional: simplemente inviertes el orden y colocas el verbo antes de la persona... Por ejemplo, para preguntar si tú estás listo decimos:"
+   ],
+   "text": "seg_01_case2_intro.mp3"
+  },
+  {
+   "n": 5,
+   "label": "",
+   "files": [
+    "Are you ready today?"
+   ],
+   "text": "seg_01_case2_model.mp3"
+  },
+  {
+   "n": 6,
+   "label": "",
+   "files": [
+    "Fíjate bien en la alerta en rojo de tu pizarra... En español solemos preguntar manteniendo el orden afirmativo y solo subiendo el tono de voz... pero en inglés nunca hacemos eso... Por eso nunca decimos:"
+   ],
+   "text": "seg_03_part1_intro.mp3"
+  },
+  {
+   "n": 7,
+   "label": "",
+   "files": [
+    "You are ready?"
+   ],
+   "text": "seg_03_part2_wrong.mp3"
+  },
+  {
+   "n": 8,
+   "label": "",
+   "files": [
+    "Sino que en inglés siempre invertimos el orden diciendo:"
+   ],
+   "text": "seg_03_part3_pivot.mp3"
+  },
+  {
+   "n": 9,
+   "label": "",
+   "files": [
+    "Are you ready?"
+   ],
+   "text": "seg_03_part4_correct.mp3"
+  },
+  {
+   "n": 10,
+   "label": "",
+   "files": [
+    "Tu ancla mental para no dudar jamás: en preguntas directas con el verbo tu bi, primero colocas el verbo y luego la persona."
+   ],
+   "text": "seg_03_part5_anchor.mp3"
+  },
+  {
+   "n": 11,
+   "label": "",
+   "files": [
+    "¡Probemos tu oído ahora mismo! Antes de ver los ejemplos, toca cuál de estas dos frases suena natural en inglés."
+   ],
+   "text": "trap_intro.mp3"
+  },
+  {
+   "n": 12,
+   "label": "",
+   "files": [
+    "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que en preguntas directas colocamos primero el verbo: diciendo... Are you ready?... Toca la otra opción en tu pantalla."
+   ],
+   "text": "trap_error.mp3"
+  },
+  {
+   "n": 13,
+   "label": "",
+   "files": [
+    "¡Exacto! Cazaste la trampa a la perfección... En preguntas siempre invertimos el orden... Escucha ahora con atención cómo suena en ejemplos reales."
+   ],
+   "text": "trap_success.mp3"
+  },
+  {
+   "n": 14,
+   "label": "",
+   "files": [
+    "Are you ready for the meeting?"
+   ],
+   "text": "seg_05.mp3"
+  },
+  {
+   "n": 15,
+   "label": "",
+   "files": [
+    "Escucha con atención cómo se unen las palabras al preguntar... Are you ready for the meeting?... El secreto de pronunciación es unir are con you suavemente:... ar yu rédi for de míting."
+   ],
+   "text": "seg_06.mp3"
+  },
+  {
+   "n": 16,
+   "label": "",
+   "files": [
+    "He isn't busy right now."
+   ],
+   "text": "seg_07.mp3"
+  },
+  {
+   "n": 17,
+   "label": "",
+   "files": [
+    "Si te surge cualquier duda, toca Preguntar en cualquier momento... Ahora constrúyela tú: voy a abrir las fichas en tu pantalla para activar tu memoria motriz... ¡Adelante, tú puedes!"
+   ],
+   "text": "seg_08.mp3"
+  },
+  {
+   "n": 18,
+   "label": "",
+   "files": [
+    "Arma la pregunta: ¿Estás listo hoy? Toca primero Are, luego you y después ready today?."
+   ],
+   "text": "build_intro.mp3"
+  },
+  {
+   "n": 19,
+   "label": "",
+   "files": [
+    "¡Impecable! Invertiste la posición y abriste con Are you. Avanza al reto de voz para entrenar tu pronunciación."
+   ],
+   "text": "challenge_success.mp3"
+  },
+  {
+   "n": 20,
+   "label": "",
+   "files": [
+    "¡Ojo al orden! Coloca primero el verbo Are antes de la persona you... Toca una ficha para reorganizarla."
+   ],
+   "text": "challenge_error.mp3"
+  },
+  {
+   "n": 21,
+   "label": "",
+   "files": [
+    "Ahora es tu turno de hablar. Escucha con atención: Are you ready today? Toca el micrófono y pronúncialo con calma."
+   ],
+   "text": "voice_instruction.mp3"
+  },
+  {
+   "n": 22,
+   "label": "",
+   "files": [
+    "Are you ready today?"
+   ],
+   "text": "voice_sample.mp3"
+  },
+  {
+   "n": 23,
+   "label": "",
+   "files": [
+    "¡Excelente pronunciación! Dominaste ser o estar en preguntas y negativos. Ya estás listo para continuar."
+   ],
+   "text": "voice_victory.mp3"
+  },
+  {
+   "n": 24,
+   "label": "",
+   "files": [
+    "Casi lo tienes. Recuerda la entonación limpia: Are you ready today? Inténtalo de nuevo tocando el micrófono."
+   ],
+   "text": "voice_retry.mp3"
+  },
+  {
+   "n": 25,
+   "label": "",
+   "files": [
+    "No logré escucharte con claridad. Asegúrate de permitir el micrófono y repite la frase con calma."
+   ],
+   "text": "voice_not_heard.mp3"
+  },
+  {
+   "n": 26,
+   "label": "",
+   "files": [
+    "Parece que el navegador no tiene permiso para el micrófono. Actívalo en la barra de direcciones para certificar tu voz."
+   ],
+   "text": "mic_error.mp3"
+  }
+ ]
+}

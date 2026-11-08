@@ -3,29 +3,34 @@ import { MessageSquareQuote, Pause, Play, Volume2 } from "lucide-react";
 
 interface LessonBoardActionsProps {
   isDictating: boolean; isSpeakingAudio: boolean; canPlaySample: boolean;
-  isAskingOpen?: boolean | undefined; onToggleLecture: () => void;
+  isAskingOpen?: boolean | undefined; isAutoplayWaiting?: boolean | undefined;
+  onToggleLecture: () => void;
   onPlaySample: () => void; onToggleAsking?: (() => void) | undefined;
 }
 
 export const LessonBoardActions: React.FC<LessonBoardActionsProps> = ({
-  isDictating, isSpeakingAudio, canPlaySample, isAskingOpen = false,
+  isDictating, isSpeakingAudio, canPlaySample, isAskingOpen = false, isAutoplayWaiting = false,
   onToggleLecture, onPlaySample, onToggleAsking,
 }) => (
   <div className="flex items-center justify-between w-full pt-2 border-t border-white/[0.06] select-none">
     <button
       type="button"
       onClick={onToggleLecture}
-      className={`group inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.16em] uppercase transition-colors cursor-pointer ${
-        isDictating ? "text-[#22D3EE]" : "text-white/55 hover:text-white"
+      className={`group inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.16em] uppercase transition-all cursor-pointer ${
+        isDictating
+          ? "text-[#22D3EE]"
+          : isAutoplayWaiting
+          ? "px-2.5 py-1 rounded-full bg-[#22D3EE]/15 border border-[#22D3EE]/50 text-[#22D3EE] animate-pulse shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+          : "text-white/55 hover:text-white"
       }`}
-      aria-label={isDictating ? "Pausar clase" : "Dictar clase"}
+      aria-label={isDictating ? "Pausar clase" : "Comenzar clase"}
     >
       {isDictating ? (
         <Pause size={10} className="animate-pulse text-[#22D3EE]" />
       ) : (
-        <Play size={10} className="text-white/40 group-hover:text-[#A27FF3] transition-colors" />
+        <Play size={10} className={isAutoplayWaiting ? "text-[#22D3EE]" : "text-white/40 group-hover:text-[#A27FF3] transition-colors"} />
       )}
-      <span>{isDictating ? "Pausa" : "Clase"}</span>
+      <span>{isDictating ? "Pausa" : isAutoplayWaiting ? "Comenzar Clase" : "Clase"}</span>
     </button>
 
     {onToggleAsking && (

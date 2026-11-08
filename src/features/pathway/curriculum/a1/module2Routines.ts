@@ -1,8 +1,8 @@
 import { FoundationUnitSpec } from "../a1Foundations";
 
 export function buildModule2Routines(
-  roleExampleNoun: string,
-  roleExampleEsp: string,
+  _roleExampleNoun: string,
+  _roleExampleEsp: string,
 ): FoundationUnitSpec[] {
   return [
     // BASE 6: ACCIONES DEL DÍA A DÍA (Presente Simple con I, You, We, They)
@@ -44,9 +44,9 @@ export function buildModule2Routines(
             pronunciationHint: "ui stádi ínglish évri mórning",
           },
           {
-            english: `I work ${roleExampleNoun} with my colleagues.`,
-            spanish: `Yo trabajo ${roleExampleEsp} con mis compañeros.`,
-            pronunciationHint: "ai uórk uiz mai kóligs",
+            english: "I work every day with my colleagues.",
+            spanish: "Yo trabajo cada día con mis compañeros.",
+            pronunciationHint: "ai uórk évri déi uiz mai kóligs",
           },
         ],
         blockChallenge: {

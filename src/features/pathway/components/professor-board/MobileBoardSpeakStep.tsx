@@ -63,7 +63,6 @@ export const MobileBoardSpeakStep: React.FC<MobileBoardSpeakStepProps> = ({
         </div>
       ) : (
         <div className="pt-2 border-t border-[#4ade80]/30 space-y-2">
-          <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#4ade80]">✓ Base conquistada y guardada en tu progreso</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             {onBridgeNavigate && (
               <button type="button" onClick={() => onBridgeNavigate(bridgeModule.target)} className="px-3.5 py-1.5 rounded-full bg-[#4ade80] text-[#000001] text-[11.5px] font-semibold cursor-pointer">

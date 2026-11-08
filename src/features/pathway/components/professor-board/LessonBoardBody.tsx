@@ -20,6 +20,8 @@ export interface LiveBoardState {
   activeBeat: LiveClassBeatId;
   activeFormulaCaseIndex: number;
   activeExampleIndex: number;
+  formulaRevealCount?: number | undefined;
+  trapPhase?: 0 | 1 | 2 | undefined;
   isDictating: boolean;
   isWaitingTrapCheck: boolean;
   trapCheckPassed: boolean;
@@ -70,7 +72,10 @@ export const LessonBoardBody: React.FC<LessonBoardBodyProps> = ({
         <MobileLiveRuleStage
           lesson={lesson} nodeOrderIndex={liveBoard.nodeOrderIndex} activeBeat={liveBoard.activeBeat}
           activeFormulaCaseIndex={liveBoard.activeFormulaCaseIndex}
-          activeExampleIndex={liveBoard.activeExampleIndex} isDictating={liveBoard.isDictating}
+          activeExampleIndex={liveBoard.activeExampleIndex}
+          formulaRevealCount={liveBoard.formulaRevealCount}
+          trapPhase={liveBoard.trapPhase}
+          isDictating={liveBoard.isDictating}
           isSpeakingEnglish={liveBoard.isSpeakingEnglish} speakingSampleText={speakingSampleText}
           trapCheckPassed={liveBoard.trapCheckPassed} subtitleSpanish={liveBoard.subtitleSpanish}
           onSelectBeat={liveBoard.onSelectBeat} onSelectFormulaCase={liveBoard.onSelectFormulaCase}

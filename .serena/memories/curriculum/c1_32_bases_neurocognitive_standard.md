@@ -1,0 +1,16 @@
+# C1 Pathway Curriculum Standard: 32 Bases Hacia C2 (Mastery & Native Command)
+
+## Architecture Overview
+Level C1 is completely modularized into 6 domain curriculum sub-modules in `src/features/pathway/curriculum/c1/`:
+1. `module1FrontingInversion.ts` (Bases 1 to 6): Fronting adjetival ('Difficult though it was...'), Inversión temporal restrictiva ('Not until... did we realize'), Inversión locativa ('Beneath the archway stood...'), Topicalización de objeto ('That proposal, we never accepted'), Inversión dramática ('Little did they suspect...'), Oratoria persuasiva integrada.
+2. `module2FormulaicSubjunctive.ts` (Bases 7 to 11): Subjuntivo invariable ('Be that as it may / Come what may'), Subjuntivo de cortesía ('Suffice it to say / Far be it from me'), Contrafácticos supremos ('Had it not been for / Were it not for'), Conectores de precisión ('Inasmuch as / Insofar as / Albeit'), Inversión comparativa formal ('As do all our members').
+3. `module3NominalizationEllipsis.ts` (Bases 12 to 16): Nominalización conceptual y densidad léxica ('The rapid adoption of new methodologies markedly improved...'), Elipsis condicional ('if any', 'if so', 'if ever'), Sustitución de proposición ('to do so would be unacceptable'), Cláusulas reducidas con adjetivos ('Aware of the complexity...'), Resumen ejecutivo de máxima densidad.
+4. `module4EpistemicStance.ts` (Bases 17 to 21): Litotes y understatement británico ('To say that it faced opposition would be an understatement'), Certeza gradual ('by no means certain', 'all but impossible'), Dinamismo de posición ('stands to gain', 'poised to lead'), Concesión forzosa ('There is no denying that'), Contraste afectivo ('Much as I respect your view...').
+5. `module5PragmaticIdioms.ts` (Bases 22 to 26): Metáforas conceptuales inmutables ('A double-edged sword', 'Strike a responsive chord'), Debate crítico dialéctico ('Play devil's advocate', 'Take with a pinch of salt'), Inversión literaria ('Scarcely had the session resumed when...'), Pasiva estilística ('There are understood to be multiple factors'), Reporting verbs epistemológicos ('posit', 'contend', 'concede', 'refute').
+6. `module6PhilosophicalSynthesis.ts` (Bases 27 to 32): Síntesis filosófica trascendental ('In the final analysis', 'Notwithstanding'), Giro estratégico ('Having said that', 'By the same token'), Pacing oratorio y pausas dramáticas de silencio, Pares mínimos de registro extremo ('imply' vs 'infer', 'comprise' vs 'compose'), Antítesis y paralelismo retórico ('Not because it was easy, but because it was right'), Gran Certificación C1 / Salto definitivo a C2 Mastery.
+
+## Key Guarantees
+- 100% Multi-Domain Invariance: Zero tech buzzword leakage (no sprints, repos, microservices). Clean examples across business, medicine, philosophy, education, law, arts.
+- Screaming Architecture & Anti-Monolith: 6 focused sub-modules under 320 lines each, orchestrated by `index.ts` and re-exported via `c1Foundations.ts`.
+- 4 Cumulative Checkpoints (Boss Fights): Anchored at bases 8, 16, 24, and 32 for continuous retention.
+- Flagship voice mentor: `es-CO-GonzaloNeural` with real-time speech sanitization and zero-latency RAM audio playback.

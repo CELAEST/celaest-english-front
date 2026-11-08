@@ -1,0 +1,232 @@
+import { BaseSpeechProfile, PAUSE } from "../types";
+
+/**
+ * Base 06 — Acciones del Día a Día: Hábitos y Rutinas.
+ *
+ * La regla del currículo tiene UN solo caso (hábito directo), así que se explica igual
+ * con su par intro/modelo y `activeFormulaCaseIndex: 0` + badge "CASO 1 DE 1".
+ *
+ * Mismo contrato que base_01–base_05:
+ * - una pista = un idioma;
+ * - el verbo tu bi se menciona con respelling; la frase completa va en pista inglesa;
+ * - las pausas van en `pauseAfterMs`, no en puntuación.
+ */
+export const base06SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_06",
+  orderIndex: 5,
+  title: "Acciones del Día a Día: Hábitos y Rutinas",
+  targetSentence: "We study English here.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase! Hoy pones en palabras tu día completo: lo que estudias, lo que trabajas y con qué frecuencia. Toca Comenzar Clase y avanzamos juntos por la fórmula, la trampa y tu práctica de voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "Hoy vamos a desbloquear una base fundamental para tu fluidez. En español cada persona cambia el verbo, pero en inglés, con yo, tú, nosotros y ellos, la acción se queda tal cual.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Te voy a enseñar el secreto exacto para que cuentes tus hábitos con la acción limpia, sin verbos de más. Así nunca más te trabes al hablar de tu rutina.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "El reto de esta base son tus rutinas. Para hablar de lo que pasa siempre, el inglés pide tres piezas: la persona, la acción en su forma base y la frecuencia. La acción va limpia, sin verbo extra delante.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Único uso de la regla: el hábito directo. Primero la persona, después la acción tal como es, y al final la frecuencia. Escucha:",
+      badgeLabel: "FÓRMULA · CASO 1 DE 1",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "We study English here.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 1",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mira la alerta roja de tu pizarra. En español la acción va sola, pero al pasar al inglés muchos meten una forma del verbo tu bi delante de la acción. Escucha el error típico:",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "I am live in the city.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el inglés deja la acción limpia, sin verbo extra en medio, y dice:",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "I live in the city.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Tu ancla mental para no dudar jamás: en una rutina, la acción va directa y sin verbo extra delante.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora decides tú. En tu pantalla hay dos frases: toca la que un nativo diría de verdad.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Mucho ojo! Metiste un verbo extra delante de la acción, y esa es justo la trampa del español. Toca la otra opción.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Exacto! La acción quedó limpia y directa. Ahora escucha dos rutinas reales.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.study",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "We study English every morning.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fíjate en cómo se pegan las palabras cuando hablas rápido. El secreto es no cortar la acción: ui stádi ínglish évri mórning.",
+      canonical:
+        "Fíjate en cómo se pegan las palabras cuando hablas rápido. El secreto es no cortar la acción: We study English every morning.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.work",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "I work every day with my colleagues.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Toca Preguntar si algo se te escapa. Ahora te toca armar la frase con tus manos: las fichas ya están en tu pantalla. ¡Adelante!",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordena las fichas de izquierda a derecha hasta completar la rutina.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "La persona abre la frase, después la acción sin verbo extra, y la frecuencia cierra. Toca una ficha para moverla.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bien! La acción salió limpia, sin verbo extra. Ahora vamos a certificar tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escucha primero cómo lo digo yo:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "We study English here.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Ahora enciende tu micrófono y repite la frase completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Casi lo tienes! Escucha la frase otra vez y repítela sin prisa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte con claridad. Acércate al micrófono y repite la oración conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Excelente pronunciación! La acción salió directa y con buen ritmo. Base conquistada con éxito.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Acepta el permiso del navegador o continúa en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

@@ -1049,22 +1049,44 @@ export class AudioCaptureService {
    * 3. Direct Edge Gemini Flash Audio (fallback if user configured Google Gemini key)
    * 4. Backend Proxies (ENV.apiUrl / CELAEST-CORE) with multi-provider failover
    */
+  /**
+   * Detecta el contenedor real por los primeros bytes del blob.
+   * Evita mandar a Whisper un archivo con extensión mentirosa (p. ej. PCM crudo
+   * etiquetado como webm): Groq responde 400 "not a valid media file".
+   */
+  private static async sniffAudioContainer(blob: Blob): Promise<string | null> {
+    try {
+      const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+      const ascii = (from: number, to: number) =>
+        String.fromCharCode(...Array.from(head.slice(from, to)));
+      if (head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3) return "webm";
+      if (ascii(0, 4) === "OggS") return "ogg";
+      if (ascii(0, 4) === "RIFF") return "wav";
+      if (ascii(4, 8) === "ftyp") return "mp4";
+    } catch {
+      // blob sin bytes legibles
+    }
+    return null;
+  }
+
   public static async transcribeAudio(
     audioBlob: Blob,
     _context?: { roleName?: string | undefined; question?: string | undefined },
   ): Promise<AudioTranscriptionResult | null> {
     this.lastTranscribeAllProvidersFailed = false;
-    if (!audioBlob || audioBlob.size < 200) return null;
+    // Un webm vacío pesa ~300-800 B y también dispara "invalid media file" en Groq.
+    if (!audioBlob || audioBlob.size < 1024) return null;
 
-    const extension = audioBlob.type.includes("mp4")
-      ? "mp4"
-      : audioBlob.type.includes("aac")
-        ? "m4a"
-        : audioBlob.type.includes("ogg")
-          ? "ogg"
-          : audioBlob.type.includes("wav")
-            ? "wav"
-            : "webm";
+    const container = await this.sniffAudioContainer(audioBlob);
+    if (!container) {
+      logger.warn("[AudioCaptureService] Blob sin contenedor de audio reconocible; se evita el 400 de Whisper.", {
+        size: audioBlob.size,
+        type: audioBlob.type,
+      });
+      this.lastTranscribeAllProvidersFailed = true;
+      return null;
+    }
+    const extension = container;
 
     // 1. Direct Edge/Browser Groq Whisper (Ultra-fast, ~150ms, zero backend dependence)
     // NOTE: We deliberately do NOT pass a conditioning prompt to Whisper. Passing prompts causes Whisper

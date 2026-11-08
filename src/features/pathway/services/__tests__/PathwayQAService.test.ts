@@ -29,24 +29,42 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     // 1. First visit: explains the software once + full 7-stage live choreography
     const firstLecture = PathwayLectureEngine.buildLectureScript(node);
     expect(firstLecture.headline).toContain("Mentoría");
-    expect(firstLecture.segments.length).toBe(8);
+    expect(firstLecture.segments[0]?.beat).toBe("ORIENTATION");
     expect(firstLecture.segments[0]?.badgeLabel).toContain("1. BIENVENIDA & GUÍA DE ESTUDIO");
     expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
 
-    // 2. Subsequent visit: zero software repetition, dives straight into Formula -> Trap -> Trap Check -> Examples -> Build
+    // 2. Segunda visita: sin orientación, entra directo a la clase
     const secondLecture = PathwayLectureEngine.buildLectureScript(node);
-    expect(secondLecture.segments.length).toBe(7);
-    expect(secondLecture.segments[0]?.badgeLabel).toContain("1. PROPÓSITO REAL");
-    expect(secondLecture.segments[1]?.badgeLabel).toContain("2. LA TRAMPA DEL ESPAÑOL");
-    expect(secondLecture.segments[2]?.badgeLabel).toContain("3. CAZA LA TRAMPA");
-    expect(secondLecture.segments[3]?.badgeLabel).toContain("4. MODELO NATIVO");
-    expect(secondLecture.segments[4]?.badgeLabel).toContain("5. SECRETO FONÉTICO");
-    expect(secondLecture.segments[5]?.badgeLabel).toContain("6. EJEMPLO APLICADO");
-    expect(secondLecture.segments[6]?.badgeLabel).toContain("ACTIVACIÓN EN PANTALLA");
+    expect(secondLecture.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
 
-    expect(secondLecture.segments[3]?.language).toBe("en");
-    expect(secondLecture.segments[5]?.language).toBe("en");
-    expect(secondLecture.segments[0]?.language).toBe("es");
+    // 3. Estructura del guion: fórmula (3) -> trampa (5) -> check -> ejemplos (4) -> build (2)
+    const beats = secondLecture.segments.map((s) => s.beat);
+    expect(beats.slice(0, 3)).toEqual(["FORMULA", "FORMULA", "FORMULA"]);
+    expect(beats.filter((b) => b === "TRAP").length).toBe(7);
+    expect(beats.filter((b) => b === "TRAP_CHECK").length).toBe(1);
+    expect(beats.filter((b) => b === "EXAMPLES").length).toBe(3);
+    expect(secondLecture.segments.filter((s) => s.targetStep === "BUILD").length).toBe(2);
+    expect(secondLecture.segments.find((s) => s.beat === "TRAP_CHECK")?.pauseAfterForCheck).toBe(true);
+
+    // 4. Una pista = un idioma. Los modelos nativos son pistas propias.
+    const enTexts = secondLecture.segments.filter((s) => s.language === "en").map((s) => s.text);
+    expect(enTexts).toEqual([
+      "I work every day.",
+      "I, you, we, they.",
+      "Work every day.",
+      "I work every day.",
+      "I learn English step by step.",
+      "I work with my team every morning.",
+    ]);
+
+    // 5. Cero contaminación bilingüe en las pistas en español
+    const esSegs = secondLecture.segments.filter((s) => s.language === "es");
+    for (const s of esSegs) {
+      const t = s.text.toLowerCase();
+      expect(t).not.toContain("i work every day");
+      expect(t).not.toContain("i learn english");
+      expect(t).not.toContain("work every morning");
+    }
   });
 
   it("addresses multi-case A1 formulas 1 by 1 (e.g. Base 09 Do vs Does, Base 03 Am/Is/Are) without mashing incompatible usages", () => {
@@ -63,11 +81,64 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     expect(formulaSegs09[0]?.badgeLabel).toContain("USO 1 DE 2");
     expect(formulaSegs09[1]?.badgeLabel).toContain("USO 2 DE 2");
 
-    // Base 03 (index 2): Am / Is / Are -> 3 sequential FORMULA cases
+    // Base 03 (index 2): perfil declarativo con 3 casos (VÍA A) + la regla que los anuncia.
+    // 4 pistas en español (regla + 3 intros) + 3 modelos nativos en inglés.
     const base03 = { ...node, id: "node-3", orderIndex: 2, title: seedNodes[2]!.title, competencyFocus: seedNodes[2]!.competencyFocus, blueprint: seedNodes[2]!.blueprint, lessonPayload: seedNodes[2]!.lessonPayload };
     const script03 = PathwayLectureEngine.buildLectureScript(base03);
     const formulaSegs03 = script03.segments.filter((s) => s.beat === "FORMULA");
-    expect(formulaSegs03.length).toBe(3);
+    expect(formulaSegs03.length).toBe(7);
+    expect(
+      new Set(
+        formulaSegs03
+          .filter((s) => s.activeFormulaCaseIndex !== undefined)
+          .map((s) => s.activeFormulaCaseIndex),
+      ).size,
+    ).toBe(3);
+    expect(formulaSegs03.filter((s) => s.language === "en").length).toBe(3);
+    expect(formulaSegs03.filter((s) => s.language === "es").length).toBe(4);
+    expect(formulaSegs03.some((s) => s.text.includes("tres parejas fijas"))).toBe(true);
+
+    // Base 04 (index 3): perfil declarativo con 2 casos + la regla que los anuncia.
+    // 3 pistas en español (regla + 2 intros) + 2 modelos nativos en inglés.
+    const base04 = { ...node, id: "node-4", orderIndex: 3, title: seedNodes[3]!.title, competencyFocus: seedNodes[3]!.competencyFocus, blueprint: seedNodes[3]!.blueprint, lessonPayload: seedNodes[3]!.lessonPayload };
+    const script04 = PathwayLectureEngine.buildLectureScript(base04);
+    const formulaSegs04 = script04.segments.filter((s) => s.beat === "FORMULA");
+    expect(formulaSegs04.length).toBe(5);
+    expect(
+      new Set(
+        formulaSegs04
+          .filter((s) => s.activeFormulaCaseIndex !== undefined)
+          .map((s) => s.activeFormulaCaseIndex),
+      ).size,
+    ).toBe(2);
+    expect(formulaSegs04.filter((s) => s.language === "en").length).toBe(2);
+    expect(formulaSegs04.filter((s) => s.language === "es").length).toBe(3);
+    expect(formulaSegs04.some((s) => s.text.includes("dos usos"))).toBe(true);
+
+    // Base 05 (index 4): perfil declarativo con 2 casos + la regla que los anuncia.
+    // 3 pistas en español (regla + 2 intros) + 2 modelos nativos en inglés.
+    const base05 = { ...node, id: "node-5", orderIndex: 4, title: seedNodes[4]!.title, competencyFocus: seedNodes[4]!.competencyFocus, blueprint: seedNodes[4]!.blueprint, lessonPayload: seedNodes[4]!.lessonPayload };
+    const script05 = PathwayLectureEngine.buildLectureScript(base05);
+    const formulaSegs05 = script05.segments.filter((s) => s.beat === "FORMULA");
+    expect(formulaSegs05.length).toBe(5);
+    expect(
+      new Set(
+        formulaSegs05
+          .filter((s) => s.activeFormulaCaseIndex !== undefined)
+          .map((s) => s.activeFormulaCaseIndex),
+      ).size,
+    ).toBe(2);
+    expect(formulaSegs05.filter((s) => s.language === "en").length).toBe(2);
+    expect(formulaSegs05.filter((s) => s.language === "es").length).toBe(3);
+    expect(formulaSegs05.some((s) => s.text.includes("dos usos"))).toBe(true);
+    expect(formulaSegs05.some((s) => s.text.includes("Are you ready today?"))).toBe(true);
+    // Cero contaminación bilingüe: ningún segmento en español puede contener la frase nativa
+    formulaSegs05
+      .filter((s) => s.language === "es")
+      .forEach((s) => {
+        expect(s.text.toLowerCase()).not.toContain("are you ready today");
+        expect(s.text.toLowerCase()).not.toContain("isn't busy");
+      });
 
     // Invariance across all 32 A1 foundations: zero mashed Do/Does or Don't/Doesn't in a single token
     for (const seed of seedNodes) {

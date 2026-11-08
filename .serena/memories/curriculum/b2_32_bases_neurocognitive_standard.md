@@ -1,0 +1,16 @@
+# B2 Pathway Curriculum Standard: 32 Bases Hacia C1 (Advanced Fluency)
+
+## Architecture Overview
+Level B2 is completely modularized into 6 domain curriculum sub-modules in `src/features/pathway/curriculum/b2/`:
+1. `module1InversionEmphasis.ts` (Bases 1 to 6): Inversión negativa formal (Rarely / Under no circumstances), Cleft sentences con What ('What I really need...'), Cleft sentences con It ('It was that decision that...'), Auxiliar enfatizador afirmativo ('I DO understand'), Comparativas dobles ('The more... the more...'), Inversión narrativa dramática ('Hardly had we... when...').
+2. `module2MixedConditionals.ts` (Bases 7 to 11): Condicional mixto pasado a presente ('If I had accepted, I would live in Montreal now'), Condicional mixto presente a pasado ('If I were more patient, I would have...'), Condicionales de negociación ('Provided that / As long as'), Inversión condicional diplomática ('Should you need / Had we known'), Deseos y lamentos avanzados ('I wish I had' vs 'I wish they would').
+3. `module3PastDeduction.ts` (Bases 12 to 16): Certeza lógica pasada ('Must have been' vs 'Can't have been'), Especulación pasada ('Might have / May have / Could have'), Acciones innecesarias ('Needn't have done' vs 'Didn't need to do'), Expectativas no cumplidas ('Was supposed to' / 'Were bound to'), Oportunidades desperdiciadas ('Could have done').
+4. `module4ParticipleClauses.ts` (Bases 17 to 21): Cláusulas de participio presente en -ing ('Realizing the misunderstanding...'), Cláusulas de participio pasado en -ed pasivo ('Seen from a neutral perspective...'), Participio perfecto compuesto ('Having examined all alternatives...'), Preposiciones con participio ('Despite knowing the risks...'), Causativas avanzadas ('Have something done' vs 'Get someone to do').
+5. `module5SubjunctivePassive.ts` (Bases 22 to 26): Subjuntivo mandativo formal ('I insist that he BE present'), Urgencia con 'It's (high) time' ('It is high time we addressed...'), Verbos de percepción infinitivo vs gerundio ('I heard him explain' vs 'explaining'), Pasiva impersonal e institucional ('The policy is considered to have...'), Reporting verbs de precisión ('urge', 'apologize for', 'deny having disclosed').
+6. `module6DiscourseHedging.ts` (Bases 27 to 32): Concesión formal ('Whereas / Nonetheless'), Reformulación y precisión ('To put it another way / That is to say'), Hedging diplomático ('Arguably / It would appear that'), Binomios idiomáticos inmutables ('give and take', 'pros and cons'), Preguntas retóricas de convicción ('Is it really worth compromising...?'), Gran Certificación B2 / Salto definitivo a C1 (integración oratoria sin traducción).
+
+## Key Guarantees
+- 100% Multi-Domain Invariance: Zero tech buzzword leakage (no sprints, repos, microservices). Clean examples across business, medicine, education, law, daily life, arts.
+- Screaming Architecture & Anti-Monolith: 6 focused sub-modules under 320 lines each, orchestrated by `index.ts` and re-exported via `b2Foundations.ts`.
+- 4 Cumulative Checkpoints (Boss Fights): Anchored at bases 8, 16, 24, and 32 for continuous retention.
+- Flagship voice mentor: `es-CO-GonzaloNeural` with real-time speech sanitization and zero-latency RAM audio playback.

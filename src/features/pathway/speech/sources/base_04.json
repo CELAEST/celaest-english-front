@@ -1,0 +1,199 @@
+{
+ "base": "base_04",
+ "source": "generate_fase1_base04_via_a.py",
+ "count": 24,
+ "items": [
+  {
+   "n": 1,
+   "label": "",
+   "files": [
+    "¡Bienvenido a tu clase! Hoy vas a dominar la trampa de tener: por qué en inglés nunca dices que tienes hambre ni años... Toca Comenzar Clase para escuchar la explicación paso a paso, dominar la regla y pasar a tu práctica guiada."
+   ],
+   "text": "lesson_intro.mp3"
+  },
+  {
+   "n": 2,
+   "label": "",
+   "files": [
+    "El reto de esta base es la trampa de tener. En inglés no tienes hambre ni frío: estás en ese estado con am:"
+   ],
+   "text": "seg_01_case1_intro.mp3"
+  },
+  {
+   "n": 3,
+   "label": "",
+   "files": [
+    "I am hungry now."
+   ],
+   "text": "seg_01_case1_model.mp3"
+  },
+  {
+   "n": 4,
+   "label": "",
+   "files": [
+    "Y con la edad pasa exactamente lo mismo: no tienes años, eres tus años usando is:"
+   ],
+   "text": "seg_01_case2_intro.mp3"
+  },
+  {
+   "n": 5,
+   "label": "",
+   "files": [
+    "He is 30 years old."
+   ],
+   "text": "seg_01_case2_model.mp3"
+  },
+  {
+   "n": 6,
+   "label": "",
+   "files": [
+    "Fíjate bien en la alerta en rojo de tu pizarra... En español decimos tengo 25 años con el verbo tener... pero en inglés nunca uses el verbo have para la edad ni para el hambre... Por eso tachamos I have 25 years, y decimos... I am 25 years old... Tu ancla mental para no dudar jamás: la edad y las sensaciones siempre caminan con el verbo tu bi."
+   ],
+   "text": "seg_03.mp3"
+  },
+  {
+   "n": 7,
+   "label": "",
+   "files": [
+    "I have 25 years."
+   ],
+   "text": "trap_wrong.mp3"
+  },
+  {
+   "n": 8,
+   "label": "",
+   "files": [
+    "I am 25 years old."
+   ],
+   "text": "trap_sample.mp3"
+  },
+  {
+   "n": 9,
+   "label": "",
+   "files": [
+    "¡Probemos tu oído ahora mismo! Antes de ver los ejemplos, toca cuál de estas dos frases suena natural en inglés."
+   ],
+   "text": "trap_intro.mp3"
+  },
+  {
+   "n": 10,
+   "label": "",
+   "files": [
+    "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que la edad en inglés se dice con am o is, nunca con have... diciendo... I am 25 years old... Toca la otra opción en tu pantalla."
+   ],
+   "text": "trap_error.mp3"
+  },
+  {
+   "n": 11,
+   "label": "",
+   "files": [
+    "¡Exacto! Cazaste la trampa a la perfección... La edad se dice con el verbo tu bi... Escucha ahora con atención cómo suena en ejemplos reales."
+   ],
+   "text": "trap_success.mp3"
+  },
+  {
+   "n": 12,
+   "label": "",
+   "files": [
+    "I am hungry and thirsty."
+   ],
+   "text": "seg_04.mp3"
+  },
+  {
+   "n": 13,
+   "label": "",
+   "files": [
+    "Escucha con atención cómo se unen las palabras al decir... I am hungry and thirsty... El secreto de pronunciación es sentir la unión del sujeto con am:... ai am jángri and zérsti."
+   ],
+   "text": "seg_05.mp3"
+  },
+  {
+   "n": 14,
+   "label": "",
+   "files": [
+    "He is 30 years old."
+   ],
+   "text": "seg_06.mp3"
+  },
+  {
+   "n": 15,
+   "label": "",
+   "files": [
+    "Si te surge cualquier duda, toca Preguntar en cualquier momento... Ahora constrúyela tú: voy a abrir las fichas en tu pantalla para activar tu memoria motriz... ¡Adelante, tú puedes!"
+   ],
+   "text": "seg_07.mp3"
+  },
+  {
+   "n": 16,
+   "label": "",
+   "files": [
+    "Ahora es tu turno de construir... Voy a abrir las fichas en tu pantalla para que las toques en orden y forjes tu memoria motriz... ¡Adelante, tú puedes!"
+   ],
+   "text": "build_intro.mp3"
+  },
+  {
+   "n": 17,
+   "label": "",
+   "files": [
+    "Recuerda la clave:... en inglés no tienes hambre con have, estás en ese estado diciendo:... I am hungry now... Inténtalo de nuevo."
+   ],
+   "text": "challenge_error.mp3"
+  },
+  {
+   "n": 18,
+   "label": "",
+   "files": [
+    "¡Excelente trabajo! No caíste en la trampa de have:... I am hungry now... Ahora vamos a certificar tu propia voz."
+   ],
+   "text": "challenge_success.mp3"
+  },
+  {
+   "n": 19,
+   "label": "",
+   "files": [
+    "Escucha con atención cómo lo pronuncio yo:... I am hungry now... Ahora activa tu micrófono y dilo tú para certificar tu avance."
+   ],
+   "text": "voice_instruction.mp3"
+  },
+  {
+   "n": 20,
+   "label": "",
+   "files": [
+    "I am hungry now."
+   ],
+   "text": "voice_sample.mp3"
+  },
+  {
+   "n": 21,
+   "label": "",
+   "files": [
+    "¡Casi lo tienes! Escucha el modelo una vez más con atención, y dilo con calma para certificar tu avance."
+   ],
+   "text": "voice_retry.mp3"
+  },
+  {
+   "n": 22,
+   "label": "",
+   "files": [
+    "No logré escucharte con claridad... Repite conmigo:... I am hungry now... Toca el micrófono para intentarlo."
+   ],
+   "text": "voice_not_heard.mp3"
+  },
+  {
+   "n": 23,
+   "label": "",
+   "files": [
+    "¡Impecable! Dominaste la trampa de tener y tu pronunciación fue completamente natural... ¡Base conquistada!"
+   ],
+   "text": "voice_victory.mp3"
+  },
+  {
+   "n": 24,
+   "label": "",
+   "files": [
+    "No pude activar tu micrófono. Verifica el permiso del navegador o usa el modo silencioso."
+   ],
+   "text": "mic_error.mp3"
+  }
+ ]
+}

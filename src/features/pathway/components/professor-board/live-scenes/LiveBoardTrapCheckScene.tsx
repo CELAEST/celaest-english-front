@@ -70,9 +70,7 @@ export const LiveBoardTrapCheckScene: React.FC<LiveBoardTrapCheckSceneProps> = (
         })}
       </div>
 
-      {passed ? (
-        <p className="text-[11.5px] font-mono text-[#4ade80]">✓ Radar activado. Seguimos con los ejemplos reales...</p>
-      ) : wrongPicked ? (
+      {wrongPicked && !passed ? (
         <p className="text-[11.5px] text-amber-300/90 font-light leading-relaxed">Ojo: {whySpanish}</p>
       ) : null}
     </div>

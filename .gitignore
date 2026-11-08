@@ -6,6 +6,7 @@ dist
 coverage
 build
 /*.png
+/public/*.png
 scratch/
 public/assets/backup_originals/
 certs/
@@ -15,4 +16,25 @@ public/Meshy_AI_necesitop_crear_un_pe_All_Animations.glb
 public/audio/*_backup/
 public/audio/walter_*.mp3
 public/audio/test_*.mp3
+public/audio/**/_tmp*
+*.mp3
+*.wav
+*.zip
+*.log
+*.pyc
+__pycache__/
+public/audio-test.html
+_audio_archive/
+_kg_out/
+_tmp_kernel/
+.pathway_*.log
+.pathway_*.json
+scripts/__pycache__/
+scripts/piper_models/
+scripts/*.txt
 
+.pathway_reports/
+.pathway_state_*.json
+.pathway_qa_*.json
+.pathway_build_*.log
+.pathway_regen_*.log

@@ -6,6 +6,7 @@ import { FormulaCaseTabs } from "./FormulaCaseTabs";
 export interface LiveBoardFormulaSceneProps {
   lesson: PathwayLessonPayload;
   activeCaseIndex: number;
+  revealedCountOverride?: number | undefined;
   subtitleSpanish?: string | undefined;
   isDictating: boolean;
   onSelectCase: (index: number) => void;
@@ -23,22 +24,46 @@ const TONE_LABEL = {
 } as const;
 
 export const LiveBoardFormulaScene: React.FC<LiveBoardFormulaSceneProps> = ({
-  lesson, activeCaseIndex, subtitleSpanish, isDictating, onSelectCase, onPlaySample,
+  lesson, activeCaseIndex, revealedCountOverride, subtitleSpanish, isDictating, onSelectCase, onPlaySample,
 }) => {
   const cases = resolveFormulaCases(lesson);
   const safeIdx = Math.min(activeCaseIndex, Math.max(0, cases.length - 1));
   const activeCase = cases[safeIdx]!;
   const count = activeCase.segments.length;
-  const [revealedCount, setRevealedCount] = useState(1);
+
+  const targetCount = !isDictating
+    ? count
+    : revealedCountOverride !== undefined
+    ? Math.min(count, Math.max(1, revealedCountOverride))
+    : count;
+
+  const [displayCount, setDisplayCount] = useState(targetCount);
 
   useEffect(() => {
-    setRevealedCount(1);
-    const timers: Array<ReturnType<typeof setTimeout>> = [];
-    for (let i = 2; i <= count; i++) {
-      timers.push(setTimeout(() => setRevealedCount(i), (i - 1) * 780));
+    if (!isDictating) {
+      setDisplayCount(count);
+      return;
     }
-    return () => timers.forEach(clearTimeout);
-  }, [lesson, safeIdx, count]);
+
+    // Dynamism at the halfway mark ("animación a la mitad"):
+    // When a case explanation begins (targetCount === 1):
+    // 1. Initial: Display Subject (token 1).
+    // 2. Halfway (~2.4s): Smoothly reveal Verb (token 2) when mentor names the pairing
+    //    ("usamos la pareja fija am / is / are").
+    if (targetCount === 1) {
+      setDisplayCount(1);
+      const midTimer = setTimeout(() => {
+        setDisplayCount(2);
+      }, 2400);
+      return () => clearTimeout(midTimer);
+    }
+
+    // 3. When the English native model speaks (targetCount >= 3):
+    // Smoothly reveal the Complement / State (token 3) with luminous accent aura.
+    if (targetCount >= 3) {
+      setDisplayCount(3);
+    }
+  }, [targetCount, safeIdx, isDictating, count]);
 
   return (
     <div className="flex flex-col gap-2 py-0.5 animate-[fadeIn_0.22s_ease-out_both] select-none" data-testid="live-formula-scene">
@@ -46,15 +71,15 @@ export const LiveBoardFormulaScene: React.FC<LiveBoardFormulaSceneProps> = ({
 
       <div className="flex flex-wrap items-end gap-2 sm:gap-3.5 py-0.5">
         {activeCase.segments.map((seg, idx) => {
-          const isVisible = idx < revealedCount;
-          const isLatest = isDictating && idx === revealedCount - 1;
+          const isVisible = idx < displayCount;
+          const isLatest = isDictating && idx === displayCount - 1;
           return (
             <React.Fragment key={`${safeIdx}-${seg.label}-${idx}`}>
               {idx > 0 && <span className={`text-white/25 font-light text-sm pb-1 transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-15"}`}>+</span>}
-              <div className={`relative pb-1.5 transition-all duration-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-15 translate-y-1"}`}>
-                <span className={`text-[8.5px] font-mono uppercase tracking-[0.18em] block ${isVisible ? TONE_LABEL[seg.tone] : "text-white/30"}`}>{seg.label}</span>
-                <span className={`text-sm sm:text-[15px] font-medium tracking-tight block mt-0.5 ${isLatest ? "text-white" : "text-white/95"}`}>{seg.token}</span>
-                <span className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full origin-left transition-transform duration-500 ${TONE_BAR[seg.tone]} ${isVisible ? "scale-x-100" : "scale-x-0"}`} />
+              <div className={`relative pb-1.5 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-20 translate-y-1"}`}>
+                <span className={`text-[8.5px] font-mono uppercase tracking-[0.18em] block transition-colors duration-500 ${isVisible ? TONE_LABEL[seg.tone] : "text-white/30"}`}>{seg.label}</span>
+                <span className={`text-sm sm:text-[15px] font-medium tracking-tight block mt-0.5 transition-colors duration-500 ${isLatest ? "text-white drop-shadow-[0_0_8px_rgba(167,139,250,0.45)]" : "text-white/95"}`}>{seg.token}</span>
+                <span className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full origin-left transition-transform duration-700 ease-out ${TONE_BAR[seg.tone]} ${isVisible ? "scale-x-100" : "scale-x-0"}`} />
               </div>
             </React.Fragment>
           );

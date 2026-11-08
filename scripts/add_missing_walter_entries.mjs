@@ -34,3 +34,4 @@ for (const e of entries) {
 
 fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf-8');
 console.log('Manifest updated successfully with new Walter entries!');
+

@@ -5,6 +5,7 @@ import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
 import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
+import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import {
   getUserCefrLevel,
@@ -62,6 +63,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  useLinguaEntitlement();
 
   const handleHomeVideoLoaded = React.useCallback(() => {
     setIsHomeVideoLoaded(true);

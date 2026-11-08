@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProfessorAnimState } from "../../../design-system/components/Professor3D";
 import { PathwayNode, PathwayStepId } from "../../../domain/entities/LearningPathway";
-import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
+import { MobileAudioUnlocker, SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 import { PathwayQAService, ProfessorAnswer } from "../services/PathwayQAService";
 import { buildProfessorSpeech, ProfessorBoardMode } from "../services/professorSpeech";
 import { useLiveClassChoreography } from "./useLiveClassChoreography";
@@ -10,7 +10,7 @@ export interface UseProfessorStageStateOptions {
   node: PathwayNode; step: PathwayStepId; isActive: boolean; isSpeakingAudio: boolean; isRecordingMic: boolean;
   isEvaluatingVoice?: boolean | undefined;
   isBuildCorrect: boolean; hasBuildMistake: boolean; isConquered: boolean; onPlaySample: (text: string) => void;
-  onStepChange?: ((step: PathwayStepId) => void) | undefined; initialOpenAsking?: boolean | undefined;
+  onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined; initialOpenAsking?: boolean | undefined;
 }
 
 export function useProfessorStageState({
@@ -22,7 +22,12 @@ export function useProfessorStageState({
   const [isAskingQA, setIsAskingQA] = useState(false);
   const [qaAnswer, setQaAnswer] = useState<ProfessorAnswer | null>(null);
   const [isAnsweringVoice, setIsAnsweringVoice] = useState(false);
+  const [isAiAudioPlaying, setIsAiAudioPlaying] = useState<boolean>(() => SpeechSynthesisService.isAiPlaying());
   const cancelQARef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return SpeechSynthesisService.subscribePlaybackState(setIsAiAudioPlaying);
+  }, []);
 
   const clearQaOnly = () => {
     cancelQARef.current?.(); cancelQARef.current = null;
@@ -53,14 +58,57 @@ export function useProfessorStageState({
   };
 
   const animState: ProfessorAnimState = useMemo(() => {
+    // 1. Actively recording microphone: inquisitive tilt + ear radar rings
     if (isRecordingMic) return "listening";
-    if (isAskingQA || isEvaluatingVoice) return "thinking";
-    if (isConquered || choreography.isTrapCelebrating || (step === "BUILD" && isBuildCorrect)) return "celebrating";
-    if (isSpeakingAudio || choreography.isDictating || isAnsweringVoice) return "explaining";
+
+    // 2. Actively speaking / dictating: moving vocal mouth + audio waveforms
+    // Whenever mentor voice is active (lecture, explanation, QA, or feedback), mouth MUST move!
+    if (isSpeakingAudio || choreography.isDictating || isAnsweringVoice || isAiAudioPlaying) {
+      return "explaining";
+    }
+
+    // 3. Victory / celebratory moments (only when not actively speaking):
+    // - Right after answering trap check correctly
+    // - When tiles in BUILD are correctly assembled
+    // - In SPEAK step when conquering the base / victory banner is shown
+    if (
+      choreography.isTrapCelebrating ||
+      (step === "BUILD" && isBuildCorrect) ||
+      (step === "SPEAK" && isConquered)
+    ) {
+      return "celebrating";
+    }
+
+    // 4. Thinking / Analyzing / Expectant observation: cyan cyber scanning line
+    if (
+      isAskingQA ||
+      isEvaluatingVoice ||
+      choreography.isWaitingTrapCheck ||
+      choreography.activeBeat === "TRAP" ||
+      choreography.activeBeat === "TRAP_CHECK" ||
+      hasBuildMistake ||
+      (step === "BUILD" && !isBuildCorrect)
+    ) {
+      return "thinking";
+    }
+
+    // 5. Default calm idle: OLED pill eyes with realistic blinking
     return "idle";
   }, [
-    isRecordingMic, isAskingQA, isEvaluatingVoice, isConquered,
-    choreography.isTrapCelebrating, choreography.isDictating, step, isBuildCorrect, isSpeakingAudio, isAnsweringVoice,
+    isRecordingMic,
+    isSpeakingAudio,
+    choreography.isDictating,
+    choreography.activeBeat,
+    isAnsweringVoice,
+    isAiAudioPlaying,
+    choreography.isTrapCelebrating,
+    isBuildCorrect,
+    isConquered,
+    isAskingQA,
+    isEvaluatingVoice,
+    choreography.isWaitingTrapCheck,
+    hasBuildMistake,
+    step,
   ]);
 
   const speech = useMemo(() => buildProfessorSpeech({
@@ -87,9 +135,12 @@ export function useProfessorStageState({
 
   return {
     mode, setMode, isDictating: choreography.isDictating,
+    isAutoplayWaiting: choreography.isAutoplayWaiting,
     activeBeat: choreography.activeBeat,
     activeFormulaCaseIndex: choreography.activeFormulaCaseIndex,
     activeExampleIndex: choreography.activeExampleIndex,
+    formulaRevealCount: choreography.lectureSegment?.formulaRevealCount,
+    trapPhase: choreography.lectureSegment?.trapPhase,
     isWaitingTrapCheck: choreography.isWaitingTrapCheck, trapCheckPassed: choreography.trapCheckPassed,
     isSpeakingEnglishSegment: choreography.isDictating && choreography.lectureSegment?.language === "en",
     liveSubtitleSpanish: choreography.lectureSegment?.subtitleSpanish,

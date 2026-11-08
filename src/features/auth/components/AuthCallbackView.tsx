@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../infrastructure/adapters/auth/supabaseClient";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
+import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 import { AuthUser } from "../../../application/ports/IAuthService";
 import { ROUTES } from "../../../routes/routes.config";
@@ -111,13 +113,23 @@ const AuthCallbackViewInner: React.FC = () => {
         .catch((e) => logger.warn("[AuthCallback] supabase.auth.setSession background notice", e));
 
       try {
-        const profile = await apiSettingsRepository.getProfile().catch(() => null);
+        const [profile, entitlement] = await Promise.all([
+          apiSettingsRepository.getProfile().catch(() => null),
+          ApiEntitlementRepository.getEntitlement("lingua").catch(() => null),
+        ]);
+        if (entitlement?.hasAccess && entitlement.aiCloudIncluded) {
+          await providerKeyVault.setCentralCoreEnabled(true);
+        }
         const isCompleted =
           profile?.onboardingCompleted === true ||
           Boolean(authUser.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
           Boolean(authUser.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true");
 
         if (isCompleted) {
+          authAdapter.persistSession(accessToken, refreshToken, {
+            ...authUser,
+            onboardingCompleted: true,
+          });
           localStorage.setItem("lingua_onboarding_completed", "true");
           if (authUser.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
           if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");

@@ -5,6 +5,7 @@ import {
   FlagshipVoiceId,
 } from "../../reading/services/readingAudioPrefetcher";
 import a1AudioManifest from "../../pathway/data/a1AudioManifest.json";
+import { pathwayAudioLog } from "../../pathway/audio/pathwayAudioLog";
 
 export interface SpeakOptions {
   rate?: number; // 0.75 to 1.25
@@ -42,6 +43,28 @@ export function sanitizeSpeechForVoice(text: string): string {
 export class SpeechSynthesisService {
   private static currentAudio: HTMLAudioElement | null = null;
   private static activePlaybackId: number = 0;
+  /** MP3 del manifiesto ya descargados como blob: el cambio de idioma no puede streamear. */
+  private static staticBlobCache = new Map<string, string>();
+  private static staticBlobPending = new Map<string, Promise<string | null>>();
+  private static playbackListeners = new Set<(isPlaying: boolean) => void>();
+
+  public static subscribePlaybackState(listener: (isPlaying: boolean) => void): () => void {
+    this.playbackListeners.add(listener);
+    try {
+      listener(this.isAiPlaying());
+    } catch {}
+    return () => {
+      this.playbackListeners.delete(listener);
+    };
+  }
+
+  public static notifyPlayback(playing: boolean): void {
+    this.playbackListeners.forEach((fn) => {
+      try {
+        fn(playing);
+      } catch {}
+    });
+  }
 
   /**
    * Proactively prefetch text with high-fidelity neural voice into memory.
@@ -51,11 +74,53 @@ export class SpeechSynthesisService {
     const sanitized = sanitizeSpeechForVoice(raw);
     if (!sanitized) return Promise.resolve(null);
     const manifest = (a1AudioManifest || {}) as Record<string, string>;
-    if (manifest[sanitized] || manifest[raw]) {
+    const staticUrl = manifest[sanitized] || manifest[raw];
+    if (staticUrl) {
+      // El siguiente segmento se deja 100% en memoria antes de que termine el actual.
+      this.prefetchStatic(staticUrl);
       return Promise.resolve(null);
     }
     const v = voice || "liam";
     return readingAudioPrefetcher.prefetchText(sanitized, v);
+  }
+
+  /** Descarga completa del mp3 del manifiesto y la guarda como blob URL. */
+  public static prefetchStatic(url?: string): void {
+    if (!url || this.staticBlobCache.has(url) || this.staticBlobPending.has(url)) return;
+    const pending = fetch(url, { cache: "force-cache" })
+      .then((res) => (res.ok ? res.blob() : null))
+      .then((blob) => {
+        if (!blob) return null;
+        if (this.staticBlobCache.size > 80) {
+          const first = this.staticBlobCache.entries().next().value as [string, string] | undefined;
+          if (first) {
+            URL.revokeObjectURL(first[1]);
+            this.staticBlobCache.delete(first[0]);
+          }
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        this.staticBlobCache.set(url, blobUrl);
+        return blobUrl;
+      })
+      .catch(() => null)
+      .finally(() => {
+        this.staticBlobPending.delete(url);
+      });
+    this.staticBlobPending.set(url, pending);
+  }
+
+  /** Fuente lista para reproducir: blob completo si ya está, o el mp3 con timeout corto. */
+  private static async resolveStaticSource(url: string, timeoutMs = 1200): Promise<string> {
+    const cached = this.staticBlobCache.get(url);
+    if (cached) return cached;
+    this.prefetchStatic(url);
+    const pending = this.staticBlobPending.get(url);
+    if (!pending) return url;
+    const blobUrl = await Promise.race([
+      pending,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+    return blobUrl || url;
   }
 
   /**
@@ -92,9 +157,21 @@ export class SpeechSynthesisService {
     const manifest = (a1AudioManifest || {}) as Record<string, string>;
     const staticLocalAudio = manifest[sanitized] || manifest[raw];
 
+    // Trazabilidad: una línea sin audio propio cae al TTS en vivo y suena otra voz.
+    // Esto tiene que quedar registrado, no silenciado.
+    if (staticLocalAudio) {
+      pathwayAudioLog.record({ kind: "HIT", text: sanitized, audio: staticLocalAudio });
+    } else {
+      pathwayAudioLog.record({
+        kind: "MISS",
+        text: sanitized,
+        extra: `voz=${voiceId} mismaClave=${manifest[raw] ? "raw" : "no"}`,
+      });
+    }
+
     const cached = staticLocalAudio ? null : readingAudioPrefetcher.get(sanitized, voiceId);
     const audioSource = staticLocalAudio
-      ? staticLocalAudio
+      ? await this.resolveStaticSource(staticLocalAudio)
       : cached
       ? cached.blobUrl
       : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(sanitized)}&voice=${encodeURIComponent(
@@ -123,11 +200,13 @@ export class SpeechSynthesisService {
         if (hasEnded) return;
         hasEnded = true;
         this.currentAudio = null;
+        SpeechSynthesisService.notifyPlayback(false);
         if (options.onEnd) options.onEnd();
       };
 
       audio.onplay = () => {
         if (this.activePlaybackId !== playbackId) return;
+        SpeechSynthesisService.notifyPlayback(true);
         if (options.onStart) options.onStart();
       };
 
@@ -135,6 +214,7 @@ export class SpeechSynthesisService {
 
       audio.onerror = async (e) => {
         if (this.activePlaybackId !== playbackId) return;
+        SpeechSynthesisService.notifyPlayback(false);
         logger.warn("[SpeechSynthesisService] Direct audio stream error, falling back to Web Audio buffer playback:", e);
         try {
           const played = await MobileAudioUnlocker.playNeuralBuffer(
@@ -142,10 +222,16 @@ export class SpeechSynthesisService {
             options,
             () => this.activePlaybackId === playbackId,
             () => {
-              if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
+              if (this.activePlaybackId === playbackId) {
+                SpeechSynthesisService.notifyPlayback(true);
+                if (options.onStart) options.onStart();
+              }
             },
             () => {
-              if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
+              if (this.activePlaybackId === playbackId) {
+                SpeechSynthesisService.notifyPlayback(false);
+                if (options.onEnd) options.onEnd();
+              }
             },
           );
           if (played) return;
@@ -161,6 +247,21 @@ export class SpeechSynthesisService {
         void this.speakFallback(sanitized, options, playbackId);
       };
 
+      // Nunca arrancar a media carga: eso produce "dice un poquito, se detiene y sigue".
+      if (audio.readyState < 3) {
+        await new Promise<void>((resolve) => {
+          let settled = false;
+          const done = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            audio.removeEventListener("canplaythrough", done);
+            resolve();
+          };
+          const timer = setTimeout(done, 600);
+          audio.addEventListener("canplaythrough", done, { once: true });
+        });
+      }
       await audio.play();
     } catch (err: any) {
       if (this.activePlaybackId !== playbackId) return;
@@ -207,7 +308,9 @@ export class SpeechSynthesisService {
    * Returns whether AI audio is actively playing.
    */
   public static isAiPlaying(): boolean {
-    return Boolean(this.currentAudio && !this.currentAudio.paused && !this.currentAudio.ended);
+    const isDirect = Boolean(this.currentAudio && !this.currentAudio.paused && !this.currentAudio.ended);
+    const isBuffer = MobileAudioUnlocker.isBufferPlaying();
+    return isDirect || isBuffer;
   }
 
   /**
@@ -470,6 +573,7 @@ export class SpeechSynthesisService {
   public static stop(): void {
     this.activePlaybackId++;
     MobileAudioUnlocker.stopSourceNode();
+    this.notifyPlayback(false);
     if (this.currentAudio) {
       const audio = this.currentAudio;
       audio.onplay = null;
@@ -704,6 +808,10 @@ export class MobileAudioUnlocker {
     }
   }
 
+  public static isBufferPlaying(): boolean {
+    return Boolean(this.activeSourceNode);
+  }
+
   public static init(): void {
     if (typeof window === "undefined") return;
 
@@ -720,6 +828,10 @@ export class MobileAudioUnlocker {
     window.addEventListener("touchstart", unlockHandler, { passive: true, capture: true });
     window.addEventListener("keydown", unlockHandler, { passive: true, capture: true });
   }
+}
+
+if (typeof window !== "undefined") {
+  MobileAudioUnlocker.init();
 }
 
 

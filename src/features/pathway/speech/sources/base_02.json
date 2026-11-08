@@ -1,0 +1,187 @@
+{
+ "base": "base_02",
+ "source": "generate_fase1_base02_andrew.py",
+ "count": 22,
+ "items": [
+  {
+   "n": 1,
+   "label": "1. Bienvenida a la Clase Base 02",
+   "files": [
+    "lesson_intro.mp3"
+   ],
+   "text": "¡Bienvenido a tu clase! Hoy vas a dominar el sujeto impersonal It... el ancla para frases donde no hay persona humana... Toca Comenzar Clase para escuchar la explicación paso a paso, dominar la regla y pasar a tu práctica guiada."
+  },
+  {
+   "n": 2,
+   "label": "2. Regla Central: Sujeto Impersonal It",
+   "files": [
+    "seg_01.mp3",
+    "seg_01_desktop.mp3"
+   ],
+   "text": "El reto de esta base es el sujeto impersonal It... En español decimos simplemente hace frío o es tarde, sin nombrar a ninguna persona... pero en inglés una oración nunca puede abrir con el verbo huérfano... siempre colocamos el sujeto neutro It... Mira cómo se ilumina la fórmula, pieza por pieza: primero el sujeto neutro It... luego el verbo is... y luego el estado:... It is cold today."
+  },
+  {
+   "n": 3,
+   "label": "3. Orientación y Mentalidad de Fluidez",
+   "files": [
+    "seg_02.mp3",
+    "seg_02_desktop.mp3"
+   ],
+   "text": "¡Bienvenido a tu clase! Hoy vamos a desbloquear una base fundamental para tu fluidez:... el sujeto impersonal It... En español solemos pensar de una forma, pero en inglés el cerebro opera con una lógica distinta... Te voy a enseñar el secreto exacto para que lo sientas completamente natural, y nunca más dudes al hablar."
+  },
+  {
+   "n": 4,
+   "label": "4. Alerta de la Trampa del Español",
+   "files": [
+    "seg_03.mp3"
+   ],
+   "text": "Fíjate bien en la alerta en rojo de tu pizarra... En español solemos decir simplemente está frío o hace frío, pero en inglés nunca abras una oración con Is sin su sujeto neutro... diciendo por ejemplo: It is cold... o It is late... Por eso tachamos is cold today, y decimos:... It is cold today... Tu ancla mental para no dudar jamás: en inglés el sujeto impersonal It siempre es obligatorio."
+  },
+  {
+   "n": 5,
+   "label": "5. Discriminación: Error 'Is cold today'",
+   "files": [
+    "trap_wrong.mp3"
+   ],
+   "text": "Is cold today."
+  },
+  {
+   "n": 6,
+   "label": "6. Discriminación: Modelo 'It is cold today'",
+   "files": [
+    "trap_sample.mp3"
+   ],
+   "text": "It is cold today."
+  },
+  {
+   "n": 7,
+   "label": "7. Reto Oído: Invitación",
+   "files": [
+    "trap_intro.mp3"
+   ],
+   "text": "¡Probemos tu oído ahora mismo! Antes de ver los ejemplos, toca cuál de estas dos frases suena natural en inglés."
+  },
+  {
+   "n": 8,
+   "label": "8. Feedback: Trampa Cazada",
+   "files": [
+    "trap_error.mp3"
+   ],
+   "text": "¡Mucho ojo! Esa es justo la trampa del español... En inglés nunca dejes el verbo huérfano: coloca siempre el sujeto neutro It diciendo por ejemplo:... It is cold today... Toca la otra opción en tu pantalla."
+  },
+  {
+   "n": 9,
+   "label": "9. Feedback: Acierto en Trampa",
+   "files": [
+    "trap_success.mp3"
+   ],
+   "text": "¡Exacto! Cazaste la trampa a la perfección... Nunca dejamos el verbo huérfano... Escucha ahora con atención cómo suena en ejemplos reales."
+  },
+  {
+   "n": 10,
+   "label": "10. Ejemplo 1: 'It is sunny and warm today'",
+   "files": [
+    "seg_04.mp3"
+   ],
+   "text": "It is sunny and warm today."
+  },
+  {
+   "n": 11,
+   "label": "11. Truco Fonético y Unión",
+   "files": [
+    "seg_05.mp3"
+   ],
+   "text": "Escucha con atención cómo se unen las palabras al decir:... It is sunny and warm today... El secreto de pronunciación es sentir la unión del sujeto con el verbo:... it is sáni and uórm tudéi."
+  },
+  {
+   "n": 12,
+   "label": "12. Ejemplo 2: 'It is very important to practice every day'",
+   "files": [
+    "seg_06.mp3"
+   ],
+   "text": "It is very important to practice every day."
+  },
+  {
+   "n": 13,
+   "label": "13. Pase al Ensamblaje Motriz",
+   "files": [
+    "seg_07.mp3",
+    "seg_07_desktop.mp3"
+   ],
+   "text": "Si te surge cualquier duda, toca Preguntar en cualquier momento... Ahora constrúyela tú: voy a abrir las fichas en tu pantalla para activar tu memoria motriz... ¡Adelante, tú puedes!"
+  },
+  {
+   "n": 14,
+   "label": "14. Build: Apertura de Fichas",
+   "files": [
+    "build_intro.mp3"
+   ],
+   "text": "Ahora es tu turno de construir... Voy a abrir las fichas en tu pantalla para que las toques en orden y forjes tu memoria motriz... ¡Adelante, tú puedes!"
+  },
+  {
+   "n": 15,
+   "label": "15. Build: Corrección de Fichas",
+   "files": [
+    "challenge_error.mp3"
+   ],
+   "text": "Coloca siempre el sujeto neutro It al inicio:... It... luego el verbo:... is... y al final:... cold today."
+  },
+  {
+   "n": 16,
+   "label": "16. Build: Éxito de Ensamblaje",
+   "files": [
+    "challenge_success.mp3"
+   ],
+   "text": "¡Excelente trabajo! Lo armaste en orden natural:... It is cold today... Ahora vamos a certificar tu propia voz."
+  },
+  {
+   "n": 17,
+   "label": "17. Speak: Instrucción de Micrófono",
+   "files": [
+    "voice_instruction.mp3"
+   ],
+   "text": "Escucha con atención cómo lo pronuncio yo:... It is cold today... Ahora activa tu micrófono y dilo tú para certificar tu avance."
+  },
+  {
+   "n": 18,
+   "label": "18. Speak: Modelo para Micrófono",
+   "files": [
+    "voice_sample.mp3"
+   ],
+   "text": "It is cold today."
+  },
+  {
+   "n": 19,
+   "label": "19. Speak: Reintento Pedagógico",
+   "files": [
+    "voice_retry.mp3"
+   ],
+   "text": "¡Casi lo tienes! Escucha el modelo una vez más con atención, y dilo con calma para certificar tu avance."
+  },
+  {
+   "n": 20,
+   "label": "20. Speak: No Escuchado",
+   "files": [
+    "voice_not_heard.mp3"
+   ],
+   "text": "No logré escucharte con claridad... Repite conmigo:... It is cold today... Toca el micrófono para intentarlo."
+  },
+  {
+   "n": 21,
+   "label": "21. Speak: Alerta de Permiso de Micrófono",
+   "files": [
+    "mic_error.mp3"
+   ],
+   "text": "No pude activar tu micrófono. Verifica el permiso del navegador o usa el modo silencioso."
+  },
+  {
+   "n": 22,
+   "label": "22. Speak: Victoria y Certificación de Base",
+   "files": [
+    "voice_victory.mp3",
+    "voice_victory_alt.mp3"
+   ],
+   "text": "¡Excelente pronunciación! Dijiste cada palabra en orden natural y con una cadencia impecable... Base conquistada con éxito."
+  }
+ ]
+}

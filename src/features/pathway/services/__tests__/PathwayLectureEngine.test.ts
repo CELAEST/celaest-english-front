@@ -46,15 +46,19 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
     PathwayLectureEngine.markSoftwareIntroSeen();
     const script = PathwayLectureEngine.buildLectureScript(dummyNode);
 
+    // La fórmula ahora son 3 pistas (regla, revelado, modelo nativo): se asertа por estructura.
     expect(script.segments[0]?.beat).toBe("FORMULA");
     expect(script.segments[0]?.text).toContain("El reto de esta base es");
 
-    expect(script.segments[1]?.beat).toBe("TRAP");
-    expect(script.segments[1]?.text).toContain("alerta en rojo");
-    expect(script.segments[1]?.text).toContain("ancla mental");
+    const trapSegs = script.segments.filter((s) => s.beat === "TRAP");
+    expect(trapSegs.length).toBeGreaterThanOrEqual(2);
+    const trapText = trapSegs.map((s) => s.text.toLowerCase()).join(" ");
+    expect(trapText).toContain("alerta en rojo");
+    expect(trapText).toContain("ancla mental");
 
-    expect(script.segments[2]?.beat).toBe("TRAP_CHECK");
-    expect(script.segments[2]?.pauseAfterForCheck).toBe(true);
+    const checkIndex = script.segments.findIndex((s) => s.beat === "TRAP_CHECK");
+    expect(checkIndex).toBeGreaterThan(0);
+    expect(script.segments[checkIndex]?.pauseAfterForCheck).toBe(true);
 
     const exampleEnSegments = script.segments.filter((s) => s.beat === "EXAMPLES" && s.language === "en");
     expect(exampleEnSegments.length).toBeGreaterThanOrEqual(1);
@@ -62,10 +66,11 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
     const phoneticEs = script.segments.find((s) => s.beat === "EXAMPLES" && s.language === "es");
     expect(phoneticEs?.text.toLowerCase()).toContain("cómo se unen las palabras");
 
-    const lastSeg = script.segments[script.segments.length - 1]!;
-    expect(lastSeg.text.toLowerCase()).toContain("preguntar");
-    expect(lastSeg.text).toContain("fichas");
-    expect(lastSeg.targetStep).toBe("BUILD");
+    const buildSegs = script.segments.filter((s) => s.targetStep === "BUILD");
+    expect(buildSegs.length).toBeGreaterThan(0);
+    const buildText = buildSegs.map((s) => s.text.toLowerCase()).join(" ");
+    expect(buildText).toContain("preguntar");
+    expect(buildText).toContain("fichas");
   });
 
   it("pauses cleanly at TRAP_CHECK when onPauseForCheck is provided, and resumes into EXAMPLES -> BUILD", async () => {

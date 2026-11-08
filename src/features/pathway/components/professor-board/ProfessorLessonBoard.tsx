@@ -12,6 +12,7 @@ import { LiveClassBeatBar } from "./live-scenes/LiveClassBeatBar";
 export interface ProfessorLessonBoardProps {
   lesson?: PathwayLessonPayload | undefined; step?: PathwayStepId | undefined;
   isMobileUnified?: boolean | undefined; hasQaOverride?: boolean | undefined;
+  isAutoplayWaiting?: boolean | undefined;
   mobileContext?: MobileBoardInteractiveContext | undefined;
   liveBoard?: LiveBoardState | undefined;
   speech: ProfessorSpeech; mode: ProfessorBoardMode; isDictating: boolean; isSpeakingAudio: boolean;
@@ -24,7 +25,7 @@ export interface ProfessorLessonBoardProps {
 }
 
 export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
-  lesson, step = "RULE", isMobileUnified = false, hasQaOverride = false, mobileContext, liveBoard,
+  lesson, step = "RULE", isMobileUnified = false, hasQaOverride = false, isAutoplayWaiting = false, mobileContext, liveBoard,
   speech, mode, isDictating, isSpeakingAudio, isShowingExamples = false,
   isAskingOpen = false, isAskingQA = false, suggestedQuestions,
   onModeChange, onToggleLecture, onPlaySample, onToggleAsking, onSubmitQuestion,
@@ -55,7 +56,7 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
         {isAskingOpen && onSubmitQuestion && onToggleAsking && (
           <LessonQuestionAnnex isSubmitting={isAskingQA} suggestedQuestions={suggestedQuestions} onClose={onToggleAsking} onSubmit={onSubmitQuestion} />
         )}
-        <LessonBoardActions isDictating={isDictating} isSpeakingAudio={isSpeakingAudio} canPlaySample={Boolean(speech.sampleAudioText)} isAskingOpen={isAskingOpen} onToggleLecture={onToggleLecture} onToggleAsking={onToggleAsking} onPlaySample={() => speech.sampleAudioText && onPlaySample(speech.sampleAudioText)} />
+        <LessonBoardActions isDictating={isDictating} isSpeakingAudio={isSpeakingAudio} canPlaySample={Boolean(speech.sampleAudioText)} isAskingOpen={isAskingOpen} isAutoplayWaiting={isAutoplayWaiting} onToggleLecture={onToggleLecture} onToggleAsking={onToggleAsking} onPlaySample={() => speech.sampleAudioText && onPlaySample(speech.sampleAudioText)} />
         {showRuleBuildCta && onSwitchToPractice && (
           <div className="pt-1 border-t border-white/[0.06] lg:hidden">
             <LessonBoardPracticeCta onClick={onSwitchToPractice} />

@@ -12,6 +12,7 @@ import { OnboardingFirstConversationStep } from "./OnboardingFirstConversationSt
 import { OnboardingReadyStep } from "./OnboardingReadyStep";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
+import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
@@ -134,6 +135,17 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   updateLearnerProfile({ name: authUser.name, email: authUser.email || "" });
                 }
 
+                let hasCloudAi = false;
+                try {
+                  const ent = await ApiEntitlementRepository.getEntitlement("lingua");
+                  if (ent.hasAccess && ent.aiCloudIncluded) {
+                    hasCloudAi = true;
+                    await providerKeyVault.setCentralCoreEnabled(true);
+                  }
+                } catch {
+                  // Ignore if offline or unentitled
+                }
+
                 // 2. Returning User Login or Profile already completed
                 if (mode === "login") {
                   try {
@@ -213,8 +225,8 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                   }
                 }
 
-                // 4. Fresh registration: Proceed cleanly to API Key screen
-                goToStep("api-key");
+                // 4. Fresh registration: Skip API Key screen if user already holds Cloud AI entitlement
+                goToStep(hasCloudAi ? "beginner-check" : "api-key");
               }}
             />
           )}

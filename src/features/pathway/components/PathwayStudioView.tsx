@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
 import { BridgeModuleTarget } from "../../../domain/entities/LearningPathway";
+import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
+import { LinguaMarketplacePaywallModal } from "../../workspace/components/LinguaMarketplacePaywallModal";
 import { useIsDesktopViewport } from "../hooks/useIsDesktopViewport";
 import { useLearningPathway } from "../hooks/useLearningPathway";
 import { usePathwayStageSession } from "../hooks/usePathwayStageSession";
@@ -27,22 +29,28 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
   const [openAsking, setOpenAsking] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading } = useLinguaEntitlement();
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
   useEffect(() => { warmProfessorModelCache(); }, []);
+  useEffect(() => { if (entitlement.hasAccess && paywallOpen) setPaywallOpen(false); }, [entitlement.hasAccess, paywallOpen]);
   if (!activeNode?.lessonPayload) return <PathwaySkeleton />;
+
+  const handleSelectNodeGated = (nodeId: string) => {
+    const idx = pathway.nodes.findIndex((n) => n.id === nodeId);
+    if (idx > 0 && !canAccessNode(idx)) { setPaywallOpen(true); return; }
+    selectNode(nodeId);
+  };
 
   const masteredCount = pathway.nodes.filter((n) => n.status === "MASTERED" || n.status === "CONSOLIDATED").length;
   const nextUnlocked = pathway.nodes[activeNodeIndex + 1];
   const canAdvanceNode = Boolean(nextUnlocked && nextUnlocked.status !== "LOCKED");
   const isConquered = session.isCompletedBanner || activeNode.status === "MASTERED";
-  const handleNextFoundation = canAdvanceNode ? () => selectNode(nextUnlocked!.id) : undefined;
-
-  const handlePrev =
-    session.step === "SPEAK" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("RULE") : activeNodeIndex > 0 ? () => selectNode(pathway.nodes[activeNodeIndex - 1]!.id) : undefined;
-  const handleNext =
-    session.step === "RULE" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("SPEAK") : handleNextFoundation;
+  const handleNextFoundation = canAdvanceNode ? () => handleSelectNodeGated(nextUnlocked!.id) : undefined;
+  const handlePrev = session.step === "SPEAK" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("RULE") : activeNodeIndex > 0 ? () => handleSelectNodeGated(pathway.nodes[activeNodeIndex - 1]!.id) : undefined;
+  const handleNext = session.step === "RULE" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("SPEAK") : handleNextFoundation;
 
   return (
     <div className="relative flex flex-col lg:flex-row h-full w-full bg-[#000001] px-3 sm:px-6 lg:px-8 xl:px-10 pt-2 sm:pt-4 pb-0 lg:pb-4 gap-2 lg:gap-6 xl:gap-8 overflow-hidden select-none">
@@ -55,13 +63,8 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
           onPrevAction={handlePrev} onNextAction={handleNext} onNavigateModule={onNavigateModule}
         />
       ) : (
-        <PathwayMobileTopBar
-          nodeIndex={activeNodeIndex} currentLevel={pathway.cefrLevel} activeStep={session.step}
-          onSelectStep={session.setStep} onOpenCurriculum={() => setCurriculumOpen(true)}
-          onOpenGuide={() => setGuideSection("structure")} onSelectLevel={onSelectLevel}
-        />
+        <PathwayMobileTopBar nodeIndex={activeNodeIndex} currentLevel={pathway.cefrLevel} activeStep={session.step} onSelectStep={session.setStep} onOpenCurriculum={() => setCurriculumOpen(true)} onOpenGuide={() => setGuideSection("structure")} onSelectLevel={onSelectLevel} />
       )}
-
       <PathwayProfessorStage
         node={activeNode} step={session.step} isActive={isActive} isSpeakingAudio={session.speakingText !== null}
         isRecordingMic={session.isRecording} isEvaluatingVoice={session.isEvaluatingVoice}
@@ -72,10 +75,9 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
         initialOpenAsking={openAsking} onSwitchToPractice={() => { setOpenAsking(false); session.setStep("BUILD"); }}
         className="order-2 flex-1 lg:flex-none"
       />
-
-      <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={selectNode} onPersonalizeAi={() => void personalizeWithAi()} />
+      <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={() => void personalizeWithAi()} />
       <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
+      <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={() => void startDirectCheckout()} onRefreshEntitlement={() => void refreshEntitlement()} />
     </div>
   );
 };
-export default PathwayStudioView;

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { OnboardingStep, UserAnswer, LearnerProfileData } from "../types";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
+import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 
 export const useOnboardingFlow = () => {
   const authAdapter = SupabaseAuthAdapter.getInstance();
@@ -21,6 +23,29 @@ export const useOnboardingFlow = () => {
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [hasCloudAiEntitlement, setHasCloudAiEntitlement] = useState(false);
+
+  // Smart AI Onboarding Bypass: if the user acquired Lingua via CELAEST Marketplace
+  // or active Plan (aiCloudIncluded === true), enable Central Core and skip API-Key step.
+  useEffect(() => {
+    if (!authAdapter.isAuthenticated() || isCompleted) return;
+    let active = true;
+    void ApiEntitlementRepository.getEntitlement("lingua")
+      .then(async (ent) => {
+        if (!active) return;
+        if (ent.hasAccess && ent.aiCloudIncluded) {
+          setHasCloudAiEntitlement(true);
+          await providerKeyVault.setCentralCoreEnabled(true);
+          setStep((current) => (current === "api-key" ? "beginner-check" : current));
+        }
+      })
+      .catch(() => {
+        // Fallback to standard onboarding if offline or unentitled
+      });
+    return () => {
+      active = false;
+    };
+  }, [authAdapter, isCompleted, step]);
 
   // Global listener for session expiration / 401: instantly route to login form
   useEffect(() => {
@@ -63,8 +88,8 @@ export const useOnboardingFlow = () => {
   };
 
   const nextStep = () => {
-    if (step === "auth") setStep("api-key");
-    else if (step === "welcome") setStep("api-key");
+    if (step === "auth") setStep(hasCloudAiEntitlement ? "beginner-check" : "api-key");
+    else if (step === "welcome") setStep(hasCloudAiEntitlement ? "beginner-check" : "api-key");
     else if (step === "api-key") setStep("beginner-check");
     else if (step === "beginner-check") setStep("questions");
     else if (step === "questions") {
@@ -83,7 +108,7 @@ export const useOnboardingFlow = () => {
     if (step === "welcome") {
       if (!isAuth) setStep("auth");
     } else if (step === "api-key") setStep("auth");
-    else if (step === "beginner-check") setStep("api-key");
+    else if (step === "beginner-check") setStep(hasCloudAiEntitlement ? "auth" : "api-key");
     else if (step === "questions") setStep("beginner-check");
     else if (step === "dna-analysis") setStep("questions");
     else if (step === "placement-quiz") setStep("dna-analysis");

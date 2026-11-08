@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { resolveSpeechProfile, speechMomentText } from "../speech/profiles";
 import { PathwayNode, PathwayStepId } from "../../../domain/entities/LearningPathway";
 import { MobileAudioUnlocker, SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 import {
@@ -13,7 +14,7 @@ export interface UseLiveClassChoreographyOptions {
   step: PathwayStepId;
   isActive: boolean;
   initialOpenAsking?: boolean | undefined;
-  onStepChange?: ((step: PathwayStepId) => void) | undefined;
+  onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined;
   onBeforeLectureStart: () => void;
 }
 
@@ -28,6 +29,7 @@ export function useLiveClassChoreography({
   const [isWaitingTrapCheck, setIsWaitingTrapCheck] = useState(false);
   const [trapCheckPassed, setTrapCheckPassed] = useState(false);
   const [isTrapCelebrating, setIsTrapCelebrating] = useState(false);
+  const [isAutoplayWaiting, setIsAutoplayWaiting] = useState(false);
 
   const cancelLectureRef = useRef<(() => void) | null>(null);
   const scriptRef = useRef<PathwayLectureScript | null>(null);
@@ -60,11 +62,13 @@ export function useLiveClassChoreography({
     if (targetSeg?.activeFormulaCaseIndex !== undefined) setActiveFormulaCaseIndex(targetSeg.activeFormulaCaseIndex);
     setActiveExampleIndex(targetSeg?.activeExampleIndex ?? 0);
     setIsWaitingTrapCheck(false);
+    setIsAutoplayWaiting(false);
     setIsDictating(true);
 
     void PathwayLectureEngine.playLecture(
       node,
       (_i, seg) => {
+        setIsAutoplayWaiting(false);
         setLectureSegment(seg);
         if (seg.beat) setActiveBeat(seg.beat);
         if (seg.activeFormulaCaseIndex !== undefined) setActiveFormulaCaseIndex(seg.activeFormulaCaseIndex);
@@ -75,10 +79,16 @@ export function useLiveClassChoreography({
       (s) => {
         if (s === "BUILD") {
           lectureTriggeredStepRef.current = "BUILD";
-          onStepChange?.("BUILD");
+          onStepChange?.("BUILD", { skipAudio: true });
         }
       },
-      () => { setIsDictating(false); setLectureSegment(null); cancelLectureRef.current = null; },
+      () => {
+        // Autoplay blocked by mobile browser
+        setIsAutoplayWaiting(true);
+        setIsDictating(false);
+        setLectureSegment(null);
+        cancelLectureRef.current = null;
+      },
       {
         script,
         startFromIndex: startIdx,
@@ -156,10 +166,44 @@ export function useLiveClassChoreography({
     MobileAudioUnlocker.unlock();
     clearTimersAndLecture();
     const why = node.lessonPayload?.commonMistake.whySpanish || "Revisa el orden natural en inglés.";
+    const speechProfile = resolveSpeechProfile(node.orderIndex, node.title);
+    const isBase01 =
+      node.orderIndex === 0 ||
+      node.title.toLowerCase().includes("orden mágico");
+    const isBase02 =
+      node.orderIndex === 1 ||
+      node.title.toLowerCase().includes("it' fantasma") ||
+      node.title.toLowerCase().includes("el it fantasma");
+    const isBase03 =
+      node.orderIndex === 2 ||
+      node.title.toLowerCase().includes("ser o estar sin enredos") ||
+      node.title.toLowerCase().includes("am · is · are");
+    const isBase04 =
+      node.orderIndex === 3 ||
+      node.title.toLowerCase().includes("la trampa de 'tener'") ||
+      node.title.toLowerCase().includes("la trampa de tener") ||
+      node.title.toLowerCase().includes("estados y edad");
+    const isBase05 =
+      node.orderIndex === 4 ||
+      node.title.toLowerCase().includes("negativo & pregunta") ||
+      node.title.toLowerCase().includes("negativo y pregunta");
 
     if (!isCorrect) {
       setIsWaitingTrapCheck(true);
-      void SpeechSynthesisService.speak(`¡Ojo! Esa es la trampa del español: ${why} Toca la otra opción.`, {
+      const trapErrorSpeech =
+        speechMomentText(speechProfile, "trapcheck.error") ??
+        (isBase01
+          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda siempre abrir tu frase nombrando a la persona: ya sea I, you, we, o they... Toca la otra opción en tu pantalla."
+          : isBase02
+          ? "¡Mucho ojo! Esa es justo la trampa del español... En inglés nunca dejes el verbo huérfano: coloca siempre el sujeto neutro It diciendo por ejemplo:... It is cold today... Toca la otra opción en tu pantalla."
+          : isBase03
+          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que para una sola persona ajena como ella, la pareja fija siempre es... is... diciendo... She is ready... Toca la otra opción en tu pantalla."
+          : isBase04
+          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que la edad en inglés se dice con am o is, nunca con have... diciendo... I am 25 years old... Toca la otra opción en tu pantalla."
+          : isBase05
+          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que en preguntas directas colocamos primero el verbo: diciendo... Are you ready?... Toca la otra opción en tu pantalla."
+          : `¡Ojo! Esa es la trampa del español: ${why} Toca la otra opción.`);
+      void SpeechSynthesisService.speak(trapErrorSpeech, {
         lang: "es", voice: "liam", rate: 0.97, preventSyntheticFallback: true,
       });
       return;
@@ -182,7 +226,20 @@ export function useLiveClassChoreography({
 
     // Generous 15s safety fallback only in case playback errors or fails completely
     resumeTimerRef.current = setTimeout(proceed, 15000);
-    void SpeechSynthesisService.speak("¡Exacto! Cazaste la trampa. Escucha ahora cómo suena en ejemplos reales.", {
+    const trapSuccessSpeech =
+      speechMomentText(speechProfile, "trapcheck.success") ??
+      (isBase01
+        ? "¡Exacto! Cazaste la trampa a la perfección... Escucha ahora con atención cómo suena en ejemplos reales."
+        : isBase02
+        ? "¡Exacto! Cazaste la trampa a la perfección... Nunca dejamos el verbo huérfano... Escucha ahora con atención cómo suena en ejemplos reales."
+        : isBase03
+        ? "¡Exacto! Cazaste la trampa a la perfección... Una sola persona siempre va con... is... Escucha ahora con atención cómo suena en ejemplos reales."
+        : isBase04
+        ? "¡Exacto! Cazaste la trampa a la perfección... La edad se dice con el verbo tu bi... Escucha ahora con atención cómo suena en ejemplos reales."
+        : isBase05
+        ? "¡Exacto! Cazaste la trampa a la perfección... En preguntas siempre invertimos el orden... Escucha ahora con atención cómo suena en ejemplos reales."
+        : "¡Exacto! Cazaste la trampa. Escucha ahora cómo suena en ejemplos reales.");
+    void SpeechSynthesisService.speak(trapSuccessSpeech, {
       lang: "es", voice: "liam", rate: 0.97, preventSyntheticFallback: true,
       onEnd: () => {
         if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
@@ -197,7 +254,7 @@ export function useLiveClassChoreography({
 
   return {
     isDictating, lectureSegment, activeBeat, activeFormulaCaseIndex, activeExampleIndex,
-    isWaitingTrapCheck, trapCheckPassed, isTrapCelebrating,
+    isWaitingTrapCheck, trapCheckPassed, isTrapCelebrating, isAutoplayWaiting,
     stopAllLecture: clearTimersAndLecture,
     handleToggleLecture, handleSelectBeat, handleSelectFormulaCase, handleAnswerTrapCheck,
   };

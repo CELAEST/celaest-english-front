@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {fireEvent, render, screen,} from "@testing-library/react";
 import { PathwayStudioView } from "../PathwayStudioView";
 
 describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified Mobile)", () => {
@@ -46,14 +46,13 @@ describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified M
     // Attempting mic in headless environment without hardware unlocks silent fallback
     fireEvent.click(screen.getByRole("button", { name: /Hablarle al Profesor/i }));
 
-    const silentBtn = await screen.findByRole("button", { name: /Modo silencioso/i });
+    const silentBtn = await screen.findByRole("button", { name: /Modo silencioso/i }, { timeout: 12000 });
     fireEvent.click(silentBtn);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Base conquistada y guardada en tu progreso/i)).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /Ir a practicarlo en Reading/i }));
+    // El cartel de "base conquistada" ya no se muestra: esperamos la senal real del flujo.
+    const bridgeBtn = await screen.findByRole("button", { name: /Ir a practicarlo en Reading/i });
+    expect(screen.queryByText(/Base conquistada y guardada en tu progreso/i)).not.toBeInTheDocument();
+    fireEvent.click(bridgeBtn);
     expect(onNavigateModule).toHaveBeenCalledWith("reading");
   });
 

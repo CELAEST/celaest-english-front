@@ -12,6 +12,8 @@ export interface MobileLiveRuleStageProps {
   activeBeat: LiveClassBeatId;
   activeFormulaCaseIndex: number;
   activeExampleIndex: number;
+  formulaRevealCount?: number | undefined;
+  trapPhase?: 0 | 1 | 2 | undefined;
   isDictating: boolean;
   isSpeakingEnglish: boolean;
   speakingSampleText: string | null;
@@ -24,7 +26,8 @@ export interface MobileLiveRuleStageProps {
 }
 
 export const MobileLiveRuleStage: React.FC<MobileLiveRuleStageProps> = ({
-  lesson, nodeOrderIndex, activeBeat, activeFormulaCaseIndex, activeExampleIndex, isDictating,
+  lesson, nodeOrderIndex, activeBeat, activeFormulaCaseIndex, activeExampleIndex,
+  formulaRevealCount, trapPhase, isDictating,
   isSpeakingEnglish, speakingSampleText, trapCheckPassed, subtitleSpanish,
   onSelectBeat, onSelectFormulaCase, onAnswerTrapCheck, onPlaySample,
 }) => {
@@ -51,7 +54,15 @@ export const MobileLiveRuleStage: React.FC<MobileLiveRuleStageProps> = ({
   }
 
   if (activeBeat === "TRAP") {
-    return <LiveBoardTrapScene lesson={lesson} subtitleSpanish={subtitleSpanish} onJumpToTrapCheck={() => onSelectBeat("TRAP_CHECK")} />;
+    return (
+      <LiveBoardTrapScene
+        lesson={lesson}
+        subtitleSpanish={subtitleSpanish}
+        isDictating={isDictating}
+        trapPhase={trapPhase}
+        onJumpToTrapCheck={() => onSelectBeat("TRAP_CHECK")}
+      />
+    );
   }
 
   if (activeBeat === "TRAP_CHECK") {
@@ -71,6 +82,7 @@ export const MobileLiveRuleStage: React.FC<MobileLiveRuleStageProps> = ({
   return (
     <LiveBoardFormulaScene
       lesson={lesson} activeCaseIndex={activeFormulaCaseIndex}
+      revealedCountOverride={formulaRevealCount}
       subtitleSpanish={subtitleSpanish} isDictating={isDictating}
       onSelectCase={onSelectFormulaCase} onPlaySample={onPlaySample}
     />

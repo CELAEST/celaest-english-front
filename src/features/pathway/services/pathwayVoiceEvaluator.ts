@@ -15,7 +15,7 @@ export interface EvaluatePathwayVoiceOutput {
   evaluation: PronunciationEvaluationResult | null;
 }
 
-const MIN_WHISPER_BLOB_BYTES = 400;
+const MIN_WHISPER_BLOB_BYTES = 1024;
 const MAX_SILENCE_NO_SPEECH_PROB = 0.82;
 
 /**

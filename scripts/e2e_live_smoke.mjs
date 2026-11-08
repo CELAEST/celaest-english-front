@@ -10,7 +10,7 @@
 import http from 'http';
 import https from 'https';
 
-const FRONTEND_URL = 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
 const BACKEND_URL = 'http://localhost:8080';
 
 // Real signed JWT token generated for E2E user
@@ -68,7 +68,7 @@ async function run() {
   console.log('======================================================\n');
 
   // 1. Frontend Server Liveness
-  console.log('[1/7] Testing Frontend Dev Server Liveness (Vite port 3000)...');
+  console.log(`[1/7] Testing Frontend Dev Server Liveness (${FRONTEND_URL})...`);
   try {
     const res = await request(FRONTEND_URL);
     assert(res.status === 200, `Frontend root returned HTTP ${res.status}`);

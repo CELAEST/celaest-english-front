@@ -31,6 +31,13 @@ const isLocalhost =
 const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
 const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
+const defaultProdMarketplaceUrl = "https://celaest-dashboard.vercel.app/?tab=marketplace";
+
+const marketplaceDashboardUrl =
+  metaEnv?.VITE_MARKETPLACE_URL ||
+  (isLocalhost
+    ? "http://localhost:3000/?tab=marketplace"
+    : defaultProdMarketplaceUrl);
 
 const resolvedApiUrl = trimTrailingSlash(
   apiUrl ||
@@ -76,5 +83,7 @@ export const ENV = {
   supabaseUrl: trimTrailingSlash(supabaseUrl),
   /** Supabase Public Anon Key */
   supabaseAnonKey,
+  /** CELAEST Marketplace Dashboard URL */
+  marketplaceDashboardUrl: trimTrailingSlash(marketplaceDashboardUrl),
   isProd,
 } as const;

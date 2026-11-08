@@ -63,7 +63,6 @@ export const PathwayVoiceUnlockStep: React.FC<PathwayVoiceUnlockStepProps> = ({
         </div>
       ) : (
         <div className="pt-2.5 border-t border-[#4ade80]/30 space-y-2">
-          <span className="block text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.2em] text-[#4ade80]">✓ Base conquistada y guardada en tu progreso</span>
           <p className="text-xs sm:text-sm text-white/75 font-light">{bridgeModule.reasonSpanish}</p>
           <div className="flex flex-wrap items-center gap-4">
             {onBridgeNavigate && (

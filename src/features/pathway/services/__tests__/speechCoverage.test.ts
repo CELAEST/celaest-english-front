@@ -3,6 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import manifest from "../../data/a1AudioManifest.json";
 import a2Manifest from "../../data/a2AudioManifest.json";
+import b1Manifest from "../../data/b1AudioManifest.json";
+import b2Manifest from "../../data/b2AudioManifest.json";
+import c1Manifest from "../../data/c1AudioManifest.json";
+import c2Manifest from "../../data/c2AudioManifest.json";
 import { speechProfiles } from "../../speech/profiles";
 import { buildProceduralSeedNodes } from "../aiPathwayCurriculumService";
 import { PathwayLectureEngine } from "../PathwayLectureEngine";
@@ -31,7 +35,14 @@ function sanitize(text: string): string {
     .trim();
 }
 
-const M = { ...manifest, ...a2Manifest } as Record<string, string>;
+const M = {
+  ...manifest,
+  ...a2Manifest,
+  ...b1Manifest,
+  ...b2Manifest,
+  ...c1Manifest,
+  ...c2Manifest,
+} as Record<string, string>;
 
 /**
  * Bases declaradas CERRADAS. Solo estas bloquean el build.

@@ -1,5 +1,6 @@
 import phoneticsManifest from "../data/phoneticsAudioManifest.json";
 import { SpeechSynthesisService, SpeakOptions } from "../../conversation/services/speechSynthesisService";
+import { resolveAudioUrl } from "../../../shared/utils/audioUrl";
 
 const manifest = (phoneticsManifest || {}) as Record<string, string>;
 
@@ -51,7 +52,7 @@ export class PhoneticAudioService {
 
   private static playLocal(src: string, onEnd?: () => void): Promise<void> {
     return new Promise((resolve) => {
-      const audio = new Audio(src);
+      const audio = new Audio(resolveAudioUrl(src));
       this.currentAudio = audio;
       const finish = () => {
         if (this.currentAudio === audio) this.currentAudio = null;

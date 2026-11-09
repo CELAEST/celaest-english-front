@@ -1,5 +1,6 @@
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
+import { resolveAudioUrl } from "../../../shared/utils/audioUrl";
 import {
   readingAudioPrefetcher,
   FlagshipVoiceId,
@@ -92,7 +93,8 @@ export class SpeechSynthesisService {
   /** Descarga completa del mp3 del manifiesto y la guarda como blob URL. */
   public static prefetchStatic(url?: string): void {
     if (!url || this.staticBlobCache.has(url) || this.staticBlobPending.has(url)) return;
-    const pending = fetch(url, { cache: "force-cache" })
+    const targetUrl = resolveAudioUrl(url);
+    const pending = fetch(targetUrl, { cache: "force-cache" })
       .then((res) => (res.ok ? res.blob() : null))
       .then((blob) => {
         if (!blob) return null;
@@ -119,13 +121,14 @@ export class SpeechSynthesisService {
     const cached = this.staticBlobCache.get(url);
     if (cached) return cached;
     this.prefetchStatic(url);
+    const targetUrl = resolveAudioUrl(url);
     const pending = this.staticBlobPending.get(url);
-    if (!pending) return url;
+    if (!pending) return targetUrl;
     const blobUrl = await Promise.race([
       pending,
       new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
     ]);
-    return blobUrl || url;
+    return blobUrl || targetUrl;
   }
 
   /**

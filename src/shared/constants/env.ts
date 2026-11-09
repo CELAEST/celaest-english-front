@@ -32,6 +32,11 @@ const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
 const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
 const defaultProdMarketplaceUrl = "https://celaest-dashboard.vercel.app/?tab=marketplace";
+const defaultProdAudioBaseUrl = "https://pub-f37d8afe3d964d7d8910cb7514c4b7a5.r2.dev";
+
+const resolvedAudioBaseUrl = trimTrailingSlash(
+  metaEnv?.VITE_AUDIO_BASE_URL || (isProd ? defaultProdAudioBaseUrl : ""),
+);
 
 const marketplaceDashboardUrl =
   metaEnv?.VITE_MARKETPLACE_URL ||
@@ -85,5 +90,7 @@ export const ENV = {
   supabaseAnonKey,
   /** CELAEST Marketplace Dashboard URL */
   marketplaceDashboardUrl: trimTrailingSlash(marketplaceDashboardUrl),
+  /** Base URL for static CDN assets (R2 audio storage). Empty string in local dev. */
+  audioBaseUrl: resolvedAudioBaseUrl,
   isProd,
 } as const;

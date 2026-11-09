@@ -45,3 +45,10 @@ scripts/*.txt
 .pathway_qa_*.json
 .pathway_build_*.log
 .pathway_regen_*.log
+ 
+.wrangler
+.wrangler/
+
+ 
+assets_raw/
+

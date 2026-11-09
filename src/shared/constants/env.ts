@@ -31,7 +31,7 @@ const isLocalhost =
 const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
 const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
-const defaultProdMarketplaceUrl = "https://celaest-dashboard.vercel.app/?tab=marketplace";
+const defaultProdMarketplaceUrl = "https://celaest-dashboard.estebani1421.workers.dev/?tab=marketplace";
 const defaultProdAudioBaseUrl = "https://pub-f37d8afe3d964d7d8910cb7514c4b7a5.r2.dev";
 
 const resolvedAudioBaseUrl = trimTrailingSlash(
@@ -50,9 +50,7 @@ const resolvedApiUrl = trimTrailingSlash(
       ? "http://localhost:8080/api/v1"
       : isLocalhost
         ? `${window.location.origin}/api/v1`
-        : isBrowser
-          ? `${window.location.origin}/api/v1`
-          : defaultProdApiUrl),
+        : defaultProdApiUrl),
 );
 
 const resolvedCelaestBackUrl = trimTrailingSlash(
@@ -61,9 +59,7 @@ const resolvedCelaestBackUrl = trimTrailingSlash(
       ? "http://localhost:3101/api/v1"
       : isLocalhost
         ? `${window.location.origin}/celaest-back`
-        : isBrowser
-          ? `${window.location.origin}/celaest-back`
-          : defaultProdCelaestBackUrl),
+        : defaultProdCelaestBackUrl),
 );
 
 const resolvedCoreAiUrl = trimTrailingSlash(
@@ -72,9 +68,7 @@ const resolvedCoreAiUrl = trimTrailingSlash(
       ? "http://127.0.0.1:8085/api/v1"
       : isLocalhost
         ? `${window.location.origin}/core-ai`
-        : isBrowser
-          ? `${window.location.origin}/core-ai`
-          : defaultProdCoreAiUrl),
+        : defaultProdCoreAiUrl),
 );
 
 export const ENV = {

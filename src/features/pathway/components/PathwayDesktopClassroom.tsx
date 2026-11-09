@@ -2,11 +2,12 @@ import React from "react";
 import { BridgeModuleTarget, LearningPathway, PathwayNode } from "../../../domain/entities/LearningPathway";
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { usePathwayStageSession } from "../hooks/usePathwayStageSession";
+import { LiveBoardState } from "./professor-board/LessonBoardBody";
 import { GuideSection } from "./knowledge/GuideHeaderTitle";
 import { PathwayBottomBar } from "./PathwayBottomBar";
 import { PathwayLessonHeader } from "./PathwayLessonHeader";
 import { PathwayBlockBuilderStep } from "./stages/PathwayBlockBuilderStep";
-import { PathwayVisualRuleStep } from "./stages/PathwayVisualRuleStep";
+import { DesktopLiveRuleStage } from "./stages/DesktopLiveRuleStage";
 import { PathwayVoiceUnlockStep } from "./stages/PathwayVoiceUnlockStep";
 
 export interface PathwayDesktopClassroomProps {
@@ -17,12 +18,13 @@ export interface PathwayDesktopClassroomProps {
   onOpenGuideSection: (section: GuideSection) => void;
   onNextNode?: (() => void) | undefined; onPrevAction?: (() => void) | undefined;
   onNextAction?: (() => void) | undefined; onNavigateModule?: ((target: BridgeModuleTarget) => void) | undefined;
+  liveBoard?: LiveBoardState | undefined;
 }
 
 export const PathwayDesktopClassroom: React.FC<PathwayDesktopClassroomProps> = ({
   pathway, activeNode, activeNodeIndex, masteredCount, roleName, session, canAdvanceNode,
   onSelectLevel, onOpenCurriculum, onOpenAskTutor, onOpenGuideSection,
-  onNextNode, onPrevAction, onNextAction, onNavigateModule,
+  onNextNode, onPrevAction, onNextAction, onNavigateModule, liveBoard,
 }) => {
   const lesson = activeNode.lessonPayload!;
 
@@ -38,8 +40,9 @@ export const PathwayDesktopClassroom: React.FC<PathwayDesktopClassroomProps> = (
       />
       <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2 flex flex-col justify-center">
         {session.step === "RULE" && (
-          <PathwayVisualRuleStep
+          <DesktopLiveRuleStage
             title={activeNode.title} focus={activeNode.competencyFocus} lesson={lesson}
+            nodeOrderIndex={activeNode.orderIndex} liveBoard={liveBoard}
             speakingText={session.speakingText} onPlayAudio={session.playAudio}
             onContinueToBuild={() => session.setStep("BUILD")}
             onOpenAnatomy={() => onOpenGuideSection("structure")}

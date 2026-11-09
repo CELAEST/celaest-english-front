@@ -56,6 +56,34 @@ describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified M
     expect(onNavigateModule).toHaveBeenCalledWith("reading");
   });
 
+  it("renders dynamic Live Board on Desktop on the left side of Liam with synchronized scenes", async () => {
+    localStorage.setItem("celaest:tutor:software_explained:v2", "1");
+
+    render(
+      <PathwayStudioView
+        roleName="Product Designer"
+        userLevel="A1"
+        learningGoal="Speak fluently in tech demos"
+      />,
+    );
+
+    expect(screen.getByTestId("desktop-live-rule-stage")).toBeInTheDocument();
+    expect(screen.getByTestId("professor-3d-stage")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Clase/i })).toBeInTheDocument();
+    expect(screen.getByTestId("live-formula-scene")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /2 Trampa/i }));
+    expect(screen.getByTestId("live-trap-scene")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Reto/i }));
+    expect(screen.getByTestId("live-trap-check-scene")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /I work every day\./i }));
+    expect(screen.getByText(/¡Exacto!/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /4 Ejemplos/i }));
+    expect(screen.getByTestId("live-examples-scene")).toBeInTheDocument();
+  });
+
   it("keeps Liam visible 100% of the time on Mobile across Live Formula -> Trap -> Trap Check -> Examples -> BUILD -> SPEAK", async () => {
     Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 390 });
     window.dispatchEvent(new Event("resize"));

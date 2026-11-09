@@ -17,8 +17,43 @@ export function buildModule3CommonLawCollocations(
           { label: "BINOMIO LEGAL", token: "part and parcel of", tone: "emerald" },
           { label: "ÁMBITO DE APLICACIÓN", token: "any legitimate system of governance.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Inherencia institucional (part and parcel of)",
+            segments: [
+              { label: "CUALIDAD INHERENTE", token: "Ethical oversight is", tone: "violet" },
+              { label: "BINOMIO DE INHERENCIA", token: "part and parcel of", tone: "emerald" },
+              { label: "SISTEMA QUE LA CONTIENE", token: "sound governance.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando algo es inseparable del propio sistema y no un añadido opcional, usa 'part and parcel of'. La señal es que puedes decir 'sin esto, el sistema ya no es el mismo'. En contraste, 'an important part' solo pondera; 'part and parcel' afirma inherencia, y su orden doble es fijo.",
+            exampleEnglish: "Ethical oversight is part and parcel of sound governance.",
+          },
+          {
+            label: "02 · Anular un acto jurídico (null and void)",
+            segments: [
+              { label: "ACTO CUESTIONADO", token: "The tribunal declared the amendment", tone: "violet" },
+              { label: "BINOMIO DE NULIDAD", token: "null and void", tone: "emerald" },
+              { label: "EFECTO LEGAL", token: "with immediate effect.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un acto pierde todo valor jurídico, se declara 'null and void'. La señal es el verbo declarar o el fallo de un tribunal. En contraste, 'invalid' es un adjetivo corriente que solo dice que no vale; el binomio lo declara sin efecto legal alguno, y su orden nunca se invierte.",
+            exampleEnglish: "The tribunal declared the amendment null and void.",
+          },
+          {
+            label: "03 · Complicidad en un delito (aid and abet)",
+            segments: [
+              { label: "AUTOR MATERIAL", token: "Two directors", tone: "violet" },
+              { label: "BINOMIO DE COMPLICIDAD", token: "aided and abetted", tone: "emerald" },
+              { label: "DELITO", token: "the fraudulent scheme.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando alguien no ejecuta el delito pero lo facilita conscientemente, 'aided and abetted' es la fórmula exacta. La señal es la ayuda prestada a sabiendas. En contraste, 'helped' es neutro y hasta puede ser elogioso; el binomio connota culpa compartida y se conjuga en ambos verbos.",
+            exampleEnglish: "Two directors aided and abetted the fraudulent scheme.",
+          },
+        ],
         commonMistake: {
-          wrong: "It is an inseparable part of the system (correcto pero plano).",
+          wrong: "It is an inseparable part of the system.",
           wrongToken: "an inseparable part of",
           correct: "It is part and parcel of the system.",
           correctToken: "part and parcel of",
@@ -68,8 +103,43 @@ export function buildModule3CommonLawCollocations(
           { label: "EXIGENCIA ÉTICA", token: "that demands", tone: "emerald" },
           { label: "RESPUESTA MADURA", token: "measured and courageous deliberation.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Resultado cantado de antemano (a foregone conclusion)",
+            segments: [
+              { label: "RESULTADO PREVISIBLE", token: "The incumbent's victory was", tone: "violet" },
+              { label: "COLOCACIÓN DE EVIDENCIA", token: "a foregone conclusion", tone: "emerald" },
+              { label: "ANTES DEL HECHO", token: "long before polling day.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el desenlace se daba por descontado antes de ocurrir, di 'a foregone conclusion'. La señal es que nadie apostaría en contra. En contraste, 'an obvious result' describe lo que ya pasó; 'foregone' marca que estaba decidido de antemano, y siempre lleva el artículo 'a'.",
+            exampleEnglish: "The incumbent's victory was a foregone conclusion.",
+          },
+          {
+            label: "02 · Encrucijada que inclina la balanza (stand at a pivotal juncture)",
+            segments: [
+              { label: "POSICIÓN HISTÓRICA", token: "We stand", tone: "violet" },
+              { label: "COLOCACIÓN DE ENCRUCIJADA", token: "at a pivotal juncture", tone: "emerald" },
+              { label: "EXIGENCIA", token: "that admits no delay.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un momento exige una decisión que marcará el rumbo, usa 'stand at a pivotal juncture'. La señal es la sensación de antesala histórica. En contraste, 'an important moment' es una valoración vaga; 'pivotal' indica que la decisión inclina la balanza, y el verbo es 'stand', no 'be in'.",
+            exampleEnglish: "The board stands at a pivotal juncture.",
+          },
+          {
+            label: "03 · Fracaso sin paliativos (an unmitigated disaster)",
+            segments: [
+              { label: "GESTIÓN FALLIDA", token: "The launch turned into", tone: "violet" },
+              { label: "COLOCACIÓN DE RUINA TOTAL", token: "an unmitigated disaster", tone: "emerald" },
+              { label: "SIN ATENUANTE", token: "for every stakeholder.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un fracaso no admite ni un solo aspecto positivo, califícalo de 'an unmitigated disaster'. La señal es que no puedes añadir 'pero al menos…'. En contraste, 'a serious setback' deja abierta la recuperación; 'unmitigated' cierra toda atenuación y suena a dictamen, no a queja.",
+            exampleEnglish: "The launch turned into an unmitigated disaster.",
+          },
+        ],
         commonMistake: {
-          wrong: "We are in an important crossroad (calco literal poco natural).",
+          wrong: "We are in an important crossroad.",
           wrongToken: "in an important crossroad",
           correct: "We stand at a pivotal juncture.",
           correctToken: "stand at a pivotal juncture",
@@ -119,8 +189,32 @@ export function buildModule3CommonLawCollocations(
           { label: "METÁFORA DE INFLEXIÓN", token: "marked a definitive watershed moment", tone: "emerald" },
           { label: "ÁMBITO DEL CAMBIO", token: "in multilateral international diplomacy.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Hito que parte la historia (a watershed moment)",
+            segments: [
+              { label: "SUCESO FUNDACIONAL", token: "The ruling was", tone: "violet" },
+              { label: "METÁFORA DE DIVISORIA", token: "a watershed moment", tone: "emerald" },
+              { label: "ÁMBITO AFECTADO", token: "for civil rights.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un suceso parte la historia en antes y después, es 'a watershed moment'. La señal es que el cambio resulta irreversible. En contraste, 'a big change' solo indica tamaño; 'watershed' evoca la divisoria de aguas, y la expresión fija exige 'moment', nunca 'water point'.",
+            exampleEnglish: "The ruling was a watershed moment for civil rights.",
+          },
+          {
+            label: "02 · Transformación profunda del sistema (a sea change)",
+            segments: [
+              { label: "SECTOR TRANSFORMADO", token: "The industry has undergone", tone: "violet" },
+              { label: "METÁFORA DE MUTACIÓN", token: "a sea change", tone: "emerald" },
+              { label: "EFECTO", token: "in how it operates.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la transformación es lenta, profunda y altera todo el ecosistema, di 'a sea change'. La señal es un cambio de paradigma, no un episodio puntual. En contraste, 'a watershed moment' señala la fecha del giro; 'sea change' describe el estado nuevo en que queda el sector.",
+            exampleEnglish: "The industry has undergone a sea change.",
+          },
+        ],
         commonMistake: {
-          wrong: "It was a turning point of water (calco erróneo).",
+          wrong: "It was a turning point of water.",
           wrongToken: "turning point of water",
           correct: "It was a watershed moment in our history.",
           correctToken: "a watershed moment",
@@ -170,10 +264,45 @@ export function buildModule3CommonLawCollocations(
           { label: "CERTEZA ABSOLUTA", token: "beyond the shadow of a doubt,", tone: "emerald" },
           { label: "EFECTO JURÍDICO", token: "silencing all unfounded conjecture.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Certidumbre forense (beyond the shadow of a doubt)",
+            segments: [
+              { label: "PRUEBA PRESENTADA", token: "The footage proved his alibi", tone: "violet" },
+              { label: "CERTEZA SIN FISURA", token: "beyond the shadow of a doubt", tone: "emerald" },
+              { label: "CIERRE", token: "and ended the inquiry.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la evidencia no deja resquicio a la duda, di 'beyond the shadow of a doubt'. La señal es un contexto probatorio o forense. En contraste, 'without any doubt at all' suena coloquial y enfático de más; la fórmula fija pertenece al registro del tribunal y nunca cambia de orden.",
+            exampleEnglish: "The footage proved his alibi beyond the shadow of a doubt.",
+          },
+          {
+            label: "02 · No ceder en un principio (not give an inch)",
+            segments: [
+              { label: "PARTE QUE PRESIONA", token: "The union will", tone: "violet" },
+              { label: "FIRMEZA SIN CONCESIÓN", token: "not give an inch", tone: "emerald" },
+              { label: "TERRENO DEFENDIDO", token: "on safety standards.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando alguien defiende una posición sin la menor concesión, 'not give an inch' lo describe. La señal es una negociación con presión sostenida. En contraste, 'refuse to change' es neutro y no transmite resistencia física; el modismo exige la negación y suele ir con 'on' más el tema.",
+            exampleEnglish: "The union will not give an inch on safety standards.",
+          },
+          {
+            label: "03 · Negativa personal absoluta (not for the life of me)",
+            segments: [
+              { label: "ESFUERZO INÚTIL", token: "I cannot,", tone: "violet" },
+              { label: "NEGATIVA ABSOLUTA", token: "for the life of me,", tone: "emerald" },
+              { label: "LO IMPOSIBLE", token: "recall that clause.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando por más que lo intentas no logras algo, usa 'not for the life of me'. La señal es un esfuerzo propio y fallido, casi siempre con 'cannot'. En contraste, 'I really can't' solo informa; el modismo añade asombro ante la propia incapacidad y no se usa para negar hechos ajenos.",
+            exampleEnglish: "I cannot, for the life of me, recall that clause.",
+          },
+        ],
         commonMistake: {
-          wrong: "Without any doubt at all (coloquial y desgastado).",
+          wrong: "Without any doubt at all, the audit confirmed the ledger.",
           wrongToken: "Without any doubt at all",
-          correct: "beyond the shadow of a doubt.",
+          correct: "The audit confirmed the ledger beyond the shadow of a doubt.",
           correctToken: "beyond the shadow of a doubt",
           whySpanish: "'Beyond the shadow of a doubt' es la fórmula forense más solemne para certidumbre incontrovertible.",
         },
@@ -221,10 +350,45 @@ export function buildModule3CommonLawCollocations(
           { label: "PRINCIPIO CONSUSTANCIAL", token: "accountability is part and parcel of our covenant;", tone: "emerald" },
           { label: "METÁFORA DE INFLEXIÓN", token: "this decisive accord marks a true watershed moment.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Abrir el dictamen en la encrucijada (At this pivotal juncture,)",
+            segments: [
+              { label: "APERTURA SOLEMNE", token: "At this pivotal juncture,", tone: "violet" },
+              { label: "EXIGENCIA DEL MOMENTO", token: "restraint matters", tone: "emerald" },
+              { label: "CIERRE DE LA IDEA", token: "more than speed.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Abre el párrafo con 'At this pivotal juncture,' cuando el dictamen parte de un momento decisivo. La señal es que el lector debe sentir urgencia histórica desde la primera línea. En contraste, 'Nowadays' o 'In this moment' son planos y rompen el registro C2 del resto del texto.",
+            exampleEnglish: "At this pivotal juncture, restraint matters most.",
+          },
+          {
+            label: "02 · Anclar el principio consustancial (part and parcel of)",
+            segments: [
+              { label: "SUJETO INSTITUCIONAL", token: "Transparency is", tone: "violet" },
+              { label: "BINOMIO DE INHERENCIA", token: "part and parcel of", tone: "emerald" },
+              { label: "BIEN PROTEGIDO", token: "public trust.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "En el cuerpo del dictamen, usa 'part and parcel of' para declarar que un principio es inseparable de la institución. La señal es que el argumento necesita fundamento, no adorno. En contraste, 'is important for' solo opina; el binomio convierte la afirmación en definición.",
+            exampleEnglish: "Transparency is part and parcel of public trust.",
+          },
+          {
+            label: "03 · Cerrar con la metáfora de época (marks a watershed moment)",
+            segments: [
+              { label: "HECHO QUE CIERRA", token: "The accord", tone: "violet" },
+              { label: "METÁFORA DE INFLEXIÓN", token: "marks a watershed moment", tone: "emerald" },
+              { label: "ÁMBITO", token: "for the entire bloc.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Reserva la metáfora de inflexión para la última frase: 'marks a watershed moment' da al dictamen un cierre de época. La señal es que ya expusiste los argumentos. En contraste, si la usas al principio gastas el efecto; y 'is a watershed moment' describe sin atribuir el giro al hecho.",
+            exampleEnglish: "The accord marks a watershed moment for the bloc.",
+          },
+        ],
         commonMistake: {
-          wrong: "Mezclar vocabulario informal cotidiano dentro de un dictamen solemne.",
+          wrong: "Nowadays, transparency is quite important for public trust.",
           wrongToken: "inconsistencia de registro",
-          correct: "Mantener una densidad léxica armónica y homogénea en todo el párrafo.",
+          correct: "At this pivotal juncture, transparency is part and parcel of public trust.",
           correctToken: "consistencia tonal C2",
           whySpanish: "El estudiante C2 mantiene la dignidad de registro de la primera a la última palabra.",
         },

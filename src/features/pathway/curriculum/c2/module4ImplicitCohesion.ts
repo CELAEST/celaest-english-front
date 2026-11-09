@@ -17,8 +17,43 @@ export function buildModule4ImplicitCohesion(
           { label: "CONECTOR ESTATUTARIO", token: "whereby all subsequent disputes", tone: "emerald" },
           { label: "PROCEDIMIENTO VINCULANTE", token: "are systematically and impartially resolved.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Cláusula que define el mecanismo",
+            segments: [
+              { label: "NORMA O MARCO", token: "A charter", tone: "violet" },
+              { label: "MECANISMO ESTATUTARIO", token: "whereby every member", tone: "emerald" },
+              { label: "EFECTO VINCULANTE", token: "holds one vote.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo cuando la cláusula siguiente explica cómo funciona lo que acabas de nombrar: el estatuto define el procedimiento. 'Whereby' condensa 'by which' en una palabra. Si sólo agregás información, usá 'and'; si describís el medio legal, 'whereby' es la forma exacta.",
+            exampleEnglish: "A charter whereby every member holds one vote.",
+          },
+          {
+            label: "02 · Acto formal y secuencia inmediata",
+            segments: [
+              { label: "ACTO CUMPLIDO", token: "The oath was administered,", tone: "violet" },
+              { label: "SECUENCIA INMEDIATA", token: "whereupon the session", tone: "emerald" },
+              { label: "CONSECUENCIA", token: "formally opened.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Emplealo cuando un acto formal desencadena el paso siguiente sin demora. 'Whereupon' une la consecuencia al acto con inevitabilidad jurídica. 'And then' narra de forma coloquial y deja los hechos sueltos; aquí el segundo hecho nace del primero.",
+            exampleEnglish: "The oath was administered, whereupon the session formally opened.",
+          },
+          {
+            label: "03 · Vigencia que acaba de cambiar",
+            segments: [
+              { label: "ESTADO ANTERIOR", token: "Heretofore confidential", tone: "violet" },
+              { label: "CAMBIO DE RÉGIMEN", token: "minutes are now", tone: "emerald" },
+              { label: "NUEVA SITUACIÓN", token: "publicly available.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Sirve para declarar un estado que valía hasta hoy y ya no rige. 'Heretofore' presupone registro oficial y contraste con el presente. 'Previously' sólo ordena el tiempo; la forma arcaica añade solemnidad de acta y marca que hubo un cambio formal.",
+            exampleEnglish: "Heretofore confidential minutes are now publicly available.",
+          },
+        ],
         commonMistake: {
-          wrong: "A framework through which they can resolve disputes (estilo plano).",
+          wrong: "A framework through which they can resolve disputes.",
           wrongToken: "through which they can resolve",
           correct: "A framework whereby all disputes are resolved.",
           correctToken: "whereby all disputes are resolved",
@@ -68,8 +103,31 @@ export function buildModule4ImplicitCohesion(
           { label: "RÉPLICA DIALÉCTICA", token: "to this I would counter that", tone: "emerald" },
           { label: "REFUTACIÓN CONCLUYENTE", token: "unprecedented challenges demand proportionate resolve.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Objeción de costo o plazo",
+            segments: [
+              { label: "OBJECIÓN ANTICIPADA", token: "It may be objected that cost is steep;", tone: "violet" },
+              { label: "RÉPLICA INMEDIATA", token: "inaction costs more.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Anticipá la objeción de viabilidad antes de que el rival la pronuncie. Abrís con 'It may be objected that...' y refutás en la misma frase. Si contestás después de que habló, ya perdiste el marco; así fijás el terreno y tu respuesta suena concluyente.",
+            exampleEnglish: "It may be objected that cost is steep; inaction costs more.",
+          },
+          {
+            label: "02 · Objeción de principio",
+            segments: [
+              { label: "CRÍTICA MÁS FUERTE", token: "One might contend that speed endangers quality;", tone: "violet" },
+              { label: "RÉPLICA DE FONDO", token: "to this I submit that", tone: "emerald" },
+              { label: "TESIS SOSTENIDA", token: "deliberate speed protects it.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la crítica es de principio y no de recursos, concedé su versión más fuerte con 'One might contend that...' antes de refutar. Reconocer el mejor argumento rival te presta autoridad. Ignorarlo te deja expuesto a que el público lo escuche de boca ajena.",
+            exampleEnglish: "One might contend that speed endangers quality; I submit otherwise.",
+          },
+        ],
         commonMistake: {
-          wrong: "Some people say it is too fast, but they are wrong (coloquial y confrontativo).",
+          wrong: "Some people say it is too fast, but they are wrong.",
           wrongToken: "Some people say... they are wrong",
           correct: "It may be objected that the pace is rapid; to this I counter that urgency is paramount.",
           correctToken: "It may be objected... to this I counter",
@@ -118,6 +176,41 @@ export function buildModule4ImplicitCohesion(
           { label: "ORACIÓN A (TÉRMINO FINAL)", token: "The institution pursues excellence with uncompromising rigor.", tone: "violet" },
           { label: "ECO ANFÓRICO EN B", token: "Such rigor defines", tone: "emerald" },
           { label: "CONTINUIDAD ORGÁNICA", token: "every standard we solemnly proclaim.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Eco del término final",
+            segments: [
+              { label: "FRASE A", token: "The merger demanded patience.", tone: "violet" },
+              { label: "ECO CON SUCH", token: "Such patience", tone: "emerald" },
+              { label: "CONSECUENCIA", token: "preserved the alliance.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Tomá el último sustantivo de la frase A y reabrí la frase B con 'Such + sustantivo'. Esa repetición señala consecuencia sin conector. 'Furthermore' sólo suma un dato; 'Such patience' retoma lo dicho y lo convierte en la causa de lo que sigue.",
+            exampleEnglish: "The merger demanded patience. Such patience preserved the alliance.",
+          },
+          {
+            label: "02 · Idea dominante como sujeto",
+            segments: [
+              { label: "IDEA QUE CRECE", token: "Trust grew slowly.", tone: "violet" },
+              { label: "MISMO SUJETO", token: "Trust carried", tone: "emerald" },
+              { label: "DESENLACE", token: "the negotiation.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando una idea debe dominar el párrafo, repetí ese sustantivo como sujeto de la frase siguiente y omití el conector. La repetición deliberada crea jerarquía. Con 'In addition' ambas frases pesan igual y la idea central se diluye entre detalles.",
+            exampleEnglish: "Trust grew slowly. Trust carried the negotiation.",
+          },
+          {
+            label: "03 · Elipsis del verbo ya dicho",
+            segments: [
+              { label: "PRIMER SUJETO Y VERBO", token: "They ratified the treaty;", tone: "violet" },
+              { label: "SEGUNDO SUJETO", token: "we could not", tone: "emerald" },
+              { label: "VERBO OMITIDO", token: "(ratify)", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si el verbo de la segunda frase ya se entiende, omitilo en vez de repetirlo o de añadir un conector. 'we could not' deja el verbo en el aire y el paralelismo hace el trabajo. Repetirlo suena a informe; omitirlo demuestra dominio del ritmo.",
+            exampleEnglish: "They ratified the treaty; we could not.",
+          },
         ],
         commonMistake: {
           wrong: "The team worked hard. Furthermore, they are disciplined. In addition, they succeeded.",
@@ -170,8 +263,32 @@ export function buildModule4ImplicitCohesion(
           { label: "REALIDAD EMPÍRICA INEXORABLE", token: "the objective evidence demands", tone: "emerald" },
           { label: "ACCION REQUERIDA", token: "a thorough and unsparing review.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Datos que contradicen el deseo",
+            segments: [
+              { label: "DESEO CONCEDIDO", token: "Much though one might wish otherwise,", tone: "violet" },
+              { label: "HECHO QUE IMPONE", token: "the evidence is", tone: "emerald" },
+              { label: "VEREDICTO", token: "conclusive.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usalo cuando los datos contradicen lo que deseabas y la honestidad exige decirlo. La fórmula concede el deseo antes de afirmar el hecho. 'Unfortunately' se lamenta y debilita; esta apertura asume la realidad con entereza y sin dramatismo.",
+            exampleEnglish: "Much though one might wish otherwise, the evidence is conclusive.",
+          },
+          {
+            label: "02 · Futuro incierto, deber intacto",
+            segments: [
+              { label: "DESENLACE ABIERTO", token: "Be that as it will,", tone: "violet" },
+              { label: "OBLIGACIÓN PRESENTE", token: "our duty to them", tone: "emerald" },
+              { label: "FIRMEZA", token: "stands unchanged.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el desenlace futuro es incierto pero tu obligación no cambia, abrí con 'Be that as it will'. Acepta cualquier giro de los acontecimientos y sostiene el deber presente. 'Whatever happens' es correcto pero coloquial; esta forma pertenece al registro deliberativo.",
+            exampleEnglish: "Be that as it will, our duty to them stands.",
+          },
+        ],
         commonMistake: {
-          wrong: "Although we want that it was different (pobreza sintáctica).",
+          wrong: "Although we want that it was different.",
           wrongToken: "Although we want that it was different",
           correct: "Much though one might wish otherwise, the facts are clear.",
           correctToken: "Much though one might wish otherwise",
@@ -221,8 +338,43 @@ export function buildModule4ImplicitCohesion(
           { label: "ACCIÓN CONTRAINTUITIVA", token: "moderating our initial pace", tone: "emerald" },
           { label: "RESULTADO ÓPTIMO", token: "accelerated the ultimate delivery of the project.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Método que rinde al revés",
+            segments: [
+              { label: "APERTURA PARADÓJICA", token: "Paradoxically enough,", tone: "violet" },
+              { label: "DECISIÓN DE MÉTODO", token: "pausing the rollout", tone: "emerald" },
+              { label: "EFECTO MEDIBLE", token: "accelerated adoption.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usalo cuando una decisión de método produce el resultado opuesto al esperado y querés que se lea como hallazgo, no como error. 'Paradoxically enough' avisa que la contradicción es el punto. 'Surprisingly' sólo expresa sorpresa y no explica la causa.",
+            exampleEnglish: "Paradoxically enough, pausing the rollout accelerated adoption.",
+          },
+          {
+            label: "02 · Menos presión, más compromiso",
+            segments: [
+              { label: "APERTURA PARADÓJICA", token: "Paradoxically enough,", tone: "violet" },
+              { label: "ESTÍMULO REDUCIDO", token: "fewer incentives", tone: "emerald" },
+              { label: "RESULTADO INVERSO", token: "produced deeper commitment.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Para presentar un resultado de gestión que contradice la intuición, abrí con 'Paradoxically enough' y nombralo como ley del sistema. La partícula 'enough' invita al lector a compartir el descubrimiento. 'Ironically' señala burla; aquí no hay burla, hay comprensión.",
+            exampleEnglish: "Paradoxically enough, fewer incentives produced deeper commitment.",
+          },
+          {
+            label: "03 · Verdad parcial que oculta la causa",
+            segments: [
+              { label: "CONCESIÓN", token: "True though the claim is,", tone: "violet" },
+              { label: "GIRO DIALÉCTICO", token: "it hides", tone: "emerald" },
+              { label: "FACTOR REAL", token: "the real cause.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Concedé que la observación es cierta y señalá en la misma frase que oculta el factor decisivo. El acuerdo previo da credibilidad al giro. 'But' niega de frente y desperdicia la concesión; esta fórmula conserva lo válido y reorienta la explicación.",
+            exampleEnglish: "True though the claim is, it hides the real cause.",
+          },
+        ],
         commonMistake: {
-          wrong: "In a paradoxical way, to slow down was faster (expresión infantil).",
+          wrong: "In a paradoxical way, to slow down was faster.",
           wrongToken: "In a paradoxical way",
           correct: "Paradoxically enough, slowing down accelerated progress.",
           correctToken: "Paradoxically enough",

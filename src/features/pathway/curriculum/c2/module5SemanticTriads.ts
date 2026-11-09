@@ -17,8 +17,43 @@ export function buildModule5SemanticTriads(
           { label: "ACCIÓN", token: "facilitated steady and continuous progress", tone: "emerald" },
           { label: "CONSTANCIA", token: "under constant ethical scrutiny.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Algo que nunca se interrumpió (continuous)",
+            segments: [
+              { label: "SITUACIÓN SIN CORTE", token: "The generator ran", tone: "violet" },
+              { label: "FLUJO ININTERRUMPIDO", token: "continuous power", tone: "emerald" },
+              { label: "DURACIÓN VERIFICADA", token: "for nine hours.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando lo que describes no se interrumpió ni una vez durante todo el período, usa 'continuous'. La señal es que puedes decir 'de principio a fin sin pausa'. En contraste, si se detuvo y volvió a empezar, 'continuous' miente y corresponde 'continual', que marca intervalos.",
+            exampleEnglish: "The laboratory needed continuous power for nine hours.",
+          },
+          {
+            label: "02 · Algo que se repite a intervalos (continual)",
+            segments: [
+              { label: "EPISODIOS REPETIDOS", token: "Continual interruptions", tone: "violet" },
+              { label: "EFECTO ACUMULADO", token: "slowed the negotiations", tone: "emerald" },
+              { label: "PERÍODO", token: "for months.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando algo se repite una y otra vez a intervalos regulares, la palabra es 'continual'. La señal es que puedes contar las veces o decir 'una y otra vez'. En contraste, 'continuous' prometería un flujo que nunca se cortó, y aquí sí hubo pausas entre un episodio y el siguiente.",
+            exampleEnglish: "Continual interruptions slowed the negotiations for months.",
+          },
+          {
+            label: "03 · Algo que no varía en nivel ni lealtad (constant)",
+            segments: [
+              { label: "APOYO INALTERADO", token: "Her constant support", tone: "violet" },
+              { label: "EFECTO", token: "reassured", tone: "emerald" },
+              { label: "QUIEN RECIBE", token: "the entire research team.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando algo no cambia de nivel, de intensidad ni de lealtad, usa 'constant'. La señal es la ausencia de variación, no de pausa: mide magnitud o fidelidad. En contraste, 'continuous' habla de tiempo sin corte y 'continual' de repeticiones; solo 'constant' describe un valor que se mantiene igual.",
+            exampleEnglish: "Her constant support reassured the entire research team.",
+          },
+        ],
         commonMistake: {
-          wrong: "The continuous rain stopped and started all day (error conceptual).",
+          wrong: "The continuous rain stopped and started all day.",
           wrongToken: "continuous rain stopped and started",
           correct: "The continual rain stopped and started all day.",
           correctToken: "continual rain",
@@ -68,8 +103,31 @@ export function buildModule5SemanticTriads(
           { label: "OBJETIVO PROCESAL", token: "to guarantee absolute procedural fairness", tone: "emerald" },
           { label: "GARANTÍA", token: "for all parties involved.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Nombrar a un árbitro sin conflicto de interés (disinterested)",
+            segments: [
+              { label: "PARTE QUE DECIDE", token: "a disinterested arbiter", tone: "violet" },
+              { label: "SIN GANANCIA PERSONAL", token: "keeps the hearing fair", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando eliges a alguien que debe decidir sin ganar nada con el resultado, la palabra es 'disinterested'. La señal es el conflicto de interés, no el aburrimiento. En contraste, 'uninterested' diría que la persona no tiene curiosidad, y descalificaría justo al árbitro que necesitas.",
+            exampleEnglish: "We need a disinterested arbiter for this final hearing.",
+          },
+          {
+            label: "02 · Describir apatía o falta de curiosidad (uninterested)",
+            segments: [
+              { label: "PÚBLICO PRESENTE", token: "The audience", tone: "violet" },
+              { label: "APATÍA OBSERVADA", token: "seemed uninterested", tone: "emerald" },
+              { label: "TEMA", token: "in the second proposal.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando alguien no siente curiosidad por un tema, usa 'uninterested'. La señal es la indiferencia hacia el contenido, sin ninguna cuestión ética de por medio. En contraste, decir 'disinterested' aquí suena a elogio equivocado: presentarías como imparcial a quien simplemente no le importa.",
+            exampleEnglish: "The audience seemed uninterested in the second proposal.",
+          },
+        ],
         commonMistake: {
-          wrong: "The judge was uninterested in the outcome (significa que estaba aburrido o dormido).",
+          wrong: "The judge was uninterested in the outcome.",
           wrongToken: "was uninterested in the outcome",
           correct: "The judge was completely disinterested in the outcome.",
           correctToken: "completely disinterested",
@@ -119,8 +177,43 @@ export function buildModule5SemanticTriads(
           { label: "OBJETO DELIMITADO", token: "the precise ethical boundaries", tone: "emerald" },
           { label: "ALCANCE EPISTEMOLÓGICO", token: "governing future empirical research.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Fijar los límites exactos de un concepto (delineate)",
+            segments: [
+              { label: "TEXTO QUE ORDENA", token: "The chapter", tone: "violet" },
+              { label: "FRONTERA TRAZADA", token: "delineates the boundaries", tone: "emerald" },
+              { label: "ÁMBITO ACOTADO", token: "of informed consent.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando necesitas decir dónde empieza y dónde termina un concepto, usa 'delineate'. La señal es que el lector debe ver la frontera, no solo la idea. En contraste, 'shows' o 'explains' describen sin fijar límites, y la discusión vuelve a abrirse después por pura ambigüedad.",
+            exampleEnglish: "The chapter delineates the boundaries of informed consent.",
+          },
+          {
+            label: "02 · Deducir una tendencia desde datos parciales (extrapolate)",
+            segments: [
+              { label: "BASE MEDIDA", token: "From these figures", tone: "violet" },
+              { label: "PROYECCIÓN", token: "we can extrapolate", tone: "emerald" },
+              { label: "OBJETO FUTURO", token: "future demand.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando partes de cifras conocidas para hablar de lo que aún no se midió, el verbo es 'extrapolate'. La señal es la base empírica: hay datos y hay proyección. En contraste, 'guess' no reconoce esa base y resta credibilidad al cálculo ante un lector técnico.",
+            exampleEnglish: "We can extrapolate future demand from these figures.",
+          },
+          {
+            label: "03 · Desengañar de una creencia falsa (disabuse)",
+            segments: [
+              { label: "CREENCIA ERRÓNEA", token: "that old assumption", tone: "violet" },
+              { label: "CORRECCIÓN", token: "the audit disabused us", tone: "emerald" },
+              { label: "PREPOSICIÓN OBLIGATORIA", token: "of, never about", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando alguien sostiene una creencia equivocada y quieres quitársela, usa 'disabuse'. La señal es que la otra persona ya cree algo falso. En contraste, 'convince' solo persuade de una idea nueva; 'disabuse' siempre pide la preposición 'of' y supone corregir un error previo.",
+            exampleEnglish: "The audit disabused us of that old assumption.",
+          },
+        ],
         commonMistake: {
-          wrong: "The paper shows where the limits are (estilo básico escolar).",
+          wrong: "The paper shows where the limits are.",
           wrongToken: "shows where the limits are",
           correct: "The treatise meticulously delineates the boundaries.",
           correctToken: "meticulously delineates",
@@ -170,8 +263,32 @@ export function buildModule5SemanticTriads(
           { label: "SUJETO OBLIGADO", token: "the supervisory board", tone: "emerald" },
           { label: "DEBER INELUDIBLE", token: "to substantiate every material claim.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Asignar la carga de la prueba (the onus lies upon)",
+            segments: [
+              { label: "CARGA ASIGNADA", token: "The onus lies upon", tone: "violet" },
+              { label: "PARTE OBLIGADA", token: "the regulator", tone: "emerald" },
+              { label: "DEBER DE PROBAR", token: "to justify the ban.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando debes decir quién tiene que probar algo ante una instancia, usa 'the onus lies upon'. La señal es que hay una afirmación en disputa y alguien debe sostenerla. En contraste, 'it is the responsibility of' reparte deberes sin nombrar la prueba, y el argumento pierde filo.",
+            exampleEnglish: "The onus lies upon the regulator to justify the ban.",
+          },
+          {
+            label: "02 · Pedir solemnemente ante un tribunal (it is respectfully submitted)",
+            segments: [
+              { label: "FÓRMULA DE CORTESÍA", token: "It is respectfully submitted", tone: "violet" },
+              { label: "CONTENIDO DE LA PETICIÓN", token: "that the evidence is incomplete", tone: "emerald" },
+              { label: "FORO", token: "before the tribunal.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando te diriges a un tribunal o a un órgano formal, abre con 'it is respectfully submitted that'. La señal es el foro y la cortesía debida. En contraste, 'I think' o 'we want' presentan la petición como opinión personal y le quitan la autoridad procesal que el escrito necesita.",
+            exampleEnglish: "It is respectfully submitted that the evidence is incomplete.",
+          },
+        ],
         commonMistake: {
-          wrong: "It is the responsibility of the board to prove it (estilo llano).",
+          wrong: "It is the responsibility of the board to prove it.",
           wrongToken: "It is the responsibility of the board",
           correct: "The onus lies upon the board to substantiate the claim.",
           correctToken: "The onus lies upon",
@@ -221,10 +338,34 @@ export function buildModule5SemanticTriads(
           { label: "RÉPLICA FULMINANTE", token: "Far from it;", tone: "emerald" },
           { label: "REAFIRMACIÓN SOBERANA", token: "we have redoubled our commitment.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Rechazar de plano una acusación (far from it)",
+            segments: [
+              { label: "ACUSACIÓN PLANTEADA", token: "Critics called it surrender.", tone: "violet" },
+              { label: "RÉPLICA EN DOS PALABRAS", token: "Far from it;", tone: "emerald" },
+              { label: "POSICIÓN REAFIRMADA", token: "we held firm.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la pregunta hostil insinúa que abandonaste algo, responde 'Far from it'. La señal es la sospecha de claudicación. En contraste, 'No, that is not true' suena defensivo y te obliga a explicar de más; la elipsis niega y da vuelta la acusación en dos palabras.",
+            exampleEnglish: "Critics called it surrender. Far from it; we held firm.",
+          },
+          {
+            label: "02 · Negar con frialdad un diagnóstico casi cierto (scarcely so)",
+            segments: [
+              { label: "DIAGNÓSTICO EXAGERADO", token: "Has morale collapsed?", tone: "violet" },
+              { label: "NEGACIÓN SECA", token: "Scarcely so;", tone: "emerald" },
+              { label: "HECHO QUE LO DESMIENTE", token: "the team regrouped.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la premisa es casi cierta pero no lo es, 'Scarcely so' niega con frialdad y sin alarma. La señal es un hecho exagerado o apenas aplicable. En contraste, 'Far from it' rechaza desde la raíz; 'Scarcely so' admite un resto mínimo y por eso suena más seco.",
+            exampleEnglish: "Has morale collapsed? Scarcely so; the team regrouped.",
+          },
+        ],
         commonMistake: {
-          wrong: "No, that is not true at all, we did not do that (tono defensivo y atropellado).",
+          wrong: "No, that is not true at all, we did not do that.",
           wrongToken: "No, that is not true at all",
-          correct: "Far from it; our resolve is firmer than ever.",
+          correct: "Far from it, our resolve is firmer than ever.",
           correctToken: "Far from it",
           whySpanish: "'Far from it' o 'Quite the contrary' proyecta serenidad soberana sin entrar en pánico explicativo.",
         },

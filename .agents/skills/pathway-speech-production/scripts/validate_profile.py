@@ -274,6 +274,14 @@ def main() -> int:
         all_errors.extend(e)
         all_warnings.extend(w)
 
+    # Líneas de sistema genéricas: pueden compartir MP3 entre bases (misma voz y misma frase).
+    SHARED_OK_IDS = {
+        "trapcheck.intro", "trapcheck.error", "trapcheck.success",
+        "build.transition", "build.intro", "build.error", "build.success",
+        "speak.lead", "speak.instruction",
+        "voice.retry", "voice.not_heard", "mic.error",
+    }
+
     if len(parsed) > 1 and not args.allow_collisions:
         owners: dict[str, list[str]] = {}
         for profile in parsed:
@@ -282,7 +290,8 @@ def main() -> int:
                 owners.setdefault(sanitize(m["text"]), []).append(f"{base}/{m['id']}")
         for text, where in owners.items():
             bases = {w.split("/")[0] for w in where}
-            if len(bases) > 1:
+            ids = {w.split("/", 1)[1] for w in where}
+            if len(bases) > 1 and not ids.issubset(SHARED_OK_IDS):
                 all_errors.append(f"texto compartido entre bases (mismo mp3): {where} -> {text[:70]!r}")
 
     for p in paths:

@@ -1,0 +1,278 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * B2 Base 25 — Pasiva Impersonal e Institucional.
+ *
+ * Tres casos de la misma regla (qué tiempo tiene el hecho reportado):
+ *  1. fuente anónima → It is + participio + that → "It is believed that the market will recover."
+ *  2. hecho anterior → to have + participio → "The company is reported to have doubled profits."
+ *  3. estado vigente → to be + adjetivo → "The system is understood to be reliable."
+ *
+ * Trampa = commonMistake del currículo: "People say that the organization had success." →
+ * "The organization is reported to have achieved great success."
+ * Objetivo de voz: "The strategy is understood to reflect the best global practices."
+ */
+export const baseB225SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_b2_25",
+  orderIndex: 24,
+  title: "Pasiva Impersonal e Institucional: The policy is reported to have...",
+  targetSentence: "The strategy is understood to reflect the best global practices.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de pasiva impersonal! Hoy vas a reportar hechos sin decir quién los dice, con registro de informe profesional. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español decís se dice que o la gente dice que. En inglés profesional la fuente se borra: el hecho pasa al centro y el reporte queda como una estructura fija. Si nombrás a la gente, pierdes neutralidad.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final vas a reportar una creencia, un hecho anterior y un estado vigente, y lo vas a decir en una frase completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La pasiva de reporte tiene tres casos y una sola idea: el hecho manda y la fuente desaparece. Lo que cambia es el tiempo del hecho. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: fuente anónima. Abrís con it is más participio y seguís con that. No nombrás a nadie y el dato suena neutral.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "It is believed that the market will recover.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo caso: el hecho ocurrió antes del reporte. El infinitivo se vuelve compuesto: to have más participio.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      canonical:
+        "Segundo caso: el hecho ocurrió antes del reporte. El infinitivo se vuelve compuesto: to have más participio.",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "The company is reported to have doubled profits.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case3.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Tercer caso: un estado vigente. Si describís cómo es algo hoy, usás to be más adjetivo, no un hecho terminado.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      canonical:
+        "Tercer caso: un estado vigente. Si describís cómo es algo hoy, usás to be más adjetivo, no un hecho terminado.",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case3.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "The system is understood to be reliable.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error típico es reportar como en una charla: people say. Escuchá el error.",
+      canonical:
+        "Mirá la alerta roja. El error típico es reportar como en una charla: people say. Escuchá el error.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "People say that the organization had success.",
+      subtitle: "People say that the organization had success.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el informe usa la pasiva de reporte: el sujeto real pasa adelante y la fuente se borra.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "The organization is reported to have achieved great success.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: fuente borrada, hecho al frente. Si aparece people say, el registro bajó.",
+      canonical:
+        "Ancla mental: fuente borrada, hecho al frente. Si aparece people say, el registro bajó.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. En pantalla hay dos frases y solo una suena a informe institucional.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa frase nombra a la gente y pierde neutralidad. La pasiva de reporte borra la fuente. Probá la otra opción.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. El hecho quedó al frente y la fuente desapareció. Ahora escuchá dos ejemplos reales.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.program",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "The new community program is considered to have a lasting positive impact on youth.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en la unión de considered to: la d final se pega a la palabra siguiente y las dos suenan konsíderd tu, sin pausa.",
+      canonical:
+        "Fijate en la unión de considered to: la d final se pega a la palabra siguiente y las dos suenan konsíderd tu, sin pausa.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.development",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "It is widely acknowledged that ongoing professional development enhances overall performance.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá el informe con las fichas.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha. La pista es un programa que se considera positivo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá por el programa, seguí con la pasiva de reporte y el infinitivo compuesto. Cerrá con el impacto positivo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. La fuente quedó fuera y el hecho al frente. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá el modelo de hoy:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "The strategy is understood to reflect the best global practices.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé tu micrófono y repetí la frase completa sin apuro.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi lo tenés. Escuchá otra vez el modelo y repetilo tranquilo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte. Acercate un poco más y repetí la frase entera.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. Reportaste sin fuente y el registro quedó institucional. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Dale permiso al navegador o continuá en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

@@ -47,6 +47,11 @@ def main() -> int:
         return 1
 
     profiles = sorted(PROFILES.glob("base_*.ts"))
+    a2_profiles = sorted((PROFILES / "a2").glob("base_*.ts"))
+    b1_profiles = sorted((PROFILES / "b1").glob("base_*.ts"))
+    b2_profiles = sorted((PROFILES / "b2").glob("base_*.ts"))
+    c1_profiles = sorted((PROFILES / "c1").glob("base_*.ts"))
+    c2_profiles = sorted((PROFILES / "c2").glob("base_*.ts"))
     if not profiles:
         print("FAIL: no hay perfiles")
         return 1
@@ -65,14 +70,39 @@ def main() -> int:
         for profile in profiles:
             zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/{profile.name}")
             count += 1
+        for profile in a2_profiles:
+            zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/a2/{profile.name}")
+            count += 1
+        for profile in b1_profiles:
+            zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/b1/{profile.name}")
+            count += 1
+        for profile in b2_profiles:
+            zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/b2/{profile.name}")
+            count += 1
+        for profile in c1_profiles:
+            zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/c1/{profile.name}")
+            count += 1
+        for profile in c2_profiles:
+            zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/c2/{profile.name}")
+            count += 1
         zf.write(ROOT / "src/features/pathway/speech/types.ts",
                  f"{root_name}/src/features/pathway/speech/types.ts")
         zf.write(MANIFEST, f"{root_name}/src/features/pathway/data/a1AudioManifest.json")
+        a2_manifest = ROOT / "src/features/pathway/data/a2AudioManifest.json"
+        zf.write(a2_manifest, f"{root_name}/src/features/pathway/data/a2AudioManifest.json")
+        b1_manifest = ROOT / "src/features/pathway/data/b1AudioManifest.json"
+        zf.write(b1_manifest, f"{root_name}/src/features/pathway/data/b1AudioManifest.json")
+        b2_manifest = ROOT / "src/features/pathway/data/b2AudioManifest.json"
+        zf.write(b2_manifest, f"{root_name}/src/features/pathway/data/b2AudioManifest.json")
+        c1_manifest = ROOT / "src/features/pathway/data/c1AudioManifest.json"
+        zf.write(c1_manifest, f"{root_name}/src/features/pathway/data/c1AudioManifest.json")
+        c2_manifest = ROOT / "src/features/pathway/data/c2AudioManifest.json"
+        zf.write(c2_manifest, f"{root_name}/src/features/pathway/data/c2AudioManifest.json")
         zf.write(ref, f"{root_name}/ref_larga.wav")
-        count += 3
+        count += 4
 
     print(f"bundle: {out} ({out.stat().st_size/1e6:.1f} MB)")
-    print(f"perfiles incluidos: {len(profiles)}")
+    print(f"perfiles incluidos: {len(profiles)} A1 + {len(a2_profiles)} A2 + {len(b1_profiles)} B1")
     print("Subilo a Colab/Kaggle y corré cloud/run_cloud.py --from NN --to NN")
     return 0
 

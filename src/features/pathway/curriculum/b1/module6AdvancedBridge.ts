@@ -17,6 +17,29 @@ export function buildModule6AdvancedBridge(
           { label: "PARTICIPIO PASADO", token: "checked · called · started · prepared", tone: "emerald" },
           { label: "CONTEXTO", token: "earlier / before leaving / more carefully", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Lamentar lo que no hiciste",
+            segments: [
+              { label: "YO + DEBÍ HABER", token: "I should have ('ve)", tone: "violet" },
+              { label: "PARTICIPIO", token: "called · checked · asked", tone: "emerald" },
+              { label: "MARCO PASADO", token: "earlier / before the meeting", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el lamento es tuyo y la acción ya no se puede cambiar, usas 'I should have + participio': hablas del pasado desde el presente. La señal es 'yo debí'; en cambio, para el futuro dirías 'I should call'.",
+            exampleEnglish: "I should have asked before signing.",
+          },
+          {
+            label: "02 · Criticar lo que otro no hizo",
+            segments: [
+              { label: "OTRO + DEBÍA HABER", token: "You should have · They should have", tone: "violet" },
+              { label: "PARTICIPIO", token: "confirmed · warned · replied", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la acción faltante es de otra persona y buscas señalar su error, cambias el sujeto: 'You/They should have + participio'. La señal es quién debía actuar; con 'I' es lamento propio, con 'they' es crítica.",
+            exampleEnglish: "The team should have confirmed the dates.",
+          },
+        ],
         commonMistake: {
           wrong: "I should have call you yesterday.",
           wrongToken: "should have call",
@@ -66,6 +89,29 @@ export function buildModule6AdvancedBridge(
         formulaSegments: [
           { label: "PUDO HABER SIDO", token: "We could have done · It could have been", tone: "violet" },
           { label: "PARTICIPIO", token: "achieved · avoided · delivered", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Oportunidad que no tomaste",
+            segments: [
+              { label: "PUDIMOS HABER", token: "We could have · I could have", tone: "violet" },
+              { label: "PARTICIPIO", token: "won · applied · delivered", tone: "emerald" },
+              { label: "RESULTADO NO REAL", token: "but we didn't", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando existía la posibilidad y no la tomaste, usas 'could have + participio' para nombrarla: la habilidad estaba, el resultado no ocurrió. La señal es 'pude y no lo hice'; en cambio, 'I could win' habla de hoy o del futuro.",
+            exampleEnglish: "We could have applied for that grant.",
+          },
+          {
+            label: "02 · Alivio por un riesgo pasado",
+            segments: [
+              { label: "PUDO HABER SIDO PEOR", token: "It could have been worse", tone: "violet" },
+              { label: "PARTICIPIO", token: "been · caused · failed", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando algo salió bien por poco y quieres mostrar alivio, usas 'it could have been + participio': describes el desastre que no pasó. La señal es el alivio; con 'it was worse' afirmarías un hecho, no una posibilidad abierta.",
+            exampleEnglish: "The delay could have caused bigger problems.",
+          },
         ],
         commonMistake: {
           wrong: "We could have win if we tried.",
@@ -117,8 +163,30 @@ export function buildModule6AdvancedBridge(
           { label: "FRASE AFIRMATIVA", token: "She is coming · You work here", tone: "violet" },
           { label: "COLETILLA NEGATIVA", token: "isn't she? · don't you?", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Confirmar una afirmación",
+            segments: [
+              { label: "FRASE POSITIVA", token: "You are ready · She works here", tone: "violet" },
+              { label: "COLETILLA NEGATIVA", token: "aren't you? · doesn't she?", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando afirmas algo y buscas que el otro lo confirme, la coletilla va negativa y con el mismo auxiliar: 'You are ready, aren't you?'. La señal es que tu frase no lleva 'not'; el error típico es añadir 'yes?' en lugar de la coletilla.",
+            exampleEnglish: "You are joining us, aren't you?",
+          },
+          {
+            label: "02 · Pedir confirmación de algo negativo",
+            segments: [
+              { label: "FRASE NEGATIVA", token: "You haven't seen it · He isn't ready", tone: "violet" },
+              { label: "COLETILLA POSITIVA", token: "have you? · is he?", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando tu frase ya es negativa, la coletilla se vuelve positiva y repite el auxiliar: 'He isn't ready, is he?'. La señal es la palabra 'not' en tu frase; si pones otra negación, tendrías dos y sonaría forzado.",
+            exampleEnglish: "He isn't ready yet, is he?",
+          },
+        ],
         commonMistake: {
-          wrong: "You are ready, yes? / no? (muy plano).",
+          wrong: "You are ready, yes?",
           wrongToken: "yes? / no?",
           correct: "You are ready, aren't you?",
           correctToken: "aren't you?",
@@ -167,10 +235,32 @@ export function buildModule6AdvancedBridge(
           { label: "AUNQUE (+ ORACIÓN)", token: "Although the schedule was tight", tone: "violet" },
           { label: "A PESAR DE (+ SUSTANTIVO)", token: "Despite the obstacles / Despite being tired", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Contraste con sustantivo o -ing",
+            segments: [
+              { label: "DESPITE + SUSTANTIVO", token: "Despite the delay · Despite the cost", tone: "violet" },
+              { label: "O BIEN + -ING", token: "Despite being tired", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el contraste va seguido de un sustantivo o de un verbo en -ing, usa 'despite': 'Despite the delay' o 'Despite working late'. La señal es que no hay sujeto ni verbo conjugado; en cambio, si necesitas una oración completa, iría 'although'.",
+            exampleEnglish: "Despite the heavy traffic, we arrived early.",
+          },
+          {
+            label: "02 · Contraste con una oración completa",
+            segments: [
+              { label: "ALTHOUGH + SUJETO", token: "Although it was raining", tone: "violet" },
+              { label: "Y VERBO CONJUGADO", token: "Although we were tired", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres contrastar dos ideas completas, cada una con sujeto y verbo, abre con 'although': 'Although the price was high, we signed'. La señal es que la primera parte tiene verbo conjugado; si solo hay un sustantivo, tendrías que decir 'despite'.",
+            exampleEnglish: "Although the price was high, we signed.",
+          },
+        ],
         commonMistake: {
-          wrong: "Despite of the rain (mezclar despite con of).",
+          wrong: "Despite of the rain.",
           wrongToken: "Despite of",
-          correct: "Despite the rain / In spite of the rain.",
+          correct: "Despite the rain.",
           correctToken: "Despite the rain",
           whySpanish: "'Despite' va solo sin 'of'. Si quieres usar 'of', di 'In spite of'.",
         },
@@ -216,6 +306,28 @@ export function buildModule6AdvancedBridge(
         formulaSegments: [
           { label: "DESEARÍA / OJALÁ", token: "I wish", tone: "violet" },
           { label: "SITUACIÓN DESEADA (PASADO)", token: "I had more time · I knew the answer · we lived closer", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Desear algo distinto hoy",
+            segments: [
+              { label: "I WISH + PASADO", token: "I wish I had · I wish she were here", tone: "violet" },
+              { label: "SITUACIÓN IRREAL HOY", token: "more time · speak French", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando deseas algo distinto en tu presente, usas 'I wish + pasado simple': 'I wish I had a bigger team'. La señal es que hoy no es así; el pasado marca distancia, no tiempo. Con presente dirías 'I hope', que sí espera algo posible.",
+            exampleEnglish: "I wish I had a bigger office.",
+          },
+          {
+            label: "02 · Arrepentirse de una decisión",
+            segments: [
+              { label: "I WISH + HAD DONE", token: "I wish I had studied", tone: "violet" },
+              { label: "PASADO QUE YA NO CAMBIA", token: "wish we had asked", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el deseo apunta a algo que ya hiciste o no hiciste, el pasado se dobla: 'I wish I had studied more'. La señal es que la decisión ya ocurrió; en cambio, para el presente basta un pasado simple: 'I wish I studied medicine'.",
+            exampleEnglish: "I wish we had asked for help.",
+          },
         ],
         commonMistake: {
           wrong: "I wish I have more time today.",
@@ -266,6 +378,28 @@ export function buildModule6AdvancedBridge(
         formulaSegments: [
           { label: "SI HUBIERA (HAD + PART)", token: "If I had known / If we had prepared", tone: "violet" },
           { label: "HABRÍA (WOULD HAVE + PART)", token: "I would have told you / we would have won", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Cambiar la hipótesis del pasado",
+            segments: [
+              { label: "IF + HAD + PARTICIPIO", token: "If I had checked · If we had planned", tone: "violet" },
+              { label: "SIN WOULD EN EL IF", token: "nunca 'If I would have'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando imaginas que algo pasado fue distinto, la condición va con 'had + participio': 'If I had checked the file'. La señal es la parte con 'if'; ahí nunca entra 'would have', que es justo el error que delata la traducción del español.",
+            exampleEnglish: "If we had planned better, we would have won.",
+          },
+          {
+            label: "02 · El resultado que no existió",
+            segments: [
+              { label: "WOULD HAVE + PARTICIPIO", token: "I would have told you · we would have won", tone: "violet" },
+              { label: "SOLO EN EL RESULTADO", token: "nunca en la parte con 'if'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando describes el resultado que no ocurrió, usas 'would have + participio': 'I would have called you'. La señal es que no es un hecho sino una consecuencia imaginaria; en cambio, en la parte con 'if' no va 'would', sino 'had'.",
+            exampleEnglish: "The client would have approved the offer.",
+          },
         ],
         commonMistake: {
           wrong: "If I would have known, I would have told you.",

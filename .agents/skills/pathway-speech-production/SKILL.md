@@ -674,3 +674,26 @@ manifiesto (`gen_base --manifest-only`), re-mide el QA, registra/cierra cada bas
 - Si la sesión se corta, relanzar con el mismo rango: `gen_base` reutiliza por hash los mp3 que
   ya estén en la carpeta de salida.
 - No se puede automatizar el clic de “Run” dentro de tu cuenta de Google; el resto sí.
+
+### Kaggle: trampas comprobadas
+- **Siempre** reconstruir el bundle antes de subir (`prepare_bundle.py`); un bundle viejo produce
+  "no existe profiles/base_XX.ts".
+- Esperar `kaggle datasets status ... == ready` antes de `kernels push`; si no, el kernel monta la
+  versión anterior del dataset.
+- Kaggle **descomprime** el ZIP: buscar `cloud/run_cloud.py` con glob en `/kaggle/input`, no asumir
+  `/kaggle/input/<slug>/pathway_cloud`.
+- El kernel debe desinstalar `torchvision` (Kaggle trae una versión incompatible con su torch y
+  rompe el import de Chatterbox con `ModuleNotFoundError: LlamaModel`).
+- `run_cloud.py` deja `pathway_cloud_out.zip`; usar `--no-import` y correr el importador local
+  cuando la GPU/PC no esté escribiendo el manifiesto.
+
+---
+
+## 16. Producción a escala: reglas de tiempo
+
+- Medir por **pistas generadas / QA verde / bases cerradas**, no solo por bases cerradas.
+- Repartir rangos únicos entre GPUs; nunca duplicar el mismo rango.
+- Un watcher debe tener timeout y condición de salida; jamás `while(true)` sin límite.
+- QA por excepción: small → large-v3 → recorte/regeneración solo de la pista.
+- Cerrar en lote cuando el módulo esté verde; no cerrar de a una.
+- Kaggle: usar la cuota en trabajo único (otro rango o regeneración), no en respaldos.

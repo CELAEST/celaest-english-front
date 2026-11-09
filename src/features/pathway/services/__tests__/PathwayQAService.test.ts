@@ -74,12 +74,13 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     // Base 09 (index 8): Do vs Does -> 2 sequential FORMULA cases
     const base09 = { ...node, id: "node-9", orderIndex: 8, title: seedNodes[8]!.title, competencyFocus: seedNodes[8]!.competencyFocus, blueprint: seedNodes[8]!.blueprint, lessonPayload: seedNodes[8]!.lessonPayload };
     const script09 = PathwayLectureEngine.buildLectureScript(base09);
-    const formulaSegs09 = script09.segments.filter((s) => s.beat === "FORMULA");
-    expect(formulaSegs09.length).toBe(2);
-    expect(formulaSegs09[0]?.activeFormulaCaseIndex).toBe(0);
-    expect(formulaSegs09[1]?.activeFormulaCaseIndex).toBe(1);
-    expect(formulaSegs09[0]?.badgeLabel).toContain("USO 1 DE 2");
-    expect(formulaSegs09[1]?.badgeLabel).toContain("USO 2 DE 2");
+    const formulaSegs09 = script09.segments.filter(
+      (s) => s.beat === "FORMULA" && s.activeFormulaCaseIndex !== undefined,
+    );
+    expect(formulaSegs09.length).toBe(4);
+    expect(formulaSegs09.map((s) => s.activeFormulaCaseIndex)).toEqual([0, 0, 1, 1]);
+    expect(formulaSegs09[0]?.badgeLabel).toContain("CASO 1 DE 2");
+    expect(formulaSegs09[2]?.badgeLabel).toContain("CASO 2 DE 2");
 
     // Base 03 (index 2): perfil declarativo con 3 casos (VÍA A) + la regla que los anuncia.
     // 4 pistas en español (regla + 3 intros) + 3 modelos nativos en inglés.

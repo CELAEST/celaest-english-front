@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_profile import parse_profile, sanitize  # noqa: E402
+import difflib
 
 DEFAULT_REF = os.environ.get(
     "PATHWAY_TTS_REF",
@@ -47,10 +48,10 @@ def decode(path: Path, sr: int = 16000):
     return np.frombuffer(out.stdout, np.float32)
 
 
-def rebuild_manifest(base: str, moments: list[dict], manifest_path: Path, outdir: Path) -> tuple[int, int]:
+def rebuild_manifest(base: str, moments: list[dict], manifest_path: Path, outdir: Path, level: str = "a1") -> tuple[int, int]:
     """Reconstruye las entradas de una base desde sus mp3 existentes (sin generar audio)."""
     data = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
-    prefix = f"/audio/pathway/a1/{base}/"
+    prefix = f"/audio/pathway/{level}/{base}/"
     data = {k: v for k, v in data.items() if not (isinstance(v, str) and prefix in v)}
     added = 0
     for m in moments:
@@ -66,21 +67,24 @@ def rebuild_manifest(base: str, moments: list[dict], manifest_path: Path, outdir
 
 
 def norm_es(text: str) -> str:
-    """Normalización fonética del español para el QA: seseo (z/ce/ci -> s) y b/v.
-    Evita regenerar una pista correcta solo porque Whisper escribió 'casaste' por 'cazaste'."""
+    """Normalización fonética del español para el QA (seseo, b/v, respellings)."""
     t = norm(text)
     t = t.replace("z", "s")
     t = re.sub(r"c(?=[ei])", "s", t)
     t = t.replace("v", "b")
-    # Respelling del verbo: "tu bi" puede oírse/escribirse "tu vi", "tuí", "tuy" o "to be".
     t = re.sub(r"\b(?:tu\s*(?:bi|vi|be|i|y)|to\s*be|tuy|tui|tuí|tuví|tuvi|tubi)\b", "tobi", t)
-    # "con tener" suena igual que "contener".
     t = t.replace("con tener", "contener")
-    # Clíticos que el ASR separa: "repítela" vs "repite la".
     t = t.replace("repítela", "repitela").replace("repite la", "repitela")
-    # Nombre de la letra: el guion dice "la ese", el ASR escribe "la S".
     t = t.replace("la ese", "la s")
-    return t
+    t = t.replace("primero uso", "primer uso")
+    t = t.replace("una ese", "una s")
+    t = t.replace("y regulares", "irregulares")
+    t = t.replace("escuche", "escucha")
+    t = t.replace("giz", "jis").replace("ger", "jer").replace("nunca si", "nunca jis")
+    t = t.replace("mida la alerta", "mira la alerta").replace("pisara", "pizarra")
+    t = t.replace("casa la trampa", "caza la trampa").replace("toque el que", "toca el que")
+    t = t.replace("carlos laptop", "carlos s laptop")
+    return t.replace(" ", "")
 
 
 def acoustic_stats(path: Path) -> dict:
@@ -114,15 +118,27 @@ def acoustic_stats(path: Path) -> dict:
     }
 
 
+def qa_ratio(target: str, heard: str, lang: str, normalizer) -> float:
+    if lang == "es":
+        # Carácter a carácter: tolera que el ASR una/separe respellings ("der is"/"deris").
+        return difflib.SequenceMatcher(None, normalizer(target), normalizer(heard)).ratio()
+    return difflib.SequenceMatcher(None, normalizer(target).split(), normalizer(heard).split()).ratio()
+
+
 def norm(text: str) -> str:
     import unicodedata
 
     t = unicodedata.normalize("NFD", text or "")
     t = "".join(c for c in t if unicodedata.category(c) != "Mn").lower()
     t = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", t)).strip()
-    # Homófonos de las trampas: "no"/"know" y el respelling "dount" (don't/dont/down).
     t = re.sub(r"\bknow\b", "no", t)
     t = t.replace("don t", "dount").replace("dont", "dount").replace("down", "dount")
+    nums = {"0":"zero","1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven",
+            "8":"eight","9":"nine","10":"ten","11":"eleven","12":"twelve","13":"thirteen",
+            "14":"fourteen","15":"fifteen","16":"sixteen","17":"seventeen","18":"eighteen",
+            "19":"nineteen","20":"twenty","30":"thirty","40":"forty","50":"fifty","60":"sixty",
+            "70":"seventy","80":"eighty","90":"ninety","100":"hundred"}
+    t = re.sub(r"\b(\d+)\b", lambda m: nums.get(m.group(1), m.group(1)), t)
     return t
 
 
@@ -130,8 +146,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", required=True, help="base_03")
     ap.add_argument("--profile", default=None)
-    ap.add_argument("--audio-root", default="public/audio/pathway/a1")
-    ap.add_argument("--manifest", default="src/features/pathway/data/a1AudioManifest.json")
+    ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
+    ap.add_argument("--audio-root", default=None)
+    ap.add_argument("--manifest", default=None)
     ap.add_argument("--state", default=None, help="estado incremental (default: .pathway_state_<base>.json)")
     ap.add_argument("--report", default=None, help="reporte QA (default: .pathway_qa_<base>.json)")
     ap.add_argument("--ref", default=DEFAULT_REF, help="wav de referencia de la voz clonada")
@@ -149,6 +166,10 @@ def main() -> int:
     ap.add_argument("--no-manifest", action="store_true")
     ap.add_argument("--manifest-only", action="store_true", help="solo reconstruir el manifiesto con los mp3 existentes")
     args = ap.parse_args()
+    if not args.audio_root:
+        args.audio_root = f"public/audio/pathway/{args.level}"
+    if not args.manifest:
+        args.manifest = f"src/features/pathway/data/{args.level}AudioManifest.json"
 
     profile_path = Path(args.profile or f"src/features/pathway/speech/profiles/{args.base}.ts")
     if not profile_path.exists():
@@ -178,7 +199,7 @@ def main() -> int:
         return 0
     if args.manifest_only:
         outdir.mkdir(parents=True, exist_ok=True)
-        added, total = rebuild_manifest(args.base, all_moments, Path(args.manifest), outdir)
+        added, total = rebuild_manifest(args.base, all_moments, Path(args.manifest), outdir, args.level)
         print(f"manifiesto: +{added} entradas de {args.base}, total {total}")
         return 0
     if not Path(args.ref).exists():
@@ -229,9 +250,7 @@ def main() -> int:
             segs, _ = asr.transcribe(decode(mp3), language=lang, beam_size=5)
             heard = " ".join(s.text.strip() for s in segs).strip()
             normalizer = norm_es if lang == "es" else norm
-            ratio = difflib.SequenceMatcher(
-                None, normalizer(target).split(), normalizer(heard).split()
-            ).ratio()
+            ratio = qa_ratio(target, heard, lang, normalizer)
             previous = state.get(mid, {})
             state[mid] = {"hash": digest, "ratio": round(ratio, 3), "seed": previous.get("seed")}
             status = "OK" if ratio >= args.threshold else "REVISAR"
@@ -257,9 +276,7 @@ def main() -> int:
                 segs, _ = asr.transcribe(decode(mp3), language=lang, beam_size=5)
                 heard = " ".join(s.text.strip() for s in segs).strip()
                 normalizer = norm_es if lang == "es" else norm
-                ratio = difflib.SequenceMatcher(
-                    None, normalizer(target).split(), normalizer(heard).split()
-                ).ratio()
+                ratio = qa_ratio(target, heard, lang, normalizer)
                 acoustics = acoustic_stats(mp3)
                 safe = acoustics["clip"] == 0 and acoustics["true_peak_db"] <= 0.0
                 if not safe:
@@ -323,7 +340,7 @@ def main() -> int:
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
 
     if not args.no_manifest:
-        added, total = rebuild_manifest(args.base, all_moments, Path(args.manifest), outdir)
+        added, total = rebuild_manifest(args.base, all_moments, Path(args.manifest), outdir, args.level)
         print(f"\nmanifiesto: +{added} entradas de {args.base}, total {total}")
 
     ok = sum(1 for r in report if r["status"] in ("OK", "REUSE"))

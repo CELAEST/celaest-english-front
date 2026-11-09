@@ -1,0 +1,277 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C1 Base 24 — Inversión Literaria Suprema: Scarcely had... when...
+ *
+ * Tres casos de la misma decisión (qué pareja adverbio más conector elige el cronista):
+ *  1. interrupción casi sin pausa -> scarcely had ... when
+ *  2. margen mínimo de tiempo      -> barely had ... when
+ *  3. secuencia inmediata          -> no sooner had ... than
+ *
+ * Trampa = commonMistake del currículo: "Scarcely the session had resumed than..."
+ * -> "Scarcely had the session resumed when..."
+ * Objetivo de voz: "Scarcely had the announcement been made when expressions of widespread
+ * support poured in."
+ */
+export const baseC124SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c1_24",
+  orderIndex: 23,
+  title: "Inversión Literaria Suprema: Scarcely had... when...",
+  targetSentence: "Scarcely had the announcement been made when expressions of widespread support poured in.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de inversión literaria! Hoy narrás dos sucesos pegados en el tiempo con el registro más fino del inglés escrito. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español decís apenas había empezado cuando se cortó la luz. En inglés culto esa inmediatez se logra invirtiendo el auxiliar delante del sujeto.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final narrás una interrupción, un margen mínimo y una secuencia inmediata, sin equivocar nunca la pareja de adverbio y conector.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene tres casos y lo que cambia es la pareja entre adverbio y conector. Los tres invierten el auxiliar. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: un suceso interrumpe a otro. Si el segundo sorprende al primero, abrís con skérsli jad y cerrás con when. La señal es el corte, no la secuencia.",
+      canonical:
+        "Primer caso: un suceso interrumpe a otro. Si el segundo sorprende al primero, abrís con skérsli jad y cerrás con when. La señal es el corte, no la secuencia.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Scarcely had the meeting begun when the power failed.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Caso dos: subrayar un margen mínimo. Si casi no hubo margen, cambiás el adverbio por bérli y mantenés la inversión. La señal es el intervalo; el conector no cambia.",
+      canonical:
+        "Caso dos: subrayar un margen mínimo. Si casi no hubo margen, cambiás el adverbio por bérli y mantenés la inversión. La señal es el intervalo; el conector no cambia.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Barely had she finished speaking when applause broke out.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case3.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Caso tres: elegir el conector correcto. Si abrís con no sooner, el conector obligatorio es than, nunca when. La señal es la pareja fija.",
+      canonical:
+        "Caso tres: elegir el conector correcto. Si abrís con no sooner, el conector obligatorio es than, nunca when. La señal es la pareja fija.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case3.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "No sooner had we agreed than the budget changed.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error clásico mezcla las dos piezas: deja el auxiliar en su lugar y elige el conector equivocado. Escuchá cómo suena.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "Scarcely the session had resumed than a consensus was reached.",
+      subtitle: "Scarcely the session had resumed than a consensus was reached.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el auxiliar se adelanta al sujeto y el conector es when. En este registro la inversión no es opcional.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "Scarcely had the session resumed when a consensus was reached.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: apenas y difícilmente piden when, mientras que la otra pareja pide than. Recordá la pareja antes de abrir la boca.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. Tocá la frase que un cronista publicaría tal cual.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa frase dejó el auxiliar en su lugar y usó el conector equivocado. Con scarcely, el auxiliar va delante y el conector es when.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Auxiliar invertido y conector correcto. Ahora escuchá dos crónicas breves.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.session",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "Scarcely had the session resumed when a unanimous consensus was reached.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en la apertura: el adverbio y el auxiliar se unen en un bloque y la ese final se apoya en el auxiliar. Suena skérsli jad.",
+      canonical:
+        "Fijate en la apertura: el adverbio y el auxiliar se unen en un bloque y la ese final se apoya en el auxiliar. Suena skérsli jad.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.keynote",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "Barely had the keynote address concluded when intense discussions erupted across the hall.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá la crónica vos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta reconstruir la crónica completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá con el adverbio, seguí con el auxiliar invertido y el sujeto, después el participio. Cierra con el conector y el resultado.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. La inversión quedó en su sitio y el conector cerró la crónica. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá la crónica completa:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "Scarcely had the announcement been made when expressions of widespread support poured in.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé el micrófono y repetí la crónica entera, sin cortar la inversión.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi. Escuchá otra vez y repetí la inversión de corrido.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte. Acercate al micrófono y repetí la crónica conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. La inversión sonó natural y el conector cayó donde corresponde. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Autorizá el permiso del navegador o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

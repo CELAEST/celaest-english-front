@@ -17,10 +17,45 @@ export function buildModule6PresidentialRhetoric(
           { label: "SEGUNDO PILAR", token: "discipline in execution,", tone: "emerald" },
           { label: "CLÍMAX Y RESOLUCIÓN", token: "and humility in triumph.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Cierre de máxima brevedad",
+            segments: [
+              { label: "PRIMER VERBO", token: "We came,", tone: "violet" },
+              { label: "SEGUNDO VERBO", token: "we saw,", tone: "emerald" },
+              { label: "GOLPE FINAL", token: "we conquered.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cierra el discurso cuando ya dijiste todo y solo falta que la idea quede grabada. Tres verbos cortos y paralelos golpean más que una frase larga: la brevedad crea la autoridad final. Una oración extensa informa; esta secuencia sentencia.",
+            exampleEnglish: "We listened, we weighed, we decided.",
+          },
+          {
+            label: "02 · Definir un ideal colectivo",
+            segments: [
+              { label: "ORIGEN", token: "of the people,", tone: "violet" },
+              { label: "MÉTODO", token: "by the people,", tone: "emerald" },
+              { label: "DESTINO", token: "for the people.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Define una institución con tres preposiciones paralelas sobre el mismo sustantivo. Cada preposición marca una relación distinta —origen, método, destino— y el oído la reconoce como una sola idea. Con tres adjetivos el ideal suena a eslogan; con tres preposiciones suena a ley.",
+            exampleEnglish: "A union of workers, by workers, for workers.",
+          },
+          {
+            label: "03 · Programa de tres acciones",
+            segments: [
+              { label: "ESCUCHAR", token: "We will listen carefully,", tone: "violet" },
+              { label: "LEGISLAR", token: "legislate wisely,", tone: "emerald" },
+              { label: "GOBERNAR", token: "and govern honestly.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Presenta tu agenda cuando el público necesita recordarla, no solo entenderla. Tres acciones con adverbio propio cubren dominios distintos y ascienden hasta la promesa mayor. Si enumerás cinco medidas, ninguna se recuerda; con tres, cada una sostiene a las otras.",
+            exampleEnglish: "We will cut waste, protect labour, and rebuild trust.",
+          },
+        ],
         commonMistake: {
-          wrong: "We need clarity, to be disciplined, and having humility (romper el paralelismo sintáctico).",
+          wrong: "We need clarity, to be disciplined, and having humility.",
           wrongToken: "clarity, to be disciplined, and having humility",
-          correct: "clarity in purpose, discipline in execution, and humility in triumph.",
+          correct: "We need clarity in purpose, discipline in execution, and humility in triumph.",
           correctToken: "clarity in purpose, discipline in execution, and humility in triumph",
           whySpanish: "El tricolon exige simetría gramatical perfecta en los tres componentes.",
         },
@@ -68,8 +103,31 @@ export function buildModule6PresidentialRhetoric(
           { label: "CONEXIÓN DE QUIASMO", token: "let us rather work to live", tone: "emerald" },
           { label: "CLÁUSULA B (TRABAJAR PARA VIVIR)", token: "with unyielding dignity and purpose.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Negar un marco y proponer el tuyo",
+            segments: [
+              { label: "RECHAZO DEL MARCO", token: "Ask not what your country can do for you;", tone: "violet" },
+              { label: "ESPEJO AFIRMATIVO", token: "ask what you can do for your country.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo cuando te empujan a una pregunta egoísta y querés reemplazarla por otra. Primero niegas el marco ajeno con 'ask not'; enseguida devolvés los mismos términos invertidos. Una refutación directa discute; el quiasmo cambia la pregunta y gana el debate.",
+            exampleEnglish: "Ask not what your nation gives; ask what you give your nation.",
+          },
+          {
+            label: "02 · Invertir medios y fines",
+            segments: [
+              { label: "ORDEN DESPLAZADO", token: "Let us not live to work;", tone: "violet" },
+              { label: "JERARQUÍA RESTAURADA", token: "let us work to live", tone: "emerald" },
+              { label: "CONDICIÓN", token: "with dignity intact.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Elige este molde cuando dos verbos están en orden invertido y querés corregir la jerarquía. Al cruzar el par, el significado se vuelve sentencia moral. Decir lo mismo sin invertir es un consejo más; invertirlo lo convierte en principio que el público repite.",
+            exampleEnglish: "Let us not serve the law; let us make the law serve.",
+          },
+        ],
         commonMistake: {
-          wrong: "Don't live for work, you should work so you can live well (prosa vulgar).",
+          wrong: "Do not live for work. You should work so you can live well.",
           wrongToken: "you should work so you can live well",
           correct: "Let us not live to work; let us work to live.",
           correctToken: "Let us not live to work; let us work to live",
@@ -119,8 +177,32 @@ export function buildModule6PresidentialRhetoric(
           { label: "HECHO INEVITABLE", token: "the overwhelming weight of empirical evidence,", tone: "emerald" },
           { label: "ACCIÓN FUTURA SOBERANA", token: "we stand prepared to collaborate without rancor.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Presuponer que el otro aún no actuó",
+            segments: [
+              { label: "MARCADOR TEMPORAL", token: "When the board finally acknowledges", tone: "violet" },
+              { label: "HECHO DADO POR CIERTO", token: "the documented shortfall,", tone: "emerald" },
+              { label: "TU MOVIMIENTO", token: "we will publish our audit.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Elige 'when' con 'finally' cuando el adversario todavía no hizo lo que corresponde y no querés acusarlo. La cláusula temporal da su falta por hecho consumado y tu frase solo habla del futuro. Con 'if' suplicás; con esta presuposición, informás.",
+            exampleEnglish: "When the board finally opens the records, we can proceed.",
+          },
+          {
+            label: "02 · Dar un hecho por sabido",
+            segments: [
+              { label: "VERBO FACTIVO", token: "Given that the audits confirmed", tone: "violet" },
+              { label: "VERDAD COMPARTIDA", token: "the shortfall,", tone: "emerald" },
+              { label: "CONCLUSIÓN INELUDIBLE", token: "silence is no longer defensible.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'given that' cuando el dato ya está probado y querés que la conclusión parezca inevitable. Presentás la premisa como conocimiento común, así que discutir tu conclusión exige negar el hecho. 'I think that' deja la puerta abierta; 'given that' la cierra.",
+            exampleEnglish: "Given that the results are public, further delay looks deliberate.",
+          },
+        ],
         commonMistake: {
-          wrong: "The committee is blind and refuses to see the truth (agresivo y tosco).",
+          wrong: "The committee is blind and refuses to see the truth.",
           wrongToken: "is blind and refuses to see",
           correct: "When the committee finally acknowledges the evidence, progress will follow.",
           correctToken: "When the committee finally acknowledges",
@@ -170,10 +252,43 @@ export function buildModule6PresidentialRhetoric(
           { label: "SILENCIO INTENCIONAL", token: "[strategic resonant silence]", tone: "emerald" },
           { label: "CADENCIA DESCENDENTE FIRME", token: "it embodies our definitive institutional standard.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Fijar un límite no negociable",
+            segments: [
+              { label: "TERMINAL PLANO", token: "The deadline stands as written;", tone: "violet" },
+              { label: "DESCENSO FINAL", token: "it will not move.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Baja la voz al final cuando anunciás un límite que no vas a discutir. El descenso seco comunica que la decisión ya está tomada; subir la entonación ahí convierte el límite en una propuesta y abre la negociación que querías evitar.",
+            exampleEnglish: "Our terms are fixed; the negotiation is closed.",
+          },
+          {
+            label: "02 · Veredicto tras el silencio",
+            segments: [
+              { label: "PAUSA DELIBERADA", token: "[silence before the verdict]", tone: "emerald" },
+              { label: "RESOLUCIÓN GRAVE", token: "We have weighed every objection,", tone: "violet" },
+              { label: "SENTENCIA", token: "and our answer remains no.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Coloca una pausa audible antes de tu conclusión y aterriza en nota grave. El silencio deja que la sala se ordene y hace que la frase final suene a fallo. Rellenar ese hueco con más explicaciones diluye la autoridad que la pausa acaba de construir.",
+            exampleEnglish: "We heard the appeal. The ruling does not change.",
+          },
+          {
+            label: "03 · Afirmar sin pedir permiso",
+            segments: [
+              { label: "SIN COLETILLA", token: "The evidence is complete,", tone: "violet" },
+              { label: "CAÍDA FIRME", token: "and the conclusion is ours.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Suprime la coletilla ascendente de quien busca aprobación cuando afirmás algo que ya verificaste. Terminar en nota baja declara; terminar en nota alta pide un permiso que el oyente no debe conceder. La caída firme es cortesía con la audiencia.",
+            exampleEnglish: "The file is closed, and the finding is sound.",
+          },
+        ],
         commonMistake: {
-          wrong: "Terminar oraciones afirmativas con tono ascendente agudo (hace que una certeza suene a duda).",
+          wrong: "The terms are fixed?",
           wrongToken: "uptalk interrogativo",
-          correct: "Descender el tono de voz en la última sílaba con firmeza serena y tranquila.",
+          correct: "The deadline stands as written, and it will not move.",
           correctToken: "inflexión cadente C2",
           whySpanish: "La autoridad serena no grita; proyecta certeza mediante notas graves y silencios deliberados.",
         },
@@ -221,10 +336,34 @@ export function buildModule6PresidentialRhetoric(
           { label: "PIVOTE ESTRATÉGICO", token: "however, the foundational dilemma", tone: "emerald" },
           { label: "RECONDUCCIÓN SOBERANA", token: "we must confront is long-term ethical viability.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Validar la pregunta hostil y reconducir",
+            segments: [
+              { label: "VALIDACIÓN", token: "That is a serious question;", tone: "violet" },
+              { label: "PIVOTE", token: "however,", tone: "emerald" },
+              { label: "TU EJE", token: "the cost to families decides this vote.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo cuando la pregunta es capciosa y no podés ignorarla sin parecer evasivo. Concedés legitimidad en tres palabras y el pivote traslada el foco a tu terreno. Negarte a responder te pone a la defensiva; validar y reconducir te devuelve el escenario.",
+            exampleEnglish: "That is a fair concern; however, affordability decides this vote.",
+          },
+          {
+            label: "02 · Pivote desde el ataque personal",
+            segments: [
+              { label: "ATAQUE AL ORADOR", token: "The question targets my record;", tone: "violet" },
+              { label: "TRASLADO AL ASUNTO", token: "the policy itself", tone: "emerald" },
+              { label: "TU EJE REAL", token: "deserves examination.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Elige este pivote cuando el ataque apunta a tu persona y no al problema. Nombrás el blanco real sin responder la insinuación y devolvés la mirada al asunto. Contestar el ataque personal te hunde en su terreno; reconducirlo lo deja hablando solo.",
+            exampleEnglish: "My record is public; the bill itself deserves scrutiny.",
+          },
+        ],
         commonMistake: {
-          wrong: "I won't answer that because your question is biased (confrontación torpe).",
+          wrong: "I will not answer that because your question is biased.",
           wrongToken: "your question is biased",
-          correct: "That is an intriguing question; however, the core issue is...",
+          correct: "That is an intriguing question; however, the core issue is cost.",
           correctToken: "however, the core issue is...",
           whySpanish: "El 'bridge and pivot' desactiva la trampa sin hostilidad y te devuelve el control absoluto del escenario.",
         },
@@ -272,10 +411,44 @@ export function buildModule6PresidentialRhetoric(
           { label: "TRICOLON PRESIDENCIAL", token: "we demand clarity in purpose, discipline in execution, and humility in triumph.", tone: "emerald" },
           { label: "QUIASMO HISTÓRICO FINAL", token: "That enduring perseverance it was that prevailed beyond the shadow of a doubt.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Apertura con cláusula absoluta",
+            segments: [
+              { label: "CLÁUSULA ABSOLUTA", token: "The votes counted,", tone: "violet" },
+              { label: "SUJETO SOBERANO", token: "we addressed the chamber", tone: "emerald" },
+              { label: "PROPÓSITO", token: "without hesitation.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Abre el discurso cerrando primero una acción previa. La cláusula absoluta elimina conectores y entrega la escena ya resuelta; en su lugar, 'after the votes were counted' cuenta lo mismo con más palabras y menos peso. Menos gramática visible, más autoridad.",
+            exampleEnglish: "The votes counted, the chamber fell silent.",
+          },
+          {
+            label: "02 · Cuerpo con tres pilares",
+            segments: [
+              { label: "PILAR UNO", token: "patience in debate,", tone: "violet" },
+              { label: "PILAR DOS", token: "courage in decision,", tone: "emerald" },
+              { label: "PILAR TRES", token: "and mercy in victory.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Sostiene el centro del discurso: tres pilares con la misma estructura y una sola preposición repetida. Marcan el programa entero y se recuerdan sin apuntes. Cambiar la tercera forma para variar el estilo rompe el paralelismo y el oído lo detecta como error.",
+            exampleEnglish: "We promise order at home, honesty in office, and peace abroad.",
+          },
+          {
+            label: "03 · Cierre con hendidura de mérito",
+            segments: [
+              { label: "HENDIDURA", token: "It was restraint, not rhetoric,", tone: "violet" },
+              { label: "QUE SOSTUVO", token: "that held this union together.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cierra destacando el mérito exacto que querés que se recuerde. La hendidura pone la cualidad al frente y el contraste 'not rhetoric' elimina la lectura cínica antes de que aparezca. Un cierre plano informa; esta estructura consagra.",
+            exampleEnglish: "It was patience, not spectacle, that carried the reform.",
+          },
+        ],
         commonMistake: {
-          wrong: "Dudar o sentir que el idioma es una barrera ajena.",
+          wrong: "I think that maybe, if it is possible, we could perhaps begin to speak.",
           wrongToken: "barrera idiomática",
-          correct: "Habitar el idioma con libertad estética, rigor conceptual y autoridad serena.",
+          correct: "The chamber is ready, and we will speak.",
           correctToken: "soberanía C2 definitiva",
           whySpanish: "El Sovereign Speaker piensa, siente y persuade directamente en la lengua inglesa sin intermediación del español.",
         },

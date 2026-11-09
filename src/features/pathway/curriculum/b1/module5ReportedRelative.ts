@@ -16,6 +16,28 @@ export function buildModule5ReportedRelative(
           { label: "SAY (SOLO)", token: "He said that he was ready", tone: "violet" },
           { label: "TELL + PERSONA", token: "He told me / told us / told the client", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Reportar sin nombrar a nadie",
+            segments: [
+              { label: "SAY", token: "He said · She said", tone: "violet" },
+              { label: "THAT + LO DICHO", token: "that the deadline moved", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando solo quieres transmitir la frase y no mencionas a quién se dijo, usas 'said that' sin más. La señal es que no aparece ninguna persona después del verbo; si aparece ('me', 'us', 'the client'), cambia a 'told'.",
+            exampleEnglish: "The client said that the deadline moved.",
+          },
+          {
+            label: "02 · Nombrar a quien escucha",
+            segments: [
+              { label: "TELL", token: "told", tone: "violet" },
+              { label: "PERSONA PEGADA", token: "me · us · the client", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando nombras de inmediato a quien escucha, el verbo es 'tell' y la persona va pegada: 'told me', 'told us', 'told the client'. La señal es esa persona obligatoria; el error típico es decir 'said me', que en inglés no existe.",
+            exampleEnglish: "Our director told us the plan changed.",
+          },
+        ],
         commonMistake: {
           wrong: "He said me that he was busy.",
           wrongToken: "said me",
@@ -66,8 +88,30 @@ export function buildModule5ReportedRelative(
           { label: "DIJO EN VIVO", token: "\"I will do it\" · \"I can help\"", tone: "violet" },
           { label: "REPORTADO (PASO ATRÁS)", token: "He said he would do it · he could help", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Presente que se vuelve pasado",
+            segments: [
+              { label: "CITA EN VIVO", token: "\"I need more time\"", tone: "violet" },
+              { label: "REPORTADO", token: "she needed more time", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la frase original está en presente ('I need time') y la reportas con 'said', el verbo retrocede un paso: 'needed'. La señal es el tiempo de la cita; en cambio, si citas textualmente con comillas, el presente se queda igual.",
+            exampleEnglish: "She said she needed more time.",
+          },
+          {
+            label: "02 · Pasado que se vuelve past perfect",
+            segments: [
+              { label: "CITA EN VIVO", token: "\"I sent it\"", tone: "violet" },
+              { label: "REPORTADO", token: "he had sent it", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si lo dicho ya estaba en pasado ('I sent it'), el retroceso llega al past perfect: 'had sent'. La señal es un pasado dentro de la cita; con presente solo bajas a pasado simple, no a 'had'.",
+            exampleEnglish: "He said he had sent the file.",
+          },
+        ],
         commonMistake: {
-          wrong: "He said that he will call tomorrow (en pasado narrativo).",
+          wrong: "He said that he will call tomorrow.",
           wrongToken: "said that he will",
           correct: "He said that he would call tomorrow.",
           correctToken: "said that he would",
@@ -115,6 +159,28 @@ export function buildModule5ReportedRelative(
         formulaSegments: [
           { label: "PREGUNTA REPORTADA", token: "She asked if I had experience", tone: "violet" },
           { label: "INSTRUCCIÓN REPORTADA", token: "He told us to review the figures", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Preguntar sin invertir el verbo",
+            segments: [
+              { label: "ASKED IF", token: "asked (me) if", tone: "violet" },
+              { label: "ORDEN NORMAL", token: "if we had capacity", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando reportas una pregunta de sí o no, abres con 'asked if' y dejas la frase en orden normal: sujeto, verbo. La señal es que la pregunta original no llevaba 'what' ni 'where'; el error es invertir y decir 'if was I'.",
+            exampleEnglish: "The client asked if we had capacity.",
+          },
+          {
+            label: "02 · Reportar una orden o consejo",
+            segments: [
+              { label: "TOLD + PERSONA", token: "told me · told us", tone: "violet" },
+              { label: "TO + VERBO BASE", token: "to call them · to wait", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando lo dicho fue una orden, un consejo o una instrucción, usas 'told me to' más el verbo base. La señal es que no hay pregunta ni información, sino una acción pedida; 'asked if' describiría una duda, no una orden.",
+            exampleEnglish: "My leader told me to call them.",
+          },
         ],
         commonMistake: {
           wrong: "She asked me if was I ready.",
@@ -167,6 +233,38 @@ export function buildModule5ReportedRelative(
           { label: "COSA / LUGAR", token: "The plan that worked · The city where I live", tone: "emerald" },
           { label: "POSESIÓN", token: "The client whose contract was signed", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Persona o cosa",
+            segments: [
+              { label: "PERSONA", token: "who · that", tone: "violet" },
+              { label: "COSA", token: "which · that", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el antecedente es una persona, el relativo es 'who' (o 'that'); si es una cosa o un animal, 'which'. La señal es el sustantivo anterior: 'the analyst' pide 'who', 'the report' pide 'which'.",
+            exampleEnglish: "The analyst who joined us speaks German.",
+          },
+          {
+            label: "02 · Posesión con whose",
+            segments: [
+              { label: "WHOSE", token: "whose idea · whose team", tone: "sky" },
+              { label: "SIN ARTÍCULO", token: "nunca 'who his'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres decir que algo pertenece a esa persona, usas 'whose' y no traduces 'que su'. La señal es la posesión sobre el sustantivo siguiente: 'whose idea', 'whose team'. Con 'who' la frase quedaría incompleta.",
+            exampleEnglish: "The colleague whose idea won got promoted.",
+          },
+          {
+            label: "03 · Lugar con where",
+            segments: [
+              { label: "LUGAR", token: "the office · the city", tone: "violet" },
+              { label: "WHERE + CLÁUSULA", token: "where we train", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el antecedente es un lugar y la cláusula dice qué pasa allí, usas 'where'. La señal es que el relativo reemplaza a 'in that place'; con 'which' tendrías que añadir 'in', así que 'where' es la salida limpia.",
+            exampleEnglish: "That is the office where we train.",
+          },
+        ],
         commonMistake: {
           wrong: "The person which called me.",
           wrongToken: "person which",
@@ -217,8 +315,30 @@ export function buildModule5ReportedRelative(
           { label: "CON PRONOMBRE (CORRECTO)", token: "The book that I read yesterday", tone: "violet" },
           { label: "FLUIDEZ NATIVA (OMISIÓN)", token: "The book I read yesterday", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Objeto: puedes borrarlo",
+            segments: [
+              { label: "CON RELATIVO", token: "the report that we wrote", tone: "violet" },
+              { label: "OMITIDO", token: "the report we wrote", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el relativo es el objeto de la cláusula ('that I read'), puedes borrarlo y la frase sigue completa: 'the book I read'. La señal es que después viene otro sujeto ('I', 'we', 'you') haciendo la acción.",
+            exampleEnglish: "The report we wrote impressed the client.",
+          },
+          {
+            label: "02 · Sujeto: no se puede borrar",
+            segments: [
+              { label: "RELATIVO SUJETO", token: "who called · that is here", tone: "violet" },
+              { label: "SIN HUECO", token: "nunca 'the engineer called us'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el relativo es el sujeto ('who called', 'that is here'), no puedes borrarlo: la cláusula se quedaría sin quien actúe. La señal es que después del hueco viene directamente un verbo, no una persona.",
+            exampleEnglish: "The engineer who called us arrives today.",
+          },
+        ],
         commonMistake: {
-          wrong: "The person that is here (¡aquí no se puede borrar porque 'that' es el sujeto!).",
+          wrong: "The person is here.",
           wrongToken: "The person is here",
           correct: "The person who is here.",
           correctToken: "The person who is here",

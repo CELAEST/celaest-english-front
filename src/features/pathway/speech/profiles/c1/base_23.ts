@@ -1,0 +1,256 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C1 Base 23 — Expresiones de Debate Crítico.
+ *
+ * Dos casos de la misma decisión (cómo se gradúa la duda frente a una idea):
+ *  1. cuestionar sin atacar -> play devil's advocate
+ *  2. dudar de un dato sin descalificarlo -> with a pinch of salt
+ *
+ * Trampa = commonMistake del currículo: "I want to be the advocate of the devil." ->
+ * "Allow me to play devil's advocate."
+ * Objetivo de voz: "To play devil's advocate, are we certain that this methodology is
+ * universally applicable?"
+ */
+export const baseC123SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c1_23",
+  orderIndex: 22,
+  title: "Expresiones de Debate Crítico: Devil's advocate / Pinch of salt",
+  targetSentence: "To play devil's advocate, are we certain that this methodology is universally applicable?",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de debate crítico! Hoy aprendés dos jugadas de mesa redonda: meter una duda sin pelear y pedir cautela con un dato recién publicado. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español decís abogado del diablo o tomalo con pinzas y se entiende. En inglés esas dos ideas son fórmulas cerradas que el oyente reconoce al instante.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final abrís una crítica hipotética y graduás la confianza en un dato, sin descalificar a nadie ni cerrar el debate.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene dos casos y cada fórmula hace un trabajo distinto: una abre el debate y la otra lo frena. La señal está en qué querés que pase con la idea. Las vemos una por una.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: cuestionar sin atacar. Si la crítica será hipotética, abrís con let mi plei dévils ádvoket. La señal es el rol anunciado; acusar cierra el debate.",
+      canonical:
+        "Primer caso: cuestionar sin atacar. Si la crítica será hipotética, abrís con let mi plei dévils ádvoket. La señal es el rol anunciado; acusar cierra el debate.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Let me play devil's advocate and test that claim.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Caso dos: dudar de un dato sin descalificarlo. Si la cifra no está verificada, la pedís uid a pinch ov solt. La señal es la fuente; decir falso descalifica.",
+      canonical:
+        "Caso dos: dudar de un dato sin descalificarlo. Si la cifra no está verificada, la pedís uid a pinch ov solt. La señal es la fuente; decir falso descalifica.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Take those early projections with a pinch of salt.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error típico es traducir la fórmula del español palabra por palabra y quedar con algo que ningún hablante usa. Escuchá.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "I want to be the advocate of the devil.",
+      subtitle: "I want to be the advocate of the devil.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el rol no se ocupa: se juega. La fórmula pide el verbo jugar y el rol va entero, sin artículos en medio.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "Allow me to play devil's advocate.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: el abogado del diablo no se encarna, se juega. Recordá el verbo y la fórmula aparece sola.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. Tocá la fórmula que un moderador usaría en una mesa redonda.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa versión traduce la fórmula del español y pierde el verbo que la fija. El rol se juega, no se ocupa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Rol anunciado y verbo correcto. Ahora escuchá dos intervenciones reales de debate.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.devil",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "Allow me to play devil's advocate: what would happen if our initial premises failed?",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en la apertura: las palabras se unen en un solo bloque y la ese final del posesivo se pega al rol. Suena aláu mi tu pléi.",
+      canonical:
+        "Fijate en la apertura: las palabras se unen en un solo bloque y la ese final del posesivo se pega al rol. Suena aláu mi tu pléi.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.salt",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "We should take early unverified estimates with a healthy pinch of salt.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá la intervención.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta completar la intervención entera.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá con la apertura dialéctica, seguí con la pregunta y cerrá con el escenario crítico. El rol va entero al principio.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. Abriste el debate con el rol anunciado y la pregunta quedó clara. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá el modelo completo:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "To play devil's advocate, are we certain that this methodology is universally applicable?",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé el micrófono y repetí la intervención entera, con tono de pregunta al final.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi lo tenés. Escuchá otra vez y repetí con calma, sin apurar el rol.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No te escuché bien. Acercate al micrófono y repetí la intervención conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. El rol sonó anunciado y la duda quedó abierta sin atacar a nadie. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "El permiso del micrófono no está activo. Habilitalo desde el navegador o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

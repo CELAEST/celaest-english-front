@@ -8,7 +8,7 @@ import { BaseSpeechProfile, PAUSE } from "../types";
  *  2. después de una preposición → "We can help them with this task."
  *
  * La trampa del español es conservar la forma del sujeto después del verbo
- * ("She called I yesterday."). Mismo contrato que el resto: una pista = un
+ * ("She called I, yesterday."). Mismo contrato que el resto: una pista = un
  * idioma, un caso por par intro/modelo, respelling solo en la pista fonética
  * y pausas en `pauseAfterMs`.
  */
@@ -95,7 +95,7 @@ export const base17SpeechProfile: BaseSpeechProfile = {
       id: "trap.wrong",
       beat: "TRAP",
       language: "en",
-      text: "She called I yesterday.",
+      text: "She called I, yesterday.",
       cue: { trapPhase: 1 },
       pauseAfterMs: PAUSE.afterNativeModel,
     },
@@ -237,7 +237,7 @@ export const base17SpeechProfile: BaseSpeechProfile = {
       id: "voice.victory",
       beat: "DIALOG",
       language: "es",
-      text: "¡Muy buena dicción! Cambiaste la persona a su forma de receptor. Quedaste con esta base conquistada.",
+      text: "¡Muy buena pronunciación! Cambiaste la persona a su forma de receptor. Base conquistada.",
       pauseAfterMs: PAUSE.standard,
     },
     {

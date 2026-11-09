@@ -17,8 +17,40 @@ export function buildModule1BaroqueSyntax(
           { label: "SUJETO PRINCIPAL", token: "the delegates", tone: "emerald" },
           { label: "ACCIÓN SOLEMNE", token: "departed the chamber in silence.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Hecho previo ya cerrado",
+            segments: [
+              { label: "SUSTANTIVO + PARTICIPIO", token: "The vote recorded,", tone: "violet" },
+              { label: "ACTO QUE SIGUE", token: "the chair closed the session.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Abre con la cláusula absoluta cuando el hecho previo ya está cerrado y querés que la frase arranque con él. Sin 'when' ni 'was': el sustantivo y su participio quedan suspendidos y el acto siguiente entra como consecuencia. Con 'When the vote was recorded' vuelve el relato básico.",
+            exampleEnglish: "The vote recorded, the chair closed the session.",
+          },
+          {
+            label: "02 · Anterioridad ya cumplida",
+            segments: [
+              { label: "HECHO PREVIO CONCLUIDO", token: "The last witness having been heard,", tone: "emerald" },
+              { label: "DECISIÓN QUE RECAE", token: "the tribunal withdrew.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si el hecho previo es pasivo y necesitás marcar que terminó antes del acto principal, la cláusula lleva 'having been + participio'. 'The last witness heard,' sugeriría simultaneidad; 'having been heard' sella la anterioridad y deja el peso ceremonial en el cierre.",
+            exampleEnglish: "The last witness having been heard, the tribunal withdrew.",
+          },
+          {
+            label: "03 · Escena que acompaña",
+            segments: [
+              { label: "CIRCUNSTANCIA SIMULTÁNEA", token: "The lights dimming,", tone: "violet" },
+              { label: "ACTO QUE NO SE DETIENE", token: "the audience fell silent.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Para una circunstancia que acompaña al acto principal en el mismo instante, la cláusula toma participio presente. No causa nada: encuadra la escena. Cambiarla por 'Because the lights were dimming' inventaría una causa que la frase no afirma.",
+            exampleEnglish: "The lights dimming, the audience fell silent.",
+          },
+        ],
         commonMistake: {
-          wrong: "When the deliberations concluded, the delegates left (correcto pero básico).",
+          wrong: "When the deliberations concluded, the delegates left.",
           wrongToken: "When the deliberations concluded",
           correct: "The deliberations concluded, the delegates departed.",
           correctToken: "The deliberations concluded",
@@ -68,8 +100,30 @@ export function buildModule1BaroqueSyntax(
           { label: "MARCO HEROICO", token: "against all", tone: "emerald" },
           { label: "CONTRAPESO", token: "conceivable odds.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Triunfo que nadie creía",
+            segments: [
+              { label: "VERBO DE ECO", token: "Survive it did,", tone: "violet" },
+              { label: "PRUEBA QUE LO CONFIRMA", token: "against every prediction of collapse.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo cuando el resultado contradice una duda ya expresada y querés confirmarlo con fuerza. El verbo en forma base va delante y 'did' cierra el eco: la frase responde a un 'no va a resistir' que quedó en el aire. 'It survived after all' informa; 'Survive it did' sentencia.",
+            exampleEnglish: "Survive it did, against every prediction of collapse.",
+          },
+          {
+            label: "02 · Cualidad puesta en duda",
+            segments: [
+              { label: "ADJETIVO AL FRENTE", token: "Formidable the task was,", tone: "violet" },
+              { label: "RESOLUCIÓN QUE LO IGUALA", token: "and formidable the resolve.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si la duda recae sobre una cualidad y no sobre una acción, el eco adelanta el adjetivo y deja el verbo copulativo detrás del sujeto. 'The task was indeed formidable' describe; esta inversión iguala el obstáculo con la respuesta y cierra la objeción.",
+            exampleEnglish: "Formidable the task was, and formidable the resolve.",
+          },
+        ],
         commonMistake: {
-          wrong: "They really prevailed against all odds (coloquial y plano).",
+          wrong: "They really prevailed against all odds.",
           wrongToken: "They really prevailed",
           correct: "Prevail they did, against all conceivable odds.",
           correctToken: "Prevail they did",
@@ -119,10 +173,42 @@ export function buildModule1BaroqueSyntax(
           { label: "INTENSIFICADOR ESCINDIDO", token: "if not outright transformative,", tone: "emerald" },
           { label: "IMPACTO INSTITUCIONAL", token: "for the entire community.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Elogio que roza el máximo",
+            segments: [
+              { label: "CUALIDAD SÓLIDA", token: "The reform was substantial,", tone: "violet" },
+              { label: "TECHO SUGERIDO", token: "if not historically decisive.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando querés elogiar sin gastar el superlativo, el 'if not' sube el techo a una categoría mayor sin afirmarla del todo. 'Substantial, if not historically decisive' deja la puerta abierta; decir 'and decisive' obligaría a sostenerlo. La señal es la coma antes del 'if'.",
+            exampleEnglish: "The reform was substantial, if not historically decisive.",
+          },
+          {
+            label: "02 · Pareja de logros",
+            segments: [
+              { label: "LOGRO MENOR", token: "a success,", tone: "violet" },
+              { label: "LOGRO MAYOR NO AFIRMADO", token: "if not a triumph.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el contraste es entre dos logros y no entre dos cualidades, la escisión conserva el artículo en cada polo: 'a success, if not a triumph'. Sin el segundo artículo la frase se rompe; con él, el segundo logro queda sugerido como techo inalcanzable por ahora.",
+            exampleEnglish: "The exhibition was a success, if not a triumph.",
+          },
+          {
+            label: "03 · Mínimo asegurado",
+            segments: [
+              { label: "LECTURA POSIBLE", token: "if not decisive,", tone: "emerald" },
+              { label: "PISO QUE IGUAL VALE", token: "at least instructive.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si no querés sugerir un techo sino garantizar un piso, el 'if not' cambia de dirección: 'if not decisive, at least instructive' concede el límite y rescata lo conseguido. Va al final, tras el verbo, y evita el tono de disculpa de un 'it was not decisive'.",
+            exampleEnglish: "The summit was, if not decisive, at least instructive.",
+          },
+        ],
         commonMistake: {
-          wrong: "Their contribution was decisive and maybe completely transformative (redundante y vacilante).",
+          wrong: "Their contribution was decisive and maybe completely transformative.",
           wrongToken: "and maybe completely",
-          correct: "decisive, if not outright transformative,",
+          correct: "Their contribution was decisive, if not outright transformative.",
           correctToken: "if not outright transformative",
           whySpanish: "La fórmula 'if not outright' condensa la alternativa máxima con elegancia aristocrática.",
         },
@@ -170,8 +256,30 @@ export function buildModule1BaroqueSyntax(
           { label: "RELATIVO ENLACE", token: "that secured", tone: "emerald" },
           { label: "LOGRO HISTÓRICO", token: "the ultimate triumph.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Atribuir el logro a una causa",
+            segments: [
+              { label: "CAUSA MONUMENTAL", token: "That quiet resolve it was", tone: "violet" },
+              { label: "QUE SOSTUVO EL PLAN", token: "that carried the plan.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Elegís esta hendidura invertida cuando un logro colectivo necesita una causa nombrada y querés que esa causa abra la frase. La hendidura plana, 'It was that quiet resolve that...', informa; la inversión convierte la cualidad en monumento antes de nombrar el efecto.",
+            exampleEnglish: "That quiet resolve it was that carried the plan.",
+          },
+          {
+            label: "02 · Negar la causa que otros atribuyen",
+            segments: [
+              { label: "CAUSA RECHAZADA", token: "Not ambition it was", tone: "violet" },
+              { label: "CAUSA VERDADERA", token: "that moved them, but duty.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando alguien atribuyó el hecho a un motivo y querés negarlo sin discutir, la hendidura invertida empieza negando: 'Not ambition it was'. El 'but' final instala la causa verdadera. Con 'It was not ambition that moved them' el foco sigue en la negación, no en el deber.",
+            exampleEnglish: "Not ambition it was that moved them, but duty.",
+          },
+        ],
         commonMistake: {
-          wrong: "That vision was which guided us (calco roto del español).",
+          wrong: "That vision was which guided us.",
           wrongToken: "was which guided",
           correct: "That vision it was that guided our efforts.",
           correctToken: "That vision it was that",
@@ -220,6 +328,28 @@ export function buildModule1BaroqueSyntax(
           { label: "PRIMERA INVERSIÓN NEGATIVA", token: "Not only did they fail to consult the council,", tone: "violet" },
           { label: "SEGUNDA INVERSIÓN NEGATIVA", token: "but nor did they acknowledge", tone: "emerald" },
           { label: "OBJETO DE LA FALTA", token: "the fundamental discrepancy.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Dos omisiones en el mismo dictamen",
+            segments: [
+              { label: "PRIMERA FALTA", token: "Not only did they omit the results,", tone: "violet" },
+              { label: "SEGUNDA FALTA", token: "but nor did they explain.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Encadená dos faltas cuando querés una crítica sin fisuras: cada polo se invierte con 'did' y 'nor' niega el segundo sin abrir una nueva oración. Si la segunda parte va con 'and they didn't', la condena se enfría y el oyente siente que el argumento afloja.",
+            exampleEnglish: "Not only did they omit the results, but nor did they explain.",
+          },
+          {
+            label: "02 · Cuando ningún polo tiene agente",
+            segments: [
+              { label: "PRIMER HECHO ELUDIDO", token: "Not only was the warning ignored,", tone: "violet" },
+              { label: "SEGUNDO HECHO ELUDIDO", token: "but neither were the minutes kept.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si ninguno de los dos hechos tiene agente, ambos polos van en pasiva y el segundo usa 'neither were'. La señal es la ausencia de sujeto que actúa: importa la negligencia, no quién la cometió. 'And the minutes weren't kept' rompería la simetría de la acusación.",
+            exampleEnglish: "Not only was the warning ignored, but neither were the minutes kept.",
+          },
         ],
         commonMistake: {
           wrong: "Not only they didn't consult, but also they didn't acknowledge.",
@@ -272,10 +402,42 @@ export function buildModule1BaroqueSyntax(
           { label: "INVERSIÓN DE ECO", token: "prevail they did against all odds.", tone: "emerald" },
           { label: "HENDIDURA MONUMENTAL", token: "That unyielding perseverance it was that secured victory.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Apertura que fija la escena",
+            segments: [
+              { label: "CLÁUSULA ABSOLUTA DE APERTURA", token: "The accord signed,", tone: "violet" },
+              { label: "ECO DEL VEREDICTO", token: "prevail they did.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "En un párrafo de cátedra, la cláusula absoluta abre: fija el hecho previo sin conjunciones y deja la escena lista. Después ya podés echar mano del eco. Si empezás por el eco, el lector no sabe qué se firmó ni por qué el triunfo importa.",
+            exampleEnglish: "The accord signed, prevail they did against every skeptic.",
+          },
+          {
+            label: "02 · Veredicto tras la duda",
+            segments: [
+              { label: "DUDA EN EL AIRE", token: "Few expected endurance,", tone: "emerald" },
+              { label: "ECO QUE SENTENCIA", token: "endure it did.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "El eco entra justo después de una expectativa negativa: la frase ya dijo que se dudaba y la inversión responde. Ese es su lugar en la arquitectura barroca, no el arranque. Colocado antes de la duda, el énfasis se gasta sin nada que lo justifique.",
+            exampleEnglish: "Few expected endurance; endure it did.",
+          },
+          {
+            label: "03 · Cierre monumental",
+            segments: [
+              { label: "CAUSA QUE QUEDA", token: "That patient diplomacy it was", tone: "violet" },
+              { label: "QUE SELLA EL PÁRRAFO", token: "that preserved the union.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "La hendidura invertida cierra el párrafo: nombra la causa que merece recordarse y deja el efecto al final. Puesta al medio, corta el relato; al cierre, funciona como inscripción. Es el último movimiento, después de la escena y del eco.",
+            exampleEnglish: "That patient diplomacy it was that preserved the union.",
+          },
+        ],
         commonMistake: {
-          wrong: "Escribir con sintaxis predecible de oraciones coordinadas simples.",
+          wrong: "The debate ended, and they reached consensus, and their strength was evident.",
           wrongToken: "sintaxis plana",
-          correct: "Entrelazar hipérbaton, cláusulas absolutas y ecos para lograr relieve escultural.",
+          correct: "The debate concluded, achieve consensus they did.",
           correctToken: "relieve catedrático C2",
           whySpanish: "El hablante C2 esculpe las frases dotándolas de relieve tridimensional y peso específico.",
         },

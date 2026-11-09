@@ -17,6 +17,30 @@ export function buildModule2TemporalDepth(
           { label: "HACIENDO", token: "working · waiting · preparing", tone: "emerald" },
           { label: "DURACIÓN", token: "for two hours / all morning / since 8 AM", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Duración que sigue en curso",
+            segments: [
+              { label: "LLEVAR + TIEMPO", token: "have been · has been", tone: "violet" },
+              { label: "ACCIÓN ACTIVA", token: "working · waiting · studying", tone: "emerald" },
+              { label: "DESDE CUÁNDO", token: "for two hours / since 8 AM", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la acción arrancó antes y todavía sigue viva ahora, usas 'have been' más '-ing', con 'for' o 'since' como señal de duración abierta. Con presente continuo ('I am working') hablarías solo de este segundo, sin mostrar el tiempo acumulado.",
+            exampleEnglish: "We have been waiting for the client since nine.",
+          },
+          {
+            label: "02 · Resultado visible del esfuerzo",
+            segments: [
+              { label: "CAUSA DEL EFECTO", token: "have been · has been", tone: "violet" },
+              { label: "ACCIÓN REPETIDA", token: "running · cleaning · painting", tone: "emerald" },
+              { label: "SEÑAL VISIBLE", token: "tired · sweaty · dirty", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando justificas lo que se ve en este momento (cansancio, manos sucias, ropa mojada), usas la forma continua porque el foco está en la actividad que dejó esa huella. Con presente perfecto simple dirías que la tarea terminó; aquí la acción sigue siendo la causa visible.",
+            exampleEnglish: "She has been running, so she is tired.",
+          },
+        ],
         commonMistake: {
           wrong: "I am working here since two years.",
           wrongToken: "am working here since",
@@ -66,6 +90,30 @@ export function buildModule2TemporalDepth(
         formulaSegments: [
           { label: "PROCESO (DURACIÓN)", token: "I have been writing emails all morning", tone: "violet" },
           { label: "RESULTADO (LOGRO)", token: "I have written five emails", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Proceso o duración",
+            segments: [
+              { label: "FOCO EN EL PROCESO", token: "have been · has been + -ing", tone: "violet" },
+              { label: "ACTIVIDAD ABIERTA", token: "reading · writing · coding", tone: "emerald" },
+              { label: "TIEMPO TRANSCURRIDO", token: "all morning / for an hour", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando te importa la actividad y cuánto tiempo llevas en ella, usas la forma continua con 'all morning' o 'for + tiempo' como señal. La tarea no está cerrada: sigues dentro. Con la forma simple hablarías de unidades terminadas, no del proceso.",
+            exampleEnglish: "I have been reading that report all morning.",
+          },
+          {
+            label: "02 · Resultado numérico",
+            segments: [
+              { label: "FOCO EN EL LOGRO", token: "have · has + participio", tone: "violet" },
+              { label: "UNIDADES CONTADAS", token: "three · five · ten", tone: "emerald" },
+              { label: "CIERRE", token: "so far / this week", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando mencionas cuántas unidades completaste, la señal es el número, y ahí va la forma simple: 'have written three'. El proceso queda en segundo plano. Si dijeras 'have been writing three emails' sonaría a esfuerzo sin cierre, que es justo el error típico.",
+            exampleEnglish: "She has written three chapters since Monday.",
+          },
         ],
         commonMistake: {
           wrong: "I have been writing five emails this morning.",
@@ -117,6 +165,29 @@ export function buildModule2TemporalDepth(
           { label: "ACCIÓN ANTERIOR (HAD)", token: "The meeting had already started", tone: "violet" },
           { label: "ACCIÓN POSTERIOR (PAST)", token: "when I arrived at the office", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · La acción que ya había ocurrido",
+            segments: [
+              { label: "RETROCESO EN EL TIEMPO", token: "had + participio", tone: "violet" },
+              { label: "ACCIÓN ANTERIOR", token: "finished · left · approved", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando cuentas algo pasado y necesitas mostrar que otro hecho fue todavía más antiguo, usas 'had' más el participio. La señal es que el orden importa: el oyente debe entender que eso ocurrió antes. Con pasado simple ambas acciones sonarían simultáneas.",
+            exampleEnglish: "He had finished the audit when I called.",
+          },
+          {
+            label: "02 · Antes de otro pasado explícito",
+            segments: [
+              { label: "PUNTO DE REFERENCIA", token: "when / by Friday", tone: "violet" },
+              { label: "LO YA HECHO", token: "had completed · had sent", tone: "emerald" },
+              { label: "ORDEN DE LA HISTORIA", token: "primero had, después pasado", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la frase nombra las dos acciones, la anterior lleva 'had' y la posterior va en pasado simple: 'By Friday, we had completed every interview'. La señal es el conector temporal que fija el punto. Si inviertes el orden, la cronología se rompe.",
+            exampleEnglish: "By Friday, we had completed every interview.",
+          },
+        ],
         commonMistake: {
           wrong: "When I arrived, the train already left.",
           wrongToken: "already left",
@@ -166,6 +237,38 @@ export function buildModule2TemporalDepth(
         formulaSegments: [
           { label: "PARA CUANDO", token: "By the time + Past Simple", tone: "violet" },
           { label: "YA SE HABÍA HECHO", token: "we had resolved the issue", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · By the time: para cuando",
+            segments: [
+              { label: "PARA CUANDO", token: "By the time + pasado simple", tone: "violet" },
+              { label: "LO YA RESUELTO", token: "had + participio", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'By the time' marca un límite pasado y siempre pide pasado simple después ('the manager arrived'). La otra parte va en 'had' porque ya estaba hecho al llegar ese momento. Con presente perfecto ('has arrived') rompes la línea temporal y suena a traducción literal.",
+            exampleEnglish: "By the time we arrived, the room had emptied.",
+          },
+          {
+            label: "02 · Before: antes de",
+            segments: [
+              { label: "ORDEN YA MARCADO", token: "before + pasado simple", tone: "violet" },
+              { label: "LO PREVIO", token: "had checked · had sent", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'Before' ya indica qué pasó primero, así que el pasado simple también sería correcto; usas 'had' cuando quieres remarcar el orden y evitar ambigüedad. La señal es que 'before' puede llevar dos formas, mientras 'by the time' obliga al perfecto.",
+            exampleEnglish: "She had checked the figures before she signed.",
+          },
+          {
+            label: "03 · Already: ya, antes de lo esperado",
+            segments: [
+              { label: "YA HECHO", token: "had + already + participio", tone: "violet" },
+              { label: "SORPRESA O ADELANTO", token: "already booked · already left", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'Already' señala que algo ocurrió antes de lo esperado, y en pasado se coloca entre 'had' y el participio: 'had already booked'. No confundas con 'yet', que va al final en negativas y preguntas. Aquí el matiz es adelanto, no simple anterioridad.",
+            exampleEnglish: "They had already booked the venue.",
+          },
         ],
         commonMistake: {
           wrong: "By the time the manager has arrived, we solved.",
@@ -218,8 +321,42 @@ export function buildModule2TemporalDepth(
           { label: "ESTAR ACOSTUMBRADO", token: "I am used to working remotely", tone: "emerald" },
           { label: "ACOSTUMBRARSE", token: "I am getting used to this routine", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Solía hacer: hábito terminado",
+            segments: [
+              { label: "SOLÍA (YA NO)", token: "used to + verbo base", tone: "violet" },
+              { label: "HÁBITO DEL PASADO", token: "commute · work · travel", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando hablas de un hábito que tenías y ya no tienes, usas 'used to' más el verbo base, sin '-ing' ni 'to be'. La señal es el contraste pasado-presente ('but now'). Con 'be used to' dirías que estás acostumbrado hoy, no que abandonaste la costumbre.",
+            exampleEnglish: "I used to travel every week for work.",
+          },
+          {
+            label: "02 · Estar acostumbrado",
+            segments: [
+              { label: "ESTADO ACTUAL", token: "am · is · are used to", tone: "violet" },
+              { label: "COSTUMBRE VIGENTE", token: "+ -ing", tone: "emerald" },
+              { label: "SEÑAL", token: "doesn't bother me now", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando describes algo que ya no te cuesta porque es tu normalidad, usas 'am / is / are used to' más el verbo en '-ing'. La señal es la ausencia de esfuerzo hoy. Si usas el verbo base ('used to work'), pasas a significar 'solía trabajar', el error clásico de esta base.",
+            exampleEnglish: "She is used to speaking in public.",
+          },
+          {
+            label: "03 · Acostumbrarse: proceso en marcha",
+            segments: [
+              { label: "PROCESO", token: "am · is · are getting used to", tone: "violet" },
+              { label: "NOVEDAD EN CURSO", token: "+ -ing", tone: "emerald" },
+              { label: "SEÑAL", token: "little by little / still", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando estás en pleno proceso de adaptarte a algo nuevo, usas 'get used to' en continuo: 'I am getting used to it'. La señal es el cambio gradual. Con 'am used to' dirías que ya terminaste la adaptación, sin nada en marcha.",
+            exampleEnglish: "We are getting used to the new system.",
+          },
+        ],
         commonMistake: {
-          wrong: "I am used to work late (queriendo decir estar acostumbrado).",
+          wrong: "I am used to work late.",
           wrongToken: "used to work",
           correct: "I am used to working late.",
           correctToken: "used to working",

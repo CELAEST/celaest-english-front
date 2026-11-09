@@ -17,6 +17,41 @@ export function buildModule2FutureDecisions(
           { label: "INTENCIÓN", token: "going to", tone: "emerald" },
           { label: "VERBO BASE", token: "start · learn · visit", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Plan o intención ya decidida",
+            segments: [
+              { label: "SUJETO + TO BE", token: "I am · She is · We are", tone: "violet" },
+              { label: "INTENCIÓN PREVIA", token: "going to", tone: "emerald" },
+              { label: "VERBO BASE", token: "start · learn · visit", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando ya decidiste algo antes de hablar y tienes un plan en la cabeza, usas 'am / is / are going to' más el verbo base. Se distingue de 'will', que es la decisión tomada en el mismo segundo.",
+            exampleEnglish: "She is going to visit her family on Sunday.",
+          },
+          {
+            label: "02 · Negativo: no hay plan",
+            segments: [
+              { label: "TO BE + NOT", token: "am not · isn't · aren't", tone: "violet" },
+              { label: "SIN INTENCIÓN", token: "not going to", tone: "emerald" },
+              { label: "VERBO BASE", token: "cancel · buy · travel", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Para negar un plan pones 'not' después del verbo To Be: 'isn't going to', nunca 'don't going to'. La negación vive en el To Be, así que el resto de la frase no cambia.",
+            exampleEnglish: "We are not going to buy that car.",
+          },
+          {
+            label: "03 · Pregunta por el plan",
+            segments: [
+              { label: "PREGUNTA + TO BE", token: "Are you · Is she · What are", tone: "violet" },
+              { label: "INTENCIÓN", token: "going to", tone: "emerald" },
+              { label: "VERBO BASE", token: "study · work · do", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando preguntas por lo que alguien planeó, mueves el verbo To Be al inicio y no usas 'do': 'Are you going to study?'. Con 'will' preguntarías un caso distinto, sin plan previo.",
+            exampleEnglish: "Are you going to study tonight?",
+          },
+        ],
         commonMistake: {
           wrong: "I going to start tomorrow.",
           wrongToken: "I going",
@@ -67,6 +102,39 @@ export function buildModule2FutureDecisions(
           { label: "QUIÉN", token: "I / You / We / They", tone: "violet" },
           { label: "FUTURO INSTANTÁNEO", token: "will ('ll) / will not (won't)", tone: "emerald" },
           { label: "ACCIÓN PURA", token: "help you · answer · check that", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Decisión instantánea",
+            segments: [
+              { label: "DECISIÓN AL MOMENTO", token: "will ('ll)", tone: "violet" },
+              { label: "ACCIÓN INMEDIATA", token: "answer · check · open", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el teléfono suena o alguien pide algo y decides en ese mismo segundo, usas 'will' más el verbo base. No hubo plan antes: por eso no usas 'going to', que anuncia una intención previa.",
+            exampleEnglish: "I will answer the phone now.",
+          },
+          {
+            label: "02 · Promesa u oferta",
+            segments: [
+              { label: "PROMESA", token: "I will · we will", tone: "violet" },
+              { label: "COMPROMISO", token: "send it · call you · be there", tone: "emerald" },
+              { label: "SEÑAL", token: "don't worry / I promise", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando prometes algo o te ofreces a ayudar, usas 'will' y el verbo base sin 'to'. La señal es que hablas de un compromiso tuyo frente a otra persona, no de un plan que ya existía.",
+            exampleEnglish: "I will send the file after lunch.",
+          },
+          {
+            label: "03 · Negativo: won't",
+            segments: [
+              { label: "WILL + NOT", token: "won't", tone: "violet" },
+              { label: "VERBO BASE", token: "be late · forget · cancel", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Para negar algo futuro con 'will' usas 'won't', la contracción de 'will not', con el verbo base. No digas 'don't will' ni 'won't to'; el verbo siempre queda limpio.",
+            exampleEnglish: "She won't be late to the meeting.",
+          },
         ],
         commonMistake: {
           wrong: "The phone is ringing. I am going to answer it.",
@@ -119,10 +187,33 @@ export function buildModule2FutureDecisions(
           { label: "ACCIÓN CON -ING", token: "meeting · flying · having lunch", tone: "emerald" },
           { label: "HORA / FECHA FIJA", token: "tomorrow at 3 PM / next Friday", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Cita fija con hora o fecha",
+            segments: [
+              { label: "ACCIÓN AGENDADA", token: "meeting · flying · attending", tone: "violet" },
+              { label: "HORA / FECHA", token: "at 4 PM / next Friday", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la cita ya tiene hora o fecha en el calendario, usas el presente continuo: 'I am meeting... at 4 PM'. La señal es que la hora está fija, por eso no 'will', que sonaría a decisión del momento.",
+            exampleEnglish: "I am seeing the doctor at four.",
+          },
+          {
+            label: "02 · Arreglo ya acordado",
+            segments: [
+              { label: "ACUERDO PREVIO", token: "are meeting · is having lunch", tone: "violet" },
+              { label: "CON QUIÉN / DÓNDE", token: "with the client · in Madrid", tone: "emerald" },
+              { label: "MOMENTO", token: "tomorrow / on Monday", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando dos personas ya acordaron verse, el presente continuo muestra que el arreglo está hecho, no solo deseado. La señal es que hay otra persona involucrada; con 'going to' hablarías solo de tu intención.",
+            exampleEnglish: "We are having lunch with the client.",
+          },
+        ],
         commonMistake: {
-          wrong: "I will meet the doctor tomorrow at 4 PM (suena como que lo decidiste ya).",
+          wrong: "I will meet the doctor tomorrow at four.",
           wrongToken: "will meet",
-          correct: "I am meeting the doctor tomorrow at 4 PM.",
+          correct: "I am meeting the doctor tomorrow at four.",
           correctToken: "am meeting",
           whySpanish: "Para citas agendadas con fecha y hora fija, el presente continuo es la forma más natural.",
         },
@@ -170,8 +261,40 @@ export function buildModule2FutureDecisions(
           { label: "PLAN PREVIO", token: "I am going to study tonight", tone: "emerald" },
           { label: "CITA EN AGENDA", token: "I am seeing the doctor at 4", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Decisión del momento: will",
+            segments: [
+              { label: "SIN PLAN PREVIO", token: "will ('ll)", tone: "violet" },
+              { label: "ACCIÓN", token: "call back · check · help", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Elige 'will' cuando decides al hablar: el teléfono suena, alguien te pide algo y respondes en ese instante. Si ya lo habías pensado antes, esa misma frase pide 'going to'.",
+            exampleEnglish: "I will call you back in a minute.",
+          },
+          {
+            label: "02 · Plan previo: going to",
+            segments: [
+              { label: "TO BE + GOING TO", token: "am · is · are going to", tone: "violet" },
+              { label: "INTENCIÓN PENSADA", token: "move · study · sell", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Elige 'going to' cuando la idea ya estaba en tu cabeza antes de hablar, aunque no haya fecha ni cita. La señal es 'lo pensé'; si además hay hora y otra persona, pasa al presente continuo.",
+            exampleEnglish: "We are going to move the office next year.",
+          },
+          {
+            label: "03 · Cita en agenda: continuo",
+            segments: [
+              { label: "TO BE + -ING", token: "am meeting · is flying", tone: "violet" },
+              { label: "FECHA Y HORA", token: "at ten / tomorrow", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Elige el presente continuo cuando la cita ya está en el calendario con hora, lugar o personas confirmadas. Es el futuro más concreto de los tres: no hay duda ni intención suelta, hay compromiso agendado.",
+            exampleEnglish: "I am meeting Anna at ten tomorrow.",
+          },
+        ],
         commonMistake: {
-          wrong: "I will travel to Madrid next week (cuando ya compraste los boletos).",
+          wrong: "I will travel to Madrid next week.",
           wrongToken: "will travel",
           correct: "I am going to travel to Madrid next week.",
           correctToken: "am going to travel",
@@ -220,6 +343,38 @@ export function buildModule2FutureDecisions(
           { label: "DENTRO DE X TIEMPO", token: "in two days · in five minutes", tone: "violet" },
           { label: "EL PRÓXIMO", token: "next week · next month · next year", tone: "emerald" },
           { label: "MUY PRONTO", token: "soon · later today · tonight", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Plazo con in",
+            segments: [
+              { label: "IN + PERÍODO", token: "in two days · in a week", tone: "violet" },
+              { label: "CUÁNTO FALTA", token: "desde ahora", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Usas 'in' más un período para decir cuánto falta desde hoy: 'in two days' es dentro de dos días. No digas 'inside', que significa adentro de un lugar. Contrasta con 'next', que ubica el día en el calendario.",
+            exampleEnglish: "The report will be ready in three days.",
+          },
+          {
+            label: "02 · Próximo con next",
+            segments: [
+              { label: "NEXT + PERÍODO", token: "next week · next Monday", tone: "emerald" },
+              { label: "SIN ARTÍCULO", token: "nunca 'the next week'", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usas 'next' más el período para ubicar el siguiente del calendario: 'next Friday' es el viernes que viene. Nunca le pongas 'the' delante; 'the next week' cuenta semanas, no nombra la próxima.",
+            exampleEnglish: "We will review the budget next Friday.",
+          },
+          {
+            label: "03 · Pronto: soon, later, tonight",
+            segments: [
+              { label: "SIN FECHA EXACTA", token: "soon · later · tonight", tone: "sky" },
+              { label: "CERCANÍA", token: "esta noche / en un rato", tone: "violet" },
+            ],
+            explanationSpanish:
+              "Cuando no hay fecha exacta, solo cercanía, usas 'soon', 'later' o 'tonight' y van al final de la frase. La señal es que no puedes contar días ni nombrar un día: con 'in' o 'next' sí lo harías.",
+            exampleEnglish: "I will send the details later today.",
+          },
         ],
         commonMistake: {
           wrong: "I see you the next Monday.",

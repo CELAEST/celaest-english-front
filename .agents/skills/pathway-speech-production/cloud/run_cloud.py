@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path.cwd()
 GEN = ROOT / "scripts" / "gen_base.py"
 REF = ROOT / "ref_larga.wav"
+LEVEL = "a1"
 MANIFEST = ROOT / "src/features/pathway/data/a1AudioManifest.json"
 AUDIO = ROOT / "public/audio/pathway/a1"
 OUT = ROOT / "pathway_cloud_out.zip"
@@ -28,6 +29,7 @@ OUT = ROOT / "pathway_cloud_out.zip"
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
     ap.add_argument("--from", dest="from_base", required=True)
     ap.add_argument("--to", dest="to_base", required=True)
     ap.add_argument("--qa-model", default="small", choices=["small", "medium"])
@@ -36,9 +38,13 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
+    level = args.level
     start = int(args.from_base.replace("base_", ""))
     end = int(args.to_base.replace("base_", ""))
-    bases = [f"base_{n:02d}" for n in range(start, end + 1)]
+    prefix = "base" if level == "a1" else f"base_{level}"
+    bases = [f"{prefix}_{n:02d}" for n in range(start, end + 1)]
+    manifest_path = ROOT / f"src/features/pathway/data/{level}AudioManifest.json"
+    audio_root = ROOT / f"public/audio/pathway/{level}"
     print("bundle:", ROOT)
     print("bases:", ", ".join(bases))
     if not GEN.exists():
@@ -54,10 +60,12 @@ def main() -> int:
     failed = []
     for base in bases:
         print(f"\n=== {base} ===", flush=True)
+        profile = ROOT / f"src/features/pathway/speech/profiles/{level}/base_{base[-2:]}.ts"
         cmd = [
-            sys.executable, str(GEN), "--base", base,
+            sys.executable, str(GEN), "--level", level, "--base", base,
+            "--profile", str(profile),
             "--ref", str(REF),
-            "--manifest", str(MANIFEST),
+            "--manifest", str(manifest_path),
             "--qa-model", args.qa_model,
             "--seeds", args.seeds,
         ]
@@ -70,7 +78,7 @@ def main() -> int:
 
     files = []
     for base in bases:
-        folder = AUDIO / base
+        folder = audio_root / base
         if folder.exists():
             files.extend(sorted(folder.glob("*.mp3")))
     report_files = [ROOT / f".pathway_qa_{b}.json" for b in bases if (ROOT / f".pathway_qa_{b}.json").exists()]

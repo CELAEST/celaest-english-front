@@ -1,0 +1,257 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * B2 Base 24 — Verbos de Percepción.
+ *
+ * Dos casos de la misma decisión (la acción completa o en desarrollo):
+ *  1. acción completa → base sin to → "I saw her sign the agreement."
+ *  2. acción en curso → -ing → "We heard the team discussing the plan."
+ *
+ * Trampa = commonMistake del currículo: "I heard him to explain the concept during the seminar." →
+ * "I heard him explain the concept during the seminar."
+ * Objetivo de voz: "I watched the team present their findings to the executive board."
+ */
+export const baseB224SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_b2_24",
+  orderIndex: 23,
+  title: "Verbos de Percepción: I heard him explain vs I heard him explaining",
+  targetSentence: "I watched the team present their findings to the executive board.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de verbos de percepción! Hoy vas a contar lo que viste u oíste y a decidir si el acto fue completo o quedó a mitad de camino. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español decís lo vi firmar o lo vi firmando y el matiz es sutil. En inglés la diferencia es total: sin terminación ves el acto completo, con ing lo ves en pleno desarrollo. Elegir mal cambia lo que presenciaste.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final vas a contar una acción cerrada y otra en curso sin dudar, y lo vas a decir en una frase completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene dos casos y una sola pregunta: la acción terminó delante tuyo o la viste a mitad de camino. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: acción completa. Viste el acto de principio a fin, entonces el verbo va en forma base sin to. Nunca le pongas la preposición delante.",
+      canonical:
+        "Primer caso: acción completa. Viste el acto de principio a fin, entonces el verbo va en forma base sin to. Nunca le pongas la preposición delante.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "I saw her sign the agreement.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo caso: acción en curso. Entraste a mitad del acto y seguía pasando, entonces el verbo lleva ing. No viste el final.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "We heard the team discussing the plan.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error clásico es meter to entre el verbo de percepción y la persona. Escuchá el error.",
+      canonical:
+        "Mirá la alerta roja. El error clásico es meter to entre el verbo de percepción y la persona. Escuchá el error.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "I heard him to explain the concept during the seminar.",
+      subtitle: "I heard him to explain the concept during the seminar.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, la forma base va pegada a la persona, sin la preposición. El verbo de percepción no la acepta.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "I heard him explain the concept during the seminar.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: percepción más persona más verbo limpio. Si aparece la preposición en el medio, la frase está rota.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Te toca a vos. En pantalla hay dos frases y solo una respeta el verbo de percepción.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa frase metió to después de la persona. Con see, hear o watch el verbo va en forma base o en ing. Probá la otra.",
+      canonical:
+        "Esa frase metió to después de la persona. Con see, hear o watch el verbo va en forma base o en ing. Probá la otra.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. El verbo quedó pegado a la persona y el acto se entiende completo. Ahora dos ejemplos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.professor",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "I heard the professor explain the entire theoretical model from start to finish.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en la unión de heard him: la d final se pega a la h y las dos palabras suenan jérdim, sin cortar.",
+      canonical:
+        "Fijate en la unión de heard him: la d final se pega a la h y las dos palabras suenan jérdim, sin cortar.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.artisans",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "We watched the skilled artisans crafting delicate ceramics with patient precision.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá la frase de percepción.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha. La pista es una charla que oíste completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá por el pronombre, seguí con el verbo de percepción y la persona, y cerrá con el verbo base sin la preposición.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. El verbo quedó sin preposición y el acto se entiende completo. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá la frase objetivo:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "I watched the team present their findings to the executive board.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé tu micrófono y repetí la frase completa con calma.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi lo tenés. Escuchá el modelo una vez más y repetilo despacio.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte. Acercate al micrófono y repetí la frase entera.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. El verbo quedó en forma base y el acto completo se entiende. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Revisá el permiso del navegador o continuá en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

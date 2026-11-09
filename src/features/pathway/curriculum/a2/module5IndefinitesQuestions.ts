@@ -17,8 +17,40 @@ export function buildModule5IndefinitesQuestions(
           { label: "OBJETO INDEFINIDO", token: "There is something important", tone: "emerald" },
           { label: "LUGAR INDEFINIDO", token: "It is somewhere in the office", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Persona no identificada",
+            segments: [
+              { label: "PERSONA INDEFINIDA", token: "someone · somebody", tone: "violet" },
+              { label: "CÓMO ACTÚA", token: "is calling · left a message", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Usá 'someone' cuando sabés que existe una persona pero no necesitás nombrarla. Ocupa el lugar del sujeto y lleva verbo en singular, como 'someone is'. En preguntas o en negativo cambia a 'anyone': 'Is anyone there?'.",
+            exampleEnglish: "Someone from support called you earlier.",
+          },
+          {
+            label: "02 · Objeto no específico",
+            segments: [
+              { label: "COSA INDEFINIDA", token: "something", tone: "violet" },
+              { label: "QUÉ HACER CON ELLA", token: "to review · important", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando hablás de una cosa que no querés especificar, usás 'something'. Es singular y nunca lleva artículo: decís 'something important', no 'a something'. La pareja 'anything' aparece en preguntas y en frases negativas.",
+            exampleEnglish: "I have something to tell you.",
+          },
+          {
+            label: "03 · Lugar sin precisar",
+            segments: [
+              { label: "LUGAR INDEFINIDO", token: "somewhere", tone: "violet" },
+              { label: "DÓNDE VA EN LA FRASE", token: "después del verbo · is somewhere", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Para un lugar que no querés precisar, usás 'somewhere': no importa cuál, solo que existe uno. Va detrás del verbo: 'it is somewhere here'. Si das la ubicación exacta, volvés a un lugar concreto como 'the office'.",
+            exampleEnglish: "We need to meet somewhere quiet.",
+          },
+        ],
         commonMistake: {
-          wrong: "Anyone is calling you (en afirmativo).",
+          wrong: "Anyone is calling you.",
           wrongToken: "Anyone",
           correct: "Someone is calling you.",
           correctToken: "Someone",
@@ -66,6 +98,28 @@ export function buildModule5IndefinitesQuestions(
         formulaSegments: [
           { label: "CON VERBO NEGATIVO", token: "I don't know anything / anyone", tone: "violet" },
           { label: "CON VERBO POSITIVO", token: "I know nothing / There is nobody", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Verbo negativo + any",
+            segments: [
+              { label: "VERBO NEGATIVO", token: "don't · didn't · isn't", tone: "violet" },
+              { label: "PRONOMBRE EN POSITIVO", token: "anything · anyone", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si el verbo ya está en negativo con 'don't', 'didn't' o 'isn't', el pronombre va en positivo con 'any': 'I didn't see anyone'. Un solo negativo por frase. Si decís 'I didn't see no one', los dos negativos se anulan y dices lo contrario.",
+            exampleEnglish: "I don't need anything else.",
+          },
+          {
+            label: "02 · Verbo positivo + no",
+            segments: [
+              { label: "VERBO POSITIVO", token: "know · called · is", tone: "violet" },
+              { label: "PRONOMBRE NEGATIVO", token: "nothing · nobody", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si el verbo es positivo, la negación viaja al pronombre con 'no': 'I know nothing', 'Nobody called'. El verbo queda intacto y en singular. Elegís 'nothing' cuando el negativo está solo en el pronombre, nunca en los dos lados.",
+            exampleEnglish: "Nobody told me about the change.",
+          },
         ],
         commonMistake: {
           wrong: "I don't know nothing.",
@@ -116,6 +170,28 @@ export function buildModule5IndefinitesQuestions(
         formulaSegments: [
           { label: "SUJETO SINGULAR", token: "Everyone / Everybody / Everything", tone: "violet" },
           { label: "VERBO EN SINGULAR", token: "is ready · has time · works well", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Everyone con verbo singular",
+            segments: [
+              { label: "SUJETO COLECTIVO", token: "everyone · everybody", tone: "violet" },
+              { label: "VERBO EN SINGULAR", token: "is · has · works", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando 'everyone' es el sujeto, el verbo va en singular, igual que con 'he': 'Everyone is', 'Everyone has', 'Everyone works'. Aunque en español pensemos en 'todos' y en plural, en inglés nunca va 'are' ni 'have' detrás de 'everyone'.",
+            exampleEnglish: "Everyone has a copy of the file.",
+          },
+          {
+            label: "02 · Everything con verbo singular",
+            segments: [
+              { label: "SUJETO COLECTIVO", token: "everything", tone: "violet" },
+              { label: "VERBO EN SINGULAR", token: "is · looks · has", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'Everything' también es singular: junta todas las cosas en un solo bloque, por eso pide 'is', 'has' o un verbo con -s. Contrasta con 'all the things', que sí es plural y pide 'are'. La señal es la terminación '-thing': siempre singular.",
+            exampleEnglish: "Everything looks fine on the report.",
+          },
         ],
         commonMistake: {
           wrong: "Everyone are here today.",
@@ -168,8 +244,32 @@ export function buildModule5IndefinitesQuestions(
           { label: "PREGUNTA", token: "are you talking / does it come", tone: "emerald" },
           { label: "PREPOSICIÓN FINAL", token: "to? / for? / from?", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Preguntar con quién (who ... to)",
+            segments: [
+              { label: "WH- DE PERSONA", token: "who", tone: "violet" },
+              { label: "PREGUNTA", token: "are you talking · did you speak", tone: "emerald" },
+              { label: "PREPOSICIÓN FINAL", token: "to?", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Preguntás por una persona y dejás la preposición al final: 'Who did you talk to?'. Si la movés al inicio ('To whom did you talk?'), suena muy formal y poco natural en conversación. La señal es que la preposición cierra la pregunta.",
+            exampleEnglish: "Who did you speak to yesterday?",
+          },
+          {
+            label: "02 · Preguntar para qué (what ... for)",
+            segments: [
+              { label: "WH- DE COSA", token: "what", tone: "violet" },
+              { label: "PREGUNTA", token: "is this · is it", tone: "emerald" },
+              { label: "PREPOSICIÓN FINAL", token: "for?", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando preguntás el propósito de una cosa, usás 'what' y mandás 'for' al final: 'What is this button for?'. El 'for' no se puede omitir: sin él la pregunta queda incompleta. Con 'who' la preposición típica es 'to'; con 'what', 'for'.",
+            exampleEnglish: "What is this cable for?",
+          },
+        ],
         commonMistake: {
-          wrong: "With who are you talking? (muy arcaico).",
+          wrong: "With who are you talking?.",
           wrongToken: "With who",
           correct: "Who are you talking to?",
           correctToken: "Who... to?",
@@ -218,6 +318,30 @@ export function buildModule5IndefinitesQuestions(
           { label: "APERTURA AMABLE", token: "Could you tell me / Do you know", tone: "violet" },
           { label: "CONECTOR", token: "where / what time / if", tone: "emerald" },
           { label: "ORDEN SUJETO + VERBO", token: "the office is? / the meeting starts?", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Sí/no con if",
+            segments: [
+              { label: "APERTURA AMABLE", token: "Could you tell me · Do you know", tone: "violet" },
+              { label: "CONECTOR IF", token: "if", tone: "emerald" },
+              { label: "ORDEN SUJETO + VERBO", token: "the office is open?", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la respuesta que esperás es sí o no, la pregunta indirecta lleva 'if' en el centro: 'Do you know if the office is open?'. No usás 'if' con preguntas wh-. Después de 'if' el orden vuelve a sujeto + verbo, sin auxiliar.",
+            exampleEnglish: "Could you tell me if the shop opens today?",
+          },
+          {
+            label: "02 · Wh- indirecta",
+            segments: [
+              { label: "APERTURA AMABLE", token: "Could you tell me · Can you tell me", tone: "violet" },
+              { label: "CONECTOR WH-", token: "where · when · what time", tone: "emerald" },
+              { label: "ORDEN SUJETO + VERBO", token: "the lift is?", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Si la pregunta original empieza con 'where', 'when' o 'what time', esa palabra pasa al centro y el resto toma orden de oración: 'Can you tell me where the lift is?'. No hay segunda inversión: nunca 'where is the lift?'.",
+            exampleEnglish: "Do you know where the invoices are?",
+          },
         ],
         commonMistake: {
           wrong: "Could you tell me where is the station?",

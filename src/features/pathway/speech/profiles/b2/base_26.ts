@@ -1,0 +1,280 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * B2 Base 26 — Reporting Verbs de Precisión.
+ *
+ * Tres casos de la misma familia (qué patrón pide cada verbo de reporte):
+ *  1. disculpa formal → apologize for + gerundio → "She apologized for missing the review."
+ *  2. instar a actuar → urge + objeto + to → "He urged the board to act quickly."
+ *  3. negar un hecho previo → deny + having + participio → "They denied having received the payment."
+ *
+ * Trampa = commonMistake del currículo: "She said sorry that she arrived late." →
+ * "She apologized for arriving late."
+ * Objetivo de voz: "He congratulated the entire committee on reaching a milestone."
+ */
+export const baseB226SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_b2_26",
+  orderIndex: 25,
+  title: "Reporting Verbs de Precisión: Urge, apologize for, deny having done",
+  targetSentence: "He congratulated the entire committee on reaching a milestone.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de verbos de reporte! Hoy dejás de repetir dijo que y elegís el verbo que muestra la intención exacta. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español contás lo que otro dijo con dijo que y un verbo. En inglés avanzado cada verbo de reporte trae su propio patrón: preposición con gerundio, objeto con infinitivo, o having con participio. El patrón no es libre.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final vas a disculpar, instar y negar con el verbo correcto, y lo vas a decir en una frase completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene tres casos y cada verbo manda: el patrón cambia según lo que reportás. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: una disculpa por un hecho pasado. El verbo apologize pide la preposición for y un gerundio. Después de for nunca va infinitivo.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      canonical:
+        "Primer caso: una disculpa por un hecho pasado. El verbo apologize pide la preposición for y un gerundio. Después de for nunca va infinitivo.",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "She apologized for missing the review.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo caso: instar a alguien a actuar. El verbo urge pide la persona y luego el infinitivo con to. Hay alguien que debe moverse.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      canonical:
+        "Segundo caso: instar a alguien a actuar. El verbo urge pide la persona y luego el infinitivo con to. Hay alguien que debe moverse.",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "He urged the board to act quickly.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case3.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Tercer caso: negar un hecho anterior. El verbo deny se cierra con having más participio. El hecho ocurrió antes del reporte.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case3.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "They denied having received the payment.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error típico es traducir la disculpa palabra por palabra. Escuchá el error.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "She said sorry that she arrived late.",
+      subtitle: "She said sorry that she arrived late.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el verbo apologize más la preposición for más gerundio reporta la disculpa con precisión.",
+      canonical:
+        "En su lugar, el verbo apologize más la preposición for más gerundio reporta la disculpa con precisión.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "She apologized for arriving late.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: cada verbo de reporte tiene su patrón. Si copias el español, el patrón se rompe.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. En pantalla hay dos frases y solo una usa el patrón correcto.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa frase armó la disculpa con said sorry. El verbo apologize pide for y gerundio. Probá la otra opción.",
+      canonical:
+        "Esa frase armó la disculpa con said sorry. El verbo apologize pide for y gerundio. Probá la otra opción.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. La disculpa quedó con for y gerundio, como en un informe real. Ahora dos ejemplos.",
+      canonical:
+        "Exacto. La disculpa quedó con for y gerundio, como en un informe real. Ahora dos ejemplos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.disclosed",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "She firmly denied having disclosed any proprietary details to third parties.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en la unión de denied having: la d final se pega a la h y las dos palabras suenan dináid jáving, sin cortar.",
+      canonical:
+        "Fijate en la unión de denied having: la d final se pega a la h y las dos palabras suenan dináid jáving, sin cortar.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.explore",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "The senior advisor urged the committee to explore alternative funding sources.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá el reporte con las fichas.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha. La pista es una negación sobre unos detalles.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá por la persona, seguí con el verbo deny y having. Cerrá con los detalles confidenciales, sin la preposición de infinitivo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. El verbo quedó con su patrón y la negación suena precisa. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá la frase meta en mi voz:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "He congratulated the entire committee on reaching a milestone.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé tu micrófono y repetí la frase completa sin apuro.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi lo tenés. Escuchá otra vez el modelo y repetilo tranquilo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte. Acercate un poco más y repetí la frase entera.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. Elegiste el verbo de reporte y su patrón exacto. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Dale permiso al navegador o continuá en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

@@ -1,0 +1,277 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C1 Base 22 — Metáforas Conceptuales Cultas.
+ *
+ * Tres casos de la misma decisión (qué metáfora fija elige el hablante culto):
+ *  1. advertir un costo oculto  -> a double-edged sword
+ *  2. conectar con la audiencia -> struck a chord
+ *  3. exigir reglas iguales     -> a level playing field
+ *
+ * Trampa = commonMistake del currículo: "It is an arm of double edge." ->
+ * "It is a double-edged sword."
+ * Objetivo de voz: "We must bear in mind that every structural decision carries
+ * long-term consequences."
+ */
+export const baseC122SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c1_22",
+  orderIndex: 21,
+  title: "Metáforas Conceptuales Cultas: Double-edged sword / Strike a chord",
+  targetSentence: "We must bear in mind that every structural decision carries long-term consequences.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de metáforas de pensamiento! Hoy elegís la imagen exacta para advertir un costo, conectar con el público o pedir reglas parejas. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español decís arma de doble filo y se entiende. En inglés culto la idea no se traduce: se reemplaza por una imagen fija que el lector reconoce.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final advertís un costo escondido, describís una resonancia emocional y pedís condiciones parejas, siempre dentro de una frase completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene tres casos y las metáforas no son intercambiables: cada una responde a una situación distinta. Las vemos una por una.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: advertir un costo oculto. Si hay beneficio real y costo serio, usás a dábl édzhd sord. La señal es el pero; una queja sola no alcanza.",
+      canonical:
+        "Primer caso: advertir un costo oculto. Si hay beneficio real y costo serio, usás a dábl édzhd sord. La señal es el pero; una queja sola no alcanza.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Automation is a double-edged sword for small teams.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo caso: conectar con la audiencia. Si tu mensaje provoca una reacción emocional, decís que strak a kord. La señal es la reacción, no el contenido.",
+      canonical:
+        "Segundo caso: conectar con la audiencia. Si tu mensaje provoca una reacción emocional, decís que strak a kord. La señal es la reacción, no el contenido.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Her speech on fairness struck a chord with voters.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case3.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Tercer caso: exigir reglas iguales. Si alguien arranca en desventaja, pedís condiciones parejas con lével pléing fild. La señal es la desventaja; justo a secas es vago.",
+      canonical:
+        "Tercer caso: exigir reglas iguales. Si alguien arranca en desventaja, pedís condiciones parejas con lével pléing fild. La señal es la desventaja; justo a secas es vago.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case3.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Small suppliers need a level playing field to compete.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error clásico es traducir la imagen del español palabra por palabra y armar algo que en inglés no existe. Escuchá cómo suena.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "It is an arm of double edge.",
+      subtitle: "It is an arm of double edge.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, la imagen viaja completa y en una sola pieza: el adjetivo compuesto va antes del sustantivo y no se traduce.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "Our strategy is a double-edged sword.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: la metáfora es un bloque único. Si tuviste que traducir tres palabras para armarla, ya no es inglés.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. En pantalla hay dos frases: tocá la que un ensayista publicaría tal cual.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa frase traduce la imagen palabra por palabra. La forma fija es una sola pieza y el adjetivo compuesto se escribe con guion.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Una sola imagen y cero calcos del español. Ahora escuchá dos ejemplos de nivel avanzado.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.metaphor",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "That particular strategy represents a double-edged sword for our reputation.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en double-edged: las dos partes se unen en un solo bloque y suenan dábl édzhd, con la de final pegada a sword.",
+      canonical:
+        "Fijate en double-edged: las dos partes se unen en un solo bloque y suenan dábl édzhd, con la de final pegada a sword.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.resonance",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "His insightful reflections struck a responsive chord with the entire audience.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá la frase vos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta formar la oración completa, arrancando por la estrategia evaluada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá por la estrategia evaluada, seguí con el verbo y después la metáfora de doble filo. Cierra con la reputación.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. La metáfora entró como una pieza y la frase se sostiene sola. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá cómo lo digo yo:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "We must bear in mind that every structural decision carries long-term consequences.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Bien, encendé el micrófono y decí la frase completa sin leer.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi. Escuchá otra vez y repetí sin apuro, marcando cada palabra.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No logré escucharte con claridad. Acercate al micrófono y repetí la frase junto conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. La metáfora sonó como una pieza única y la frase fluyó entera. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Tu micrófono no arrancó. Autorizá el permiso del navegador o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

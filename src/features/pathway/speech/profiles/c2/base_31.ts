@@ -1,0 +1,253 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C2 Base 31 — El Bridge and Pivot Dialéctico.
+ *
+ * Dos casos de la misma decisión (de dónde viene el ataque y hacia dónde se gira):
+ *  1. pregunta hostil               -> validación + giro al eje propio
+ *  2. ataque personal               -> se nombra el blanco real (la política)
+ *
+ * Trampa = commonMistake del currículo: confrontar y acusar a la pregunta de tendenciosa
+ * ("I will not answer that because your question is biased").
+ * Objetivo de voz: "While that perspective is well-taken, the paramount challenge before us
+ * is preserving public trust."
+ */
+export const baseC231SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c2_31",
+  orderIndex: 30,
+  title: "El Bridge and Pivot Dialéctico: Reorientar Debates Hostiles con Distinción",
+  targetSentence:
+    "While that perspective is well-taken, the paramount challenge before us is preserving public trust.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "Bienvenido a la clase de puente y pivote. Hoy respondés preguntas hostiles sin defenderte y sin perder el escenario. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español, cuando la pregunta es capciosa, el instinto es aclarar o negarse. En el inglés público la salida elegante valida la pregunta en tres palabras y traslada el foco.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al terminar, validás una pregunta hostil y la reconducís a tu eje, y respondés un ataque personal mirando la política y no a tu persona.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene dos casos y la estructura es la misma: validación corta, conector de giro y tu eje. Lo que cambia es de dónde viene el ataque. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer uso: validar una pregunta hostil y reconducir. Concedés legitimidad en pocas palabras y el conector mueve el foco a tu terreno. Negarte te deja a la defensiva.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "That is a fair concern; however, affordability decides this vote.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo uso: responder un ataque personal. Nombrás el blanco real sin contestar la insinuación y devolvés la mirada al asunto. Contradecir el ataque te hunde en su terreno.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "My record is public; the bill itself deserves scrutiny.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error es la confrontación: negarse a responder y acusar a la pregunta de tendenciosa. Escuchá cómo suena.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "I will not answer that because your question is biased.",
+      subtitle: "I won't answer that because your question is biased.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, la validación cortés desactiva la trampa y el giro te devuelve el escenario. No hay hostilidad: hay manejo del turno.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "That is an intriguing question; however, the core issue is cost.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: validá, girá y volvé a tu eje. Recordá ese orden y no dudes.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. Tocá la respuesta que desactiva la trampa sin pelear.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa respuesta pelea y te pone en el centro del ataque. Validá la pregunta y girá hacia tu eje.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Validaste sin ceder y el foco volvió a tu terreno. Ahora escuchá dos ejemplos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.one",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "That is a legitimate inquiry; however, the foundational dilemma we must confront is ethical viability.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en el conector: las dos mitades se unen con una pausa corta y el giro se oye entero. El conector suena jáuever y la última sílaba baja, sin subida.",
+      canonical:
+        "Fijate en el conector: las dos mitades se unen con una pausa corta y el giro se oye entero. El conector suena jáuever y la última sílaba baja, sin subida.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.two",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "I understand that concern; nevertheless, the overarching imperative remains systemic resilience.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá la respuesta pública.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta reconstruir la respuesta completa.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá con el demostrativo y la validación. Seguí con el conector de giro. Cerrás con el dilema fundamental y la viabilidad ética.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. Validaste, giraste y el eje quedó en tu terreno. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá la respuesta completa:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "While that perspective is well-taken, the paramount challenge before us is preserving public trust.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé el micrófono y repetí la respuesta con el giro bien marcado.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi. Escuchá otra vez y repetí el giro sin acelerar.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No te escuché. Acercate al micrófono y repetí la validación conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. Validaste y giraste sin pelear. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Sin acceso al micrófono. Habilitá el permiso o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

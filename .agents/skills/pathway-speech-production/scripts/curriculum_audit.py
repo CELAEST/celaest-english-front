@@ -25,15 +25,32 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-MODULES = [
-    "module1Identity.ts",
-    "module2Routines.ts",
-    "module3ObjectsPossession.ts",
-    "module4SpaceTimeQuantity.ts",
-    "module5Communication.ts",
-    "module6FluencyAndBridge.ts",
-]
-CURRICULUM = Path("src/features/pathway/curriculum/a1")
+MODULES = {
+    "a1": [
+        "module1Identity.ts", "module2Routines.ts", "module3ObjectsPossession.ts",
+        "module4SpaceTimeQuantity.ts", "module5Communication.ts", "module6FluencyAndBridge.ts",
+    ],
+    "a2": [
+        "module1PastNarrative.ts", "module2FutureDecisions.ts", "module3Comparatives.ts",
+        "module4ModalsPurpose.ts", "module5IndefinitesQuestions.ts", "module6PresentPerfectBridge.ts",
+    ],
+    "b1": [
+        "module1Conditionals.ts", "module2TemporalDepth.ts", "module3PassiveVoice.ts",
+        "module4ModalsPatterns.ts", "module5ReportedRelative.ts", "module6AdvancedBridge.ts",
+    ],
+    "b2": [
+        "module1InversionEmphasis.ts", "module2MixedConditionals.ts", "module3PastDeduction.ts",
+        "module4ParticipleClauses.ts", "module5SubjunctivePassive.ts", "module6DiscourseHedging.ts",
+    ],
+    "c1": [
+        "module1FrontingInversion.ts", "module2FormulaicSubjunctive.ts", "module3NominalizationEllipsis.ts",
+        "module4EpistemicStance.ts", "module5PragmaticIdioms.ts", "module6PhilosophicalSynthesis.ts",
+    ],
+    "c2": [
+        "module1BaroqueSyntax.ts", "module2DiplomaticIrony.ts", "module3CommonLawCollocations.ts",
+        "module4ImplicitCohesion.ts", "module5SemanticTriads.ts", "module6PresidentialRhetoric.ts",
+    ],
+}
 PROFILES = Path("src/features/pathway/speech/profiles")
 
 
@@ -50,10 +67,11 @@ def json_string(raw: str) -> str:
     return json.loads('"' + raw + '"')
 
 
-def curriculum_blocks() -> list[dict]:
+def curriculum_blocks(level: str = "a1") -> list[dict]:
     blocks: list[dict] = []
-    for module in MODULES:
-        path = CURRICULUM / module
+    root = Path(f"src/features/pathway/curriculum/{level}")
+    for module in MODULES.get(level, []):
+        path = root / module
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8-sig")
@@ -81,9 +99,13 @@ def curriculum_blocks() -> list[dict]:
     return blocks
 
 
-def audit(base: str, block: dict) -> list[str]:
+def audit(base: str, block: dict, level: str = "a1") -> list[str]:
     errors: list[str] = []
-    path = PROFILES / f"{base}.ts"
+    if level != "a1":
+        name = base.replace(f"base_{level}_", "base_")
+        path = PROFILES / level / f"{name}.ts"
+    else:
+        path = PROFILES / f"{base}.ts"
     if not path.exists():
         return [f"falta el perfil {path}"]
     profile = parse_profile(path)
@@ -145,23 +167,32 @@ def audit(base: str, block: dict) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
     ap.add_argument("--base")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--existing", action="store_true", help="solo perfiles que ya existen")
     args = ap.parse_args()
-    blocks = curriculum_blocks()
+    blocks = curriculum_blocks(args.level)
+    prefix = "base" if args.level == "a1" else f"base_{args.level}"
+    def profile_path(i: int) -> Path:
+        name = f"base_{i:02d}.ts" if args.level == "a1" else f"base_{i:02d}.ts"
+        return (PROFILES / args.level / name) if args.level != "a1" else (PROFILES / name)
     if args.base:
-        n = int(args.base.replace("base_", ""))
+        n = int(re.search(r"(\d+)$", args.base).group(1))
         targets = [(args.base, blocks[n - 1])]
     elif args.all:
-        targets = [(f"base_{i:02d}", b) for i, b in enumerate(blocks, 1)
-                   if not args.existing or (PROFILES / f"base_{i:02d}.ts").exists()]
+        targets = []
+        for i, b in enumerate(blocks, 1):
+            base = f"base_{i:02d}" if args.level == "a1" else f"base_{args.level}_{i:02d}"
+            if args.existing and not profile_path(i).exists():
+                continue
+            targets.append((base, b))
     else:
         ap.error("pasá --base base_0N o --all")
 
     failed = 0
     for base, block in targets:
-        errors = audit(base, block)
+        errors = audit(base, block, args.level)
         if errors:
             failed += 1
             print(f"FAIL {base} ({block['module']})")

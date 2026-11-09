@@ -17,8 +17,30 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "TESIS TRASCENDENTAL", token: "authenticity and intellectual rigor", tone: "emerald" },
           { label: "CONCLUSIÓN INVARIABLE", token: "remain our most enduring assets.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Cierre de disertación",
+            segments: [
+              { label: "APERTURA DE SÍNTESIS", token: "In the final analysis,", tone: "violet" },
+              { label: "JUICIO PANORÁMICO", token: "every costly decision proved justified.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cierra cuando ya pesaste todas las aristas y necesitás una visión de conjunto. 'Finally' solo ordena el discurso; 'In the final analysis' anuncia un juicio que resume el debate entero y da autoridad al cierre.",
+            exampleEnglish: "In the final analysis, patience outlasted every clever strategy.",
+          },
+          {
+            label: "02 · Obstáculo ya superado",
+            segments: [
+              { label: "CONCESIÓN PREVIA", token: "Notwithstanding the early delays,", tone: "emerald" },
+              { label: "LOGRO INTACTO", token: "the outcome remained exemplary.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo para reconocer un obstáculo superado sin restarle mérito al logro: entra delante de una frase nominal. Con 'although' necesitarías sujeto y verbo; 'notwithstanding' se engancha directo al sustantivo.",
+            exampleEnglish: "Notwithstanding the early setbacks, the expedition reached its summit.",
+          },
+        ],
         commonMistake: {
-          wrong: "At the end of all, the thing is... (coloquial y calco directo).",
+          wrong: "At the end of all, authenticity remains paramount.",
           wrongToken: "At the end of all",
           correct: "In the final analysis, authenticity remains paramount.",
           correctToken: "In the final analysis",
@@ -68,8 +90,32 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "GIRO REFLEXIVO", token: "having said that,", tone: "emerald" },
           { label: "MATIZ PRUDENTE", token: "we must not underestimate implementation hurdles.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Matizar tu propia tesis",
+            segments: [
+              { label: "POSTURA PREVIA", token: "The strategy is bold;", tone: "violet" },
+              { label: "GIRO QUE RECONOCE", token: "having said that,", tone: "emerald" },
+              { label: "MATIZ PRUDENTE", token: "the risks deserve a hearing.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Gira después de una afirmación fuerte que no querés abandonar. 'But' suena a refutación; 'having said that' conserva lo dicho y añade la objeción, y por eso es el giro del líder reflexivo.",
+            exampleEnglish: "Having said that, we still lack a realistic timetable.",
+          },
+          {
+            label: "02 · Extender la misma razón",
+            segments: [
+              { label: "RAZÓN YA ACEPTADA", token: "Autonomy raises commitment;", tone: "violet" },
+              { label: "EXTENSIÓN DEL ARGUMENTO", token: "by the same token,", tone: "emerald" },
+              { label: "SEGUNDO CASO", token: "clear goals raise focus.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Úsalo cuando la misma razón que justifica lo anterior justifica lo siguiente: extiende el argumento, no lo contradice. Si querés conceder algo en contra, la opción es 'having said that'.",
+            exampleEnglish: "By the same token, remote teams need written norms.",
+          },
+        ],
         commonMistake: {
-          wrong: "Having said this, we need care (uso de 'this' en lugar de 'that').",
+          wrong: "Having said this, we must proceed with caution.",
           wrongToken: "Having said this",
           correct: "Having said that, we must proceed with caution.",
           correctToken: "Having said that",
@@ -119,10 +165,34 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "PAUSA SILENCIOSA (1 SEG)", token: "[deliberate strategic pause]", tone: "emerald" },
           { label: "RESOLUCIÓN SOLEMNE", token: "but unwavering clarity of purpose.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Pausa antes del término clave",
+            segments: [
+              { label: "NEGACIÓN SIN CULMINAR", token: "What we need is not speed,", tone: "violet" },
+              { label: "PAUSA DE UN SEGUNDO", token: "[silencio deliberado]", tone: "emerald" },
+              { label: "TÉRMINO QUE CAE", token: "but judgment.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Haz el silencio justo antes del término que quieres que quede sonando. Si aceleras y lo dices todo seguido, el oyente no distingue lo importante; la pausa le da un lugar exacto donde poner la atención.",
+            exampleEnglish: "We asked not for applause, but for honest scrutiny.",
+          },
+          {
+            label: "02 · Enumeración con remate",
+            segments: [
+              { label: "ANUNCIO DE LA LISTA", token: "Three things matter here:", tone: "violet" },
+              { label: "MICRO-PAUSA ENTRE ÍTEMS", token: "resolve · restraint ·", tone: "emerald" },
+              { label: "REMATEN CON PESO", token: "and quiet courage.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "En una enumeración, marca cada ítem con una micro-pausa y baja el tono en el último: así el cierre se oye como conclusión. Leer la lista de corrido la convierte en un dato más y pierde el peso oratorio.",
+            exampleEnglish: "Three things matter here: resolve, restraint, and quiet courage.",
+          },
+        ],
         commonMistake: {
-          wrong: "Hablar rápido sin pausas para intentar demostrar fluidez (genera ansiedad en el oyente).",
+          wrong: "What we require today is not haste but clarity.",
           wrongToken: "rapidez atropellada",
-          correct: "Ralentizar en los puntos clave e insertar pausas deliberadas de silencio.",
+          correct: "What we require today is not haste, but clarity.",
           correctToken: "pacing ejecutivo",
           whySpanish: "Los grandes oradores anglosajones dominan el silencio como un instrumento musical de persuasión.",
         },
@@ -170,8 +240,42 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "CONTENIDO INFERIDO", token: "are fundamentally incomplete,", tone: "emerald" },
           { label: "ACCIÓN DEL RECEPTOR", token: "or should I infer a different concern?", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Emisor que insinúa",
+            segments: [
+              { label: "RECEPTOR INTERPELA", token: "Are you implying that", tone: "violet" },
+              { label: "CONTENIDO NO DICHO", token: "the review was rushed?", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'imply' cuando hablas del que emite: dice algo sin decirlo del todo. Si preguntas por lo que tú deduces del otro, el verbo cambia a 'infer'; ese cruce es el error que delata al que no domina el par.",
+            exampleEnglish: "I was not implying that your report was careless.",
+          },
+          {
+            label: "02 · Receptor que deduce",
+            segments: [
+              { label: "EVIDENCIA DISPONIBLE", token: "From the survey data,", tone: "violet" },
+              { label: "DEDUCCIÓN DEL OYENTE", token: "we may infer", tone: "emerald" },
+              { label: "CONCLUSIÓN PROVISIONAL", token: "a widening skills gap.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'infer' cuando tú, como lector u oyente, sacas una conclusión a partir de evidencia. Va con 'from' más la fuente de la que deduces; 'imply' no lleva esa fuente porque no deduce: emite la señal.",
+            exampleEnglish: "From these figures we infer a steady decline.",
+          },
+          {
+            label: "03 · Todo que comprende sus partes",
+            segments: [
+              { label: "CONJUNTO", token: "The panel", tone: "violet" },
+              { label: "VERBO DEL TODO", token: "comprises", tone: "emerald" },
+              { label: "PARTES SIN 'OF'", token: "five independent reviewers.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'comprise' cuando el conjunto va primero y las partes después, sin 'of'. El giro inverso cambia de verbo: 'is composed of'. Decir 'is comprised of' es el error más perseguido en los exámenes C1.",
+            exampleEnglish: "The panel comprises five independent reviewers.",
+          },
+        ],
         commonMistake: {
-          wrong: "What are you inferring? (cuando quieres decir '¿qué estás insinuando?').",
+          wrong: "What are you inferring?",
           wrongToken: "inferring",
           correct: "What are you implying?",
           correctToken: "implying",
@@ -221,10 +325,34 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "CONEXIÓN DE ANTÍTESIS", token: "but because it was", tone: "emerald" },
           { label: "CLÁUSULA PARALELA B", token: "fundamentally and morally right.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · El motivo verdadero",
+            segments: [
+              { label: "ACCIÓN ELEGIDA", token: "We stayed", tone: "violet" },
+              { label: "MOTIVO DESCARTADO", token: "not because it was safe,", tone: "emerald" },
+              { label: "MOTIVO REAL EN PARALELO", token: "but because it mattered.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Descarta un motivo falso y declara el verdadero con dos cláusulas idénticas: sujeto y verbo en ambas. Si dices 'not because safe', rompes la simetría y el oyente pierde el paralelo que hace memorable la frase.",
+            exampleEnglish: "We stayed not because it was safe, but because it mattered.",
+          },
+          {
+            label: "02 · Dónde reside el valor",
+            segments: [
+              { label: "MEDIDA NEGADA", token: "Strength lies not in loud promises,", tone: "violet" },
+              { label: "BISAGRA PARALELA", token: "but in", tone: "emerald" },
+              { label: "MEDIDA AFIRMADA", token: "steady daily practice.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando defines un valor, niega primero el criterio equivocado y afirma el tuyo con la misma preposición. Repetir 'in' en las dos mitades es lo que sostiene el paralelismo; cambiar de preposición lo desarma.",
+            exampleEnglish: "Strength lies not in loud promises, but in steady practice.",
+          },
+        ],
         commonMistake: {
-          wrong: "We chose it not because easy, but it was right (romper la simetría sintáctica).",
+          wrong: "We chose it not because easy, but it was right.",
           wrongToken: "not because easy, but it was right",
-          correct: "not because it was easy, but because it was right.",
+          correct: "We chose it not because it was easy, but because it was right.",
           correctToken: "not because it was easy, but because it was right",
           whySpanish: "El paralelismo retórico exige que ambas cláusulas compartan la misma estructura gramatical exacta.",
         },
@@ -272,10 +400,42 @@ export function buildModule6PhilosophicalSynthesis(
           { label: "SÍNTESIS SUBJUNTIVA", token: "suffice it to say that our collective resolve persisted.", tone: "emerald" },
           { label: "CONTRAFÁCTICO SUPREMO", token: "Had it not been for our unwavering purpose,", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Apertura concesiva invertida",
+            segments: [
+              { label: "ADJETIVO AL FRENTE", token: "Demanding though the work was,", tone: "violet" },
+              { label: "RESULTADO SOSTENIDO", token: "the team endured.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Abre con el adjetivo para poner el peso en la dificultad antes que en el sujeto. Con 'although' el orden normal aplana el énfasis; el fronting con 'though' lo eleva y suena a disertación.",
+            exampleEnglish: "Demanding though the work was, the team endured.",
+          },
+          {
+            label: "02 · Síntesis sin detallar",
+            segments: [
+              { label: "SÍNTESIS SUBJUNTIVA", token: "Suffice it to say", tone: "violet" },
+              { label: "CONTENIDO RESUMIDO", token: "that the debate changed us.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa la fórmula cuando resumís sin entrar en detalles y das por sobreentendido el resto. 'It is enough to say' se entiende, pero no es la fórmula fija del registro culto; esta invierte el orden y lleva 'it' fijo.",
+            exampleEnglish: "Suffice it to say that the debate changed us.",
+          },
+          {
+            label: "03 · Contrafáctico sin 'if'",
+            segments: [
+              { label: "APERTURA SIN 'IF'", token: "Had it not been for our purpose,", tone: "violet" },
+              { label: "RESULTADO EVITADO", token: "we would have faltered.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Presenta un apoyo decisivo como causa de que el resultado no fuera peor: sin él, todo habría cambiado. La apertura con 'Had' sustituye a 'if' e invierte el orden; con 'if' la frase pierde solemnidad.",
+            exampleEnglish: "Had it not been for her counsel, we would have failed.",
+          },
+        ],
         commonMistake: {
-          wrong: "Vacilar o traducir mentalmente antes de emitir un juicio complejo.",
+          wrong: "Well, demanding though the journey was, you know, the team endured.",
           wrongToken: "vacilación o muletillas",
-          correct: "Modular la voz con cadencia, pausas deliberadas y recursos sintácticos variados.",
+          correct: "Demanding though the journey was, the team endured.",
           correctToken: "maestría C2",
           whySpanish: "El hablante C2 domina el idioma como un instrumento de pensamiento abstracto y belleza estética.",
         },

@@ -17,6 +17,39 @@ export function buildModule6PresentPerfectBridge(
           { label: "PARTICIPIO", token: "worked · visited · seen · completed", tone: "emerald" },
           { label: "EXPERIENCIA", token: "many projects / that movie", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Contar lo que sí has hecho",
+            segments: [
+              { label: "AUXILIAR", token: "I have · She has · We have", tone: "violet" },
+              { label: "PARTICIPIO", token: "worked · visited · managed", tone: "emerald" },
+              { label: "SIN FECHA", token: "in my life / so far", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando cuentas algo hecho en algún momento de tu vida y la fecha no importa, usas 'have/has + participio'. La señal es que no hay hora cerrada; en cambio, con 'yesterday' o 'in 2023' iría pasado simple.",
+            exampleEnglish: "We have managed three global projects.",
+          },
+          {
+            label: "02 · Decir lo que no ha pasado",
+            segments: [
+              { label: "AUXILIAR NEGADO", token: "haven't · hasn't", tone: "violet" },
+              { label: "PARTICIPIO", token: "called · finished · answered", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Para decir que algo no ha ocurrido todavía, niegas solo el auxiliar: 'haven't' o 'hasn't' más el participio. El verbo no cambia; el error típico es negar el verbo y decir 'I have not went'.",
+            exampleEnglish: "She has not called the client back.",
+          },
+          {
+            label: "03 · Preguntar por la experiencia",
+            segments: [
+              { label: "AUXILIAR INVERTIDO", token: "Have you · Has she", tone: "violet" },
+              { label: "PARTICIPIO", token: "finished · seen · tried", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Para preguntar si alguien ha tenido esa experiencia, el auxiliar pasa delante del sujeto: 'Have you + participio?'. No abras con 'Did': 'Did you finished it?' mezcla dos tiempos y suena mal.",
+            exampleEnglish: "Have you finished the monthly report?",
+          },
+        ],
         commonMistake: {
           wrong: "I have visit that city before.",
           wrongToken: "have visit",
@@ -66,6 +99,28 @@ export function buildModule6PresentPerfectBridge(
         formulaSegments: [
           { label: "¿ALGUNA VEZ HAS...?", token: "Have you ever + participio?", tone: "violet" },
           { label: "NUNCA HE...", token: "I have never + participio", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Preguntar 'Have you ever...?'",
+            segments: [
+              { label: "AUXILIAR INVERTIDO", token: "Have you ever", tone: "violet" },
+              { label: "PARTICIPIO", token: "led · been · tried", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Para preguntar por cualquier experiencia de vida, la fórmula es fija: 'Have you ever + participio?'. 'ever' va entre el sujeto y el verbo; si preguntas con 'Did', ya estás hablando de una fecha concreta, no de la vida entera.",
+            exampleEnglish: "Have you ever led a team abroad?",
+          },
+          {
+            label: "02 · Responder 'I have never...'",
+            segments: [
+              { label: "AUXILIAR + NEVER", token: "I have never · She has never", tone: "violet" },
+              { label: "PARTICIPIO", token: "negotiated · worked · travelled", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'never' se coloca entre el auxiliar y el participio y significa que la experiencia es cero hasta hoy. No va al inicio ni después del verbo: 'I have never negotiated' sí, 'I never have negotiated' no.",
+            exampleEnglish: "I have never negotiated a contract.",
+          },
         ],
         commonMistake: {
           wrong: "Did you ever been to London?",
@@ -118,6 +173,38 @@ export function buildModule6PresentPerfectBridge(
           { label: "YA LO HICE", token: "I have already sent it", tone: "emerald" },
           { label: "AÚN NO (AL FINAL)", token: "I haven't called yet", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Algo que acaba de pasar ('just')",
+            segments: [
+              { label: "AUXILIAR + JUST", token: "I have just · She has just", tone: "violet" },
+              { label: "PARTICIPIO", token: "arrived · sent · finished", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Usas 'just' cuando la acción terminó hace segundos o minutos. Va entre el auxiliar y el participio: 'I have just arrived'. Con solo 'I arrived' cortas el lazo con el ahora y suena a otro dato del pasado.",
+            exampleEnglish: "He has just left the office.",
+          },
+          {
+            label: "02 · Algo hecho antes de lo esperado ('already')",
+            segments: [
+              { label: "AUXILIAR + ALREADY", token: "I have already · We have already", tone: "violet" },
+              { label: "PARTICIPIO", token: "sent · updated · booked", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'already' indica que algo se completó antes del momento previsto y sorprende un poco. También va entre el auxiliar y el participio. En preguntas y negaciones, en cambio, lo normal es oír 'yet', no 'already'.",
+            exampleEnglish: "We have already sent the proposal.",
+          },
+          {
+            label: "03 · Algo pendiente ('yet')",
+            segments: [
+              { label: "NEGACIÓN", token: "haven't · hasn't", tone: "violet" },
+              { label: "YET AL FINAL", token: "... approved it yet", tone: "sky" },
+            ],
+            explanationSpanish:
+              "'yet' va al final de la frase y trabaja con negativos y preguntas: 'Haven't you finished yet?'. Señala que algo sigue pendiente; si ya ocurrió, corresponde 'already' y usar 'yet' sería el error de esta base.",
+            exampleEnglish: "They haven't approved the budget yet.",
+          },
+        ],
         commonMistake: {
           wrong: "I haven't called already.",
           wrongToken: "already",
@@ -167,6 +254,29 @@ export function buildModule6PresentPerfectBridge(
         formulaSegments: [
           { label: "FECHA CERRADA (PAST SIMPLE)", token: "I visited London in 2023 / yesterday", tone: "violet" },
           { label: "EXPERIENCIA ABIERTA (PRESENT PERFECT)", token: "I have visited London three times", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Fecha cerrada → Past Simple",
+            segments: [
+              { label: "MARCADOR CERRADO", token: "yesterday · in 2023 · two hours ago", tone: "violet" },
+              { label: "FORMA", token: "verbo en pasado (signed · saw)", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si la frase trae un momento cerrado como 'yesterday', 'last Monday' o 'in 2023', el verbo va en pasado simple: 'we signed'. El marcador decide la forma; si agregas 'have signed', la frase se rompe.",
+            exampleEnglish: "We signed the contract last Monday.",
+          },
+          {
+            label: "02 · Experiencia abierta → Present Perfect",
+            segments: [
+              { label: "SIN FECHA", token: "twice / ever / so far", tone: "violet" },
+              { label: "FORMA", token: "have/has + participio", tone: "emerald" },
+              { label: "PERIODO ABIERTO", token: "hasta hoy", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando no das fecha sino cuántas veces o hasta hoy, usas 'have/has + participio': 'I have met her twice'. La señal es un periodo que sigue abierto; en cambio, con 'in 2022' iría pasado simple.",
+            exampleEnglish: "I have met the new manager twice.",
+          },
         ],
         commonMistake: {
           wrong: "I have seen him yesterday.",
@@ -219,6 +329,38 @@ export function buildModule6PresentPerfectBridge(
           { label: "SIN EMBARGO", token: "It was late. However, we continued", tone: "emerald" },
           { label: "DE MODO QUE", token: "I practice daily so that I can grow", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Obstáculo y resultado ('although')",
+            segments: [
+              { label: "AUNQUE + OBSTÁCULO", token: "Although the budget was small", tone: "violet" },
+              { label: "RESULTADO", token: "we delivered", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'although' abre la frase con el obstáculo y la otra mitad trae el resultado: 'Although it rained, we went'. Une las dos ideas en una sola oración, así que no lleva 'but' después; 'Although... but' es el error clásico.",
+            exampleEnglish: "Although the budget was small, we delivered.",
+          },
+          {
+            label: "02 · Dos oraciones en contraste ('however')",
+            segments: [
+              { label: "ORACIÓN 1", token: "The plan was risky.", tone: "violet" },
+              { label: "HOWEVER, + CONTRASTE", token: "However, we approved it", tone: "sky" },
+            ],
+            explanationSpanish:
+              "'however' une dos oraciones completas y va al inicio de la segunda, seguido de coma: 'It was late. However, we continued'. A diferencia de 'although', necesita punto antes y no puede ir dentro de la misma frase.",
+            exampleEnglish: "The plan was risky. However, we approved it.",
+          },
+          {
+            label: "03 · Explicar el propósito ('so that')",
+            segments: [
+              { label: "ACCIÓN", token: "I take notes", tone: "violet" },
+              { label: "SO THAT + PROPÓSITO", token: "so that I remember names", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'so that' explica para qué haces algo y va seguido de sujeto y verbo: 'I practice so that I improve'. La señal es que responde 'para qué'. No lo confundas con 'because', que responde 'por qué' y da la causa.",
+            exampleEnglish: "I take notes so that I remember names.",
+          },
+        ],
         commonMistake: {
           wrong: "Although it was raining, but we went out.",
           wrongToken: "Although... but",
@@ -269,6 +411,38 @@ export function buildModule6PresentPerfectBridge(
           { label: "DURACIÓN", token: "I have worked here for two years", tone: "violet" },
           { label: "INICIO", token: "I have lived here since 2023", tone: "emerald" },
           { label: "HÁBITO EXTINTO", token: "I used to wake up late (ya no)", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Medir la duración ('for')",
+            segments: [
+              { label: "FOR + DURACIÓN", token: "for six months · for two years", tone: "violet" },
+              { label: "PERIODO CONTABLE", token: "la cantidad de tiempo", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Con 'for' mides cuánto tiempo lleva algo: 'for three years', 'for six months'. Es una cantidad que puedes contar en el calendario. En cambio 'since' señala el punto de arranque y nunca una cantidad.",
+            exampleEnglish: "We have used this tool for six months.",
+          },
+          {
+            label: "02 · Marcar el inicio ('since')",
+            segments: [
+              { label: "SINCE + INICIO", token: "since 2023 · since Monday", tone: "violet" },
+              { label: "HECHO DE ARRANQUE", token: "since I moved here", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Con 'since' marcas el momento exacto en que empezó algo: una fecha, un día o un hecho como 'since I moved'. Solo acepta puntos de inicio; si lo que dices es la duración, la palabra correcta es 'for'.",
+            exampleEnglish: "She has worked here since January.",
+          },
+          {
+            label: "03 · Hablar de un hábito que ya no tienes ('used to')",
+            segments: [
+              { label: "USED TO + VERBO BASE", token: "I used to travel", tone: "violet" },
+              { label: "HÁBITO QUE YA NO", token: "every day, antes", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "'used to + verbo base' describe un hábito o estado del pasado que ya no es cierto: 'I used to wake up late'. No lleva fecha obligatoria porque el 'ya no' está incluido. No sirve para una acción suelta de una sola vez.",
+            exampleEnglish: "I used to travel by bus every day.",
+          },
         ],
         commonMistake: {
           wrong: "I have worked here since three years.",

@@ -13,9 +13,41 @@ export function buildModule1PastNarrative(
         ruleTaglineSpanish:
           "En pasado regular todos los verbos terminan en '-ed', pero nunca digas 'uork-ed' con dos sílabas. Solo pronuncias la 'e' si el verbo termina en sonido T o D como en needed o started.",
         formulaSegments: [
-          { label: "SONIDO /t/ O /d/ (1 SÍLABA)", token: "worked /uórkt/ · called /kóld/", tone: "violet" },
-          { label: "SONIDO /ɪd/ (EXTRA SÍLABA)", token: "needed /nídid/ · started /stártid/", tone: "emerald" },
-          { label: "SEÑAL DE PASADO", token: "yesterday / last week", tone: "sky" },
+          { label: "SONIDO /t/", token: "finished · worked · stopped", tone: "violet" },
+          { label: "SONIDO /d/", token: "called · played · arrived", tone: "emerald" },
+          { label: "SONIDO /ɪd/", token: "needed · started · decided", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Sonido /t/",
+            segments: [
+              { label: "VERBO + -ED", token: "finished · worked · stopped", tone: "violet" },
+              { label: "SONIDO", token: "/t/ sin sílaba extra", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si el verbo termina en un sonido sordo como p, k, f, s, ch o sh, la -ed suena /t/. La palabra se dice en un solo golpe, sin añadir una sílaba extra.",
+            exampleEnglish: "We finished the task on time.",
+          },
+          {
+            label: "02 · Sonido /d/",
+            segments: [
+              { label: "VERBO + -ED", token: "called · played · arrived", tone: "violet" },
+              { label: "SONIDO", token: "/d/ sin sílaba extra", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si el verbo termina en un sonido sonoro como una vocal, b, g, l, m, n, r, v o z, la -ed suena /d/. Tampoco se pronuncia la e: 'called' tiene una sola sílaba.",
+            exampleEnglish: "She called her client this morning.",
+          },
+          {
+            label: "03 · Sonido /ɪd/",
+            segments: [
+              { label: "VERBO + -ED", token: "needed · started · decided", tone: "violet" },
+              { label: "SONIDO", token: "/ɪd/ con sílaba extra", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si el verbo termina en t o d, la -ed añade una sílaba /ɪd/. Es el único caso donde la e se pronuncia: 'needed' suena con dos sílabas claras.",
+            exampleEnglish: "We needed more time yesterday.",
+          },
         ],
         commonMistake: {
           wrong: "I work-ed yesterday.",
@@ -68,6 +100,19 @@ export function buildModule1PastNarrative(
           { label: "IRREGULAR DE ORO", token: "went · saw · had · made · took", tone: "emerald" },
           { label: "MOMENTO", token: "yesterday / last night / two days ago", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Forma única para todas las personas",
+            segments: [
+              { label: "PERSONA", token: "I / He / She / We / They", tone: "violet" },
+              { label: "IRREGULAR", token: "went · saw · had · made", tone: "emerald" },
+              { label: "MOMENTO", token: "yesterday / last night", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Los irregulares no añaden -ed: cambian su raíz y esa misma forma sirve para todas las personas. No existe 'goed' ni 'wented'; el momento pasado se marca con la frase o con el contexto.",
+            exampleEnglish: "I went to the office early.",
+          },
+        ],
         commonMistake: {
           wrong: "I goed to the office yesterday.",
           wrongToken: "goed",
@@ -118,6 +163,28 @@ export function buildModule1PastNarrative(
           { label: "QUIÉN", token: "I / She / We / They", tone: "violet" },
           { label: "ESCUDO PASADO", token: "didn't", tone: "emerald" },
           { label: "VERBO BASE PURO", token: "go · see · call · know", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Negar una acción pasada",
+            segments: [
+              { label: "ESCUDO + VERBO BASE", token: "didn't call · didn't see", tone: "violet" },
+              { label: "SIN DOBLE PASADO", token: "nunca 'didn't called'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres decir que algo no ocurrió, usas 'didn't' seguido del verbo en forma base. El pasado ya está en 'didn't', así que el verbo no lleva -ed ni forma irregular: 'I didn't see', nunca 'I didn't saw'.",
+            exampleEnglish: "She didn't answer my email.",
+          },
+          {
+            label: "02 · Respuesta corta negativa",
+            segments: [
+              { label: "RESPUESTA CORTA", token: "No, I didn't · No, they didn't", tone: "violet" },
+              { label: "SIN REPETIR EL VERBO", token: "no se dice 'No, I didn't went'", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando alguien te pregunta con 'Did you…?', contestas corto con 'No, I didn't': el auxiliar ya carga el significado y no repites el verbo. No digas 'No, I didn't went' ni 'No, I no'; la respuesta termina en 'didn't'.",
+            exampleEnglish: "No, we didn't book the tickets.",
+          },
         ],
         commonMistake: {
           wrong: "I didn't saw the message.",
@@ -170,6 +237,29 @@ export function buildModule1PastNarrative(
           { label: "QUIÉN", token: "you / she / they", tone: "emerald" },
           { label: "VERBO BASE", token: "find / call / understand?", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Preguntar si algo pasó",
+            segments: [
+              { label: "LLAVE AL INICIO", token: "Did you · Did she · Did they", tone: "violet" },
+              { label: "VERBO BASE", token: "call · find · understand", tone: "emerald" },
+              { label: "SIN -ED", token: "nunca 'Did you called?'", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando necesitas saber si algo pasó, abres la pregunta con 'Did' antes de la persona y dejas el verbo en forma base. 'Did' ya marca el pasado, así que 'Did you call?' es correcto y 'Did you called?' es el doble pasado.",
+            exampleEnglish: "Did you send the invoice?",
+          },
+          {
+            label: "02 · Confirmar o negar con el auxiliar",
+            segments: [
+              { label: "AFIRMATIVO", token: "Yes, I did", tone: "emerald" },
+              { label: "NEGATIVO", token: "No, I didn't", tone: "violet" },
+            ],
+            explanationSpanish:
+              "Cuando te preguntan con 'Did', respondes con el mismo auxiliar y sin repetir el verbo: 'Yes, I did' o 'No, I didn't'. El auxiliar solo completa la respuesta; añadir 'went' o 'saw' después suena redundante y delata el doble pasado.",
+            exampleEnglish: "Yes, we did, and it helped.",
+          },
+        ],
         commonMistake: {
           wrong: "Did you called the client?",
           wrongToken: "called",
@@ -221,6 +311,39 @@ export function buildModule1PastNarrative(
           { label: "HACIENDO EN PASADO", token: "working · traveling · reviewing", tone: "emerald" },
           { label: "HORA EXACTA", token: "at 8 PM yesterday / all morning", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Describir lo que estaba pasando",
+            segments: [
+              { label: "WAS / WERE", token: "I was · he was · we were", tone: "violet" },
+              { label: "VERBO + -ING", token: "working · reviewing · traveling", tone: "emerald" },
+              { label: "MOMENTO EXACTO", token: "at 8 PM / all morning", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando describes algo que estaba en curso en un momento del pasado, usas 'was' con I, he, she, it y 'were' con you, we, they, más el verbo con -ing. El momento exacto puede ir al final: 'at 8 PM'.",
+            exampleEnglish: "I was reviewing the contract at noon.",
+          },
+          {
+            label: "02 · Negar algo que estaba pasando",
+            segments: [
+              { label: "FORMA NEGATIVA", token: "wasn't · weren't", tone: "violet" },
+              { label: "VERBO + -ING", token: "working · listening", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la acción en curso no estaba ocurriendo, niegas con 'wasn't' o 'weren't' y mantienes el -ing: 'I wasn't working'. No uses 'didn't' aquí, porque 'didn't work' habla de un hecho terminado, no de algo en desarrollo.",
+            exampleEnglish: "They weren't listening during the call.",
+          },
+          {
+            label: "03 · Preguntar qué estaba pasando",
+            segments: [
+              { label: "WAS / WERE AL INICIO", token: "Was she · Were they", tone: "violet" },
+              { label: "SUJETO + -ING", token: "reading · waiting", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres saber qué estaba ocurriendo, inviertes el auxiliar: 'Was she working?' o 'Were they waiting?'. No necesitas 'did': 'Did you working?' mezcla dos tiempos y es el error típico al preguntar en continuo.",
+            exampleEnglish: "Were you waiting outside the office?",
+          },
+        ],
         commonMistake: {
           wrong: "I was work all morning.",
           wrongToken: "was work",
@@ -271,6 +394,38 @@ export function buildModule1PastNarrative(
           { label: "ACCIÓN LARGA EN CURSO", token: "I was working / She was reading", tone: "violet" },
           { label: "INTERRUPCIÓN", token: "when", tone: "emerald" },
           { label: "ACCIÓN PUNTUAL", token: "the phone rang / he arrived", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Describir la acción larga en curso",
+            segments: [
+              { label: "ACCIÓN LARGA", token: "was working · were talking", tone: "violet" },
+              { label: "FORMA", token: "was / were + -ing", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando una acción seguía desarrollándose, la presentas en Past Continuous: 'I was working'. Es el fondo de la historia: la acción no ha terminado cuando aparece lo demás, y por eso lleva -ing y no Pasado Simple.",
+            exampleEnglish: "We were talking about the budget.",
+          },
+          {
+            label: "02 · Interrumpir con when + pasado simple",
+            segments: [
+              { label: "WHEN", token: "when + acción puntual", tone: "emerald" },
+              { label: "PASADO SIMPLE", token: "called · rang · arrived", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando una acción corta interrumpe la que estaba en curso, la interrupción va en Pasado Simple después de 'when'. 'I was working when he called': el -ing muestra el fondo y 'called' el golpe, no 'was calling'.",
+            exampleEnglish: "I was driving when the client called.",
+          },
+          {
+            label: "03 · Unir dos acciones paralelas con while",
+            segments: [
+              { label: "WHILE", token: "while + acción en curso", tone: "violet" },
+              { label: "DOS A LA VEZ", token: "she was reading · I was cooking", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando dos acciones largas ocurrían al mismo tiempo, unes con 'while' y pones las dos en continuo: 'While she was reading, I was cooking'. 'While' indica simultaneidad; 'when' señala el momento puntual que corta.",
+            exampleEnglish: "While they were traveling, I was working.",
+          },
         ],
         commonMistake: {
           wrong: "I was working when the phone was ringing.",

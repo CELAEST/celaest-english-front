@@ -17,10 +17,45 @@ export function buildModule5PragmaticIdioms(
           { label: "METÁFORA CONCEPTUAL", token: "a double-edged sword", tone: "emerald" },
           { label: "JUSTIFICACIÓN", token: "for our institutional reputation.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Advertir un costo oculto (double-edged sword)",
+            segments: [
+              { label: "BENEFICIO RECONOCIDO", token: "Automation brings speed,", tone: "violet" },
+              { label: "METÁFORA DE DOBLE FILO", token: "but it is a double-edged sword", tone: "emerald" },
+              { label: "COSTO SEÑALADO", token: "for small teams.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando algo trae un beneficio claro pero también un costo serio, llámalo 'a double-edged sword'. La señal es que puedes completar la frase con 'es cierto, pero…'. En contraste, 'a problem' solo nombra lo negativo y pierdes el balance; 'an arm of double edge' es calco del español y no existe.",
+            exampleEnglish: "Automation is a double-edged sword for small teams.",
+          },
+          {
+            label: "02 · Conectar emocionalmente con el público (strike a chord)",
+            segments: [
+              { label: "MENSAJE EMITIDO", token: "Her speech on fairness", tone: "violet" },
+              { label: "RESONANCIA", token: "struck a chord", tone: "emerald" },
+              { label: "QUIEN ESCUCHA", token: "with voters.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un discurso o una idea conecta emocionalmente con quien escucha, di que 'struck a chord'. La señal es la reacción del público, no el contenido. En contraste, 'people liked it' es plano y no describe resonancia profunda; el pasado 'struck' es fijo, nunca 'stroke'.",
+            exampleEnglish: "Her speech on fairness struck a chord with voters.",
+          },
+          {
+            label: "03 · Exigir reglas iguales para todos (level playing field)",
+            segments: [
+              { label: "PARTE EN DESVENTAJA", token: "Small suppliers need", tone: "violet" },
+              { label: "METÁFORA DE IGUALDAD", token: "a level playing field", tone: "emerald" },
+              { label: "PROPÓSITO", token: "to compete.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando pides condiciones iguales para todos los que compiten, usa 'a level playing field'. La señal es que alguien empieza en desventaja. En contraste, 'fair' a secas es vago y admite discusión; la metáfora nombra la igualdad de reglas desde la salida.",
+            exampleEnglish: "Small suppliers need a level playing field to compete.",
+          },
+        ],
         commonMistake: {
-          wrong: "It is an arm of double edge (traducción literal de 'arma de doble filo').",
+          wrong: "It is an arm of double edge.",
           wrongToken: "an arm of double edge",
-          correct: "It is a double-edged sword.",
+          correct: "Our strategy is a double-edged sword.",
           correctToken: "a double-edged sword",
           whySpanish: "Las metáforas conceptuales inglesas tienen formas léxicas inmutables.",
         },
@@ -68,8 +103,30 @@ export function buildModule5PragmaticIdioms(
           { label: "PREGUNTA RETÓRICA DESAFIANTE", token: "what would happen if our initial premises", tone: "emerald" },
           { label: "ESCENARIO CRÍTICO", token: "proved fundamentally flawed?", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Cuestionar sin atacar (play devil's advocate)",
+            segments: [
+              { label: "ROL ANUNCIADO", token: "Let me play devil's advocate", tone: "violet" },
+              { label: "IDEA A EXAMINAR", token: "and test that claim.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres poner a prueba una idea sin atacar a quien la propone, abre con 'let me play devil's advocate'. La señal es que la crítica será hipotética y temporal. En contraste, 'you are wrong' cierra el debate; el modismo avisa que solo estás explorando el escenario.",
+            exampleEnglish: "Let me play devil's advocate and test that claim.",
+          },
+          {
+            label: "02 · Dudar de un dato sin descalificarlo (with a pinch of salt)",
+            segments: [
+              { label: "DATO PRELIMINAR", token: "early projections", tone: "violet" },
+              { label: "CAUTELA MODERADA", token: "with a pinch of salt", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando un dato es preliminar y no quieres avalar su exactitud, pide tomarlo 'with a pinch of salt'. La señal es que la fuente todavía no está verificada. En contraste, 'it is false' descalifica la evidencia entera en lugar de graduar la confianza.",
+            exampleEnglish: "Take those early projections with a pinch of salt.",
+          },
+        ],
         commonMistake: {
-          wrong: "I want to be the advocate of the devil (traducción literal).",
+          wrong: "I want to be the advocate of the devil.",
           wrongToken: "advocate of the devil",
           correct: "Allow me to play devil's advocate.",
           correctToken: "play devil's advocate",
@@ -118,6 +175,38 @@ export function buildModule5PragmaticIdioms(
           { label: "INVERSIÓN TEMPORAL LITERAL", token: "Scarcely had the session resumed", tone: "violet" },
           { label: "CONEXIÓN INMEDIATA", token: "when a unanimous consensus", tone: "emerald" },
           { label: "RESOLUCIÓN SOLEMNE", token: "was definitively reached.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Un suceso interrumpe a otro (scarcely had... when)",
+            segments: [
+              { label: "INVERSIÓN CON SCARCELY", token: "Scarcely had the meeting begun", tone: "violet" },
+              { label: "CONECTOR WHEN", token: "when the power failed.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el segundo suceso interrumpe al primero casi sin pausa, invierte: 'Scarcely had + sujeto + participio + when'. La señal es que el segundo hecho llega antes de terminar el primero. En contraste, 'as soon as' ordena los hechos sin dramatismo.",
+            exampleEnglish: "Scarcely had the meeting begun when the power failed.",
+          },
+          {
+            label: "02 · Subrayar un margen mínimo de tiempo (barely had... when)",
+            segments: [
+              { label: "INVERSIÓN CON BARELY", token: "Barely had she finished speaking", tone: "violet" },
+              { label: "REACCIÓN INMEDIATA", token: "when applause broke out.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres subrayar que casi no hubo tiempo disponible, cambia 'scarcely' por 'barely'. La señal es un intervalo mínimo, no solo una secuencia. En contraste, 'barely' acentúa la escasez de ese margen; la inversión 'had + sujeto' se mantiene igual.",
+            exampleEnglish: "Barely had she finished speaking when applause broke out.",
+          },
+          {
+            label: "03 · Elegir el conector correcto (no sooner... than)",
+            segments: [
+              { label: "INVERSIÓN CON NO SOONER", token: "No sooner had we agreed", tone: "violet" },
+              { label: "CONECTOR THAN", token: "than the budget changed.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Si eliges 'no sooner' para el primer suceso, el conector obligatorio es 'than', nunca 'when'. La señal es la pareja fija: 'scarcely' y 'hardly' piden 'when'; 'no sooner' pide 'than'. Confundir esas parejas es el error más frecuente de esta estructura.",
+            exampleEnglish: "No sooner had we agreed than the budget changed.",
+          },
         ],
         commonMistake: {
           wrong: "Scarcely the session had resumed than a consensus was reached.",
@@ -170,10 +259,42 @@ export function buildModule5PragmaticIdioms(
           { label: "FACTORES IDENTIFICADOS", token: "multiple underlying variables", tone: "emerald" },
           { label: "DELIMITACIÓN", token: "contributing to this phenomenon.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Informar sin citar la fuente (there are understood to be)",
+            segments: [
+              { label: "SUJETO VACÍO PLURAL", token: "There are understood to be", tone: "violet" },
+              { label: "FACTORES", token: "several reasons for the delay.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando informas que existen factores o discrepancias sin decir quién lo afirma, usa 'there are understood to be'. La señal es que proteges la fuente. En contraste, 'people think that' suena coloquial y te obliga a nombrar un sujeto que no puedes citar.",
+            exampleEnglish: "There are understood to be several reasons for the delay.",
+          },
+          {
+            label: "02 · Concordar con un singular (there is believed to be)",
+            segments: [
+              { label: "SUJETO VACÍO SINGULAR", token: "There is believed to be", tone: "violet" },
+              { label: "NÚCLEO INCONTABLE", token: "little risk in the plan.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el núcleo es singular o incontable, la pasiva cambia a 'there is believed to be'. La señal es la concordancia: 'support', 'consensus' o 'risk' no llevan '-s'. En contraste, con plurales se dice 'there are understood to be'.",
+            exampleEnglish: "There is believed to be little risk in the plan.",
+          },
+          {
+            label: "03 · Señalar que existe una fuente publicada (there are reported to be)",
+            segments: [
+              { label: "SUJETO VACÍO + REPORTED", token: "There are reported to be", tone: "violet" },
+              { label: "HECHO ATRIBUIDO", token: "delays across the northern route.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el dato proviene de un informe o de fuentes difundidas, elige 'there are reported to be'. La señal es que existe una fuente externa publicada. En contraste, 'understood' indica conocimiento general y 'believed' una opinión mayoritaria sin documento.",
+            exampleEnglish: "There are reported to be delays across the northern route.",
+          },
+        ],
         commonMistake: {
-          wrong: "People think that there is many factors (coloquial y error de concordancia).",
+          wrong: "People think that there is many factors behind the delay.",
           wrongToken: "there is many factors",
-          correct: "There are understood to be multiple factors.",
+          correct: "There are understood to be multiple factors behind the delay.",
           correctToken: "There are understood to be",
           whySpanish: "Con sustantivos plurales ('factors') la pasiva utiliza 'There ARE understood to be'.",
         },
@@ -221,8 +342,40 @@ export function buildModule5PragmaticIdioms(
           { label: "TESIS FUNDAMENTAL", token: "sustainable development requires", tone: "emerald" },
           { label: "CONDICIÓN INDISPENSABLE", token: "a rigorous ethical balance.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Presentar la premisa de un autor (posits)",
+            segments: [
+              { label: "AUTOR + POSITS", token: "The authors posit that", tone: "violet" },
+              { label: "PREMISA DE PARTIDA", token: "culture precedes strategy.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando presentas la premisa de la que parte un autor, usa 'posits that'. La señal es que la tesis no se defiende: se establece como base del razonamiento. En contraste, 'says that' solo transmite palabras y no revela que es un punto de partida.",
+            exampleEnglish: "The authors posit that culture precedes strategy.",
+          },
+          {
+            label: "02 · Sostener una tesis frente a la oposición (contends)",
+            segments: [
+              { label: "AUTOR + CONTENDS", token: "Critics contend that", tone: "violet" },
+              { label: "TESIS DISPUTADA", token: "the data proves nothing.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando un autor defiende una tesis frente a colegas que la discuten, usa 'contends that'. La señal es la existencia de oposición activa. En contraste, 'posits' solo establece una premisa; 'contends' indica que hay un debate abierto en curso.",
+            exampleEnglish: "Critics contend that the data proves nothing.",
+          },
+          {
+            label: "03 · Conceder un punto y refutar el resto (concedes / refutes)",
+            segments: [
+              { label: "CONCESIÓN PARCIAL", token: "She concedes the delay", tone: "violet" },
+              { label: "REFUTACIÓN DEL RESTO", token: "but refutes any negligence.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando aceptas un punto del adversario y rechazas el resto con evidencia, combina 'concedes' con 'refutes'. La señal es que primero cedes algo verdadero. En contraste, refutar todo te hace parecer terco y resta credibilidad a tu análisis.",
+            exampleEnglish: "She concedes the delay but refutes any negligence.",
+          },
+        ],
         commonMistake: {
-          wrong: "The author says that ethics is needed (estilo escolar).",
+          wrong: "The author says that ethics is needed.",
           wrongToken: "says that ethics is needed",
           correct: "The author posits that ethics is indispensable.",
           correctToken: "posits that ethics is indispensable",

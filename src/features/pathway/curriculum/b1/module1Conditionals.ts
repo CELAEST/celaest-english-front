@@ -16,8 +16,30 @@ export function buildModule1Conditionals(
           { label: "CONDICIÓN EN PRESENTE", token: "If you heat / If we practice", tone: "violet" },
           { label: "RESULTADO EN PRESENTE", token: "it boils / we improve", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Hecho universal con if",
+            segments: [
+              { label: "CONDICIÓN", token: "If you freeze", tone: "violet" },
+              { label: "RESULTADO", token: "it becomes ice", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la relación es una ley natural o una regla fija, usas 'if' con presente en los dos lados. No es una promesa futura: si pones 'it will boil', el hecho se convierte en predicción.",
+            exampleEnglish: "If you freeze water, it becomes ice.",
+          },
+          {
+            label: "02 · Hábito automático con when",
+            segments: [
+              { label: "SEÑAL DE REPETICIÓN", token: "When the alarm rings", tone: "violet" },
+              { label: "RESULTADO AUTOMÁTICO", token: "the lights turn on", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la situación se repite cada vez, cambias 'if' por 'when' porque no planteas duda: es rutina automática. La forma no cambia, ambos lados en presente; solo cambia la señal de frecuencia.",
+            exampleEnglish: "When the alarm rings, the lights turn on.",
+          },
+        ],
         commonMistake: {
-          wrong: "If you heat water, it will boil (para hechos universales).",
+          wrong: "If you heat water, it will boil.",
           wrongToken: "it will boil",
           correct: "If you heat water, it boils.",
           correctToken: "it boils",
@@ -65,6 +87,28 @@ export function buildModule1Conditionals(
         formulaSegments: [
           { label: "CONDICIÓN (PRESENTE)", token: "If we finish early", tone: "violet" },
           { label: "RESULTADO (FUTURO)", token: "we will review the next step", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Condición primero",
+            segments: [
+              { label: "CONDICIÓN CON IF", token: "If the client agrees", tone: "violet" },
+              { label: "RESULTADO CON WILL", token: "we will sign", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la condición es la información nueva, abre con 'if' en presente y cierra con 'will'. El oyente escucha primero la duda y luego el compromiso, el orden natural en una negociación.",
+            exampleEnglish: "If the client agrees, we will sign.",
+          },
+          {
+            label: "02 · Resultado primero",
+            segments: [
+              { label: "RESULTADO CON WILL", token: "We will start on Monday", tone: "emerald" },
+              { label: "CONDICIÓN CON IF", token: "if the budget arrives", tone: "violet" },
+            ],
+            explanationSpanish:
+              "Si el resultado es lo urgente, dices 'will' primero y dejas el 'if' al final. El presente sigue solo en la condición; invertir no cambia la forma, solo el énfasis.",
+            exampleEnglish: "We will start on Monday if the budget arrives.",
+          },
         ],
         commonMistake: {
           wrong: "If it will rain tomorrow, I stay at home.",
@@ -117,6 +161,38 @@ export function buildModule1Conditionals(
           { label: "TAN PRONTO COMO", token: "as soon as we arrive", tone: "emerald" },
           { label: "EN CASO DE QUE", token: "in case you need help", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · A menos que (unless)",
+            segments: [
+              { label: "CONDICIÓN CON UNLESS", token: "Unless the manager approves", tone: "violet" },
+              { label: "RESULTADO CON WILL", token: "we will delay the launch", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el resultado depende de levantar un obstáculo, usas 'unless' con el verbo en afirmativo: 'a menos que apruebe'. Nunca añadas 'don't': 'unless you don't call' niega dos veces.",
+            exampleEnglish: "Unless the manager approves, we will delay the launch.",
+          },
+          {
+            label: "02 · Tan pronto como (as soon as)",
+            segments: [
+              { label: "TAN PRONTO COMO", token: "As soon as the meeting ends", tone: "violet" },
+              { label: "RESULTADO INMEDIATO", token: "I will update you", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando una acción dispara otra de inmediato, 'as soon as' marca el instante exacto. Va con presente y el resultado con 'will': no significa 'lo antes posible', sino 'en el mismo momento en que'.",
+            exampleEnglish: "As soon as the meeting ends, I will update you.",
+          },
+          {
+            label: "03 · En caso de que (in case)",
+            segments: [
+              { label: "ACCIÓN PREVENTIVA", token: "Bring the contract", tone: "emerald" },
+              { label: "SUPUESTO POSIBLE", token: "in case they ask questions", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el resultado es una precaución, 'in case' presenta el hecho como posible, no como condición estricta. Haces la acción principal igual: no esperas a que ocurra, como harías con 'if'.",
+            exampleEnglish: "Bring the contract in case they ask questions.",
+          },
+        ],
         commonMistake: {
           wrong: "Unless you don't call me, I will leave.",
           wrongToken: "Unless you don't call",
@@ -166,6 +242,28 @@ export function buildModule1Conditionals(
         formulaSegments: [
           { label: "CONDICIÓN HIPOTÉTICA", token: "If I had more time / If we lived in London", tone: "violet" },
           { label: "RESULTADO IMAGINARIO", token: "I would travel / we would visit", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Hipótesis no real",
+            segments: [
+              { label: "CONDICIÓN EN PASADO", token: "If we had a budget", tone: "violet" },
+              { label: "RESULTADO CON WOULD", token: "we would hire two people", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando imaginas algo que hoy no es real, pones la condición en pasado y el resultado con 'would'. La señal es el contraste con la realidad: no lo tienes ahora, por eso suena a deseo.",
+            exampleEnglish: "If we had a budget, we would hire two people.",
+          },
+          {
+            label: "02 · Pregunta con what would you do",
+            segments: [
+              { label: "PREGUNTA ABIERTA", token: "What would you do", tone: "emerald" },
+              { label: "CONDICIÓN EN PASADO", token: "if we lost the account", tone: "violet" },
+            ],
+            explanationSpanish:
+              "Cuando buscas la opinión de alguien, invierte el orden y abre con 'What would you do'. La condición queda en pasado: 'if we lost'; nunca con 'will', porque no es un plan real.",
+            exampleEnglish: "What would you do if we lost the account?",
+          },
         ],
         commonMistake: {
           wrong: "If I have more money, I would buy a car.",
@@ -217,8 +315,30 @@ export function buildModule1Conditionals(
           { label: "SI YO FUERA TÚ", token: "If I were you", tone: "violet" },
           { label: "CONSEJO HIPOTÉTICO", token: "I would take the offer / I wouldn't worry", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Consejo con If I were you",
+            segments: [
+              { label: "FÓRMULA DE CONSEJO", token: "If I were you", tone: "violet" },
+              { label: "ACCIÓN RECOMENDADA", token: "I would sign today", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando das un consejo sin imponerlo, te pones en el lugar del otro con 'If I were you' y suavizas la orden con 'would'. Frente a un 'you should' directo, deja la decisión en su lado.",
+            exampleEnglish: "If I were you, I would sign today.",
+          },
+          {
+            label: "02 · Consejo sobre he o she",
+            segments: [
+              { label: "CONDICIÓN CON WERE", token: "If he were the owner", tone: "violet" },
+              { label: "RESULTADO CON WOULD", token: "he would change the plan", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando hablas de otra persona en una hipótesis irreal, también usas 'were' aunque el sujeto sea he o she. Es la forma del estándar profesional; 'if he was' queda para el registro coloquial.",
+            exampleEnglish: "If he were the owner, he would change the plan.",
+          },
+        ],
         commonMistake: {
-          wrong: "If I was you, I would accept (muy informal).",
+          wrong: "If I was you, I would accept.",
           wrongToken: "If I was you",
           correct: "If I were you, I would accept.",
           correctToken: "If I were you",
@@ -266,6 +386,28 @@ export function buildModule1Conditionals(
         formulaSegments: [
           { label: "PROBABLE (PRESENTE + WILL)", token: "If I have time tomorrow, I will call", tone: "violet" },
           { label: "IMPROBABLE (PASADO + WOULD)", token: "If I had wings, I would fly", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Posibilidad real",
+            segments: [
+              { label: "CONDICIÓN PRESENTE", token: "If the flight lands early", tone: "violet" },
+              { label: "RESULTADO CON WILL", token: "I will take the train", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el plan puede cumplirse de verdad, usas presente más 'will' y lo dices como compromiso. La señal es concreta: una fecha, una condición alcanzable, algo que depende de hechos.",
+            exampleEnglish: "If the flight lands early, I will take the train.",
+          },
+          {
+            label: "02 · Hipótesis remota",
+            segments: [
+              { label: "CONDICIÓN PASADO", token: "If we owned a plane", tone: "violet" },
+              { label: "RESULTADO CON WOULD", token: "we would visit more clients", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando sabes que no va a pasar, bajas la condición a pasado y el resultado a 'would'. Suena a sueño o a exploración; si mezclas 'will', deja de ser imaginación y se contradice.",
+            exampleEnglish: "If we owned a plane, we would visit more clients.",
+          },
         ],
         commonMistake: {
           wrong: "If I will have time, I would call.",

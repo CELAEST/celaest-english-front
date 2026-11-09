@@ -1,0 +1,253 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C2 Base 28 — El Quiasmo Retórico (inversión simétrica).
+ *
+ * Dos casos de la misma decisión (qué términos cruzan en espejo y para qué):
+ *  1. negar un marco y proponer el tuyo -> ask not what your nation gives; ask what you give
+ *  2. invertir medios y fines            -> not live to work; work to live
+ *
+ * Trampa = commonMistake del currículo: explicar el consejo en prosa vulgar
+ * ("Do not live for work. You should work so you can live well").
+ * Objetivo de voz: "Let us never compromise principle for peace, but let us never refuse
+ * peace when founded upon principle."
+ */
+export const baseC228SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c2_28",
+  orderIndex: 27,
+  title: "El Quiasmo Retórico: Ask not what your country can do for you",
+  targetSentence:
+    "Let us never compromise principle for peace, but let us never refuse peace when founded upon principle.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "Bienvenido a la clase de quiasmo. Hoy aprendés a cruzar dos términos para que tu frase se convierta en una ley que el público repite. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español el quiasmo suena a sentencia antigua. En el inglés presidencial es la firma del discurso: el oído detecta el cruce y ya no lo olvida.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al terminar, rechazás un marco ajeno con una pregunta en espejo y invertís dos verbos para corregir la jerarquía. Y lo decís sin titubear.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene dos casos y los dos viven del mismo cruce: los términos cambian de lugar. El orden invertido es lo que fija la idea. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer uso: negar el marco ajeno. Cuando te empujan una pregunta egoísta, la rechazás y devolvés los mismos términos en espejo. Una refutación discute; el quiasmo cambia la pregunta.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Ask not what your nation gives; ask what you give your nation.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Segundo uso: invertir medios y fines. Cuando dos verbos están al revés, el cruce restaura la jerarquía. Decir lo mismo sin invertir es un consejo; invertirlo lo vuelve principio.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Let us not serve the law; let us make the law serve.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 2",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error clásico es explicar la idea con palabras sueltas y perder el espejo. Escuchá cómo suena.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "Do not live for work. You should work so you can live well.",
+      subtitle: "Don't live for work, you should work so you can live well.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, los dos verbos se cruzan en espejo: vivir para trabajar, trabajar para vivir. El cruce convierte el consejo en ley moral.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "Let us not live to work; let us work to live.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: si los términos no cambian de lugar, no hay quiasmo. Recordá el espejo y no dudes.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. Tocá la frase que suena a ley y no a consejo de amigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa versión aconseja pero no cruza los términos. El quiasmo invierte el par exacto y recién ahí sentencia.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Los dos verbos cruzados en espejo y la idea queda grabada. Ahora escuchá dos ejemplos.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.one",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "Let us not live to work; let us work to live with dignity and purpose.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en el cruce: las dos mitades se unen con la misma música y el acento cae en el verbo que cambió de lugar. La partícula de apertura suena let as, sin corte y sin subida.",
+      canonical:
+        "Fijate en el cruce: las dos mitades se unen con la misma música y el acento cae en el verbo que cambió de lugar. La partícula de apertura suena let as, sin corte y sin subida.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.two",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "We shape our institutions, and thereafter our institutions shape us.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá el espejo completo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta reconstruir la frase en espejo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá por la primera mitad con la negación. Después repetís la estructura y cruzás los dos verbos. Cerrás con la dignidad.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. El cruce quedó exacto y la frase suena a principio. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá el quiasmo completo:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "Let us never compromise principle for peace, but let us never refuse peace when founded upon principle.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé el micrófono y repetí las dos mitades con el cruce bien marcado.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi. Escuchá otra vez y repetí el espejo sin apuro.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No te escuché. Repetí la segunda mitad acercándote al micrófono.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. Los términos cruzaron en espejo y la frase quedó como ley. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "El navegador no dio permiso de micrófono. Habilitalo o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

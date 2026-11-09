@@ -71,6 +71,7 @@ def run(cmd: list[str]) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
     ap.add_argument("--from", dest="from_base", required=True)
     ap.add_argument("--to", dest="to_base", required=True)
     ap.add_argument("--qa-model", default="small", choices=["small", "medium"])
@@ -88,12 +89,11 @@ def main() -> int:
 
     bundle = ROOT / "pathway_cloud_bundle.zip"
     print("1) Bundle")
-    if not bundle.exists() or args.dry_run:
-        cmd = [sys.executable, str(CLOUD / "prepare_bundle.py")]
-        if args.dry_run:
-            print("   (dry-run) se ejecutaría:", " ".join(cmd))
-        elif run(cmd) != 0:
-            return 1
+    cmd = [sys.executable, str(CLOUD / "prepare_bundle.py")]
+    if args.dry_run:
+        print("   (dry-run) se ejecutaría:", " ".join(cmd))
+    elif run(cmd) != 0:
+        return 1
     print("   bundle:", bundle, f"{bundle.stat().st_size/1e6:.1f} MB" if bundle.exists() else "")
 
     tmp = Path(tempfile.mkdtemp(prefix="pathway_kaggle_"))
@@ -125,7 +125,7 @@ subprocess.run([sys.executable, "-m", "pip", "install", "-q", "chatterbox-tts", 
 # Kaggle trae torchvision incompatible con torch y rompe el import de Chatterbox.
 subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "-q", "torchvision"], check=False)
 root = "/kaggle/working/pathway_cloud"
-cmd = [sys.executable, "cloud/run_cloud.py", "--from", "{args.from_base}", "--to", "{args.to_base}", "--qa-model", "{args.qa_model}"]
+cmd = [sys.executable, "cloud/run_cloud.py", "--level", "{args.level}", "--from", "{args.from_base}", "--to", "{args.to_base}", "--qa-model", "{args.qa_model}"]
 print("RUN", cmd, flush=True)
 rc = subprocess.run(cmd, cwd=root).returncode
 sys.exit(rc)'''
@@ -163,6 +163,16 @@ sys.exit(rc)'''
         if run([kg, "datasets", "version", "-p", str(ds_dir), "-m", "bundle update"]) != 0:
             print("FAIL: no se pudo actualizar el dataset")
             return 1
+
+    print("   esperando a que Kaggle procese el dataset...")
+    for _ in range(30):
+        st = subprocess.run([kg, "datasets", "status", f"{user}/{DATASET_SLUG}"],
+                            capture_output=True, text=True)
+        if "ready" in (st.stdout + st.stderr).lower():
+            break
+        time.sleep(10)
+    else:
+        print("   aviso: el dataset no reportó ready; sigo igual")
 
     print("4) Subiendo kernel con GPU...")
     if run([kg, "kernels", "push", "-p", str(kn_dir)]) != 0:
@@ -202,7 +212,7 @@ sys.exit(rc)'''
 
     if not args.no_import:
         print("7) Importando a tu repo...")
-        cmd = [sys.executable, str(CLOUD / "import_cloud_audio.py"), "--zip", str(local_zip)]
+        cmd = [sys.executable, str(CLOUD / "import_cloud_audio.py"), "--level", args.level, "--zip", str(local_zip)]
         if run(cmd) != 0:
             print("FAIL: el importador terminó con error")
             return 1

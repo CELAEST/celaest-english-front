@@ -17,6 +17,39 @@ export function buildModule4ModalsPurpose(
           { label: "DEBER PERSONAL", token: "I must + verb (sin to)", tone: "emerald" },
           { label: "NO ES OBLIGATORIO", token: "You don't have to + verb", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Regla externa: have to",
+            segments: [
+              { label: "OBLIGACIÓN EXTERNA", token: "I have to / She has to + verb", tone: "violet" },
+              { label: "SEÑAL", token: "badge · deadline · schedule", tone: "emerald" },
+              { label: "TERCERA PERSONA", token: "has to", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la obligación viene de una regla, un jefe o un horario, usa 'have to': la presión está afuera de ti. Con he, she o it cambia a 'has to'. En cambio, 'must' habla de tu propia convicción, no de una norma.",
+            exampleEnglish: "I have to wear a badge at work.",
+          },
+          {
+            label: "02 · Deber personal: must",
+            segments: [
+              { label: "CONVICCIÓN PROPIA", token: "I must + verb", tone: "violet" },
+              { label: "SIN 'TO'", token: "must finish · must call", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la obligación nace de tu conciencia o de una decisión personal fuerte, usa 'must'. Va directo al verbo, sin 'to'. Contraste: si la regla es externa, 'have to' suena más natural y menos solemne.",
+            exampleEnglish: "I must call my family tonight.",
+          },
+          {
+            label: "03 · No es obligatorio: don't have to",
+            segments: [
+              { label: "NO HACE FALTA", token: "don't / doesn't have to + verb", tone: "violet" },
+              { label: "NO ES PROHIBICIÓN", token: "optional, not banned", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando algo es opcional y nadie te obliga, usa 'don't have to'. Ojo: eso no significa prohibido; para prohibir se usa 'mustn't'. Es la confusión más común de esta base.",
+            exampleEnglish: "We don't have to print the agenda.",
+          },
+        ],
         commonMistake: {
           wrong: "You must to finish this.",
           wrongToken: "must to finish",
@@ -67,6 +100,28 @@ export function buildModule4ModalsPurpose(
           { label: "QUIÉN", token: "You / We / I", tone: "violet" },
           { label: "CONSEJO", token: "should / shouldn't", tone: "emerald" },
           { label: "ACCIÓN DIRECTA", token: "review · double-check · rest", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Consejo: should",
+            segments: [
+              { label: "CONSEJO", token: "should + verb", tone: "violet" },
+              { label: "SIN -S NI 'TO'", token: "she should review", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres recomendar algo sin imponerlo, usa 'should': es un consejo, no una orden. El verbo siguiente va limpio, sin 'to' y sin '-s'. Contraste: 'have to' obliga; 'should' solo sugiere.",
+            exampleEnglish: "You should ask for the details.",
+          },
+          {
+            label: "02 · Consejo negativo: shouldn't",
+            segments: [
+              { label: "CONSEJO NEGATIVO", token: "shouldn't + verb", tone: "violet" },
+              { label: "SEÑAL", token: "rushing · deleting · waiting", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres desaconsejar una acción, usa 'shouldn't': suaviza el 'no lo hagas'. No es una prohibición formal, es una recomendación. Contraste: si algo está prohibido de verdad, se usa 'mustn't'.",
+            exampleEnglish: "You shouldn't send that email today.",
+          },
         ],
         commonMistake: {
           wrong: "You should to take a break.",
@@ -119,6 +174,28 @@ export function buildModule4ModalsPurpose(
           { label: "PROBABILIDAD", token: "might / may", tone: "emerald" },
           { label: "ACCIÓN BASE", token: "take more time / rain / change", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Posibilidad: may",
+            segments: [
+              { label: "POSIBILIDAD CON BASE", token: "may + verb", tone: "violet" },
+              { label: "REGISTRO", token: "formal y prudente", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando ves una posibilidad con algo de base, usa 'may': es formal, deja la puerta abierta y funciona muy bien en correos y reuniones. Contraste: 'will' afirma; 'may' solo plantea que puede pasar.",
+            exampleEnglish: "The client may ask for a discount.",
+          },
+          {
+            label: "02 · Posibilidad más incierta: might",
+            segments: [
+              { label: "POSIBILIDAD DÉBIL", token: "might + verb", tone: "violet" },
+              { label: "SEÑAL", token: "sospecha, sin datos", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la posibilidad es más remota o insegura, usa 'might': es la opción más común al hablar para especular. Contraste: 'may' suena más formal y algo más probable; 'might' deja más duda.",
+            exampleEnglish: "It might rain before the meeting.",
+          },
+        ],
         commonMistake: {
           wrong: "Maybe it will to rain.",
           wrongToken: "will to",
@@ -170,6 +247,28 @@ export function buildModule4ModalsPurpose(
           { label: "PROPÓSITO (PARA)", token: "to", tone: "emerald" },
           { label: "ACCIÓN META", token: "learn faster / confirm the hour", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Propósito afirmativo: to + verbo",
+            segments: [
+              { label: "ACCIÓN INICIAL", token: "I called / We meet", tone: "violet" },
+              { label: "PROPÓSITO (PARA)", token: "to + verb", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres decir para qué haces algo, une las dos acciones con 'to' y el verbo base. Nunca pongas 'for' delante del verbo: 'for to confirm' no existe. Contraste: 'for' solo aparece antes de un sustantivo.",
+            exampleEnglish: "She saved money to buy a laptop.",
+          },
+          {
+            label: "02 · Propósito negativo: not to",
+            segments: [
+              { label: "ACCIÓN INICIAL", token: "I left early", tone: "violet" },
+              { label: "PROPÓSITO NEGADO", token: "not to + verb", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el propósito es evitar algo, el 'not' va delante del 'to': 'not to miss'. No digas 'to not' ni 'for not', porque suenan forzados o incorrectos. Contraste: 'not to' explica intención; 'don't' da una orden.",
+            exampleEnglish: "I took a taxi not to be late.",
+          },
+        ],
         commonMistake: {
           wrong: "I study for to learn English.",
           wrongToken: "for to learn",
@@ -220,8 +319,40 @@ export function buildModule4ModalsPurpose(
           { label: "VERBO + PARTÍCULA", token: "turn on · pick up · set up · find out", tone: "violet" },
           { label: "OBJETO", token: "the computer · the call · the details", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Separables: turn it off",
+            segments: [
+              { label: "VERBO + PARTÍCULA", token: "turn off · pick up · set up", tone: "violet" },
+              { label: "PRONOMBRE EN MEDIO", token: "turn it off · pick them up", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Con un pronombre (it, them) la partícula se separa: 'turn it off', nunca 'turn off it'. Con un sustantivo tienes dos opciones: 'turn off the lights' o 'turn the lights off'. La señal es el pronombre en medio.",
+            exampleEnglish: "Can you set it up tonight?",
+          },
+          {
+            label: "02 · Inseparables: look for",
+            segments: [
+              { label: "VERBO + PARTÍCULA", token: "look for · find out", tone: "violet" },
+              { label: "JUNTOS SIEMPRE", token: "look for my keys", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "En los inseparables la partícula no se mueve: decimos 'look for my keys', nunca 'look my keys for'. La señal está en el significado: verbo y partícula forman una unidad y no admiten nada en medio.",
+            exampleEnglish: "We are looking for the invoice.",
+          },
+          {
+            label: "03 · Intransitivos: sin objeto",
+            segments: [
+              { label: "VERBO + PARTÍCULA", token: "wake up · get up · come back", tone: "violet" },
+              { label: "SIN OBJETO", token: "I woke up late", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Algunos phrasal verbs no llevan objeto: 'wake up', 'get up' o 'come back' se usan solos. Si les agregas un objeto, la frase deja de funcionar. Contraste: 'turn on' sí pide objeto; 'wake up' no.",
+            exampleEnglish: "I woke up late this morning.",
+          },
+        ],
         commonMistake: {
-          wrong: "I am searching my keys (literal).",
+          wrong: "I am searching my keys.",
           wrongToken: "searching my keys",
           correct: "I am looking for my keys.",
           correctToken: "looking for",

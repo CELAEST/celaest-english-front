@@ -17,6 +17,41 @@ export function buildModule3NominalizationEllipsis(
           { label: "VERBO DE IMPACTO", token: "markedly improved", tone: "emerald" },
           { label: "EFECTO CONCISO", token: "team coherence.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Empaquetar la causa de un resultado",
+            segments: [
+              { label: "CAUSA NOMINALIZADA", token: "the sharp decline in demand", tone: "violet" },
+              { label: "VERBO DE IMPACTO", token: "compelled", tone: "emerald" },
+              { label: "EFECTO", token: "an immediate restructuring.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando expliques por qué ocurrió algo, convierte el verbo de la causa en sustantivo con adjetivo: 'demand declined sharply' pasa a 'the sharp decline in demand'. La señal es que la causa ya no necesita 'because'; el contraste es una sola frase densa frente a dos cláusulas.",
+            exampleEnglish: "The sharp decline in demand compelled an immediate restructuring.",
+          },
+          {
+            label: "02 · Empaquetar una decisión que se juzga",
+            segments: [
+              { label: "SUSTANTIVO DE ACCIÓN", token: "their refusal to disclose the figures", tone: "violet" },
+              { label: "VERBO DE JUICIO", token: "prompted", tone: "emerald" },
+              { label: "REACCIÓN", token: "immediate criticism.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando mencionas una decisión para después juzgarla, usa el sustantivo del verbo ('refusal', 'decision', 'approval') más 'to' o 'of'. La señal es un verbo de juicio detrás; el contraste con 'they refused and everyone criticized them' es un solo sujeto y sin repetición.",
+            exampleEnglish: "Their refusal to publish the data drew sharp criticism.",
+          },
+          {
+            label: "03 · Empaquetar un proceso como sujeto",
+            segments: [
+              { label: "PROCESO NOMINAL", token: "the continuous monitoring of emissions", tone: "violet" },
+              { label: "VERBO DE EXIGENCIA", token: "requires", tone: "emerald" },
+              { label: "CONDICIÓN", token: "trained personnel.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el proceso, y no la persona, es el tema de la frase, ponlo como sujeto nominal: 'the monitoring of emissions requires...'. La señal es que el agente desaparece porque no importa; el contraste con 'we monitor emissions and we need staff' elimina el 'we' repetido.",
+            exampleEnglish: "The continuous monitoring of emissions requires trained personnel.",
+          },
+        ],
         commonMistake: {
           wrong: "Because the team adopted new methods quickly, they improved a lot.",
           wrongToken: "Because the team adopted... quickly",
@@ -67,6 +102,41 @@ export function buildModule3NominalizationEllipsis(
           { label: "AFIRMACIÓN PRINCIPAL", token: "Few difficulties,", tone: "violet" },
           { label: "ELIPSIS CONDICIONAL", token: "if any,", tone: "emerald" },
           { label: "VERBO + MARCO", token: "arose during the implementation phase.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Cantidad dudosa con if any",
+            segments: [
+              { label: "CANTIDAD MÍNIMA", token: "Little support,", tone: "violet" },
+              { label: "ELIPSIS CONDICIONAL", token: "if any,", tone: "emerald" },
+              { label: "VERBO PRINCIPAL", token: "came from the board.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando afirmas que una cantidad es mínima y quieres sugerir que quizá fue cero, inserta 'if any' entre comas después del sustantivo. La señal es una palabra como 'few' o 'little' delante; el contraste con 'if there were any' es que no repites el verbo.",
+            exampleEnglish: "Little support, if any, came from the board.",
+          },
+          {
+            label: "02 · Condición sobre toda la frase (if so)",
+            segments: [
+              { label: "PREMISA COMPLETA", token: "The figures may change.", tone: "violet" },
+              { label: "ELIPSIS DE CONDICIÓN", token: "If so,", tone: "emerald" },
+              { label: "CONSECUENCIA", token: "we revise the report.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la condición repite entera la frase anterior, no la repitas: cierra la premisa y abre con 'If so'. La señal es que acabas de afirmar algo sobre lo que el otro puede dudar; el contraste con 'If that is true' es economía total.",
+            exampleEnglish: "The figures may change. If so, we revise the report.",
+          },
+          {
+            label: "03 · Frecuencia negada con if ever",
+            segments: [
+              { label: "FRECUENCIA MÍNIMA", token: "seldom meets,", tone: "violet" },
+              { label: "ELIPSIS DE FRECUENCIA", token: "if ever,", tone: "emerald" },
+              { label: "MARCO TEMPORAL", token: "during the summer.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando un adverbio como 'seldom', 'rarely' o 'hardly' ya niega la frecuencia, añade 'if ever' entre comas para reforzar que casi nunca ocurre. La señal es el adverbio negativo previo; el contraste con 'if at all' es que ahí hablas de grado, no de veces.",
+            exampleEnglish: "The committee seldom meets, if ever, during the summer.",
+          },
         ],
         commonMistake: {
           wrong: "Few difficulties, if there were any difficulties, appeared.",
@@ -119,10 +189,34 @@ export function buildModule3NominalizationEllipsis(
           { label: "SUSTITUCIÓN DE ACCIÓN", token: "to do so", tone: "emerald" },
           { label: "CONSECUENCIA ÉTICA", token: "would be utterly unacceptable.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Sustituir una acción ya nombrada (to do so)",
+            segments: [
+              { label: "ACCIÓN PREVIA", token: "They may reject the offer;", tone: "violet" },
+              { label: "SUSTITUCIÓN DE ACCIÓN", token: "to do so", tone: "emerald" },
+              { label: "CONSECUENCIA", token: "would end the talks.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando evalúas una acción que acabas de mencionar, sustituye toda la frase verbal por 'to do so'. La señal es un verbo como 'would', 'must' o 'means' después; el contraste con repetir 'to reject the offer' es que no cargas otra vez la acción completa.",
+            exampleEnglish: "The board may withdraw; to do so would end the project.",
+          },
+          {
+            label: "02 · Condición formal sobre la premisa (should that be so)",
+            segments: [
+              { label: "PREMISA PREVIA", token: "The supplier has confirmed delivery.", tone: "violet" },
+              { label: "INVERSIÓN CONDICIONAL", token: "Should that be so,", tone: "emerald" },
+              { label: "CONSECUENCIA", token: "we can move the launch forward.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando retomas una afirmación ajena y quieres condicionarla con tono formal, usa 'Should that be so' en lugar de 'If that is true'. La señal es que la premisa ya está dicha; el contraste con 'if' es la inversión, que suena a informe y evita la repetición.",
+            exampleEnglish: "Should that be so, we will accelerate the rollout.",
+          },
+        ],
         commonMistake: {
-          wrong: "Accepting terms is bad; to accept terms would be unacceptable (repetición tosca).",
+          wrong: "We could reject the offer, and to reject the offer would end the talks.",
           wrongToken: "to accept terms",
-          correct: "To do so would be unacceptable.",
+          correct: "We could reject the offer; to do so would end the talks.",
           correctToken: "To do so",
           whySpanish: "'To do so' reemplaza la frase verbal entera con elegancia y economía.",
         },
@@ -170,8 +264,43 @@ export function buildModule3NominalizationEllipsis(
           { label: "SUJETO PRINCIPAL", token: "the director", tone: "emerald" },
           { label: "ACCIÓN PRUDENTE", token: "sought a comprehensive second opinion.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Adjetivo + of (aware of)",
+            segments: [
+              { label: "ADJETIVO REDUCIDO", token: "Aware", tone: "violet" },
+              { label: "COMPLEMENTO OF", token: "of the tight deadline,", tone: "emerald" },
+              { label: "SUJETO + ACCIÓN", token: "the team cut the scope.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando la causa de una acción es lo que alguien sabe, abre con el adjetivo y su complemento 'of': 'Aware of the deadline'. La señal es un adjetivo que pide 'of' (aware, conscious, mindful); el contraste con 'Because they were aware' es que no hay verbo ni 'because'.",
+            exampleEnglish: "Aware of the tight deadline, the team cut the scope.",
+          },
+          {
+            label: "02 · Adjetivo + to + verbo (reluctant to)",
+            segments: [
+              { label: "ADJETIVO REDUCIDO", token: "Reluctant", tone: "violet" },
+              { label: "TO + VERBO", token: "to sign the report,", tone: "emerald" },
+              { label: "SUJETO + ACCIÓN", token: "the auditor requested changes.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el motivo es una incapacidad o una disposición, el adjetivo va con 'to' más verbo: 'Reluctant to sign'. La señal es 'unable', 'ready' o 'reluctant'; el contraste con 'Because we could not verify it' es que la forma queda en dos palabras y el sujeto sigue igual.",
+            exampleEnglish: "Reluctant to sign the report, the auditor requested changes.",
+          },
+          {
+            label: "03 · Adjetivo + that + cláusula (mindful that)",
+            segments: [
+              { label: "ADJETIVO REDUCIDO", token: "Mindful", tone: "violet" },
+              { label: "THAT + CLÁUSULA", token: "that time was short,", tone: "emerald" },
+              { label: "SUJETO + ACCIÓN", token: "the organizers trimmed the agenda.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando lo que sigue no es un sustantivo sino una idea completa, el adjetivo pide 'that' más cláusula: 'Mindful that time was short'. La señal es un verbo conjugado después; el contraste con 'Mindful of' es que ahí solo puede ir un sustantivo.",
+            exampleEnglish: "Mindful that time was short, the organizers trimmed the agenda.",
+          },
+        ],
         commonMistake: {
-          wrong: "Being aware of the complexity, the director sought advice (Being es innecesario).",
+          wrong: "Being aware of the complexity, the director sought advice.",
           wrongToken: "Being aware",
           correct: "Aware of the complexity, the director sought advice.",
           correctToken: "Aware of the complexity",
@@ -221,10 +350,44 @@ export function buildModule3NominalizationEllipsis(
           { label: "ELIPSIS PRECISA", token: "few obstacles, if any, slowed progress.", tone: "emerald" },
           { label: "NOMINALIZACIÓN FINAL", token: "The prompt calibration of priorities ensured excellence.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Abrir con la condición (cláusula reducida)",
+            segments: [
+              { label: "CONDICIÓN REDUCIDA", token: "Conscious of the reputational stakes,", tone: "violet" },
+              { label: "HALLAZGO", token: "the board postponed the announcement.", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "En un resumen, la primera frase fija la condición de la que depende todo lo demás, y una cláusula reducida lo hace sin ocupar espacio. La señal es un adjetivo con 'of' y su sujeto compartido; el contraste con dos oraciones con 'because' es una sola línea.",
+            exampleEnglish: "Conscious of the reputational stakes, the board postponed the announcement.",
+          },
+          {
+            label: "02 · Cuantificar el riesgo con elipsis (if any)",
+            segments: [
+              { label: "CANTIDAD MÍNIMA", token: "few objections,", tone: "violet" },
+              { label: "ELIPSIS CONDICIONAL", token: "if any,", tone: "emerald" },
+              { label: "RESULTADO", token: "blocked the final vote.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el resumen cifra un riesgo sin comprometerse, la elipsis 'if any' marca que la cantidad pudo ser cero. La señal es 'few' o 'little' delante; el contraste con 'if there were any' es el verbo que ya no repetís.",
+            exampleEnglish: "Few objections, if any, blocked the final vote.",
+          },
+          {
+            label: "03 · Cerrar con el resultado nominalizado",
+            segments: [
+              { label: "NOMINALIZACIÓN", token: "The early resolution of the dispute", tone: "violet" },
+              { label: "VERBO DE EFECTO", token: "secured", tone: "emerald" },
+              { label: "CIERRE", token: "broad stakeholder support.", tone: "sky" },
+            ],
+            explanationSpanish:
+              "La última frase del resumen nombra el resultado como sujeto, no como cláusula con 'we'. La señal es que el lector necesita saber qué se logró; el contraste con 'we resolved the dispute and everyone supported us' es un cierre sin sujeto humano.",
+            exampleEnglish: "The early resolution of the dispute secured broad stakeholder support.",
+          },
+        ],
         commonMistake: {
-          wrong: "Escribir textos extensos llenos de oraciones simples coordinadas por 'and' y 'because'.",
+          wrong: "Because they were aware of the risks, and there were few errors, the review was clean.",
           wrongToken: "sobreexplicación",
-          correct: "Condensar causas en frases nominales abstractas con elipsis precisas.",
+          correct: "Aware of the risks, few errors, if any, escaped review.",
           correctToken: "concisión ejecutiva C1",
           whySpanish: "El nivel C1 no mide cuántas palabras dices, sino cuánta sustancia comunicas por segundo.",
         },

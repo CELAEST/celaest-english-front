@@ -17,8 +17,32 @@ export function buildModule3PassiveVoice(
           { label: "SER / ESTAR (PRESENTE)", token: "is / are", tone: "emerald" },
           { label: "PARTICIPIO PASADO", token: "generated · updated · reviewed daily", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Hecho en singular: is",
+            segments: [
+              { label: "OBJETO SINGULAR", token: "The report / This file", tone: "violet" },
+              { label: "HECHO O ESTADO", token: "is + participio", tone: "emerald" },
+              { label: "SEÑAL", token: "is checked · is locked", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el sujeto es un objeto en singular (the report, this file) y lo que importa es el hecho o el estado, usa 'is' más participio. Si el sujeto es plural, cambia a 'are'. Contraste: en activo dirías 'the team checks it', con autor.",
+            exampleEnglish: "The report is checked every Friday.",
+          },
+          {
+            label: "02 · Hecho plural: are",
+            segments: [
+              { label: "OBJETO PLURAL", token: "These files / All transactions", tone: "violet" },
+              { label: "HECHO HABITUAL", token: "are + participio", tone: "emerald" },
+              { label: "SEÑAL", token: "are approved · are secured", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el objeto receptor es plural (these files, all transactions), el auxiliar cambia a 'are' y el participio no cambia. Señal rápida: mira el sustantivo, no el verbo. Contraste: con singular sería 'is', nunca 'are'.",
+            exampleEnglish: "These invoices are approved online.",
+          },
+        ],
         commonMistake: {
-          wrong: "The data update every morning (activo sin sujeto).",
+          wrong: "The data update every morning.",
           wrongToken: "data update",
           correct: "The data is updated every morning.",
           correctToken: "is updated",
@@ -67,6 +91,30 @@ export function buildModule3PassiveVoice(
           { label: "OBJETO", token: "The platform / The proposals", tone: "violet" },
           { label: "FUE / FUERON", token: "was / were", tone: "emerald" },
           { label: "PARTICIPIO PASADO", token: "launched · approved · completed", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Resultado singular: was",
+            segments: [
+              { label: "OBJETO SINGULAR", token: "The contract / The project", tone: "violet" },
+              { label: "FUE", token: "was + participio", tone: "emerald" },
+              { label: "SEÑAL", token: "was signed · was approved", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando reportas un resultado ya cerrado con un sujeto singular (the contract, the project), usa 'was' más participio. La señal es el hecho concluido, no la persona. Contraste: en presente dirías 'is signed'; aquí ya terminó.",
+            exampleEnglish: "The contract was signed last week.",
+          },
+          {
+            label: "02 · Resultado plural: were",
+            segments: [
+              { label: "OBJETO PLURAL", token: "The proposals / These guidelines", tone: "violet" },
+              { label: "FUERON", token: "were + participio", tone: "emerald" },
+              { label: "SEÑAL", token: "were approved · were delivered", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el sujeto es plural (the proposals, these guidelines), el pasado pasivo usa 'were', nunca 'was'. El participio tampoco cambia. Contraste: un solo documento lleva 'was'; varios llevan 'were'.",
+            exampleEnglish: "The proposals were approved on Monday.",
+          },
         ],
         commonMistake: {
           wrong: "The decision made yesterday.",
@@ -119,8 +167,31 @@ export function buildModule3PassiveVoice(
           { label: "POR (AGENTE)", token: "by", tone: "emerald" },
           { label: "AUTOR RELEVANTE", token: "our local team / experts", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Agente relevante: by",
+            segments: [
+              { label: "ACCIÓN PASIVA", token: "was designed / was written", tone: "violet" },
+              { label: "AGENTE", token: "by + autor concreto", tone: "emerald" },
+              { label: "SEÑAL", token: "firma · experto · equipo", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Menciona el agente con 'by' solo cuando aporta valor: una firma, un experto, un equipo concreto. Si el lector ya sabe quién fue, 'by' sobra. Contraste: 'The email was sent' funciona sin agente; 'was sent by somebody' no informa nada.",
+            exampleEnglish: "The survey was designed by an expert.",
+          },
+          {
+            label: "02 · Agente omitido: sin by",
+            segments: [
+              { label: "ACCIÓN PASIVA", token: "was sent / was restored", tone: "violet" },
+              { label: "SIN AGENTE", token: "sin 'by' al final", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Omite el agente cuando es obvio, desconocido o irrelevante (somebody, people, the system). La frase queda más corta y más profesional. Contraste: añadir 'by somebody' solo alarga y resta credibilidad al mensaje.",
+            exampleEnglish: "The package was delivered this morning.",
+          },
+        ],
         commonMistake: {
-          wrong: "The email was sent by somebody (relleno innecesario).",
+          wrong: "The email was sent by somebody.",
           wrongToken: "by somebody",
           correct: "The email was sent this morning.",
           correctToken: "was sent",
@@ -169,6 +240,41 @@ export function buildModule3PassiveVoice(
           { label: "MODAL", token: "can / should / must", tone: "violet" },
           { label: "SER (INVARIABLE)", token: "be", tone: "emerald" },
           { label: "PARTICIPIO", token: "completed · delivered · reviewed", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Posibilidad: can be",
+            segments: [
+              { label: "POSIBILIDAD", token: "can", tone: "violet" },
+              { label: "BE INVARIABLE", token: "be", tone: "emerald" },
+              { label: "PARTICIPIO", token: "shared · accessed · done", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'can be' cuando algo es posible o está disponible sin decir quién lo hará. La señal es la pregunta '¿se puede?'. Contraste: 'can do' nombra al ejecutor; 'can be done' pone el foco en el resultado.",
+            exampleEnglish: "The report can be shared online.",
+          },
+          {
+            label: "02 · Recomendación: should be",
+            segments: [
+              { label: "RECOMENDACIÓN", token: "should", tone: "violet" },
+              { label: "BE INVARIABLE", token: "be", tone: "emerald" },
+              { label: "PARTICIPIO", token: "reviewed · adjusted", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'should be' para recomendar o pedir un cambio sin culpar a nadie. Suena diplomático en correos y reuniones. Contraste: 'you should review' señala a una persona; 'it should be reviewed' habla del proceso.",
+            exampleEnglish: "The settings should be adjusted today.",
+          },
+          {
+            label: "03 · Obligación: must be",
+            segments: [
+              { label: "OBLIGACIÓN", token: "must", tone: "violet" },
+              { label: "BE INVARIABLE", token: "be", tone: "emerald" },
+              { label: "PARTICIPIO", token: "finished · signed", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Usa 'must be' cuando el requisito es obligatorio y no admite demora: una norma, una fecha límite. Es más fuerte que 'should be'. Contraste: 'should be' recomienda; 'must be' exige cumplimiento.",
+            exampleEnglish: "The form must be signed by hand.",
+          },
         ],
         commonMistake: {
           wrong: "This should be review by tomorrow.",
@@ -220,6 +326,30 @@ export function buildModule3PassiveVoice(
           { label: "ENFOQUE INFORMAL (ACTIVA)", token: "We found an error", tone: "violet" },
           { label: "TRANSFORMACIÓN (PASIVA)", token: "An error was detected", tone: "emerald" },
           { label: "RESOLUCIÓN", token: "and the issue was resolved", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Diplomacia: sin culpables",
+            segments: [
+              { label: "ACTIVA INFORMAL", token: "We made a mistake", tone: "violet" },
+              { label: "PASIVA OBJETIVA", token: "A mistake was made", tone: "emerald" },
+              { label: "SEÑAL", token: "error · retraso · cambio", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando informas un error sin acusar a nadie, pasa la activa a pasiva: 'we made a mistake' se vuelve 'a mistake was made'. La señal es que no conviene nombrar al responsable. Contraste: la activa suena a culpa directa.",
+            exampleEnglish: "A mistake was found in the report.",
+          },
+          {
+            label: "02 · Aviso plural: were",
+            segments: [
+              { label: "SUJETO PLURAL", token: "All participants / The results", tone: "violet" },
+              { label: "PASIVA", token: "were + participio", tone: "emerald" },
+              { label: "SEÑAL", token: "plural exige 'were'", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el sujeto plural recibe la acción, el pasado pasivo lleva 'were', nunca 'was'. Es la forma que da tono ejecutivo a un aviso. Contraste: con 'we' también va 'were'; solo el singular toma 'was'.",
+            exampleEnglish: "The results were shared with the board.",
+          },
         ],
         commonMistake: {
           wrong: "We was informed about the change.",

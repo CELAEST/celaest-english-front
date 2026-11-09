@@ -1,0 +1,277 @@
+import { BaseSpeechProfile, PAUSE } from "../../types";
+
+/**
+ * C1 Base 26 — Reporting Verbs de Rigor Epistémico.
+ *
+ * Tres casos de la misma decisión (qué verbo de reporte revela la postura del autor):
+ *  1. presentar una premisa            -> posits that
+ *  2. sostener una tesis disputada     -> contends that
+ *  3. conceder un punto y refutar      -> concedes ... but refutes
+ *
+ * Trampa = commonMistake del currículo: "The author says that ethics is needed."
+ * -> "The author posits that ethics is indispensable."
+ * Objetivo de voz: "Leading theorists contend that systemic adaptability is more vital than
+ * rigid forecasting."
+ */
+export const baseC126SpeechProfile: BaseSpeechProfile = {
+  baseId: "base_c1_26",
+  orderIndex: 25,
+  title: "Reporting Verbs de Rigor Epistémico: Posit / Contend / Refute / Concede",
+  targetSentence: "Leading theorists contend that systemic adaptability is more vital than rigid forecasting.",
+  voiceProfile: "v2_expresivo",
+  moments: [
+    {
+      id: "welcome",
+      beat: "DIALOG",
+      language: "es",
+      text: "¡Bienvenido a tu clase de verbos de reporte académico! Hoy dejás atrás el autor dice que y elegís el verbo que revela qué hace el autor con su tesis. Tocá Comenzar Clase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why",
+      beat: "DIALOG",
+      language: "es",
+      text: "En español un verbo cubre casi todo: dijeron o sostienen. El inglés académico distingue si el autor fija una premisa, se defiende de colegas o admite un punto.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "why.promise",
+      beat: "DIALOG",
+      language: "es",
+      text: "Al final presentás una premisa, describís una tesis disputada y combinás una concesión con una refutación en la misma frase.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.rule",
+      beat: "FORMULA",
+      language: "es",
+      text: "La regla tiene tres casos y el verbo de reporte es la pieza que cambia. Cada verbo anuncia la postura del autor. Los vemos uno por uno.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "formula.case1.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Primer caso: presentar la premisa de un autor. Si la tesis se fija como punto de partida, usás pózits dat. El autor dice solo transmite palabras.",
+      canonical:
+        "Primer caso: presentar la premisa de un autor. Si la tesis se fija como punto de partida, usás pózits dat. El autor dice solo transmite palabras.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case1.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "The authors posit that culture precedes strategy.",
+      badgeLabel: "FÓRMULA · CASO 1 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case2.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Caso dos: sostener una tesis frente a la oposición. Si hay colegas que discuten la idea, usás konténds dat. La señal es el debate; posits solo fija una premisa.",
+      canonical:
+        "Caso dos: sostener una tesis frente a la oposición. Si hay colegas que discuten la idea, usás konténds dat. La señal es el debate; posits solo fija una premisa.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case2.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "Critics contend that the data proves nothing.",
+      badgeLabel: "FÓRMULA · CASO 2 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "formula.case3.intro",
+      beat: "FORMULA",
+      language: "es",
+      text: "Caso tres: conceder y refutar. Si aceptás un punto del adversario y rechazás la acusación, combinás konsíds con rifiúts. Refutar todo te deja terco.",
+      canonical:
+        "Caso tres: conceder y refutar. Si aceptás un punto del adversario y rechazás la acusación, combinás konsíds con rifiúts. Refutar todo te deja terco.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 1, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "formula.case3.model",
+      beat: "FORMULA",
+      language: "en",
+      text: "She concedes the delay but refutes any negligence.",
+      badgeLabel: "FÓRMULA · CASO 3 DE 3",
+      cue: { formulaRevealCount: 3, activeFormulaCaseIndex: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.intro",
+      beat: "TRAP",
+      language: "es",
+      text: "Mirá la alerta roja. El error clásico es quedarse en el verbo escolar y perder el matiz del autor. Escuchá cómo suena.",
+      cue: { trapPhase: 0 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.wrong",
+      beat: "TRAP",
+      language: "en",
+      text: "The author says that ethics is needed.",
+      subtitle: "The author says that ethics is needed.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.pivot",
+      beat: "TRAP",
+      language: "es",
+      text: "En su lugar, el verbo de reporte anuncia la postura: el autor establece una premisa y eso se dice con posits, no con el verbo escolar.",
+      cue: { trapPhase: 1 },
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "trap.right",
+      beat: "TRAP",
+      language: "en",
+      text: "The author posits that ethics is indispensable.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "trap.anchor",
+      beat: "TRAP",
+      language: "es",
+      text: "Ancla mental: elegí el verbo por lo que el autor hace con su tesis, no por lo que dice. Recordá ese criterio y acertás siempre.",
+      cue: { trapPhase: 2 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.intro",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Ahora elegís vos. Tocá la versión que un paper publicaría tal cual.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.error",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Esa versión usa el verbo escolar y no informa la postura del autor. La premisa se establece con posits.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "trapcheck.success",
+      beat: "TRAP_CHECK",
+      language: "es",
+      text: "Exacto. Verbo preciso y postura visible. Ahora escuchá dos fragmentos de paper.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.posits",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "The author posits that sustainable development requires a rigorous ethical balance.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "example.phonetic",
+      beat: "EXAMPLES",
+      language: "es",
+      text: "Fijate en el verbo: la ese final y la palabra siguiente se unen en un bloque. Suenan pózits dat, sin pausa entre medio.",
+      canonical:
+        "Fijate en el verbo: la ese final y la palabra siguiente se unen en un bloque. Suenan pózits dat, sin pausa entre medio.",
+      cue: { activeExampleIndex: 0 },
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "example.concedes",
+      beat: "EXAMPLES",
+      language: "en",
+      text: "While she conceded that initial metrics were flawed, she vehemently refuted the accusation of neglect.",
+      cue: { activeExampleIndex: 1 },
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "build.transition",
+      beat: "BUILD",
+      language: "es",
+      text: "Si algo no te cierra, tocá Preguntar. Ahora armá el fragmento.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.intro",
+      beat: "BUILD",
+      language: "es",
+      text: "Ordená las fichas de izquierda a derecha hasta reconstruir la cita académica.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.error",
+      beat: "BUILD",
+      language: "es",
+      text: "Empezá con el autor, seguí con el verbo de reporte en presente y el conector. Cierra con la tesis y su condición ética.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "build.success",
+      beat: "BUILD",
+      language: "es",
+      text: "Muy bien. El verbo de reporte quedó exacto y la tesis suena académica. Ahora tu voz.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "speak.lead",
+      beat: "SPEAK",
+      language: "es",
+      text: "Escuchá la tesis completa:",
+      pauseAfterMs: PAUSE.beforeNativeModel,
+    },
+    {
+      id: "speak.model",
+      beat: "SPEAK",
+      language: "en",
+      text: "Leading theorists contend that systemic adaptability is more vital than rigid forecasting.",
+      pauseAfterMs: PAUSE.afterNativeModel,
+    },
+    {
+      id: "speak.instruction",
+      beat: "SPEAK",
+      language: "es",
+      text: "Encendé el micrófono y repetí la tesis completa, marcando bien el verbo de reporte.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.retry",
+      beat: "DIALOG",
+      language: "es",
+      text: "Casi. Escuchá otra vez y repetí sin apuro, con el verbo bien marcado.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.not_heard",
+      beat: "DIALOG",
+      language: "es",
+      text: "No te escuché. Acercate al micrófono y repetí la tesis conmigo.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "voice.victory",
+      beat: "DIALOG",
+      language: "es",
+      text: "Excelente. El verbo de reporte sonó preciso y la tesis quedó clara. Base conquistada.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
+      id: "mic.error",
+      beat: "DIALOG",
+      language: "es",
+      text: "Sin permiso de micrófono. Habilitalo desde el navegador o seguí en modo silencioso.",
+      pauseAfterMs: PAUSE.standard,
+    },
+  ],
+};

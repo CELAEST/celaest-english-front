@@ -26,7 +26,14 @@ __pycache__/
 public/audio-test.html
 _audio_archive/
 _kg_out/
+_kg_*/
+_b2_backup/
 _tmp_kernel/
+._*.py
+.tmp_*.py
+.kaggle_*
+.serena/
+.*.md
 .pathway_*.log
 .pathway_*.json
 scripts/__pycache__/

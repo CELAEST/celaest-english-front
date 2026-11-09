@@ -5,6 +5,11 @@ import {
   FlagshipVoiceId,
 } from "../../reading/services/readingAudioPrefetcher";
 import a1AudioManifest from "../../pathway/data/a1AudioManifest.json";
+import a2AudioManifest from "../../pathway/data/a2AudioManifest.json";
+import b1AudioManifest from "../../pathway/data/b1AudioManifest.json";
+import b2AudioManifest from "../../pathway/data/b2AudioManifest.json";
+import c1AudioManifest from "../../pathway/data/c1AudioManifest.json";
+import c2AudioManifest from "../../pathway/data/c2AudioManifest.json";
 import { pathwayAudioLog } from "../../pathway/audio/pathwayAudioLog";
 
 export interface SpeakOptions {
@@ -73,7 +78,7 @@ export class SpeechSynthesisService {
     const raw = text ? text.trim() : "";
     const sanitized = sanitizeSpeechForVoice(raw);
     if (!sanitized) return Promise.resolve(null);
-    const manifest = (a1AudioManifest || {}) as Record<string, string>;
+    const manifest = { ...a1AudioManifest, ...a2AudioManifest, ...b1AudioManifest, ...b2AudioManifest, ...c1AudioManifest, ...c2AudioManifest } as Record<string, string>;
     const staticUrl = manifest[sanitized] || manifest[raw];
     if (staticUrl) {
       // El siguiente segmento se deja 100% en memoria antes de que termine el actual.
@@ -154,7 +159,7 @@ export class SpeechSynthesisService {
     }
 
     // 0. Check pre-baked static local asset (100% owned local disk asset, 0ms, 0 API spend)
-    const manifest = (a1AudioManifest || {}) as Record<string, string>;
+    const manifest = { ...a1AudioManifest, ...a2AudioManifest, ...b1AudioManifest, ...b2AudioManifest, ...c1AudioManifest, ...c2AudioManifest } as Record<string, string>;
     const staticLocalAudio = manifest[sanitized] || manifest[raw];
 
     // Trazabilidad: una línea sin audio propio cae al TTS en vivo y suena otra voz.

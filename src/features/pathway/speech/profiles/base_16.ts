@@ -158,7 +158,7 @@ export const base16SpeechProfile: BaseSpeechProfile = {
       language: "es",
       text: "Fíjate cómo se unen las palabras cuando el dueño lleva su marca. El secreto es oír esa marca como una sílaba más: dis is Kárlos-es láptop.",
       canonical:
-        "Fíjate cómo se unen las palabras cuando el dueño lleva su marca. El secreto es oír esa marca como una sílaba más: This is Carlos's laptop.",
+        "Fíjate cómo se unen las palabras cuando el dueño lleva su marca. El secreto es oír esa marca como una sílaba más: dis is Kárlos-es láptop.",
       cue: { activeExampleIndex: 0 },
       pauseAfterMs: PAUSE.standard,
     },

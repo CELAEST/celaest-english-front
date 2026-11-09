@@ -17,6 +17,41 @@ export function buildModule1FrontingInversion(
           { label: "SUJETO PRINCIPAL", token: "the team", tone: "emerald" },
           { label: "RESOLUCIÓN FIRME", token: "maintained its composure.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Adjetivo + though: hecho difícil que igual ocurrió",
+            segments: [
+              { label: "ADJETIVO AL FRENTE", token: "Difficult", tone: "violet" },
+              { label: "THOUGH + SUJETO + WAS", token: "though the decision was", tone: "emerald" },
+              { label: "RESULTADO", token: "we moved forward", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el dato es un hecho duro que ya ocurrió, adelantas el adjetivo y lo unes con though: Difficult though the decision was. La señal es la constatación, no la hipótesis; con 'Although it was difficult' el mismo contenido pierde el golpe inicial.",
+            exampleEnglish: "Difficult though the decision was, we moved forward.",
+          },
+          {
+            label: "02 · As + may: lo que suena increíble pero es cierto",
+            segments: [
+              { label: "ADJETIVO AL FRENTE", token: "Unlikely", tone: "violet" },
+              { label: "AS + SUJETO + MAY", token: "as it may seem", tone: "emerald" },
+              { label: "LO QUE OCURRIÓ", token: "the two teams agreed", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando presentas algo que suena improbable y quieres marcar que es cierto, usas as + sujeto + may: Unlikely as it may seem. La señal es la concesión ante la sorpresa del oyente; con though no cabe ese matiz de 'por mucho que parezca', porque though afirma el hecho sin más.",
+            exampleEnglish: "Unlikely as it may seem, the two teams agreed.",
+          },
+          {
+            label: "03 · Adverbio + as: esfuerzo o valoración concedidos",
+            segments: [
+              { label: "ADVERBIO AL FRENTE", token: "Much", tone: "violet" },
+              { label: "AS + SUJETO", token: "as we value tradition", tone: "emerald" },
+              { label: "GIRO NECESARIO", token: "we must adapt", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando concedes una valoración o un esfuerzo antes de contrastar, el elemento al frente es un adverbio como much o hard, seguido de as: Much as we value tradition. La señal es el verbo de aprecio o intento; si usas 'Although we value tradition much', el énfasis se diluye y suena a traducción.",
+            exampleEnglish: "Much as we value tradition, we must adapt.",
+          },
+        ],
         commonMistake: {
           wrong: "Although difficult it was, we succeeded.",
           wrongToken: "Although difficult it was",
@@ -67,6 +102,41 @@ export function buildModule1FrontingInversion(
           { label: "CLÁUSULA TEMPORAL", token: "Not until the review was complete", tone: "violet" },
           { label: "INVERSIÓN OBLIGATORIA", token: "did the committee announce", tone: "emerald" },
           { label: "COMPLEMENTO", token: "the official findings.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Not until: el resultado llega al cerrar el plazo",
+            segments: [
+              { label: "LÍMITE TEMPORAL", token: "Not until midnight", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the results", tone: "emerald" },
+              { label: "LO ESPERADO", token: "finally arrive", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el hecho solo ocurre al cerrarse un plazo, abres con Not until + el momento y después inviertes: did the results arrive. La señal es el límite exacto, no la secuencia; con 'The results arrived until midnight' cambias el significado, y sin inversión la frase suena plana.",
+            exampleEnglish: "Not until midnight did the results arrive.",
+          },
+          {
+            label: "02 · Only after: el logro llega tras un proceso",
+            segments: [
+              { label: "PROCESO PREVIO", token: "Only after the vote", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the board", tone: "emerald" },
+              { label: "REACCIÓN", token: "make its statement", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando quieres mostrar que un paso previo era la condición y la reacción vino después, abres con Only after + ese paso: Only after the vote did the board speak. La señal es la cadena de dos momentos; el contraste es 'After the vote, the board spoke', que informa pero no subraya la dependencia.",
+            exampleEnglish: "Only after the vote did the board speak.",
+          },
+          {
+            label: "03 · Only when: la condición que se cumple por fin",
+            segments: [
+              { label: "CONDICIÓN", token: "Only when the storm passed", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did we leave", tone: "emerald" },
+              { label: "LUGAR", token: "the shelter", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el hecho depende de que una condición se cumpla, abres con Only when + condición y luego inviertes: did we leave. La señal es la condición, no el plazo ni la secuencia; con 'We left only when the storm passed' el foco queda al final y se pierde la tensión del inicio.",
+            exampleEnglish: "Only when the storm passed did we leave the shelter.",
+          },
         ],
         commonMistake: {
           wrong: "Not until the review concluded we realized the impact.",
@@ -119,6 +189,41 @@ export function buildModule1FrontingInversion(
           { label: "VERBO DE MOVIMIENTO/ESTADO", token: "stood", tone: "emerald" },
           { label: "SUJETO COMPLETO", token: "the historic stone monument.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Frase de lugar: describir una escena detenida",
+            segments: [
+              { label: "DÓNDE", token: "Beneath the old bridge", tone: "violet" },
+              { label: "VERBO DE ESTADO", token: "stood", tone: "emerald" },
+              { label: "SUJETO AL FINAL", token: "a single lantern", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando describes una escena quieta, abres con el lugar y colocas el verbo de estado antes del sujeto: Beneath the bridge stood a lantern. La señal es un verbo como stand, lie o hang; con 'A lantern stood beneath the bridge' la escena se informa, pero no se pinta.",
+            exampleEnglish: "Beneath the old bridge stood a single lantern.",
+          },
+          {
+            label: "02 · Frase direccional: alguien entra en escena",
+            segments: [
+              { label: "HACIA DÓNDE", token: "Into the silent hall", tone: "violet" },
+              { label: "VERBO DE MOVIMIENTO", token: "walked", tone: "emerald" },
+              { label: "SUJETO AL FINAL", token: "the new director", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando narras una entrada y el sujeto es la noticia, abres con la dirección y el verbo de movimiento: Into the hall walked the new director. La señal es el desplazamiento hacia un lugar; se diferencia del caso de lugar en que aquí hay movimiento, y el foco cae en quién llega.",
+            exampleEnglish: "Into the silent hall walked the new director.",
+          },
+          {
+            label: "03 · Sujeto pronombre: la inversión se detiene",
+            segments: [
+              { label: "ADVERBIO DE MOVIMIENTO", token: "Away", tone: "violet" },
+              { label: "SUJETO PRONOMBRE", token: "they", tone: "emerald" },
+              { label: "VERBO AL FINAL", token: "went", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el sujeto es un pronombre como they o she, la inversión se detiene y el orden vuelve a sujeto + verbo: Away they went. La señal es el pronombre, que no puede cargar el foco; si escribes 'Away went they', la frase suena forzada y rompe el ritmo de la crónica.",
+            exampleEnglish: "Away they went before anyone could answer.",
+          },
+        ],
         commonMistake: {
           wrong: "Beneath the archway did stand the monument.",
           wrongToken: "did stand",
@@ -169,8 +274,40 @@ export function buildModule1FrontingInversion(
           { label: "OBJETO TOPICALIZADO", token: "That particular perspective,", tone: "violet" },
           { label: "SUJETO + VERBO", token: "we had never seriously considered.", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Objeto directo al frente: postura innegociable",
+            segments: [
+              { label: "OBJETO AL FRENTE", token: "That argument,", tone: "violet" },
+              { label: "SUJETO + VERBO", token: "nobody in the room defended", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando quieres cerrar la puerta a un tema, pones el objeto al inicio y después sujeto + verbo, sin repetir el pronombre: That argument, nobody defended. La señal es la postura ante una propuesta concreta; con 'Nobody defended that argument' informas, pero el rechazo no queda fijado como tema.",
+            exampleEnglish: "That argument, nobody in the room defended.",
+          },
+          {
+            label: "02 · Such + sustantivo: valorar lo que se nombra",
+            segments: [
+              { label: "VALORACIÓN AL FRENTE", token: "Such dedication,", tone: "violet" },
+              { label: "SUJETO INDEFINIDO", token: "one rarely sees", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando elogias o censuras una cualidad y la quieres como tema, abres con Such + sustantivo: Such dedication, one rarely sees. La señal es la valoración, no el objeto concreto; el contraste es 'One rarely sees such dedication', donde el elogio aparece tarde y sin peso.",
+            exampleEnglish: "Such dedication, one rarely sees in this office.",
+          },
+          {
+            label: "03 · Complemento con preposición: tema que se retoma",
+            segments: [
+              { label: "PREPOSICIÓN + OBJETO", token: "Of that risk,", tone: "violet" },
+              { label: "SUJETO + VERBO", token: "the committee was aware", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el tema lleva preposición, la mueves junto con su objeto y mantienes el resto en orden normal: Of that risk, the committee was aware. La señal es el complemento con of, to o with; sin la preposición al frente ('That risk, the committee was aware') la frase queda coja.",
+            exampleEnglish: "Of that risk, the committee was fully aware.",
+          },
+        ],
         commonMistake: {
-          wrong: "That proposal, we never accepted it (calco redundante del español).",
+          wrong: "That proposal, we never accepted it.",
           wrongToken: "accepted it",
           correct: "That proposal, we never accepted.",
           correctToken: "we never accepted",
@@ -219,6 +356,41 @@ export function buildModule1FrontingInversion(
           { label: "ADVERBIO RESTRICTIVO", token: "Little did they suspect", tone: "violet" },
           { label: "PROPOSICIÓN SECUNDARIA", token: "that their research would revolutionize", tone: "emerald" },
           { label: "OBJETO DEL IMPACTO", token: "the entire discipline.", tone: "sky" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Little did: nadie sospechaba lo que venía",
+            segments: [
+              { label: "ADVERBIO AL FRENTE", token: "Little", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the founders know", tone: "emerald" },
+              { label: "LO QUE VINO", token: "what awaited them", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando narras un pasado y quieres marcar que nadie veía venir el desenlace, abres con Little + did + sujeto + verbo base: Little did the founders know. La señal es la ignorancia previa con revelación posterior; con 'The founders didn't know' el dato es correcto, pero pierde la ironía.",
+            exampleEnglish: "Little did the founders know what awaited them.",
+          },
+          {
+            label: "02 · At no point: negar un periodo entero",
+            segments: [
+              { label: "FRASE RESTRICTIVA", token: "At no point", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the witness", tone: "emerald" },
+              { label: "LO NEGADO", token: "change her story", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando niegas algo durante todo un periodo, abres con At no point y inviertes: did the witness change her story. La señal es la cobertura temporal completa, típica de informes y declaraciones; con 'The witness did not change her story' solo niegas el hecho, sin cubrir el periodo.",
+            exampleEnglish: "At no point did the witness change her story.",
+          },
+          {
+            label: "03 · Not once: contar cero veces",
+            segments: [
+              { label: "NEGACIÓN AL FRENTE", token: "Not once", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the team", tone: "emerald" },
+              { label: "LO NO OCURRIDO", token: "lose its focus", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando cuentas ocurrencias y el número es cero, usas Not once con inversión: Not once did the team lose focus. La señal es el conteo de veces, no el periodo; se distingue de At no point en que allí se cubre un lapso y aquí se cuenta cuántas veces pasó.",
+            exampleEnglish: "Not once did the team lose its focus.",
+          },
         ],
         commonMistake: {
           wrong: "Little they knew about the consequences.",
@@ -271,10 +443,44 @@ export function buildModule1FrontingInversion(
           { label: "INVERSIÓN TEMPORAL", token: "not until today did we witness the results.", tone: "emerald" },
           { label: "TOPICALIZACIÓN FINAL", token: "That shared conviction, we shall never abandon.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Apertura: fronting que admite la dificultad",
+            segments: [
+              { label: "ADJETIVO AL FRENTE", token: "Demanding", tone: "violet" },
+              { label: "THOUGH + SUJETO", token: "though the process was,", tone: "emerald" },
+              { label: "RESOLUCIÓN", token: "the team held its nerve", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando abres un discurso y quieres reconocer la dificultad sin ceder fuerza, empiezas con el adjetivo al frente y though: Demanding though the process was. La señal es el primer movimiento del discurso; cerrando con 'It was demanding' el reconocimiento llega tarde y suena defensivo.",
+            exampleEnglish: "Demanding though the process was, the team held its nerve.",
+          },
+          {
+            label: "02 · Giro: inversión que revela lo decisivo",
+            segments: [
+              { label: "LÍMITE TEMPORAL", token: "Not until the final vote", tone: "violet" },
+              { label: "INVERSIÓN CON DID", token: "did the truth", tone: "emerald" },
+              { label: "REVELACIÓN", token: "emerge", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando el discurso necesita un giro que revele el dato clave, colocas la inversión justo en ese punto: Not until the final vote did the truth emerge. La señal es el momento de máxima tensión; si la pones al inicio y no en el giro, gastas el efecto antes de que la audiencia escuche el argumento.",
+            exampleEnglish: "Not until the final vote did the truth emerge.",
+          },
+          {
+            label: "03 · Cierre: topicalización de la convicción",
+            segments: [
+              { label: "CONVICCIÓN AL FRENTE", token: "That commitment,", tone: "violet" },
+              { label: "SUJETO + VERBO", token: "this institution will never abandon", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando cierras y quieres que una convicción quede como tema final, adelantas el objeto: That commitment, this institution will never abandon. La señal es la última frase del discurso; con 'We will never abandon that commitment' el cierre funciona, pero la idea no queda instalada al frente.",
+            exampleEnglish: "That commitment, this institution will never abandon.",
+          },
+        ],
         commonMistake: {
-          wrong: "Encadenar cláusulas planas con 'because', 'so' y 'and' en un discurso solemne.",
+          wrong: "We will never abandon that commitment.",
           wrongToken: "estilo plano",
-          correct: "Alternar fronting adjetival con inversiones para crear dinamismo rítmico.",
+          correct: "That commitment, we will never abandon.",
           correctToken: "ritmo C1",
           whySpanish: "La alternancia de estructuras sintácticas es el distintivo de un orador cultivado.",
         },

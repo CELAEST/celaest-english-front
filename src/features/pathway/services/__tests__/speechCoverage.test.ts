@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import manifest from "../../data/a1AudioManifest.json";
+import a2Manifest from "../../data/a2AudioManifest.json";
 import { speechProfiles } from "../../speech/profiles";
 import { buildProceduralSeedNodes } from "../aiPathwayCurriculumService";
 import { PathwayLectureEngine } from "../PathwayLectureEngine";
@@ -30,14 +31,14 @@ function sanitize(text: string): string {
     .trim();
 }
 
-const M = manifest as Record<string, string>;
+const M = { ...manifest, ...a2Manifest } as Record<string, string>;
 
 /**
  * Bases declaradas CERRADAS. Solo estas bloquean el build.
  * Cerrar una base = agregarla acá después de darle audio a todas sus líneas.
  * Así el avance es nivel por nivel y nunca se rompe lo ya cerrado.
  */
-const CLOSED_BASES: string[] = ["base_01", "base_02", "base_03", "base_04", "base_05", "base_06", "base_07", "base_08", "base_09", "base_12", "base_10"];
+const CLOSED_BASES: string[] = ["base_01", "base_02", "base_03", "base_04", "base_05", "base_06", "base_07", "base_08", "base_09", "base_12", "base_10", "base_11", "base_13", "base_14", "base_15", "base_16", "base_17", "base_23", "base_30", "base_18", "base_19", "base_20", "base_21", "base_22", "base_24", "base_25", "base_26", "base_27", "base_28", "base_29", "base_31", "base_32"];
 
 function hasAudio(text: string): string | null {
   return M[sanitize(text)] || M[text.trim()] || null;

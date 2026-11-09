@@ -17,8 +17,30 @@ export function buildModule2FormulaicSubjunctive(
           { label: "COMPROMISO ÉTICO", token: "we must uphold our standard", tone: "emerald" },
           { label: "VALOR CENTRAL", token: "of absolute transparency.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Be that as it may: concesión que no cambia la decisión",
+            segments: [
+              { label: "FÓRMULA FIJA", token: "Be that as it may,", tone: "violet" },
+              { label: "POSTURA QUE NO CEDE", token: "we must uphold our standard", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando reconoces un punto del interlocutor pero la decisión no cambia, abres con Be that as it may y sigue la postura firme. La señal es la concesión que no altera el rumbo; con 'however' suenas neutral, sin el peso de autoridad de la fórmula fija.",
+            exampleEnglish: "Be that as it may, the deadline cannot be moved.",
+          },
+          {
+            label: "02 · Come what may: determinación ante cualquier resultado",
+            segments: [
+              { label: "FÓRMULA FIJA", token: "Come what may,", tone: "violet" },
+              { label: "COMPROMISO SIN CONDICIONES", token: "we will defend our principles", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando anuncias que mantendrás un principio aunque el resultado sea incierto, cierras con Come what may, sin sujeto ni verbo. La señal es el riesgo que no controlas; 'no matter what' dice lo mismo en registro coloquial y pierde la solemnidad del formulaico.",
+            exampleEnglish: "Come what may, we will protect our clients' trust.",
+          },
+        ],
         commonMistake: {
-          wrong: "Be how it was, we must proceed (traducción literal de 'sea como fuere').",
+          wrong: "Be how it was, we must proceed.",
           wrongToken: "Be how it was",
           correct: "Be that as it may, we must proceed.",
           correctToken: "Be that as it may",
@@ -68,8 +90,30 @@ export function buildModule2FormulaicSubjunctive(
           { label: "RESULTADO TRASCENDENTAL", token: "the outcomes surpassed", tone: "emerald" },
           { label: "MARCO DE REFERENCIA", token: "all initial expectations.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Suffice it to say: síntesis que omite detalles",
+            segments: [
+              { label: "SÍNTESIS", token: "Suffice it to say that", tone: "violet" },
+              { label: "RESULTADO RESUMIDO", token: "the negotiations were tense", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el desenlace importa más que los detalles y quieres cerrar rápido, abres con Suffice it to say that y resumes el resultado. La señal es un proceso largo que ya conocen; contarlo paso a paso distrae, y 'it is enough to say' suena plano.",
+            exampleEnglish: "Suffice it to say that the negotiations were tense.",
+          },
+          {
+            label: "02 · Far be it from me: crítica sin arrogancia",
+            segments: [
+              { label: "PRECAUCIÓN", token: "Far be it from me to", tone: "violet" },
+              { label: "CRÍTICA SUAVE", token: "ignore these objections", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando tu crítica puede sonar arrogante, abres con Far be it from me to y la suavizas antes de decirla. La señal es el desacuerdo con alguien de más rango; sin la fórmula, 'I question your judgment' suena frontal y rompe la cortesía institucional.",
+            exampleEnglish: "Far be it from me to ignore these objections.",
+          },
+        ],
         commonMistake: {
-          wrong: "It is enough to say that (correcto pero plano y básico).",
+          wrong: "It is enough to say that the outcome was favorable.",
           wrongToken: "It is enough to say",
           correct: "Suffice it to say that the outcome was favorable.",
           correctToken: "Suffice it to say that",
@@ -117,6 +161,28 @@ export function buildModule2FormulaicSubjunctive(
         formulaSegments: [
           { label: "FACTOR DECISIVO (PASADO)", token: "Had it not been for their timely guidance,", tone: "violet" },
           { label: "RESULTADO ALTERNATIVO", token: "the entire initiative would have faltered.", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Were it not for: factor decisivo vigente",
+            segments: [
+              { label: "FACTOR DECISIVO (PRESENTE)", token: "Were it not for your support,", tone: "violet" },
+              { label: "RESULTADO HIPOTÉTICO", token: "we would be lost", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el factor decisivo sigue vigente y el resultado es hipotético en presente, usas Were it not for y cierras con would. La señal es un apoyo que todavía tienes; con 'if it wasn't for' aciertas, pero pierdes la marca de registro formal.",
+            exampleEnglish: "Were it not for your support, we would be lost.",
+          },
+          {
+            label: "02 · Had it not been for: factor decisivo ya ocurrido",
+            segments: [
+              { label: "FACTOR DECISIVO (PASADO)", token: "Had it not been for their warning,", tone: "violet" },
+              { label: "RESULTADO ALTERNATIVO", token: "we would have failed", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando el factor decisivo ya ocurrió en el pasado, la fórmula pasa a Had it not been for y el cierre a would have + participio. La señal es la mirada retrospectiva; usar 'were' ahí rompe la correspondencia temporal.",
+            exampleEnglish: "Had it not been for their warning, the launch would have collapsed.",
+          },
         ],
         commonMistake: {
           wrong: "If it wouldn't be for your help, we failed.",
@@ -169,10 +235,33 @@ export function buildModule2FormulaicSubjunctive(
           { label: "CONCESIÓN COMPACTA", token: "albeit demanding,", tone: "emerald" },
           { label: "ÁMBITO DEL LOGRO", token: "breakthrough in community health.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Albeit: concesión compacta dentro del sintagma",
+            segments: [
+              { label: "LOGRO CON CONCESIÓN", token: "a brief, albeit tense,", tone: "violet" },
+              { label: "NÚCLEO DEL SINTAGMA", token: "negotiation", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando elogias un logro y quieres admitir un coste en pocas palabras, insertas albeit + adjetivo entre comas, sin abrir otra oración. La señal es el contraste compacto dentro del mismo sintagma; con 'although it was' cortas el ritmo y repites estructura.",
+            exampleEnglish: "It was a brief, albeit tense, negotiation.",
+          },
+          {
+            label: "02 · Insofar as: límite exacto del respaldo",
+            segments: [
+              { label: "APOYO CONDICIONADO", token: "We support the plan", tone: "violet" },
+              { label: "LÍMITE DE ALCANCE", token: "insofar as", tone: "emerald" },
+              { label: "CONDICIÓN VIGENTE", token: "the budget permits", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando respaldas algo solo dentro de un límite, introduces ese límite con insofar as y sigues con el verbo en presente. La señal es la condición de alcance, no una causa; con 'because' afirmas un motivo y cambias el sentido del compromiso.",
+            exampleEnglish: "We support the plan insofar as it reduces waste.",
+          },
+        ],
         commonMistake: {
-          wrong: "a successful although it was demanding project (pesado y redundante).",
+          wrong: "It was a successful although it was demanding project.",
           wrongToken: "although it was demanding",
-          correct: "a successful, albeit demanding, project.",
+          correct: "It was a successful, albeit demanding, project.",
           correctToken: "albeit demanding",
           whySpanish: "'Albeit' reemplaza limpiamente a 'although it was' antes de adjetivos o frases breves.",
         },
@@ -220,8 +309,32 @@ export function buildModule2FormulaicSubjunctive(
           { label: "AUXILIAR INVERTIDO", token: "as do", tone: "emerald" },
           { label: "SUJETO COMPARADO", token: "all its founding members.", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · As do: coincidencia en presente",
+            segments: [
+              { label: "CLÁUSULA BASE", token: "They value transparency,", tone: "violet" },
+              { label: "AUXILIAR INVERTIDO", token: "as do", tone: "emerald" },
+              { label: "SUJETO COMPARADO", token: "our newest partners", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando dos sujetos comparten la misma acción en presente, cierras con as do + sujeto plural y omites el verbo repetido. La señal es la coincidencia de acción; 'as all its members do it' añade un 'it' que el inglés formal no admite.",
+            exampleEnglish: "They value transparency, as do our newest partners.",
+          },
+          {
+            label: "02 · Than did: comparación de acciones pasadas",
+            segments: [
+              { label: "COMPARACIÓN EN PASADO", token: "They responded faster", tone: "violet" },
+              { label: "AUXILIAR INVERTIDO", token: "than did", tone: "emerald" },
+              { label: "SUJETO COMPARADO", token: "their overseas counterparts", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando comparas dos acciones ya ocurridas, la inversión lleva el auxiliar did: than did + sujeto. La señal es el pasado en ambas partes; sin inversión la frase se entiende, pero pierde el balance rítmico que se espera en prosa académica.",
+            exampleEnglish: "They responded faster than did their overseas counterparts.",
+          },
+        ],
         commonMistake: {
-          wrong: "The institution values integrity, as all its members do it (coloquial y redundante).",
+          wrong: "The institution values integrity, as all its members do it.",
           wrongToken: "as all its members do it",
           correct: "The institution values integrity, as do all its members.",
           correctToken: "as do all its members",

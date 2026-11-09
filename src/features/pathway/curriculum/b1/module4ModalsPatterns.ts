@@ -17,8 +17,40 @@ export function buildModule4ModalsPatterns(
           { label: "IMPOSIBLE (NO)", token: "That can't be true (es absurdo)", tone: "emerald" },
           { label: "QUIZÁS", token: "She might be in a meeting", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Casi seguro: must be",
+            segments: [
+              { label: "CONCLUSIÓN POR EVIDENCIA", token: "must be + estado", tone: "violet" },
+              { label: "SEÑAL", token: "luces prendidas · auto afuera", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando la evidencia apunta a algo casi seguro, usa 'must be': es una conclusión, no una obligación. Contraste: con 'might be' dejas la duda abierta; con 'can't be' afirmas que es imposible.",
+            exampleEnglish: "The lights are on, he must be home.",
+          },
+          {
+            label: "02 · Imposible: can't be",
+            segments: [
+              { label: "CONCLUSIÓN IMPOSIBLE", token: "can't be + estado", tone: "violet" },
+              { label: "SEÑAL", token: "contradice los hechos", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando algo no puede ser cierto según la evidencia, usa 'can't be': niega la conclusión, no la acción. Contraste: 'must be' afirma lo probable; 'can't be' descarta lo absurdo; 'might be' solo especula.",
+            exampleEnglish: "That can't be the final price.",
+          },
+          {
+            label: "03 · Probable: might be",
+            segments: [
+              { label: "HIPÓTESIS ABIERTA", token: "might be + estado", tone: "violet" },
+              { label: "SIN PRUEBAS FIRMES", token: "cincuenta por ciento", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando tienes una hipótesis sin pruebas firmes, usa 'might be': dejas la puerta abierta. Contraste: 'must be' suena a conclusión casi segura y 'can't be' descarta; 'might be' es la opción prudente.",
+            exampleEnglish: "He might be waiting for us.",
+          },
+        ],
         commonMistake: {
-          wrong: "He can't be late (queriendo decir 'no debe de estar tarde').",
+          wrong: "He can't be late.",
           wrongToken: "can't be late",
           correct: "He must be running late.",
           correctToken: "must be",
@@ -66,6 +98,28 @@ export function buildModule4ModalsPatterns(
         formulaSegments: [
           { label: "VERBO IMÁN -ING", token: "enjoy · avoid · consider · mind · finish", tone: "violet" },
           { label: "ACCIÓN CON -ING", token: "working · learning · reviewing", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Gusto y rechazo: enjoy y avoid",
+            segments: [
+              { label: "GUSTO O RECHAZO", token: "enjoy · avoid + -ing", tone: "violet" },
+              { label: "ACCIÓN EN -ING", token: "working · making · reviewing", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando hablas de lo que disfrutas o de lo que quieres evitar, usa 'enjoy' y 'avoid' con '-ing': nunca con 'to'. Contraste: 'enjoy working' suena natural; 'enjoy to work' es el error típico.",
+            exampleEnglish: "I avoid checking emails at night.",
+          },
+          {
+            label: "02 · Cortesía y cierre: mind y finish",
+            segments: [
+              { label: "CORTESÍA O CIERRE", token: "mind · finish + -ing", tone: "violet" },
+              { label: "SIN 'TO'", token: "mind waiting · finish reviewing", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando pides un favor con cortesía con 'would you mind' o cierras una acción terminada con 'finish', el verbo siguiente va en '-ing'. Contraste: 'mind waiting' es cortés; 'mind to wait' no existe en inglés.",
+            exampleEnglish: "We finished reviewing the budget yesterday.",
+          },
         ],
         commonMistake: {
           wrong: "I enjoy to work with this team.",
@@ -118,6 +172,28 @@ export function buildModule4ModalsPatterns(
           { label: "PUENTE TO", token: "to", tone: "emerald" },
           { label: "VERBO BASE", token: "expand · achieve · deliver", tone: "sky" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Decisión y plan: decide y plan",
+            segments: [
+              { label: "DECISIÓN Y PLAN", token: "decide · plan + to", tone: "violet" },
+              { label: "PUENTE TO", token: "to expand · to hire", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando hablas de una decisión tomada o de un plan hacia adelante, usa 'decide' y 'plan' con 'to'. Contraste: 'decided to expand' es correcto; 'decided expanding' es el error típico de quien traduce del español.",
+            exampleEnglish: "They plan to hire two designers.",
+          },
+          {
+            label: "02 · Logro y esperanza: manage y hope",
+            segments: [
+              { label: "LOGRO Y ESPERANZA", token: "manage · hope + to", tone: "violet" },
+              { label: "VERBO BASE LIMPIO", token: "to deliver · to see", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando relatas un logro que costó esfuerzo o una esperanza futura, usa 'manage' y 'hope' con 'to'. Contraste: 'manage to' implica dificultad superada; 'hope to' apunta al futuro y nunca lleva '-ing'.",
+            exampleEnglish: "She managed to catch the last train.",
+          },
+        ],
         commonMistake: {
           wrong: "We decided expanding the project.",
           wrongToken: "decided expanding",
@@ -168,8 +244,40 @@ export function buildModule4ModalsPatterns(
           { label: "PAUSA PARA HACER", token: "stop to do (hacer una pausa para)", tone: "violet" },
           { label: "ABANDONAR HÁBITO", token: "stop doing (dejar de hacer)", tone: "emerald" },
         ],
+        formulaCases: [
+          {
+            label: "01 · Pausa para hacer: stop to",
+            segments: [
+              { label: "PAUSA CON PROPÓSITO", token: "stop to + verbo", tone: "violet" },
+              { label: "SEÑAL", token: "interrumpes para hacer otra cosa", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando interrumpes una acción para hacer otra cosa, usa 'stop to': marca una pausa con propósito. Contraste: 'stopped to drink coffee' es la pausa; 'stopped drinking coffee' es abandonar el hábito.",
+            exampleEnglish: "We stopped to check the map.",
+          },
+          {
+            label: "02 · Abandonar el hábito: stop + -ing",
+            segments: [
+              { label: "HÁBITO ABANDONADO", token: "stop + -ing", tone: "violet" },
+              { label: "SEÑAL", token: "cambio definitivo", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando dejas un hábito de forma definitiva, usa 'stop' con '-ing': la acción queda abandonada. Contraste: con 'to' sería una pausa momentánea; con '-ing' el cambio se entiende como permanente.",
+            exampleEnglish: "She stopped using that old app.",
+          },
+          {
+            label: "03 · Tarea pendiente o recuerdo: remember y forget",
+            segments: [
+              { label: "TAREA PENDIENTE", token: "remember · forget + to", tone: "violet" },
+              { label: "RECUERDO YA VIVIDO", token: "remember + -ing", tone: "sky" },
+            ],
+            explanationSpanish:
+              "Cuando hablas de una tarea pendiente, usa 'remember to' o 'forget to'; cuando hablas de un recuerdo ya vivido, usa '-ing'. Contraste: 'remember to send' es deberlo hacer; 'remember sending' es tenerlo hecho.",
+            exampleEnglish: "Don't forget to call the client.",
+          },
+        ],
         commonMistake: {
-          wrong: "I stopped to smoke last year (¡significa que paraste tu auto para fumar!).",
+          wrong: "I stopped to smoke last year.",
           wrongToken: "stopped to smoke",
           correct: "I stopped smoking last year.",
           correctToken: "stopped smoking",
@@ -177,12 +285,12 @@ export function buildModule4ModalsPatterns(
         },
         examples: [
           {
-            english: "Remember to send the email before 5 PM (recordar la tarea pendiente).",
+            english: "Remember to send the email before five.",
             spanish: "Recuerda enviar el correo antes de las 5 PM.",
             pronunciationHint: "rimémber tu send di iméil bifór fáiv pi em",
           },
           {
-            english: "I remember sending the email yesterday (tengo el recuerdo en mi mente).",
+            english: "I remember sending the email yesterday.",
             spanish: "Recuerdo haber enviado el correo ayer.",
             pronunciationHint: "ai rimémber sénding di iméil yésterdei",
           },
@@ -217,6 +325,28 @@ export function buildModule4ModalsPatterns(
         formulaSegments: [
           { label: "¿CÓMO TE SIENTES?", token: "I am bored · interested · excited", tone: "violet" },
           { label: "¿CÓMO ES LA COSA?", token: "The movie is boring · interesting · exciting", tone: "emerald" },
+        ],
+        formulaCases: [
+          {
+            label: "01 · Lo que siente la persona: -ed",
+            segments: [
+              { label: "SENSACIÓN RECIBIDA", token: "bored · interested · excited", tone: "violet" },
+              { label: "TERMINACIÓN -ED", token: "la persona lo siente", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando describes cómo se siente una persona, usa '-ed': 'bored', 'interested'. La persona recibe la sensación, no la provoca. Contraste: si dices 'I am boring', afirmas que tú aburres a los demás.",
+            exampleEnglish: "The team was excited about the news.",
+          },
+          {
+            label: "02 · Lo que causa la sensación: -ing",
+            segments: [
+              { label: "ORIGEN DEL EFECTO", token: "boring · interesting · exciting", tone: "violet" },
+              { label: "TERMINACIÓN -ING", token: "la cosa lo provoca", tone: "emerald" },
+            ],
+            explanationSpanish:
+              "Cuando describes la cosa que provoca la sensación (una reunión, un libro), usa '-ing': 'boring', 'interesting'. Contraste: '-ed' describe a quien lo siente; '-ing' describe el origen del efecto.",
+            exampleEnglish: "That documentary was really confusing.",
+          },
         ],
         commonMistake: {
           wrong: "I am very boring in this meeting.",

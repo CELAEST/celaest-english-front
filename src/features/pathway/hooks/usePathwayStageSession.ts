@@ -516,7 +516,11 @@ export function usePathwayStageSession(
         extractedErrors: [],
       },
     });
-    playAudio("¡Impecable! Base conquistada con éxito. Ya estás listo para el siguiente reto.");
+    const localProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+    const victorySpeech =
+      speechMomentText(localProfile, "voice.victory") ??
+      "¡Impecable! Base conquistada con éxito. Ya estás listo para el siguiente reto.";
+    playAudio(victorySpeech);
   }, [activeNode, targetSentence, finishLesson, playAudio]);
 
   const canSkipWithoutMic = micUnavailable || failedVoiceAttempts >= 2;

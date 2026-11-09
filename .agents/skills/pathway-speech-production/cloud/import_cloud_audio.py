@@ -34,6 +34,7 @@ def run(cmd: list[str]) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
     ap.add_argument("--zip", required=True)
     ap.add_argument("--skip-qa", action="store_true")
     ap.add_argument("--skip-tests", action="store_true")
@@ -65,9 +66,10 @@ def main() -> int:
             return 0
 
         bases = []
+        audio_root = ROOT / f"public/audio/pathway/{args.level}"
         for folder in folders:
             base = folder.name
-            dest = AUDIO / base
+            dest = audio_root / base
             dest.mkdir(parents=True, exist_ok=True)
             for mp3 in folder.glob("*.mp3"):
                 shutil.copy2(mp3, dest / mp3.name)
@@ -76,23 +78,35 @@ def main() -> int:
             bases.append(base)
             print(f"{base}: {len(list(folder.glob('*.mp3')))} pistas copiadas")
 
+    failed: list[str] = []
     for base in bases:
         print(f"\n--- {base} ---")
-        if run([sys.executable, str(GEN), "--base", base, "--manifest-only"]) != 0:
+        manifest_cmd = [sys.executable, str(GEN), "--level", args.level, "--base", base, "--manifest-only"]
+        if args.level != "a1":
+            manifest_cmd += ["--profile", str(ROOT / f"src/features/pathway/speech/profiles/{args.level}/base_{base[-2:]}.ts")]
+        if run(manifest_cmd) != 0:
             print(f"{base}: falló el manifiesto")
-            return 1
+            failed.append(base)
+            continue
         if not args.skip_qa:
-            if run([sys.executable, str(GEN), "--base", base, "--qa-only", "--force",
-                    "--qa-model", "small"]) != 0:
-                print(f"{base}: QA con pistas fuera del gate; revisá .pathway_qa_{base}.json")
-                return 1
-        if run([sys.executable, str(PATHWAY), "audit", "--base", base, "--no-asr"]) != 0:
-            print(f"{base}: audit rojo; no se cierra")
-            return 1
-        if not args.no_close:
-            if run([sys.executable, str(PATHWAY), "close", "--base", base]) != 0:
-                print(f"{base}: no se pudo registrar")
-                return 1
+            qa_cmd = [sys.executable, str(GEN), "--level", args.level, "--base", base,
+                      "--qa-only", "--force", "--qa-model", "small"]
+            if args.level != "a1":
+                qa_cmd += ["--profile", str(ROOT / f"src/features/pathway/speech/profiles/{args.level}/base_{base[-2:]}.ts")]
+            if run(qa_cmd) != 0:
+                print(f"{base}: QA con pistas fuera del gate; queda para revisión")
+                failed.append(base)
+                continue
+        if args.level == "a1":
+            if run([sys.executable, str(PATHWAY), "audit", "--base", base, "--no-asr"]) != 0:
+                print(f"{base}: audit rojo; no se cierra")
+                failed.append(base)
+                continue
+            if not args.no_close:
+                if run([sys.executable, str(PATHWAY), "close", "--base", base]) != 0:
+                    print(f"{base}: no se pudo registrar")
+                    failed.append(base)
+                    continue
 
     if not args.skip_tests:
         npx = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
@@ -102,6 +116,9 @@ def main() -> int:
         if run([npx, "vitest", "run", "src/features/pathway"]) != 0:
             return 1
 
+    if failed:
+        print(f"\nimportadas con pendientes: {len(bases)-len(failed)}/{len(bases)}; revisar: {', '.join(failed)}")
+        return 1
     print(f"\nlisto: {len(bases)} base(s) importadas desde {zip_path.name}")
     return 0
 

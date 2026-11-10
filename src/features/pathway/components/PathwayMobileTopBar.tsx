@@ -22,28 +22,32 @@ export const PathwayMobileTopBar: React.FC<PathwayMobileTopBarProps> = React.mem
 
     return (
       <header className="w-full flex items-center justify-between pt-1.5 pb-0 px-2.5 sm:px-3 border-b border-white/[0.06] select-none shrink-0 z-20 bg-transparent">
-        {/* Left: Base & Level (Zero-Box CELAEST Standard) */}
+        {/* Left: Base & Level: 008 ⌄ · A1 ⌄ (Both with chevron, centered, exact same color) */}
         <div className="flex items-center gap-1.5 pb-1.5 shrink-0">
           <button
             type="button"
             onClick={onOpenCurriculum}
-            className="font-mono text-xs font-bold text-white hover:text-[#DDD6FE] transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            className="group inline-flex items-center gap-1 font-mono text-xs font-semibold text-white/90 hover:text-white transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             title="Ver ruta de bases"
           >
-            {baseCode}
+            <span>{baseCode}</span>
+            <ChevronDown size={10} className="text-white/50 group-hover:text-white transition-colors" />
           </button>
+
+          <span className="text-white/20 text-[10px] font-mono">•</span>
+
           {onSelectLevel ? (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
               <LevelSelectorPill currentLevel={currentLevel} onSelectLevel={onSelectLevel} />
             </div>
           ) : (
             <button
               type="button"
               onClick={onOpenCurriculum}
-              className="flex items-center gap-0.5 font-mono text-[10.5px] font-medium text-white/45 hover:text-white cursor-pointer"
+              className="group inline-flex items-center gap-1 font-mono text-xs font-semibold text-white/90 hover:text-white cursor-pointer"
             >
               <span>{currentLevel}</span>
-              <ChevronDown size={10} className="text-white/40" />
+              <ChevronDown size={10} className="text-white/50 group-hover:text-white transition-colors" />
             </button>
           )}
         </div>

@@ -25,25 +25,34 @@ export const PathwayLessonHeader: React.FC<PathwayLessonHeaderProps> = React.mem
 
     return (
       <header className="w-full flex items-center justify-between pt-1.5 pb-0 px-3 sm:px-4 border-b border-white/[0.06] select-none shrink-0 z-20 bg-transparent">
-        {/* 1. Left Cluster: 008 A1 ⌄ (Zero-Box CELAEST Standard) */}
+        {/* 1. Left Cluster: 008 ⌄ · A1 ⌄ (Both with chevron, centered, exact same color) */}
         <div className="flex items-center gap-2 pb-2 shrink-0">
           <button
             type="button"
             onClick={onOpenCurriculum}
-            className="font-mono text-xs font-bold tracking-wider text-white hover:text-[#DDD6FE] transition-colors cursor-pointer"
-            title="Base activa (Abrir Mapa Curricular)"
+            className="group inline-flex items-center gap-1 font-mono text-xs font-semibold tracking-wide text-white/90 hover:text-white transition-all cursor-pointer"
+            title="Cambiar base activa (Abrir Mapa Curricular)"
           >
-            {baseCode}
+            <span>{baseCode}</span>
+            <ChevronDown size={11} className="text-white/50 group-hover:text-white transition-colors" />
           </button>
+
+          <span className="text-white/20 text-xs font-mono">•</span>
+
           {onSelectLevel ? (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
               <LevelSelectorPill currentLevel={currentLevel} onSelectLevel={onSelectLevel} />
             </div>
           ) : (
-            <div className="flex items-center gap-0.5 font-mono text-[11px] font-semibold text-white/45">
+            <button
+              type="button"
+              onClick={onOpenCurriculum}
+              className="group inline-flex items-center gap-1 font-mono text-xs font-semibold tracking-wide text-white/90 hover:text-white transition-all cursor-pointer"
+              title="Cambiar nivel CEFR"
+            >
               <span>{currentLevel}</span>
-              <ChevronDown size={10} className="text-white/40" />
-            </div>
+              <ChevronDown size={11} className="text-white/50 group-hover:text-white transition-colors" />
+            </button>
           )}
         </div>
 

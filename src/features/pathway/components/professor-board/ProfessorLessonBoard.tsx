@@ -69,10 +69,14 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
   const baseCode = String((node?.orderIndex ?? 0) + 1).padStart(2, "0");
 
   return (
-    <section className="relative z-10 shrink-0 max-h-[54dvh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:max-h-none lg:overflow-hidden rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/[0.08] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]">
+    <section className={`relative z-10 shrink-0 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/[0.08] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)] ${
+      isAskingOpen
+        ? "h-[54dvh] sm:h-[480px] lg:h-[480px] flex flex-col overflow-hidden"
+        : "max-h-[54dvh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:max-h-none lg:overflow-hidden"
+    }`}>
       <div className="absolute inset-x-0 top-0 h-px bg-white/[0.06]" aria-hidden />
       <div className="absolute left-0 top-0 h-px bg-white/40 transition-[width] duration-150 ease-linear" style={{ width: `${progress * 100}%` }} aria-hidden />
-      <div className="flex flex-col gap-2 px-3.5 sm:px-5 pb-2.5 sm:pb-3 pt-3 sm:pt-3.5">
+      <div className={`flex flex-col px-3.5 sm:px-5 pb-2.5 sm:pb-3 pt-3 sm:pt-3.5 ${isAskingOpen ? "flex-1 min-h-0 overflow-hidden" : "gap-2"}`}>
         {isAskingOpen ? (
           <LessonBoardChatMode
             node={node}

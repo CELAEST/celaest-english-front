@@ -34,11 +34,16 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
   }, [messages, isSubmitting]);
 
   const hasMessages = messages.length > 0;
+  const chips = suggestedQuestions && suggestedQuestions.length > 0 ? suggestedQuestions : [
+    "¿Por qué en español decimos diferente?",
+    "¿Cuál es el error más común?",
+    "Dame otro ejemplo práctico",
+  ];
 
   return (
-    <div className="flex flex-col gap-2 min-h-[200px] max-h-[460px] animate-[fadeIn_0.2s_ease-out_both] select-none">
-      {/* 1. Header (Exact Match of LessonBoardHeader) */}
-      <div className="flex items-start justify-between pb-1.5 border-b border-white/[0.05]">
+    <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden select-none">
+      {/* 1. Pinned Header (Strictly fixed at top, never scrolls or disappears) */}
+      <div className="shrink-0 flex items-start justify-between pb-2 border-b border-white/[0.06]">
         <div>
           <div className="text-[9.5px] font-mono uppercase tracking-[0.2em] text-[#A27FF3]">
             BASE {baseCode} · CONSULTA CON LIAM
@@ -70,19 +75,33 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
         </div>
       </div>
 
-      {/* 2. Messages Container (Editorial Flow) */}
-      <div className="flex-1 min-h-[130px] max-h-[260px] sm:max-h-[290px] overflow-y-auto space-y-3 px-0.5 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* 2. Messages Container (The ONLY scrolling container in the card) */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 px-0.5 py-2.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {!hasMessages ? (
-          <div className="flex flex-col gap-2 py-1">
+          <div className="flex flex-col gap-2.5 py-1">
             <p className="text-xs text-white/75 leading-relaxed font-light">
               Estoy aquí para resolver cualquier duda sobre esta base. Escribe tu pregunta abajo o toca una sugerencia:
             </p>
-            <PathwayChatInputBar
-              isSubmitting={isSubmitting}
-              onSubmit={askQuestion}
-              suggestedQuestions={suggestedQuestions}
-              showChips
-            />
+            <div className="flex flex-col gap-1.5 pt-1">
+              <span className="text-[9.5px] font-mono uppercase tracking-[0.18em] text-white/35">
+                Sugerencias para esta regla
+              </span>
+              {chips.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => askQuestion(chip)}
+                  className="group w-full text-left flex items-baseline gap-2 py-1 text-xs text-white/55 hover:text-white transition-colors cursor-pointer"
+                >
+                  <span className="text-[#A27FF3] text-[10px] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
+                    →
+                  </span>
+                  <span className="truncate font-light underline underline-offset-2 decoration-white/15 group-hover:decoration-white/50">
+                    {chip}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <>
@@ -90,7 +109,7 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
               <PathwayChatMessageBubble key={msg.id} message={msg} />
             ))}
 
-            {/* Thinking Indicator (Subtle, No Loud Boxes) */}
+            {/* Thinking Indicator */}
             {isSubmitting && (
               <div className="text-[11px] text-[#A27FF3] italic font-light py-1 animate-pulse">
                 Liam está estructurando la explicación...
@@ -101,15 +120,15 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
         )}
       </div>
 
-      {/* 3. Input Bar (when messages exist) */}
-      {hasMessages && (
+      {/* 3. Pinned Input Bar (Fixed at bottom, ALWAYS 100% visible, never cut off) */}
+      <div className="shrink-0 pt-1.5">
         <PathwayChatInputBar
           isSubmitting={isSubmitting}
           onSubmit={askQuestion}
-          suggestedQuestions={suggestedQuestions}
-          showChips={messages.length < 3}
+          showChips={false}
+          variant="railZeroBox"
         />
-      )}
+      </div>
     </div>
   );
 };

@@ -39,7 +39,7 @@ export const PathwayChatInputBar: React.FC<PathwayChatInputBarProps> = ({
   const hasText = Boolean(text.trim());
 
   return (
-    <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.06] select-none">
+    <div className={`flex flex-col select-none ${showChips ? "gap-2 pt-2 border-t border-white/[0.06]" : ""}`}>
       {/* Suggested question chips (clean text links with subtle arrow) */}
       {showChips && (
         <div className="flex flex-col gap-1 pb-0.5">
@@ -64,15 +64,22 @@ export const PathwayChatInputBar: React.FC<PathwayChatInputBarProps> = ({
         </div>
       )}
 
-      {/* Input Bar — Matching Design in Image 5: Sleek Enclosed Capsule with Internal Up-Arrow */}
+      {/* Input Bar — Variant 1: Rail Linear (Zero-Box Puro — Sin Cajas) */}
       {variant === "railZeroBox" && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSubmit();
           }}
-          className="group relative flex items-center gap-2.5 px-3.5 h-10 rounded-full bg-white/[0.03] border border-white/[0.12] focus-within:border-[#A27FF3]/70 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_16px_rgba(162,127,243,0.18)] transition-all duration-200"
+          className="group relative flex items-center gap-2.5 pb-2 pt-1 border-b border-white/[0.12] focus-within:border-[#A27FF3] transition-colors duration-200"
         >
+          <div className="flex items-center gap-1.5 shrink-0 text-[#A27FF3]/75 group-focus-within:text-[#A27FF3] transition-colors">
+            <Sparkles size={13} />
+            <span className="hidden sm:inline font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40 group-focus-within:text-[#DDD6FE] transition-colors">
+              Liam
+            </span>
+          </div>
+
           <input
             type="text"
             value={text}

@@ -72,13 +72,18 @@ def run(cmd: list[str]) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--level", default="a1", choices=["a1", "a2", "b1", "b2", "c1", "c2"])
-    ap.add_argument("--from", dest="from_base", required=True)
-    ap.add_argument("--to", dest="to_base", required=True)
+    ap.add_argument("--from", dest="from_base", default=None)
+    ap.add_argument("--to", dest="to_base", default=None)
+    ap.add_argument("--common", action="store_true", help="Generar frases universales y de onboarding")
     ap.add_argument("--qa-model", default="small", choices=["small", "medium"])
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-import", action="store_true")
     ap.add_argument("--timeout-min", type=int, default=240)
     args = ap.parse_args()
+
+    if not args.common and (not args.from_base or not args.to_base):
+        print("FAIL: especifica --common o define --from y --to")
+        return 1
 
     user = username()
     if not user and not args.dry_run:
@@ -110,6 +115,10 @@ def main() -> int:
         "licenses": [{"name": "CC0-1.0"}],
     }, indent=1), encoding="utf-8")
 
+    if args.common:
+        run_args = '--common'
+    else:
+        run_args = f'--level {args.level} --from {args.from_base} --to {args.to_base} --qa-model {args.qa_model}'
     script = f'''# Generado por kaggle_batch.py
 import subprocess, sys, glob, os, shutil
 print("INPUT:", os.listdir("/kaggle/input"), flush=True)
@@ -125,7 +134,7 @@ subprocess.run([sys.executable, "-m", "pip", "install", "-q", "chatterbox-tts", 
 # Kaggle trae torchvision incompatible con torch y rompe el import de Chatterbox.
 subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "-q", "torchvision"], check=False)
 root = "/kaggle/working/pathway_cloud"
-cmd = [sys.executable, "cloud/run_cloud.py", "--level", "{args.level}", "--from", "{args.from_base}", "--to", "{args.to_base}", "--qa-model", "{args.qa_model}"]
+cmd = [sys.executable, "cloud/run_cloud.py", *("{run_args}".split())]
 print("RUN", cmd, flush=True)
 rc = subprocess.run(cmd, cwd=root).returncode
 sys.exit(rc)'''

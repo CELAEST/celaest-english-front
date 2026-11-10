@@ -18,6 +18,8 @@ import { PathwayMobileTopBar } from "./PathwayMobileTopBar";
 import { PathwayProfessorStage } from "./PathwayProfessorStage";
 import { PathwaySkeleton } from "./PathwaySkeleton";
 import { LiveBoardState } from "./professor-board/LessonBoardBody";
+import { PathwayCourseIntroModal } from "./onboarding/PathwayCourseIntroModal";
+import { AppEcosystemTour } from "./tour/AppEcosystemTour";
 
 export interface PathwayStudioViewProps {
   roleName?: string | undefined; userLevel?: string | undefined; learningGoal?: string | undefined;
@@ -34,11 +36,23 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [byokOpen, setByokOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, isByokMode } = useLinguaEntitlement();
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
   useEffect(() => { warmProfessorModelCache(); }, []);
+  useEffect(() => {
+    try {
+      const introSeen = localStorage.getItem(`lingua_intro_seen_${roleName}`);
+      if (!introSeen) {
+        setIntroOpen(true);
+      }
+    } catch {
+      // safe fallback
+    }
+  }, [roleName]);
   useEffect(() => {
     if (isByokMode) {
       void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
@@ -127,6 +141,21 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
       <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
       <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={(code) => void startDirectCheckout(code)} onRefreshEntitlement={() => void refreshEntitlement()} />
       <LinguaByokRequiredModal isOpen={byokOpen} onClose={() => setByokOpen(false)} onConfigured={() => setByokOpen(false)} />
+      <PathwayCourseIntroModal
+        isOpen={introOpen}
+        userId={roleName}
+        onFinish={(triggerTour) => {
+          setIntroOpen(false);
+          if (triggerTour) {
+            setTourOpen(true);
+          }
+        }}
+      />
+      <AppEcosystemTour
+        isOpen={tourOpen}
+        userId={roleName}
+        onClose={() => setTourOpen(false)}
+      />
     </div>
   );
 };

@@ -55,9 +55,19 @@ def main() -> int:
             p.parent for p in tmp_path.rglob("base_*/*.mp3")
             if p.parent.name.startswith("base_")
         })
-        if not folders:
-            print("FAIL: el ZIP no contiene carpetas base_XX con mp3")
+        common_files = list(tmp_path.rglob("common/*.mp3"))
+        if not folders and not common_files:
+            print("FAIL: el ZIP no contiene carpetas base_XX ni common con mp3")
             return 1
+        if common_files:
+            common_dest = ROOT / "public/audio/pathway/common"
+            common_dest.mkdir(parents=True, exist_ok=True)
+            for mp3 in common_files:
+                shutil.copy2(mp3, common_dest / mp3.name)
+            print(f"common: {len(common_files)} pistas copiadas a {common_dest}")
+        if not folders:
+            print("Importación de pistas common completada.")
+            return 0
         print("bases en el ZIP:", ", ".join(f.name for f in folders))
         if args.dry_run:
             for folder in folders:

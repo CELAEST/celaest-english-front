@@ -67,6 +67,10 @@ def main() -> int:
             count += 1
         zf.write(SKILL / "cloud/run_cloud.py", f"{root_name}/cloud/run_cloud.py")
         zf.write(SKILL / "cloud/README.md", f"{root_name}/README_CLOUD.md")
+        common_profile = PROFILES / "common_universal.ts"
+        if common_profile.exists():
+            zf.write(common_profile, f"{root_name}/src/features/pathway/speech/profiles/common_universal.ts")
+            count += 1
         for profile in profiles:
             zf.write(profile, f"{root_name}/src/features/pathway/speech/profiles/{profile.name}")
             count += 1

@@ -1,4 +1,5 @@
 import { BaseSpeechProfile } from "../types";
+import { commonUniversalSpeechProfile } from "./common_universal";
 import { base01SpeechProfile } from "./base_01";
 import { base02SpeechProfile } from "./base_02";
 import { base03SpeechProfile } from "./base_03";
@@ -428,6 +429,8 @@ export function resolveSpeechProfile(
     (TITLE_HINTS[p.baseId] ?? []).some((hint) => normalized.includes(hint)),
   );
 }
+
+export { commonUniversalSpeechProfile };
 
 /** Texto de una pista del perfil, o `undefined` si no existe. */
 export function speechMomentText(

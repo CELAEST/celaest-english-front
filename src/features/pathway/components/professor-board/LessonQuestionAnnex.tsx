@@ -40,9 +40,8 @@ export const LessonQuestionAnnex: React.FC<LessonQuestionAnnexProps> = ({
           e.preventDefault();
           handleSubmit();
         }}
-        className="group relative flex items-center gap-2.5 pb-2 pt-1 border-b border-white/[0.12] focus-within:border-[#A27FF3] transition-colors duration-200"
+        className="group relative flex items-center gap-2.5 px-3.5 h-10 rounded-full bg-white/[0.03] border border-white/[0.12] focus-within:border-[#A27FF3]/70 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_16px_rgba(162,127,243,0.18)] transition-all duration-200"
       >
-        <Sparkles size={13} className="text-[#A27FF3] shrink-0 opacity-75 group-focus-within:opacity-100 transition-opacity" />
         <input
           type="text"
           value={text}

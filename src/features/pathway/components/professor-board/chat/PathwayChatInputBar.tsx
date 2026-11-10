@@ -64,22 +64,15 @@ export const PathwayChatInputBar: React.FC<PathwayChatInputBarProps> = ({
         </div>
       )}
 
-      {/* Input Bar — Variant 1: Rail Linear (Zero-Box Puro — Sin Cajas) */}
+      {/* Input Bar — Matching Design in Image 5: Sleek Enclosed Capsule with Internal Up-Arrow */}
       {variant === "railZeroBox" && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSubmit();
           }}
-          className="group relative flex items-center gap-2.5 pb-2 pt-1 border-b border-white/[0.12] focus-within:border-[#A27FF3] transition-colors duration-200"
+          className="group relative flex items-center gap-2.5 px-3.5 h-10 rounded-full bg-white/[0.03] border border-white/[0.12] focus-within:border-[#A27FF3]/70 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_16px_rgba(162,127,243,0.18)] transition-all duration-200"
         >
-          <div className="flex items-center gap-1.5 shrink-0 text-[#A27FF3]/75 group-focus-within:text-[#A27FF3] transition-colors">
-            <Sparkles size={13} />
-            <span className="hidden sm:inline font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/40 group-focus-within:text-[#DDD6FE] transition-colors">
-              Liam
-            </span>
-          </div>
-
           <input
             type="text"
             value={text}

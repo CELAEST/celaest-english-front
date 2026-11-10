@@ -179,10 +179,20 @@ async function callCoreAiMesh(systemPrompt: string, userPrompt: string): Promise
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const candidateUrls = [
-    `${ENV.coreAiUrl}/ai/chat/simple`,
-    "https://celaest-core.onrender.com/api/v1/ai/chat/simple",
-  ];
+  const isBrowser = typeof window !== "undefined";
+  const candidateUrls: string[] = [];
+
+  // In the browser, same-origin relative proxy works seamlessly in both Vite dev (/core-ai)
+  // and Vercel prod (/core-ai -> Render rewrites), with zero CORS and zero port 8085 connection errors.
+  if (isBrowser) {
+    candidateUrls.push("/core-ai/ai/chat/simple");
+  }
+
+  // Fallbacks: configured endpoint (if not localhost) or direct Render endpoint
+  if (ENV.coreAiUrl && !ENV.coreAiUrl.includes("127.0.0.1") && !ENV.coreAiUrl.includes("localhost")) {
+    candidateUrls.push(`${ENV.coreAiUrl}/ai/chat/simple`);
+  }
+  candidateUrls.push("https://celaest-core.onrender.com/api/v1/ai/chat/simple");
 
   for (const url of candidateUrls) {
     try {

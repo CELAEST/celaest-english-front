@@ -7,6 +7,7 @@ import { LiveBoardFormulaScene } from "../professor-board/live-scenes/LiveBoardF
 import { LiveBoardTrapScene } from "../professor-board/live-scenes/LiveBoardTrapScene";
 import { LiveBoardTrapCheckScene } from "../professor-board/live-scenes/LiveBoardTrapCheckScene";
 import { LiveBoardExamplesScene } from "../professor-board/live-scenes/LiveBoardExamplesScene";
+import { LiveBoardOrientationScene } from "../professor-board/live-scenes/LiveBoardOrientationScene";
 import { DesktopLiveRuleFooter } from "./DesktopLiveRuleFooter";
 
 export interface DesktopLiveRuleStageProps {
@@ -59,7 +60,13 @@ export const DesktopLiveRuleStage: React.FC<DesktopLiveRuleStageProps> = ({
             subtitleSpanish={liveBoard?.subtitleSpanish} onPlaySample={onPlayAudio}
           />
         )}
-        {(activeBeat === "FORMULA" || activeBeat === "ORIENTATION") && (
+        {activeBeat === "ORIENTATION" && (
+          <LiveBoardOrientationScene
+            subtitleSpanish={liveBoard?.subtitleSpanish}
+            onContinueToFormula={() => liveBoard?.onSelectBeat("FORMULA")}
+          />
+        )}
+        {activeBeat === "FORMULA" && (
           <LiveBoardFormulaScene
             lesson={lesson} activeCaseIndex={liveBoard ? liveBoard.activeFormulaCaseIndex : 0}
             revealedCountOverride={liveBoard?.formulaRevealCount} subtitleSpanish={liveBoard?.subtitleSpanish}

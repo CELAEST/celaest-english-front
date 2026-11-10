@@ -182,22 +182,26 @@ async function callCoreAiMesh(systemPrompt: string, userPrompt: string): Promise
   const isBrowser = typeof window !== "undefined";
   const candidateUrls: string[] = [];
 
-  // In the browser, same-origin relative proxy works seamlessly in both Vite dev (/core-ai)
-  // and Vercel prod (/core-ai -> Render rewrites), with zero CORS and zero port 8085 connection errors.
+  // In the browser, ALWAYS use the same-origin relative proxy (/core-ai).
+  // - In dev: Vite proxies /core-ai -> https://celaest-core.onrender.com/api/v1
+  // - In prod: Vercel rewrites /core-ai/:path* -> https://celaest-core.onrender.com/api/v1/:path*
+  // Same-origin eliminates all CORS preflight blocks and localhost port failures.
+  // Direct cross-origin calls to Render MUST NEVER be made from the browser.
   if (isBrowser) {
     candidateUrls.push("/core-ai/ai/chat/simple");
+  } else {
+    // In Node.js / SSR / Unit test environments:
+    if (ENV.coreAiUrl && !ENV.coreAiUrl.includes("127.0.0.1") && !ENV.coreAiUrl.includes("localhost")) {
+      candidateUrls.push(`${ENV.coreAiUrl}/ai/chat/simple`);
+    }
+    candidateUrls.push("https://celaest-core.onrender.com/api/v1/ai/chat/simple");
   }
-
-  // Fallbacks: configured endpoint (if not localhost) or direct Render endpoint
-  if (ENV.coreAiUrl && !ENV.coreAiUrl.includes("127.0.0.1") && !ENV.coreAiUrl.includes("localhost")) {
-    candidateUrls.push(`${ENV.coreAiUrl}/ai/chat/simple`);
-  }
-  candidateUrls.push("https://celaest-core.onrender.com/api/v1/ai/chat/simple");
 
   for (const url of candidateUrls) {
     try {
+      // 35s timeout to comfortably accommodate Render free-tier cold starts (~15-20s)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12_000);
+      const timeoutId = setTimeout(() => controller.abort(), 35_000);
 
       const res = await fetch(url, {
         method: "POST",

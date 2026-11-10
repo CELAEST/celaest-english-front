@@ -63,12 +63,9 @@ const resolvedCelaestBackUrl = trimTrailingSlash(
 );
 
 const resolvedCoreAiUrl = trimTrailingSlash(
-  coreAiUrl ||
-    (isTest
-      ? "http://127.0.0.1:8085/api/v1"
-      : isLocalhost
-        ? `${window.location.origin}/core-ai`
-        : defaultProdCoreAiUrl),
+  isBrowser
+    ? `${window.location.origin}/core-ai`
+    : (coreAiUrl || (isTest ? "http://127.0.0.1:8085/api/v1" : defaultProdCoreAiUrl)),
 );
 
 export const ENV = {

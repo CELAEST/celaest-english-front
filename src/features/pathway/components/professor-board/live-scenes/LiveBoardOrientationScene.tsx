@@ -77,3 +77,4 @@ export const LiveBoardOrientationScene: React.FC<LiveBoardOrientationSceneProps>
     </div>
   );
 };
+

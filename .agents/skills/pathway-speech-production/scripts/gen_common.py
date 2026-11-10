@@ -68,9 +68,9 @@ def main() -> int:
 
     import torch
     import torchaudio as ta
-    from chatterbox_tts import Chatterbox
+    from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
-    model = Chatterbox.from_pretrained(device="cuda" if torch.cuda.is_available() else "cpu")
+    model = ChatterboxMultilingualTTS.from_pretrained(device="cuda" if torch.cuda.is_available() else "cpu")
     seeds = [int(s) for s in args.seeds.split(",")]
 
     for i, m in enumerate(MOMENTS, 1):
@@ -104,3 +104,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

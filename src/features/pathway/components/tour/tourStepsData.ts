@@ -77,3 +77,4 @@ export const ECOSYSTEM_TOUR_STEPS: TourStep[] = [
     highlightPill: "Métricas Reales A1 → C2",
   },
 ];
+

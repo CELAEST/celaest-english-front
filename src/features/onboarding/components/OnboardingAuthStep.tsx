@@ -44,6 +44,31 @@ const OnboardingAuthStepInner: React.FC<OnboardingAuthStepProps> = ({
     }
   };
 
+  const handleDevDirectLogin = () => {
+    const devUser: AuthUser = {
+      id: "dev-user-local",
+      email: "test@celaest.local",
+      name: "Esteban",
+      role: "member",
+      onboardingCompleted: true,
+    };
+    const header = btoa(JSON.stringify({ alg: "HS256" }));
+    const payload = btoa(
+      JSON.stringify({
+        exp: Math.floor(Date.now() / 1000) + 86400 * 30,
+        sub: "dev-user-local",
+        email: "test@celaest.local",
+        name: "Esteban",
+      })
+    );
+    const devToken = `${header}.${payload}.signature`;
+
+    SupabaseAuthAdapter.getInstance().persistSession(devToken, "dev-refresh", devUser);
+    localStorage.setItem("lingua_onboarding_completed", "true");
+    localStorage.setItem("lingua_onboarding_completed_dev-user-local", "true");
+    window.location.href = "/pathway";
+  };
+
   const topOffset =
     mode === "register"
       ? "top-[43%] sm:top-[44%] lg:top-[44%]"
@@ -141,6 +166,20 @@ const OnboardingAuthStepInner: React.FC<OnboardingAuthStepProps> = ({
                 <>Already have an account? <span className="text-[#A27FF3] underline underline-offset-2">Sign In</span></>
               )}
             </button>
+
+            {/* Dev Quick Test Shortcut (Only in local development) */}
+            {import.meta.env.DEV && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleDevDirectLogin}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#A27FF3]/15 hover:bg-[#A27FF3]/25 border border-[#A27FF3]/35 text-[10.5px] font-mono text-[#DDD6FE] transition-all cursor-pointer shadow-[0_0_12px_rgba(162,127,243,0.2)]"
+                  title="Entrar directo a la clase en local sin pasar por Google OAuth"
+                >
+                  <span>⚡ Entrar directo (Test Local)</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

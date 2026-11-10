@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveFormulaCases } from "../../../../domain/entities/LearningPathway";
+import { directClientAiService } from "../../../settings/services/directClientAiService";
 import { buildProceduralSeedNodes } from "../aiPathwayCurriculumService";
 import { PathwayLectureEngine } from "../PathwayLectureEngine";
 import { PathwayQAService } from "../PathwayQAService";
@@ -173,6 +174,42 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     const hasSpanishSegment = answer.speechSegments.some((s) => s.language === "es");
     expect(hasEnglishSegment).toBe(true);
     expect(hasSpanishSegment).toBe(true);
+    expect(answer.isOffTopic).toBe(false);
+  });
+
+  it("politely declines off-topic questions and guides student back to English (procedural fallback)", async () => {
+    const answer = await PathwayQAService.askProfessor({
+      question: "¿Cómo hacer una receta de pizza casera?",
+      node,
+    });
+
+    expect(answer.isOffTopic).toBe(true);
+    expect(answer.directAnswer).toContain("idioma inglés");
+    expect(answer.mentalModel).toContain(node.title);
+    expect(answer.exampleEnglish).toBe("");
+  });
+
+  it("handles AI-provided off-topic boundary response correctly", async () => {
+    const aiSpy = vi.spyOn(directClientAiService, "chatCompletion").mockResolvedValueOnce(
+      JSON.stringify({
+        isOffTopic: true,
+        directAnswer: "Como mentor de CELAEST, mi rol es exclusivamente ayudarte a dominar el idioma inglés.",
+        mentalModel: "Por favor formula tu duda sobre esta regla o sobre cualquier tema del inglés.",
+        exampleEnglish: "",
+        exampleSpanish: "",
+        pronunciationTip: "",
+      }),
+    );
+
+    const answer = await PathwayQAService.askProfessor({
+      question: "¿Cómo escribir un loop for en Python?",
+      node,
+    });
+
+    expect(aiSpy).toHaveBeenCalledTimes(1);
+    expect(answer.isOffTopic).toBe(true);
+    expect(answer.directAnswer).toContain("idioma inglés");
+    expect(answer.exampleEnglish).toBe("");
   });
 
   it("throws clear error on empty question", async () => {

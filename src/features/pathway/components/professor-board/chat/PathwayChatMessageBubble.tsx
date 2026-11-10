@@ -19,28 +19,42 @@ export const PathwayChatMessageBubble: React.FC<PathwayChatMessageBubbleProps> =
   }
 
   const { answer, text } = message;
+  const isOffTopic = Boolean(answer?.isOffTopic);
 
   return (
     <div className="flex flex-col gap-1 select-text max-w-[96%]">
       {/* Mentor Label */}
-      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-[#A27FF3]">
-        Liam · Mentor
-      </span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-[#A27FF3]">
+          Liam · Mentor
+        </span>
+        {isOffTopic && (
+          <span className="text-[8.5px] font-mono tracking-wider uppercase px-1.5 py-0.2 bg-amber-500/10 border border-amber-500/25 text-amber-300/80 rounded">
+            Enfoque en Inglés
+          </span>
+        )}
+      </div>
 
       {/* Direct Answer */}
       <p className="text-xs text-white/90 leading-relaxed font-light">
         {answer?.directAnswer ?? text}
       </p>
 
-      {/* Mental Model Callout (if available) */}
+      {/* Mental Model / Guidance Callout */}
       {answer?.mentalModel && (
-        <div className="text-[11px] text-white/60 leading-relaxed italic border-l-2 border-[#A27FF3]/40 pl-2 mt-0.5 font-light">
+        <div
+          className={`text-[11px] leading-relaxed italic border-l-2 pl-2 mt-0.5 font-light ${
+            isOffTopic
+              ? "border-amber-400/40 text-amber-200/80"
+              : "border-[#A27FF3]/40 text-white/60"
+          }`}
+        >
           {answer.mentalModel}
         </div>
       )}
 
-      {/* Example Chip (if available) */}
-      {answer?.exampleEnglish && (
+      {/* Example Chip (only for on-topic English queries with examples) */}
+      {!isOffTopic && answer?.exampleEnglish && (
         <div className="px-2 py-1 rounded-md bg-white/[0.02] border border-white/[0.05] text-[11.5px] mt-0.5">
           <span className="text-white font-medium block">
             “{answer.exampleEnglish}”
@@ -53,8 +67,8 @@ export const PathwayChatMessageBubble: React.FC<PathwayChatMessageBubbleProps> =
         </div>
       )}
 
-      {/* Pronunciation Tip (if available) */}
-      {answer?.pronunciationTip && (
+      {/* Pronunciation Tip (only for on-topic English queries) */}
+      {!isOffTopic && answer?.pronunciationTip && (
         <div className="text-[10px] text-white/40 italic font-light mt-0.5">
           Tip fonético: {answer.pronunciationTip}
         </div>

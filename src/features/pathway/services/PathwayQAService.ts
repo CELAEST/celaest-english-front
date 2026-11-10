@@ -16,6 +16,7 @@ export interface ProfessorAnswer {
   pronunciationTip: string;
   fullSpeechText: string;
   speechSegments: QASpeechSegment[];
+  isOffTopic?: boolean;
 }
 
 export interface AskProfessorParams {
@@ -25,8 +26,70 @@ export interface AskProfessorParams {
   cefrLevel?: string;
 }
 
+/**
+ * Heuristic check to detect whether a question clearly departs from language learning.
+ * Follows CELAEST universal pedagogy: open pattern inspection, zero closed word whitelists.
+ */
+function isQuestionOffTopic(question: string, nodeTitle?: string): boolean {
+  const q = question.toLowerCase();
+
+  // If question mentions current lesson or grammatical/linguistic concepts, it's on-topic
+  const linguisticMarkers = [
+    "ingles", "inglés", "english", "pronunc", "tradu", "significa", "diferencia",
+    "regla", "formula", "fórmula", "sujeto", "verbo", "tiempo", "pasado", "presente",
+    "futuro", "modal", "preposici", "adjetiv", "sustantiv", "vocabulario", "palabra",
+    "oracion", "oración", "frase", "como se dice", "cómo se dice", "sound", "say",
+    "speak", "write", "mean", "gramar", "grammar", "tense", "phonetic", "ipa"
+  ];
+  if (linguisticMarkers.some((m) => q.includes(m))) {
+    return false;
+  }
+
+  // If question references node title keywords, it's on-topic
+  if (nodeTitle) {
+    const titleTokens = nodeTitle.toLowerCase().split(/\W+/).filter((t) => t.length > 3);
+    if (titleTokens.some((t) => q.includes(t))) {
+      return false;
+    }
+  }
+
+  // Check for common explicitly off-topic domains (recipes, general coding, sports, math, politics)
+  const offTopicMarkers = [
+    "receta", "cocinar", "pizza", "pastel", "torta", "ingredientes",
+    "codigo", "código", "python", "javascript", "sql query", "react component", "docker",
+    "futbol", "fútbol", "partido de", "campeonato", "messi", "ronaldo",
+    "elecciones", "presidente", "politica", "política", "senado",
+    "raiz cuadrada", "raíz cuadrada", "integral", "derivada", "matematicas", "matemáticas",
+    "clima en", "que hora es", "qué hora es", "chiste", "cuentame un chiste"
+  ];
+
+  return offTopicMarkers.some((m) => q.includes(m));
+}
+
 function buildProceduralAnswer(params: AskProfessorParams): ProfessorAnswer {
   const { question, node } = params;
+
+  if (isQuestionOffTopic(question, node.title)) {
+    const directAnswer = "Como mentor de CELAEST, mi rol es exclusivamente ayudarte a dominar el idioma inglés.";
+    const mentalModel = `Por favor formula tu duda sobre esta regla ("${node.title}") o sobre cualquier aspecto del inglés (gramática, vocabulario, pronunciación o estructura).`;
+    const fullSpeechText = `${directAnswer} ${mentalModel}`;
+    const speechSegments: QASpeechSegment[] = [
+      { language: "es", text: fullSpeechText },
+    ];
+
+    return {
+      question,
+      directAnswer,
+      mentalModel,
+      exampleEnglish: "",
+      exampleSpanish: "",
+      pronunciationTip: "",
+      fullSpeechText,
+      speechSegments,
+      isOffTopic: true,
+    };
+  }
+
   const lesson = node.lessonPayload;
   const firstEx = lesson?.examples[0];
   const exampleEnglish = firstEx?.english || lesson?.voicePractice.sentenceEnglish || "I understand the concept.";
@@ -53,6 +116,7 @@ function buildProceduralAnswer(params: AskProfessorParams): ProfessorAnswer {
     pronunciationTip,
     fullSpeechText,
     speechSegments,
+    isOffTopic: false,
   };
 }
 
@@ -75,21 +139,39 @@ Lesson Context:
 - L1 Trap: ${lesson?.commonMistake.whySpanish || node.blueprint.l1InterferenceTrap}
 - Target example: ${lesson?.examples[0]?.english || "I work every day."}
 
-CRITICAL PEDAGOGICAL CONTRACT:
-Answer the student's question directly, clearly and warmly in Spanish. Follow strictly this 3-Layer structure:
-1. directAnswer: Clear, crystal-cut answer to the question in 1 or 2 friendly Spanish sentences. No generic filler.
-2. mentalModel: Explain WHY English works like this, contrasting with Spanish (L1 interference) so they never make this mistake again.
-3. exampleEnglish: A natural, native English sentence showing the solution in real life.
-4. exampleSpanish: Exact natural Spanish meaning of that sentence.
-5. pronunciationTip: Short phonetic hint on how to sound natural saying that English sentence.
+STRICT PEDAGOGICAL BOUNDARY (ENGLISH-ONLY):
+You are EXCLUSIVELY an English Language Mentor.
+- ALLOWED:
+  1. The current lesson ("${node.title}"), its rule, trap, formula, practice, and examples.
+  2. ANY question related to the English language in general (grammar, tenses, pronunciation, phonetics, vocabulary, idioms, prepositions, false cognates, translation subtleties, professional English usage, differences between words or phrases).
+- FORBIDDEN:
+  Any subject completely unrelated to learning the English language (e.g. cooking recipes, programming in Python/JS, math problems, politics, sports news, biology, general life counseling, medical diagnoses, random chit-chat).
+
+If the student's question is OFF-TOPIC (not about English or this lesson):
+- Set "isOffTopic": true
+- "directAnswer": A firm, polite, warm Spanish refusal explaining that as a CELAEST mentor, you exclusively answer questions about mastering English (e.g., "Como mentor de CELAEST, mi rol es exclusivamente ayudarte a dominar el idioma inglés.").
+- "mentalModel": An invitation in Spanish guiding them back to English: tell them to ask about this lesson's rule ("${node.title}") or any doubt regarding English grammar, vocabulary, or pronunciation.
+- "exampleEnglish": ""
+- "exampleSpanish": ""
+- "pronunciationTip": ""
+
+If the student's question is ON-TOPIC (about this lesson OR English in general):
+- Set "isOffTopic": false
+- Follow strictly this 3-Layer structure in natural, encouraging Spanish:
+  1. directAnswer: Clear, crystal-cut answer to the question in 1 or 2 friendly Spanish sentences. No generic filler.
+  2. mentalModel: Explain WHY English works like this, contrasting with Spanish (L1 interference) so they understand the mental model.
+  3. exampleEnglish: A natural, native English sentence demonstrating the solution in real life.
+  4. exampleSpanish: Exact natural Spanish meaning of that sentence.
+  5. pronunciationTip: Short phonetic hint on how to sound natural saying that English sentence.
 
 Return ONLY a valid JSON object matching this schema:
 {
+  "isOffTopic": boolean,
   "directAnswer": "string in Spanish",
   "mentalModel": "string in Spanish",
-  "exampleEnglish": "string in English",
-  "exampleSpanish": "string in Spanish",
-  "pronunciationTip": "string in Spanish"
+  "exampleEnglish": "string in English (empty string if isOffTopic is true)",
+  "exampleSpanish": "string in Spanish (empty string if isOffTopic is true)",
+  "pronunciationTip": "string in Spanish (empty string if isOffTopic is true)"
 }`;
 
     const userPrompt = `Student question: "${trimmedQuestion}"
@@ -103,19 +185,25 @@ Explain clearly why English works this way and give me the best intuitive mental
       });
 
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.directAnswer === "string" && typeof parsed.exampleEnglish === "string") {
+      if (parsed && typeof parsed.directAnswer === "string") {
+        const isOffTopic = Boolean(parsed.isOffTopic);
         const directAnswer = parsed.directAnswer.trim();
         const mentalModel = (parsed.mentalModel || "").trim();
-        const exampleEnglish = parsed.exampleEnglish.trim();
+        const exampleEnglish = (parsed.exampleEnglish || "").trim();
         const exampleSpanish = (parsed.exampleSpanish || "").trim();
         const pronunciationTip = (parsed.pronunciationTip || "").trim();
 
-        const fullSpeechText = `${directAnswer} ${mentalModel} Por ejemplo: ${exampleEnglish}. Significa: ${exampleSpanish}. ${pronunciationTip}`;
-        const speechSegments: QASpeechSegment[] = [
-          { language: "es", text: `${directAnswer} ${mentalModel} Por ejemplo:` },
-          { language: "en", text: exampleEnglish },
-          { language: "es", text: `Significa: ${exampleSpanish}. ${pronunciationTip ? `Consejo: ${pronunciationTip}` : ""}`.trim() },
-        ];
+        const fullSpeechText = isOffTopic
+          ? `${directAnswer} ${mentalModel}`.trim()
+          : `${directAnswer} ${mentalModel} Por ejemplo: ${exampleEnglish}. Significa: ${exampleSpanish}. ${pronunciationTip}`.trim();
+
+        const speechSegments: QASpeechSegment[] = isOffTopic
+          ? [{ language: "es", text: `${directAnswer} ${mentalModel}`.trim() }]
+          : [
+              { language: "es", text: `${directAnswer} ${mentalModel} Por ejemplo:` },
+              { language: "en", text: exampleEnglish },
+              { language: "es", text: `Significa: ${exampleSpanish}. ${pronunciationTip ? `Consejo: ${pronunciationTip}` : ""}`.trim() },
+            ];
 
         return {
           question: trimmedQuestion,
@@ -126,6 +214,7 @@ Explain clearly why English works this way and give me the best intuitive mental
           pronunciationTip,
           fullSpeechText,
           speechSegments,
+          isOffTopic,
         };
       }
     } catch {

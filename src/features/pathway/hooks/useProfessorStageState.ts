@@ -40,21 +40,29 @@ export function useProfessorStageState({
   });
 
   useEffect(() => { if (initialOpenAsking) setIsAskingOpen(true); }, [initialOpenAsking]);
+  useEffect(() => {
+    if (isAskingOpen) {
+      choreography.stopAllLecture();
+    }
+  }, [isAskingOpen]);
   useEffect(() => { setMode("lesson"); clearQaOnly(); }, [step, node.id]);
 
   const handleAskQuestion = async (question: string) => {
     MobileAudioUnlocker.unlock();
     choreography.stopAllLecture();
     clearQaOnly();
-    setIsAskingOpen(false);
+    setIsAskingOpen(true);
     setIsAskingQA(true);
     try {
       const answer = await PathwayQAService.askProfessor({ question, node });
-      setQaAnswer(answer); setIsAskingQA(false); setIsAnsweringVoice(true);
-      cancelQARef.current = await PathwayQAService.playAnswer(answer, undefined, () => {
-        setIsAnsweringVoice(false); cancelQARef.current = null;
-      });
-    } catch { setIsAskingQA(false); setIsAnsweringVoice(false); }
+      setQaAnswer(answer);
+      setIsAskingQA(false);
+      setIsAnsweringVoice(false);
+      // Zero audio execution: Liam answers visually and silently to preserve voice immersion
+    } catch {
+      setIsAskingQA(false);
+      setIsAnsweringVoice(false);
+    }
   };
 
   const animState: ProfessorAnimState = useMemo(() => {
@@ -144,7 +152,7 @@ export function useProfessorStageState({
     isWaitingTrapCheck: choreography.isWaitingTrapCheck, trapCheckPassed: choreography.trapCheckPassed,
     isSpeakingEnglishSegment: choreography.isDictating && choreography.lectureSegment?.language === "en",
     liveSubtitleSpanish: choreography.lectureSegment?.subtitleSpanish,
-    isAskingOpen, setIsAskingOpen, isAskingQA, animState, speech, suggestedQuestions, isShowingExamples, isAnsweringVoice,
+    isAskingOpen, setIsAskingOpen, isAskingQA, setIsAskingQA, animState, speech, suggestedQuestions, isShowingExamples, isAnsweringVoice,
     hasQaOverride: Boolean(isAskingQA || qaAnswer),
     clearQaAnswer: clearQaOnly,
     handleToggleLecture: choreography.handleToggleLecture,

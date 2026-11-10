@@ -38,6 +38,7 @@ export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
 
       <div className="relative z-10 w-full shrink-0 pointer-events-auto">
         <ProfessorLessonBoard
+          node={node}
           lesson={node.lessonPayload} step={step} isMobileUnified={isMobileUnified}
           hasQaOverride={s.hasQaOverride} isAutoplayWaiting={s.isAutoplayWaiting} mobileContext={mobileContext} liveBoard={liveBoard}
           speech={s.speech} mode={s.mode} isShowingExamples={s.isShowingExamples}
@@ -46,6 +47,7 @@ export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
           onModeChange={s.setMode} onToggleLecture={s.handleToggleLecture} onPlaySample={s.handlePlaySample}
           onToggleAsking={() => s.setIsAskingOpen((prev) => !prev)} onSubmitQuestion={s.handleAskQuestion}
           onDismissQaOverride={s.clearQaAnswer} onSwitchToPractice={onSwitchToPractice}
+          onThinkingChange={(thinking) => s.setIsAskingQA(thinking)}
         />
       </div>
     </div>

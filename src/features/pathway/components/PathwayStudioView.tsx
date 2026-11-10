@@ -32,7 +32,6 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const isDesktop = useIsDesktopViewport();
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
-  const [openAsking, setOpenAsking] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [byokOpen, setByokOpen] = useState(false);
   const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, isByokMode } = useLinguaEntitlement();
@@ -78,7 +77,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
     isRecordingMic: session.isRecording, isEvaluatingVoice: session.isEvaluatingVoice,
     isBuildCorrect: session.isBuildCorrect, hasBuildMistake: session.hasBuildMistake,
     isConquered, onPlaySample: session.playAudio, onStepChange: session.setStep,
-    initialOpenAsking: openAsking,
+    initialOpenAsking: false,
   });
 
   const liveBoard: LiveBoardState = useMemo(() => ({
@@ -107,7 +106,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
         <PathwayDesktopClassroom
           pathway={pathway} activeNode={activeNode} activeNodeIndex={activeNodeIndex} masteredCount={masteredCount}
           roleName={roleName} session={session} canAdvanceNode={canAdvanceNode} onSelectLevel={onSelectLevel}
-          onOpenCurriculum={() => setCurriculumOpen(true)} onOpenAskTutor={() => setOpenAsking((p) => !p)}
+          onOpenCurriculum={() => setCurriculumOpen(true)} onOpenAskTutor={() => professorState.setIsAskingOpen((p) => !p)}
           onOpenGuideSection={setGuideSection} onNextNode={handleNextFoundation}
           onPrevAction={handlePrev} onNextAction={handleNext} onNavigateModule={onNavigateModule}
           liveBoard={liveBoard}
@@ -120,7 +119,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
         isRecordingMic={session.isRecording} isMobileUnified={!isDesktop}
         mobileContext={!isDesktop ? { session, isConquered, onNextFoundation: handleNextFoundation, onBridgeNavigate: onNavigateModule } : undefined}
         onPlaySample={session.playAudio}
-        onSwitchToPractice={() => { setOpenAsking(false); session.setStep("BUILD"); }}
+        onSwitchToPractice={() => { professorState.setIsAskingOpen(false); session.setStep("BUILD"); }}
         stageState={professorState} liveBoard={liveBoard}
         className="order-2 flex-1 lg:flex-none"
       />

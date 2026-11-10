@@ -18,7 +18,7 @@ const STEPS: Array<{ id: PathwayStepId; label: string; ariaLabel: string }> = [
 ];
 
 export const PathwayLessonHeader: React.FC<PathwayLessonHeaderProps> = React.memo(
-  ({ nodeIndex, currentLevel, activeStep, onSelectStep, onSelectLevel, onOpenCurriculum, onOpenTutor, onOpenAnatomy, onOpenKnowledge, nodeTitle }) => {
+  ({ nodeIndex, totalNodes, masteredCount, currentLevel, roleName, activeStep, onSelectStep, onSelectLevel, onOpenCurriculum, onOpenTutor, onOpenAnatomy, onOpenKnowledge, nodeTitle }) => {
     const handleGuide = onOpenAnatomy ?? (() => onOpenKnowledge?.("grammar"));
     const hasGuide = Boolean(onOpenAnatomy || onOpenKnowledge);
     const baseCode = String(nodeIndex + 1).padStart(2, "0");
@@ -40,11 +40,28 @@ export const PathwayLessonHeader: React.FC<PathwayLessonHeaderProps> = React.mem
               BASE {baseCode}
             </span>
             <span className="text-white/25 text-xs shrink-0">/</span>
-            <span className="text-xs font-medium text-white/85 group-hover:text-white transition-colors truncate max-w-[120px] sm:max-w-[180px] xl:max-w-[260px]">
+            <span className="text-xs font-medium text-white/85 group-hover:text-white transition-colors truncate max-w-[110px] sm:max-w-[160px] md:max-w-[200px] xl:max-w-[260px]">
               {nodeTitle ?? "Clase Activa"}
             </span>
             <ChevronDown size={11} className="text-white/40 group-hover:text-white transition-colors shrink-0" />
           </button>
+
+          {roleName && (
+            <span className="hidden 2xl:inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.02] border border-white/[0.05] font-mono text-[9.5px] uppercase tracking-wider text-white/40 shrink-0">
+              {roleName}
+            </span>
+          )}
+
+          {typeof masteredCount === "number" && totalNodes > 0 && (
+            <button
+              type="button"
+              onClick={onOpenCurriculum}
+              className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] font-mono text-[10px] text-white/50 hover:text-white/80 transition-colors cursor-pointer shrink-0"
+              title="Progreso curricular de la ruta"
+            >
+              <span>Ruta ({masteredCount}/{totalNodes})</span>
+            </button>
+          )}
         </div>
 
         {/* 2. Center Cluster: Hero Segmented Step Controller (Guaranteed 1-Line, Zero Wrap) */}

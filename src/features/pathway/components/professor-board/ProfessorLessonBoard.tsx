@@ -76,7 +76,7 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
     }`}>
       <div className="absolute inset-x-0 top-0 h-px bg-white/[0.06]" aria-hidden />
       <div className="absolute left-0 top-0 h-px bg-white/40 transition-[width] duration-150 ease-linear" style={{ width: `${progress * 100}%` }} aria-hidden />
-      <div className={`flex flex-col px-3.5 sm:px-5 pb-2.5 sm:pb-3 pt-3 sm:pt-3.5 ${isAskingOpen ? "flex-1 min-h-0 overflow-hidden" : "gap-2"}`}>
+      <div className={`flex flex-col px-3.5 sm:px-5 ${isAskingOpen ? "flex-1 min-h-0 pt-3 pb-3 overflow-hidden" : "gap-2 pb-2.5 sm:pb-3 pt-3 sm:pt-3.5"}`}>
         {isAskingOpen ? (
           <LessonBoardChatMode
             node={node}

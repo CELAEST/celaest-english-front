@@ -41,7 +41,7 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden select-none">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden select-none">
       {/* 1. Pinned Header (Strictly fixed at top, never scrolls or disappears) */}
       <div className="shrink-0 flex items-start justify-between pb-2 border-b border-white/[0.06]">
         <div>
@@ -121,12 +121,12 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
       </div>
 
       {/* 3. Pinned Input Bar (Fixed at bottom, ALWAYS 100% visible, never cut off) */}
-      <div className="shrink-0 pt-1.5">
+      <div className="shrink-0 pt-2 pb-0.5">
         <PathwayChatInputBar
           isSubmitting={isSubmitting}
           onSubmit={askQuestion}
           showChips={false}
-          variant="railZeroBox"
+          variant="capsule"
         />
       </div>
     </div>

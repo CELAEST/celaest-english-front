@@ -142,6 +142,9 @@ export class SupabaseAuthAdapter implements IAuthService {
       this.refreshTimerId = null;
     }
     if (typeof window === "undefined") return;
+    if (import.meta.env.DEV && localStorage.getItem(USER_KEY)?.includes("dev-user-local")) {
+      return;
+    }
 
     const remainingMs = getJwtExpiresInMs(token);
     // Refresh 5 minutes before expiration; if less than 5m left, wait 10s. Default to 45m if no exp field.
@@ -169,6 +172,9 @@ export class SupabaseAuthAdapter implements IAuthService {
     try {
       const token = localStorage.getItem(ACCESS_TOKEN_KEY);
       if (!token) return null;
+      if (import.meta.env.DEV && localStorage.getItem(USER_KEY)?.includes("dev-user-local")) {
+        return token;
+      }
       if (isJwtExpired(token)) {
         logger.warn("[AuthAdapter] Stored JWT token has expired. Clearing dead session.");
         this.clearDeadToken();

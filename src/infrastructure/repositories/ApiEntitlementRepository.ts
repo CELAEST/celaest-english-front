@@ -35,6 +35,26 @@ interface RawCheckoutResponse {
 
 export class ApiEntitlementRepository {
   static async getEntitlement(slug = "lingua"): Promise<ProductEntitlement> {
+    if (import.meta.env.DEV) {
+      const user = localStorage.getItem("lingua_auth_user");
+      if (user?.includes("dev-user-local")) {
+        return {
+          ...DEFAULT_FREE_ENTITLEMENT,
+          hasAccess: true,
+          accessType: "subscription",
+          productId: "prod_lingua_dev",
+          productSlug: slug,
+          productName: "Lingua Dev Full Access",
+          productType: "saas",
+          basePrice: 0,
+          currency: "USD",
+          status: "active",
+          planTier: 2,
+          aiCloudIncluded: true,
+          limits: {},
+        };
+      }
+    }
     const raw = await HttpClient.get<RawProductEntitlement>(
       `${ENV.celaestBackUrl}/user/my/entitlements/${encodeURIComponent(slug)}`,
     );

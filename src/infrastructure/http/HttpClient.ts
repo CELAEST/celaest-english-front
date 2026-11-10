@@ -136,6 +136,9 @@ export class HttpClient {
           const code = typeof errorPayload.code === "string" ? errorPayload.code : undefined;
 
           if (response.status === 401 && typeof window !== "undefined") {
+            if (import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) {
+              throw new ApiError(message, response.status, code);
+            }
             try {
               localStorage.removeItem("lingua_access_token");
               localStorage.removeItem("lingua_refresh_token");
@@ -166,6 +169,9 @@ export class HttpClient {
             rawData.error.toLowerCase().includes("unauthorized"));
 
         if (isExpiredJwtBody && typeof window !== "undefined") {
+          if (import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) {
+            throw new ApiError(rawData.error, 401, "UNAUTHORIZED");
+          }
           try {
             localStorage.removeItem("lingua_access_token");
             localStorage.removeItem("lingua_refresh_token");

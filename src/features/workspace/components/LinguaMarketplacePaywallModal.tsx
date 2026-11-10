@@ -78,7 +78,7 @@ export const LinguaMarketplacePaywallModal: React.FC<LinguaMarketplacePaywallMod
         <div className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--surface-0)]/80 px-4 py-2.5">
           <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-secondary)]">{isExpired || isRevoked ? "Renovación mensual" : "Licencia mensual"}</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-base font-medium tracking-tight text-[var(--text-primary)]">${entitlement.basePrice.toFixed(2)}</span>
+            <span className="text-base font-medium tracking-tight text-[var(--text-primary)]">${(entitlement?.basePrice ?? 29.99).toFixed(2)}</span>
             <span className="text-[11px] font-mono text-[var(--text-tertiary)]">{entitlement.currency}</span>
           </div>
         </div>

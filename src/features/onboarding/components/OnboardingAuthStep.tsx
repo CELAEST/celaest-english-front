@@ -66,6 +66,8 @@ const OnboardingAuthStepInner: React.FC<OnboardingAuthStepProps> = ({
     SupabaseAuthAdapter.getInstance().persistSession(devToken, "dev-refresh", devUser);
     localStorage.setItem("lingua_onboarding_completed", "true");
     localStorage.setItem("lingua_onboarding_completed_dev-user-local", "true");
+    localStorage.setItem("lingua_onboarding_completed_test@celaest.local", "true");
+    onSuccess(devUser, "login");
     window.location.href = "/pathway";
   };
 

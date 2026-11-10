@@ -35,17 +35,38 @@ export const LessonQuestionAnnex: React.FC<LessonQuestionAnnexProps> = ({
         </button>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="relative flex items-center">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+        className="group relative flex items-center gap-2.5 pb-2 pt-1 border-b border-white/[0.12] focus-within:border-[#A27FF3] transition-colors duration-200"
+      >
+        <Sparkles size={13} className="text-[#A27FF3] shrink-0 opacity-75 group-focus-within:opacity-100 transition-opacity" />
         <input
-          type="text" value={text} onChange={(e) => setText(e.target.value)}
-          placeholder="Escribe tu duda sobre esta regla..." disabled={isSubmitting} autoFocus
-          className="w-full h-8 pl-3 pr-8 rounded-lg bg-white/[0.03] border border-white/10 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#A27FF3]/60 transition-all"
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Escribe tu duda sobre esta regla..."
+          disabled={isSubmitting}
+          autoFocus
+          className="flex-1 min-w-0 bg-transparent border-none text-[12.5px] text-white placeholder-white/35 font-light focus:outline-none tracking-normal"
         />
         <button
-          type="submit" disabled={!text.trim() || isSubmitting}
-          className="absolute right-1 w-6 h-6 rounded-md bg-white text-black flex items-center justify-center hover:bg-white/90 disabled:opacity-20 transition-all cursor-pointer"
+          type="submit"
+          disabled={!text.trim() || isSubmitting}
+          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
+            text.trim() && !isSubmitting
+              ? "bg-[#A27FF3] text-white shadow-[0_0_12px_rgba(162,127,243,0.45)] hover:bg-[#8B5CF6] hover:scale-105 active:scale-95 cursor-pointer"
+              : "bg-white/[0.04] text-white/20 border border-white/[0.06] cursor-not-allowed"
+          }`}
+          title="Enviar pregunta"
         >
-          {isSubmitting ? <span className="w-2.5 h-2.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <ArrowUp size={11} strokeWidth={2.5} />}
+          {isSubmitting ? (
+            <span className="w-2.5 h-2.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <ArrowUp size={12} strokeWidth={2.4} />
+          )}
         </button>
       </form>
 

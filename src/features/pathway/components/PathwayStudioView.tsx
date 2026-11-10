@@ -45,7 +45,9 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   useEffect(() => { warmProfessorModelCache(); }, []);
   useEffect(() => {
     try {
-      const introSeen = localStorage.getItem(`lingua_intro_seen_${roleName}`);
+      const introSeen =
+        localStorage.getItem(`lingua_intro_seen_${roleName}`) ||
+        localStorage.getItem("lingua_intro_seen_global");
       if (!introSeen) {
         setIntroOpen(true);
       }

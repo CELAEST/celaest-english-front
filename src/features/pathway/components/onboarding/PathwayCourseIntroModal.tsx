@@ -40,6 +40,27 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
   const phrase = UNIVERSAL_PHRASES[stepMeta.key];
   const isLast = stepIndex === INTRO_STEPS.length - 1;
 
+  const playCurrentAudio = () => {
+    if (!phrase?.audioUrl) return;
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    const audio = new Audio(phrase.audioUrl);
+    audioRef.current = audio;
+    audio.onplay = () => setIsPlayingAudio(true);
+    audio.onended = () => setIsPlayingAudio(false);
+    audio.onerror = () => setIsPlayingAudio(false);
+    setIsMuted(false);
+    try {
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => setIsPlayingAudio(false));
+      }
+    } catch {
+      setIsPlayingAudio(false);
+    }
+  };
+
   // Attempt audio playback when step changes if not muted
   useEffect(() => {
     if (!isOpen || isMuted || !phrase?.audioUrl) return;
@@ -84,6 +105,7 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
   const handleComplete = (withTour: boolean) => {
     try {
       localStorage.setItem(`lingua_intro_seen_${userId}`, "true");
+      localStorage.setItem("lingua_intro_seen_global", "true");
     } catch {
       // safe fallback
     }
@@ -112,14 +134,31 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsMuted((prev) => !prev)}
-            className="text-white/40 hover:text-white transition-colors cursor-pointer p-1"
-            title={isMuted ? "Activar voz de Liam" : "Silenciar voz"}
-          >
-            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className={isPlayingAudio ? "text-[#A27FF3] animate-pulse" : ""} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={isPlayingAudio ? () => { audioRef.current?.pause(); setIsPlayingAudio(false); } : playCurrentAudio}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-mono text-[#DDD6FE] bg-[#A27FF3]/15 hover:bg-[#A27FF3]/25 border border-[#A27FF3]/35 transition-all cursor-pointer"
+              title="Escuchar audio de Liam"
+            >
+              <Volume2 size={12} className={isPlayingAudio ? "text-[#A27FF3] animate-pulse" : "text-white/60"} />
+              <span>{isPlayingAudio ? "Hablando..." : "Escuchar a Liam"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!isMuted && audioRef.current) {
+                  audioRef.current.pause();
+                  setIsPlayingAudio(false);
+                }
+                setIsMuted((prev) => !prev);
+              }}
+              className="text-white/40 hover:text-white transition-colors cursor-pointer p-1"
+              title={isMuted ? "Activar voz de Liam" : "Silenciar voz"}
+            >
+              {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className={isPlayingAudio ? "text-[#A27FF3]" : ""} />}
+            </button>
+          </div>
         </div>
 
         {/* Body Content */}

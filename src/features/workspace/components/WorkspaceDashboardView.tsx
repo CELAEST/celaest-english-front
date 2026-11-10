@@ -65,11 +65,13 @@ export interface WorkspaceDashboardViewProps {
 export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewProps> = ({
   userName = "",
   userLevel = "",
-  defaultTab = "workspace",
+  defaultTab = import.meta.env.DEV ? "workspace" : "pathway",
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([defaultTab]));
+  const initialTab =
+    !import.meta.env.DEV && defaultTab === "workspace" ? "pathway" : defaultTab;
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([initialTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const {
@@ -255,7 +257,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   );
 
   const handleBackToWorkspace = React.useCallback(() => {
-    handleSelectNav("workspace");
+    handleSelectNav(import.meta.env.DEV ? "workspace" : "pathway");
   }, [handleSelectNav]);
 
   const handleLogout = React.useCallback(async () => {
@@ -535,7 +537,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           </div>
         )}
 
-        {mountedTabs.has("workspace") && (
+        {import.meta.env.DEV && mountedTabs.has("workspace") && (
           <div
             key="workspace"
             className={`flex-col justify-between h-full px-2.5 sm:px-6 lg:px-8 pt-1.5 sm:pt-4 overflow-hidden pb-20 sm:pb-24 lg:pb-2 ${

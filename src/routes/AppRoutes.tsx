@@ -74,15 +74,15 @@ function OnboardingRoute() {
     storedUser?.onboardingCompleted === true
   );
 
-  // If user is authenticated AND has completed onboarding, navigate immediately to Workspace
+  // If user is authenticated AND has completed onboarding, navigate immediately to default route
   useEffect(() => {
     if (!isReset && hasToken && isUserCompleted) {
-      navigate(ROUTES.HOME, { replace: true });
+      navigate(import.meta.env.DEV ? ROUTES.HOME : ROUTES.PATHWAY, { replace: true });
     }
   }, [isReset, hasToken, isUserCompleted, navigate]);
 
   if (!isReset && hasToken && isUserCompleted) {
-    return <Navigate to={ROUTES.HOME} replace />;
+    return <Navigate to={import.meta.env.DEV ? ROUTES.HOME : ROUTES.PATHWAY} replace />;
   }
 
   return (
@@ -91,7 +91,7 @@ function OnboardingRoute() {
         if (uid) localStorage.setItem(`lingua_onboarding_completed_${uid}`, "true");
         if (uemail) localStorage.setItem(`lingua_onboarding_completed_${uemail}`, "true");
         localStorage.setItem("lingua_onboarding_completed", "true");
-        navigate(ROUTES.HOME, { replace: true });
+        navigate(import.meta.env.DEV ? ROUTES.HOME : ROUTES.PATHWAY, { replace: true });
       }}
     />
   );
@@ -145,7 +145,9 @@ function WorkspaceWrapper() {
 
   const getTabFromPath = (pathname: string) => {
     const clean = pathname.replace(/^\//, "");
-    if (!clean) return "workspace";
+    if (!clean || (!import.meta.env.DEV && clean === "workspace")) {
+      return import.meta.env.DEV ? "workspace" : "pathway";
+    }
     return clean;
   };
 
@@ -156,7 +158,7 @@ function WorkspaceWrapper() {
       // Intentional navigation to onboarding only permitted if logging out
       navigate(ROUTES.ONBOARDING);
     } else if (route === "workspace") {
-      navigate(ROUTES.HOME);
+      navigate(import.meta.env.DEV ? ROUTES.WORKSPACE : ROUTES.PATHWAY);
     } else {
       navigate(`/${route}`);
     }

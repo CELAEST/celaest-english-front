@@ -425,7 +425,7 @@ const MobileBottomDock: React.FC<{
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   userName: _userName = "Esteban Perez",
   userLevel: _userLevel = "A1 Elementary",
-  activeItem = "workspace",
+  activeItem = import.meta.env.DEV ? "workspace" : "pathway",
   onSelectNav,
   hasAccess = true,
 }) => {
@@ -462,11 +462,15 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   }, []);
 
   const navItems = [
-    {
-      id: "workspace",
-      label: "WORKSPACE",
-      renderIcon: (active: boolean) => <CyberWorkspaceIcon isActive={active} />,
-    },
+    ...(import.meta.env.DEV
+      ? [
+          {
+            id: "workspace",
+            label: "WORKSPACE",
+            renderIcon: (active: boolean) => <CyberWorkspaceIcon isActive={active} />,
+          },
+        ]
+      : []),
     {
       id: "pathway",
       label: "MASTERY PATH",
@@ -555,14 +559,14 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                { id: "workspace", num: "01", label: "BRIEF" },
-                { id: "pathway", num: "02", label: "PATHWAY" },
-                { id: "memory", num: "03", label: "VAULT" },
-                { id: "interview", num: "04", label: "VOICE" },
-                { id: "reading", num: "05", label: "PAGES" },
-                { id: "writing", num: "06", label: "QUILL" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "BRIEF" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "PATHWAY" },
+                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "VOICE" },
+                { id: "reading", num: import.meta.env.DEV ? "05" : "04", label: "PAGES" },
+                { id: "writing", num: import.meta.env.DEV ? "06" : "05", label: "QUILL" },
                 ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "FORGE" }] : []),
-                { id: "settings", num: "08", label: "SYSTEM" },
+                { id: "settings", num: import.meta.env.DEV ? "08" : "06", label: "SYSTEM" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (
@@ -686,14 +690,14 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                { id: "workspace", num: "01", label: "WORKSPACE" },
-                { id: "pathway", num: "02", label: "MASTERY PATH" },
-                { id: "memory", num: "03", label: "MEMORY VAULT" },
-                { id: "interview", num: "04", label: "INTERVIEW" },
-                { id: "reading", num: "05", label: "READING" },
-                { id: "writing", num: "06", label: "WRITING STUDIO" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "WORKSPACE" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "MASTERY PATH" },
+                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "MEMORY VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "INTERVIEW" },
+                { id: "reading", num: import.meta.env.DEV ? "05" : "04", label: "READING" },
+                { id: "writing", num: import.meta.env.DEV ? "06" : "05", label: "WRITING STUDIO" },
                 ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "DESIGN LAB" }] : []),
-                { id: "settings", num: "08", label: "SETTINGS" },
+                { id: "settings", num: import.meta.env.DEV ? "08" : "06", label: "SETTINGS" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (

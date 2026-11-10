@@ -61,7 +61,7 @@ export const LessonBoardBody: React.FC<LessonBoardBodyProps> = ({
     );
   }
 
-  if (isShowingExamples && lesson && (!isMobileUnified || step !== "RULE")) {
+  if (isShowingExamples && lesson && step !== "RULE") {
     return <LessonVisualExamples lesson={lesson} speakingText={speakingSampleText} onPlayAudio={onPlaySample} />;
   }
 

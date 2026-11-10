@@ -36,7 +36,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   private handleGoWorkspace = (): void => {
     this.setState({ hasError: false, error: null });
     if (typeof window !== "undefined") {
-      window.location.href = "/workspace";
+      window.location.href = import.meta.env.DEV ? "/workspace" : "/";
     }
   };
 

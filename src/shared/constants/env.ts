@@ -31,8 +31,8 @@ const isLocalhost =
 const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
 const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
-const defaultProdMarketplaceUrl = "https://celaest-dashboard.estebani1421.workers.dev/?tab=marketplace";
-const defaultProdAudioBaseUrl = "https://pub-f37d8afe3d964d7d8910cb7514c4b7a5.r2.dev";
+const defaultProdMarketplaceUrl = "https://dashboard.celaest.com/?tab=marketplace";
+const defaultProdAudioBaseUrl = "https://cdn.celaest.com";
 
 const resolvedAudioBaseUrl = trimTrailingSlash(
   metaEnv?.VITE_AUDIO_BASE_URL || (isProd ? defaultProdAudioBaseUrl : ""),

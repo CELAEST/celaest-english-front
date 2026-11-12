@@ -41,6 +41,8 @@ function createSecurityPolicy(mode: string, command: string): string {
     "https://celaest-english-back.onrender.com",
     "https://celaest-core.onrender.com",
     "https://celaest-back.onrender.com",
+    "https://cdn.celaest.com",
+    "https://*.r2.dev",
     "https://*.supabase.co",
     "https://api.groq.com",
     "https://generativelanguage.googleapis.com",

@@ -44,8 +44,13 @@ const marketplaceDashboardUrl =
     ? "http://localhost:3000/?tab=marketplace"
     : defaultProdMarketplaceUrl);
 
+const isLocalUrl = (url: string): boolean =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url);
+
+const nonLocalEnv = (val: string): string => (!isLocalhost && !isTest && isLocalUrl(val) ? "" : val);
+
 const resolvedApiUrl = trimTrailingSlash(
-  apiUrl ||
+  nonLocalEnv(apiUrl) ||
     (isTest
       ? "http://localhost:8080/api/v1"
       : isLocalhost
@@ -54,7 +59,7 @@ const resolvedApiUrl = trimTrailingSlash(
 );
 
 const resolvedCelaestBackUrl = trimTrailingSlash(
-  celaestBackUrl ||
+  nonLocalEnv(celaestBackUrl) ||
     (isTest
       ? "http://localhost:3101/api/v1"
       : isLocalhost
@@ -63,9 +68,9 @@ const resolvedCelaestBackUrl = trimTrailingSlash(
 );
 
 const resolvedCoreAiUrl = trimTrailingSlash(
-  isBrowser
+  isLocalhost
     ? `${window.location.origin}/core-ai`
-    : (coreAiUrl || (isTest ? "http://127.0.0.1:8085/api/v1" : defaultProdCoreAiUrl)),
+    : (nonLocalEnv(coreAiUrl) || (isTest ? "http://127.0.0.1:8085/api/v1" : defaultProdCoreAiUrl)),
 );
 
 export const ENV = {

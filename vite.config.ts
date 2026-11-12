@@ -43,6 +43,7 @@ function createSecurityPolicy(mode: string, command: string): string {
     "https://celaest-back.onrender.com",
     "https://cdn.celaest.com",
     "https://*.r2.dev",
+    "https://cloudflareinsights.com",
     "https://*.supabase.co",
     "https://api.groq.com",
     "https://generativelanguage.googleapis.com",
@@ -73,7 +74,7 @@ function createSecurityPolicy(mode: string, command: string): string {
 
   return [
     "default-src 'self'",
-    `script-src ${isDev ? "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:" : "'self' 'wasm-unsafe-eval' blob:"}`,
+    `script-src ${isDev ? "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:" : "'self' 'wasm-unsafe-eval' blob: https://static.cloudflareinsights.com"}`,
     "worker-src 'self' blob: data:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com data:",

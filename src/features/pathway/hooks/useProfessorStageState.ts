@@ -4,18 +4,22 @@ import { PathwayNode, PathwayStepId } from "../../../domain/entities/LearningPat
 import { MobileAudioUnlocker, SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 import { PathwayQAService, ProfessorAnswer } from "../services/PathwayQAService";
 import { buildProfessorSpeech, ProfessorBoardMode } from "../services/professorSpeech";
+import { UNIVERSAL_PHRASES } from "../speech/universalPhrases";
 import { useLiveClassChoreography } from "./useLiveClassChoreography";
 
 export interface UseProfessorStageStateOptions {
-  node: PathwayNode; step: PathwayStepId; isActive: boolean; isSpeakingAudio: boolean; isRecordingMic: boolean;
+  node: PathwayNode; step: PathwayStepId; cefrLevel?: string | undefined; isActive: boolean;
+  hasBlockingOverlay?: boolean | undefined; isSpeakingAudio: boolean; isRecordingMic: boolean;
   isEvaluatingVoice?: boolean | undefined;
   isBuildCorrect: boolean; hasBuildMistake: boolean; isConquered: boolean; onPlaySample: (text: string) => void;
-  onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined; initialOpenAsking?: boolean | undefined;
+  onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined;
+  onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
+  initialOpenAsking?: boolean | undefined;
 }
 
 export function useProfessorStageState({
-  node, step, isActive, isSpeakingAudio, isRecordingMic, isEvaluatingVoice = false, isBuildCorrect, hasBuildMistake, isConquered,
-  onPlaySample, onStepChange, initialOpenAsking,
+  node, step, cefrLevel, isActive, hasBlockingOverlay = false, isSpeakingAudio, isRecordingMic, isEvaluatingVoice = false, isBuildCorrect, hasBuildMistake, isConquered,
+  onPlaySample, onStepChange, onAiError, initialOpenAsking,
 }: UseProfessorStageStateOptions) {
   const [mode, setMode] = useState<ProfessorBoardMode>("lesson");
   const [isAskingOpen, setIsAskingOpen] = useState(Boolean(initialOpenAsking));
@@ -24,6 +28,7 @@ export function useProfessorStageState({
   const [isAnsweringVoice, setIsAnsweringVoice] = useState(false);
   const [isAiAudioPlaying, setIsAiAudioPlaying] = useState<boolean>(() => SpeechSynthesisService.isAiPlaying());
   const cancelQARef = useRef<(() => void) | null>(null);
+  const prevAskingOpenRef = useRef<boolean>(Boolean(initialOpenAsking));
 
   useEffect(() => {
     return SpeechSynthesisService.subscribePlaybackState(setIsAiAudioPlaying);
@@ -35,14 +40,25 @@ export function useProfessorStageState({
   };
 
   const choreography = useLiveClassChoreography({
-    node, step, isActive, initialOpenAsking, onStepChange,
+    node, step, cefrLevel, isActive, hasBlockingOverlay, initialOpenAsking, onStepChange,
     onBeforeLectureStart: () => { clearQaOnly(); setMode("lesson"); },
   });
 
   useEffect(() => { if (initialOpenAsking) setIsAskingOpen(true); }, [initialOpenAsking]);
   useEffect(() => {
+    const wasOpen = prevAskingOpenRef.current;
+    prevAskingOpenRef.current = isAskingOpen;
     if (isAskingOpen) {
       choreography.stopAllLecture();
+      if (!wasOpen && !hasBlockingOverlay && UNIVERSAL_PHRASES.qa_open?.text) {
+        void SpeechSynthesisService.speak(UNIVERSAL_PHRASES.qa_open.text, {
+          lang: "es", voice: "liam", rate: 0.96, preventSyntheticFallback: true,
+        });
+      }
+    } else if (wasOpen && step === "RULE" && !hasBlockingOverlay && UNIVERSAL_PHRASES.qa_close?.text) {
+      void SpeechSynthesisService.speak(UNIVERSAL_PHRASES.qa_close.text, {
+        lang: "es", voice: "liam", rate: 0.96, preventSyntheticFallback: true,
+      });
     }
   }, [isAskingOpen]);
   useEffect(() => { setMode("lesson"); clearQaOnly(); }, [step, node.id]);
@@ -54,14 +70,15 @@ export function useProfessorStageState({
     setIsAskingOpen(true);
     setIsAskingQA(true);
     try {
-      const answer = await PathwayQAService.askProfessor({ question, node });
+      const answer = await PathwayQAService.askProfessor({ question, node, cefrLevel });
       setQaAnswer(answer);
       setIsAskingQA(false);
       setIsAnsweringVoice(false);
       // Zero audio execution: Liam answers visually and silently to preserve voice immersion
-    } catch {
+    } catch (err) {
       setIsAskingQA(false);
       setIsAnsweringVoice(false);
+      onAiError?.(err, () => { void handleAskQuestion(question); }, question);
     }
   };
 
@@ -155,6 +172,7 @@ export function useProfessorStageState({
     isAskingOpen, setIsAskingOpen, isAskingQA, setIsAskingQA, animState, speech, suggestedQuestions, isShowingExamples, isAnsweringVoice,
     hasQaOverride: Boolean(isAskingQA || qaAnswer),
     clearQaAnswer: clearQaOnly,
+    stopAllLecture: choreography.stopAllLecture,
     handleToggleLecture: choreography.handleToggleLecture,
     handleSelectBeat: choreography.handleSelectBeat,
     handleSelectFormulaCase: choreography.handleSelectFormulaCase,

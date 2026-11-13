@@ -411,21 +411,41 @@ function normalizeTitle(title?: string): string {
   return (title ?? "").toLowerCase().replace(/[«»"'`´]/g, "");
 }
 
-/** Perfil de una base por `orderIndex`, con respaldo por título. */
+function matchesCefrLevel(baseId: string, cefrLevel?: string): boolean {
+  if (!cefrLevel) return true;
+  const lvl = cefrLevel.toUpperCase();
+  if (lvl === "A1") {
+    return (
+      !baseId.startsWith("base_a2_") &&
+      !baseId.startsWith("base_b1_") &&
+      !baseId.startsWith("base_b2_") &&
+      !baseId.startsWith("base_c1_") &&
+      !baseId.startsWith("base_c2_")
+    );
+  }
+  return baseId.startsWith(`base_${lvl.toLowerCase()}_`);
+}
+
+/** Perfil de una base por `orderIndex` y nivel CEFR, con respaldo por título. */
 export function resolveSpeechProfile(
   orderIndex: number | undefined,
   title?: string,
+  cefrLevel?: string,
 ): BaseSpeechProfile | undefined {
+  const pool = cefrLevel
+    ? speechProfiles.filter((p) => matchesCefrLevel(p.baseId, cefrLevel))
+    : speechProfiles;
+  const searchPool = pool.length > 0 ? pool : speechProfiles;
+
   const normalized = normalizeTitle(title);
   if (normalized) {
-    // El título exacto manda: A1 y A2 comparten orderIndex 0..31.
-    const exact = speechProfiles.find((p) => normalizeTitle(p.title) === normalized);
+    const exact = searchPool.find((p) => normalizeTitle(p.title) === normalized);
     if (exact) return exact;
   }
-  const byIndex = speechProfiles.find((p) => p.orderIndex === orderIndex);
+  const byIndex = searchPool.find((p) => p.orderIndex === orderIndex);
   if (byIndex) return byIndex;
   if (!normalized) return undefined;
-  return speechProfiles.find((p) =>
+  return searchPool.find((p) =>
     (TITLE_HINTS[p.baseId] ?? []).some((hint) => normalized.includes(hint)),
   );
 }

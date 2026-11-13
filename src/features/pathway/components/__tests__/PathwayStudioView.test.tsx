@@ -1,6 +1,7 @@
 import React from "react";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import {fireEvent, render, screen,} from "@testing-library/react";
+import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
 import { PathwayStudioView } from "../PathwayStudioView";
 
 describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified Mobile)", () => {
@@ -127,5 +128,79 @@ describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified M
     fireEvent.click(await screen.findByRole("button", { name: /Decírsela al Profesor/i }));
     expect(screen.getByTestId("professor-3d-stage")).toBeInTheDocument();
     expect(screen.getByText(/“I learn English today\.”/i)).toBeInTheDocument();
+  });
+
+  it("renders obsidian mute toggle in Liam corner on Desktop & Mobile and mutes in-place without pausing flow", async () => {
+    localStorage.setItem("celaest:tutor:software_explained:v2", "1");
+    Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1280 });
+    window.dispatchEvent(new Event("resize"));
+
+    const stopSpy = vi.spyOn(SpeechSynthesisService, "stop");
+    const createdAudios: Array<{ muted: boolean; volume: number; onended: (() => void) | null; play: ReturnType<typeof vi.fn> }> = [];
+    const OriginalAudio = globalThis.Audio;
+    globalThis.Audio = vi.fn().mockImplementation(() => {
+      const mockAudio: any = {
+        muted: false,
+        volume: 1,
+        playbackRate: 1,
+        preload: "auto",
+        readyState: 4,
+        paused: false,
+        ended: false,
+        onplay: null,
+        onended: null,
+        onerror: null,
+        setAttribute: vi.fn(),
+        pause: vi.fn(),
+        play: vi.fn().mockResolvedValue(undefined),
+      };
+      createdAudios.push(mockAudio);
+      return mockAudio;
+    }) as unknown as typeof Audio;
+
+    try {
+      const { unmount } = render(
+        <PathwayStudioView roleName="Physician" userLevel="A1" learningGoal="Clinical English" />,
+      );
+
+      stopSpy.mockClear();
+      const desktopMuteBtn = screen.getByRole("button", { name: /Silenciar voz de Liam/i });
+      fireEvent.click(desktopMuteBtn);
+      expect(SpeechSynthesisService.isMuted()).toBe(true);
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: /Activar voz de Liam/i })).toHaveAttribute("aria-pressed", "true");
+
+      // While muted, speak() STILL executes audio silently (muted=true, volume=0) so lecture flow & timing never pause
+      const onEnd = vi.fn();
+      await SpeechSynthesisService.speak("I work every day.", { voice: "liam", onEnd });
+      const lastAudio = createdAudios[createdAudios.length - 1];
+      expect(lastAudio).toBeDefined();
+      expect(lastAudio!.muted).toBe(true);
+      expect(lastAudio!.volume).toBe(0);
+      expect(lastAudio!.play).toHaveBeenCalledTimes(1);
+
+      // Unmuting mid-segment restores live volume immediately without stopping playback
+      fireEvent.click(screen.getByRole("button", { name: /Activar voz de Liam/i }));
+      expect(SpeechSynthesisService.isMuted()).toBe(false);
+      expect(lastAudio!.muted).toBe(false);
+      expect(lastAudio!.volume).toBe(1);
+      lastAudio!.onended?.();
+      expect(onEnd).toHaveBeenCalledTimes(1);
+      unmount();
+
+      // Verify Mobile corner button also renders synced mute state cleanly
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 390 });
+      window.dispatchEvent(new Event("resize"));
+      SpeechSynthesisService.setMuted(true);
+      render(<PathwayStudioView roleName="Physician" userLevel="A1" learningGoal="Clinical English" />);
+      const mobileMuteBtn = screen.getByRole("button", { name: /Activar voz de Liam/i });
+      expect(mobileMuteBtn).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(mobileMuteBtn);
+      expect(SpeechSynthesisService.isMuted()).toBe(false);
+    } finally {
+      globalThis.Audio = OriginalAudio;
+      stopSpy.mockRestore();
+      SpeechSynthesisService.setMuted(false);
+    }
   });
 });

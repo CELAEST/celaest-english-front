@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveFormulaCases } from "../../../../domain/entities/LearningPathway";
-import { directClientAiService } from "../../../settings/services/directClientAiService";
+import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
+import { AiInfrastructureError, directClientAiService } from "../../../settings/services/directClientAiService";
+import { resolveSpeechProfile } from "../../speech/profiles";
 import { buildProceduralSeedNodes } from "../aiPathwayCurriculumService";
 import { PathwayLectureEngine } from "../PathwayLectureEngine";
 import { PathwayQAService } from "../PathwayQAService";
+import { PhoneticAudioService } from "../PhoneticAudioService";
 
 describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", () => {
   const seedNodes = buildProceduralSeedNodes("Cardiologist", "A1", "Clinical communication");
@@ -23,20 +26,26 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
   };
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     localStorage.clear();
   });
 
-  it("builds an 8-stage introductory live lecture on first visit, then 7-stage choreographed linguistics on subsequent visits", () => {
-    // 1. First visit: explains the software once + full 7-stage live choreography
+  it("builds a 3-step universal orientation on first visit, then enters lesson directly on subsequent visits", () => {
+    // 1. First visit: 3-step universal intro (intro_welcome, intro_philosophy, intro_method) + live choreography
     const firstLecture = PathwayLectureEngine.buildLectureScript(node);
     expect(firstLecture.headline).toContain("Mentoría");
-    expect(firstLecture.segments[0]?.beat).toBe("ORIENTATION");
-    expect(firstLecture.segments[0]?.badgeLabel).toContain("1. BIENVENIDA & GUÍA DE ESTUDIO");
+    const orientationBeats = firstLecture.segments.filter((s) => s.beat === "ORIENTATION");
+    expect(orientationBeats.length).toBe(3);
+    expect(firstLecture.segments[0]?.badgeLabel).toContain("1. BIENVENIDA");
     expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
 
     // 2. Segunda visita: sin orientación, entra directo a la clase
     const secondLecture = PathwayLectureEngine.buildLectureScript(node);
     expect(secondLecture.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
+
+    // 2b. Visita de retorno con bienvenida corta cuando aplica
+    const returningLecture = PathwayLectureEngine.buildLectureScript(node, { includeReturningWelcome: true });
+    expect(returningLecture.segments[0]?.text).toContain("Qué gusto verte de nuevo");
 
     // 3. Estructura del guion: fórmula (3) -> trampa (5) -> check -> ejemplos (4) -> build (2)
     const beats = secondLecture.segments.map((s) => s.beat);
@@ -157,7 +166,18 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     }
   });
 
-  it("answers student questions in 3 distinct pedagogical layers with immediate speech segments", async () => {
+  it("answers student questions in 3 distinct pedagogical layers from live AI without canned fallbacks", async () => {
+    const aiSpy = vi.spyOn(directClientAiService, "chatCompletion").mockResolvedValueOnce(
+      JSON.stringify({
+        isOffTopic: false,
+        directAnswer: "En inglés todo verbo conjugado exige sujeto explícito; para clima o tiempo usamos 'It'.",
+        mentalModel: "Piensa que en español el sujeto viaja escondido en el verbo, mientras en inglés el primer cajón siempre debe llevar nombre.",
+        exampleEnglish: "It is raining heavily today.",
+        exampleSpanish: "Está lloviendo fuerte hoy.",
+        pronunciationTip: "Enlaza 'It is' suavemente en un solo golpe de voz.",
+      }),
+    );
+
     const answer = await PathwayQAService.askProfessor({
       question: "¿Por qué no puedo decir 'Is raining' como en español decimos 'Está lloviendo'?",
       node,
@@ -165,9 +185,10 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
       cefrLevel: "A1",
     });
 
-    expect(answer.directAnswer.length).toBeGreaterThan(10);
+    expect(aiSpy).toHaveBeenCalledTimes(1);
+    expect(answer.directAnswer).toContain("sujeto explícito");
     expect(answer.mentalModel.length).toBeGreaterThan(10);
-    expect(answer.exampleEnglish.length).toBeGreaterThan(3);
+    expect(answer.exampleEnglish).toBe("It is raining heavily today.");
     expect(answer.speechSegments.length).toBeGreaterThanOrEqual(2);
 
     const hasEnglishSegment = answer.speechSegments.some((s) => s.language === "en");
@@ -175,6 +196,30 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     expect(hasEnglishSegment).toBe(true);
     expect(hasSpanishSegment).toBe(true);
     expect(answer.isOffTopic).toBe(false);
+  });
+
+  it("throws BYOK_REQUIRED instead of returning hardcoded answers when no AI key or cluster is active", async () => {
+    await expect(
+      PathwayQAService.askProfessor({
+        question: "¿Cuál es la diferencia entre 'make' y 'do'?",
+        node,
+        cefrLevel: "A1",
+      }),
+    ).rejects.toMatchObject({ code: "BYOK_REQUIRED" });
+  });
+
+  it("propagates live AI provider errors instead of masking them with hardcoded answers", async () => {
+    vi.spyOn(directClientAiService, "chatCompletion").mockRejectedValueOnce(
+      new AiInfrastructureError("AUTH_DECLINED_KEY", "Invalid API key (401)", 401, "groq"),
+    );
+
+    await expect(
+      PathwayQAService.askProfessor({
+        question: "¿Cómo uso el auxiliar 'do' en preguntas?",
+        node,
+        cefrLevel: "A1",
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_DECLINED_KEY" });
   });
 
   it("politely declines off-topic questions and guides student back to English (procedural fallback)", async () => {
@@ -202,7 +247,7 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     );
 
     const answer = await PathwayQAService.askProfessor({
-      question: "¿Cómo escribir un loop for en Python?",
+      question: "¿Quién ganó la carrera de Fórmula 1 ayer?",
       node,
     });
 
@@ -219,5 +264,16 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
         node,
       }),
     ).rejects.toThrow("Question cannot be empty");
+  });
+
+  it("isolates CEFR speech profile resolution and enforces single-voice audio stop mutex", () => {
+    expect(resolveSpeechProfile(0, undefined, "A1")?.baseId).toBe("base_01");
+    expect(resolveSpeechProfile(0, undefined, "A2")?.baseId).toBe("base_a2_01");
+
+    const stopHook = vi.fn();
+    const unsub = SpeechSynthesisService.registerExternalStop(stopHook);
+    PhoneticAudioService.stop();
+    expect(stopHook).toHaveBeenCalledTimes(1);
+    unsub();
   });
 });

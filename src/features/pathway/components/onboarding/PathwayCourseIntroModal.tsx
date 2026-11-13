@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Sparkles, ArrowRight, Volume2, VolumeX, CheckCircle2 } from "lucide-react";
+import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
 import { UNIVERSAL_PHRASES } from "../../speech/universalPhrases";
 
 interface PathwayCourseIntroModalProps {
@@ -34,63 +35,38 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const stepMeta = INTRO_STEPS[stepIndex] ?? INTRO_STEPS[0];
   const phrase = UNIVERSAL_PHRASES[stepMeta.key];
   const isLast = stepIndex === INTRO_STEPS.length - 1;
 
+  const speakPhrase = useCallback((text: string) => {
+    setIsPlayingAudio(true);
+    void SpeechSynthesisService.speak(text, {
+      lang: "es",
+      voice: "liam",
+      rate: 0.96,
+      preventSyntheticFallback: true,
+      onEnd: () => setIsPlayingAudio(false),
+      onError: () => setIsPlayingAudio(false),
+    });
+  }, []);
+
   const playCurrentAudio = () => {
-    if (!phrase?.audioUrl) return;
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    const audio = new Audio(phrase.audioUrl);
-    audioRef.current = audio;
-    audio.onplay = () => setIsPlayingAudio(true);
-    audio.onended = () => setIsPlayingAudio(false);
-    audio.onerror = () => setIsPlayingAudio(false);
+    if (!phrase?.text) return;
     setIsMuted(false);
-    try {
-      const playPromise = audio.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => setIsPlayingAudio(false));
-      }
-    } catch {
-      setIsPlayingAudio(false);
-    }
+    speakPhrase(phrase.text);
   };
 
-  // Attempt audio playback when step changes if not muted
+  // Attempt audio playback via unified SpeechSynthesisService when step changes
   useEffect(() => {
-    if (!isOpen || isMuted || !phrase?.audioUrl) return;
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
-    const audio = new Audio(phrase.audioUrl);
-    audioRef.current = audio;
-
-    audio.onplay = () => setIsPlayingAudio(true);
-    audio.onended = () => setIsPlayingAudio(false);
-    audio.onerror = () => setIsPlayingAudio(false);
-
-    try {
-      const playPromise = audio.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {
-          setIsPlayingAudio(false);
-        });
-      }
-    } catch {
-      setIsPlayingAudio(false);
-    }
-
+    if (!isOpen || isMuted || !phrase?.text) return;
+    speakPhrase(phrase.text);
     return () => {
-      audio.pause();
+      SpeechSynthesisService.stop();
+      setIsPlayingAudio(false);
     };
-  }, [stepIndex, isOpen, isMuted, phrase]);
+  }, [stepIndex, isOpen, isMuted, phrase, speakPhrase]);
 
   if (!isOpen) return null;
 
@@ -109,9 +85,8 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
     } catch {
       // safe fallback
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    SpeechSynthesisService.stop();
+    setIsPlayingAudio(false);
     onFinish(withTour);
   };
 
@@ -137,18 +112,28 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={isPlayingAudio ? () => { audioRef.current?.pause(); setIsPlayingAudio(false); } : playCurrentAudio}
+              onClick={
+                isPlayingAudio
+                  ? () => {
+                      SpeechSynthesisService.stop();
+                      setIsPlayingAudio(false);
+                    }
+                  : playCurrentAudio
+              }
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-mono text-[#DDD6FE] bg-[#A27FF3]/15 hover:bg-[#A27FF3]/25 border border-[#A27FF3]/35 transition-all cursor-pointer"
               title="Escuchar audio de Liam"
             >
-              <Volume2 size={12} className={isPlayingAudio ? "text-[#A27FF3] animate-pulse" : "text-white/60"} />
+              <Volume2
+                size={12}
+                className={isPlayingAudio ? "text-[#A27FF3] animate-pulse" : "text-white/60"}
+              />
               <span>{isPlayingAudio ? "Hablando..." : "Escuchar a Liam"}</span>
             </button>
             <button
               type="button"
               onClick={() => {
-                if (!isMuted && audioRef.current) {
-                  audioRef.current.pause();
+                if (!isMuted) {
+                  SpeechSynthesisService.stop();
                   setIsPlayingAudio(false);
                 }
                 setIsMuted((prev) => !prev);
@@ -156,7 +141,11 @@ export const PathwayCourseIntroModal: React.FC<PathwayCourseIntroModalProps> = (
               className="text-white/40 hover:text-white transition-colors cursor-pointer p-1"
               title={isMuted ? "Activar voz de Liam" : "Silenciar voz"}
             >
-              {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className={isPlayingAudio ? "text-[#A27FF3]" : ""} />}
+              {isMuted ? (
+                <VolumeX size={15} />
+              ) : (
+                <Volume2 size={15} className={isPlayingAudio ? "text-[#A27FF3]" : ""} />
+              )}
             </button>
           </div>
         </div>

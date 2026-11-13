@@ -31,11 +31,14 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
 
     const script1 = PathwayLectureEngine.buildLectureScript(dummyNode);
     expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
-    expect(script1.segments[0]?.beat).toBe("ORIENTATION");
-    expect(script1.segments[0]?.text).toContain("Liam");
-    expect(script1.segments[0]?.text).toContain("Guía de Estudio");
-    expect(script1.segments[0]?.text).toContain("14 Bloques");
-    expect(script1.segments[0]?.text).toContain("Alfabeto Fonético");
+    const orientationSegs = script1.segments.filter((s) => s.beat === "ORIENTATION");
+    expect(orientationSegs.length).toBe(3);
+    expect(orientationSegs[0]?.text).toContain("Liam");
+    expect(orientationSegs[1]?.text).toContain("patrones estructurales");
+    expect(orientationSegs[2]?.text).toContain("primera lección");
+    expect(orientationSegs[2]?.subtitleSpanish).toContain("Guía de Estudio");
+    expect(orientationSegs[2]?.subtitleSpanish).toContain("14 bloques");
+    expect(orientationSegs[2]?.subtitleSpanish).toContain("Preguntar");
 
     const script2 = PathwayLectureEngine.buildLectureScript(dummyNode);
     expect(script2.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
@@ -135,6 +138,42 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
 
     const stop = await PathwayLectureEngine.playLecture(dummyNode, () => {}, () => {}, "liam");
     expect(prefetchSpy).toHaveBeenCalled();
+    stop();
+  });
+
+  it("stays active across segments when SpeechSynthesisService.speak calls stop() internally, and stops immediately on external stop()", async () => {
+    PathwayLectureEngine.markSoftwareIntroSeen();
+    vi.spyOn(SpeechSynthesisService, "prefetch").mockImplementation(() => Promise.resolve({} as any));
+    let finishFirstSegment: (() => void) | null = null;
+    let callCount = 0;
+
+    vi.spyOn(SpeechSynthesisService, "speak").mockImplementation((_text, opts) => {
+      SpeechSynthesisService.stop();
+      callCount++;
+      if (callCount === 1) {
+        finishFirstSegment = () => opts?.onEnd?.();
+      }
+      return Promise.resolve();
+    });
+
+    const onProgress = vi.fn();
+    const onEnd = vi.fn();
+
+    const stop = await PathwayLectureEngine.playLecture(dummyNode, onProgress, onEnd, "liam");
+
+    expect(callCount).toBe(1);
+    expect(onProgress).toHaveBeenCalledTimes(1);
+    expect(onEnd).not.toHaveBeenCalled();
+
+    // Advancing segment 1 must trigger segment 2 (still not finished prematurely)
+    finishFirstSegment!();
+    await new Promise((res) => setTimeout(res, 450));
+    expect(callCount).toBeGreaterThanOrEqual(2);
+    expect(onEnd).not.toHaveBeenCalled();
+
+    // External stop() must cancel immediately and notify onEnd()
+    SpeechSynthesisService.stop();
+    expect(onEnd).toHaveBeenCalledTimes(1);
     stop();
   });
 });

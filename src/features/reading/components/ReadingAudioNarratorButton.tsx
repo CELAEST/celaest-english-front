@@ -2,6 +2,7 @@ import React from "react";
 
 export interface ReadingAudioNarratorButtonProps {
   isPlaying: boolean;
+  isLoading?: boolean | undefined;
   isPaused: boolean;
   playbackRate: number;
   selectedVoice?: "en-US-AriaNeural" | "en-US-ChristopherNeural" | undefined;
@@ -15,6 +16,7 @@ export interface ReadingAudioNarratorButtonProps {
 export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProps> = React.memo(
   ({
     isPlaying,
+    isLoading = false,
     isPaused,
     playbackRate,
     selectedVoice = "en-US-AriaNeural",
@@ -86,19 +88,26 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
           type="button"
           onClick={onTogglePlay}
           aria-label={
-            isPlaying
-              ? isPaused
-                ? "Resume audio narration"
-                : "Pause audio narration"
-              : "Listen to this page (Audio Narrator)"
+            isLoading
+              ? "Cancel audio loading"
+              : isPlaying
+                ? isPaused
+                  ? "Resume audio narration"
+                  : "Pause audio narration"
+                : "Listen to this page (Audio Narrator)"
           }
           className={`inline-flex items-center gap-1 text-[11px] font-sans transition-colors cursor-pointer bg-transparent border-0 py-1.5 px-2 -my-1 sm:my-0 sm:p-0 min-h-[36px] sm:min-h-0 outline-none leading-none active:scale-95 ml-0.5 group touch-manipulation ${
-            isPlaying
+            isPlaying || isLoading
               ? "text-white font-semibold"
               : "text-white/40 hover:text-white font-normal"
           }`}
         >
-          {isPlaying && !isPaused ? (
+          {isLoading ? (
+            <span
+              className="w-2.5 h-2.5 rounded-full border border-white/30 border-t-white animate-spin shrink-0"
+              aria-hidden="true"
+            />
+          ) : isPlaying && !isPaused ? (
             /* Live Equalizer Wave Animation */
             <div className="flex items-center gap-[2px] h-3 shrink-0" aria-hidden="true">
               <span className="w-[2px] h-2 bg-white rounded-full animate-[pulse_0.6s_ease-in-out_infinite]" />
@@ -138,7 +147,7 @@ export const ReadingAudioNarratorButton: React.FC<ReadingAudioNarratorButtonProp
           )}
 
           <span>
-            {isPlaying ? (isPaused ? "Resume" : "Pause") : "Listen"}
+            {isLoading ? "Loading..." : isPlaying ? (isPaused ? "Resume" : "Pause") : "Listen"}
           </span>
         </button>
 

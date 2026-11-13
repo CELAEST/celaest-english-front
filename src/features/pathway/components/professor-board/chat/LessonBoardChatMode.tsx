@@ -7,20 +7,27 @@ import { PathwayChatInputBar } from "./PathwayChatInputBar";
 
 interface LessonBoardChatModeProps {
   node?: PathwayNode | undefined;
+  cefrLevel?: string | undefined;
   baseCode: string;
   suggestedQuestions?: string[] | undefined;
   onClose: () => void;
   onThinkingChange?: ((isThinking: boolean) => void) | undefined;
+  onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
 }
 
 export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
   node,
+  cefrLevel,
   baseCode,
   suggestedQuestions,
   onClose,
   onThinkingChange,
+  onAiError,
 }) => {
-  const { messages, isSubmitting, askQuestion, clearChat } = usePathwayBaseChat(node);
+  const { messages, isSubmitting, askQuestion, clearChat } = usePathwayBaseChat(node, {
+    cefrLevel,
+    onAiError,
+  });
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
 
   // Sync thinking state with professor 3D avatar
@@ -34,11 +41,14 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
   }, [messages, isSubmitting]);
 
   const hasMessages = messages.length > 0;
-  const chips = suggestedQuestions && suggestedQuestions.length > 0 ? suggestedQuestions : [
-    "¿Por qué en español decimos diferente?",
-    "¿Cuál es el error más común?",
-    "Dame otro ejemplo práctico",
-  ];
+  const chips =
+    suggestedQuestions && suggestedQuestions.length > 0
+      ? suggestedQuestions
+      : [
+          "¿Por qué en español decimos diferente?",
+          "¿Cuál es el error más común?",
+          "Dame otro ejemplo práctico",
+        ];
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden select-none">
@@ -80,7 +90,8 @@ export const LessonBoardChatMode: React.FC<LessonBoardChatModeProps> = ({
         {!hasMessages ? (
           <div className="flex flex-col gap-2.5 py-1">
             <p className="text-xs text-white/75 leading-relaxed font-light">
-              Estoy aquí para resolver cualquier duda sobre esta base. Escribe tu pregunta abajo o toca una sugerencia:
+              Estoy aquí para resolver cualquier duda sobre esta base. Escribe tu pregunta abajo o
+              toca una sugerencia:
             </p>
             <div className="flex flex-col gap-1.5 pt-1">
               <span className="text-[9.5px] font-mono uppercase tracking-[0.18em] text-white/35">

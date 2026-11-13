@@ -195,6 +195,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
   const {
     isPlaying: isPlayingAudio,
+    isLoading: isLoadingAudio,
     isPaused: isPausedAudio,
     currentWordIndex: activeKaraokeWordIndex,
     playbackRate: audioPlaybackRate,
@@ -383,6 +384,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                 title={articleTitle}
                 subtitle={articleSubtitle}
                 isPlayingAudio={isPlayingAudio}
+                isLoadingAudio={isLoadingAudio}
                 isPausedAudio={isPausedAudio}
                 playbackRate={audioPlaybackRate}
                 selectedVoice={selectedVoice}

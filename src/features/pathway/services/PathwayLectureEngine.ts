@@ -1,5 +1,6 @@
 import { PathwayNode, PathwayStepId, resolveFormulaCases } from "../../../domain/entities/LearningPathway";
 import { resolveSpeechProfile } from "../speech/profiles";
+import { UNIVERSAL_PHRASES } from "../speech/universalPhrases";
 import { SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 
 export type LiveClassBeatId =
@@ -21,6 +22,11 @@ export interface LectureSegment {
   targetStep?: PathwayStepId | undefined;
   formulaRevealCount?: number | undefined;
   trapPhase?: 0 | 1 | 2 | undefined;
+}
+
+export interface BuildLectureScriptOptions {
+  cefrLevel?: string | undefined;
+  includeReturningWelcome?: boolean | undefined;
 }
 
 export interface PlayLectureOptions {
@@ -74,7 +80,10 @@ export class PathwayLectureEngine {
     }
   }
 
-  public static buildLectureScript(node: PathwayNode): PathwayLectureScript {
+  public static buildLectureScript(
+    node: PathwayNode,
+    options?: BuildLectureScriptOptions,
+  ): PathwayLectureScript {
     const lesson = node.lessonPayload;
     if (!lesson) {
       return {
@@ -105,15 +114,47 @@ export class PathwayLectureEngine {
     const surfaceRef = isMobile ? "aquí debajo en tu tarjeta" : "en tu pizarra";
     const hasSeenSoftware = this.isSoftwareIntroSeen();
     if (!hasSeenSoftware) {
+      const introWelcome = UNIVERSAL_PHRASES.intro_welcome!;
+      const introPhilosophy = UNIVERSAL_PHRASES.intro_philosophy!;
+      const introMethod = UNIVERSAL_PHRASES.intro_method!;
+      segments.push(
+        {
+          language: "es",
+          text: introWelcome.text,
+          subtitleSpanish: introWelcome.subtitle,
+          badgeLabel: "1. BIENVENIDA & GUÍA DE ESTUDIO",
+          beat: "ORIENTATION",
+          targetStep: "RULE",
+        },
+        {
+          language: "es",
+          text: introPhilosophy.text,
+          subtitleSpanish: introPhilosophy.subtitle,
+          badgeLabel: "2. MÉTODO NEUROCOGNITIVO",
+          beat: "ORIENTATION",
+          targetStep: "RULE",
+        },
+        {
+          language: "es",
+          text: introMethod.text,
+          subtitleSpanish: "Pizarra interactiva, Guía de Estudio arriba (14 bloques + fonética) y botón Preguntar siempre listo.",
+          badgeLabel: "3. TU GUÍA DE CLASE",
+          beat: "ORIENTATION",
+          targetStep: "RULE",
+        },
+      );
+      this.markSoftwareIntroSeen();
+    } else if (options?.includeReturningWelcome) {
+      const returningPhrase = UNIVERSAL_PHRASES.welcome_returning!;
       segments.push({
         language: "es",
-        text: getSoftwareGuideOrientationText(isMobile),
-        subtitleSpanish: "Tu pizarra viva sincronizada, retos en mitad de clase y Guía de Estudio arriba.",
-        badgeLabel: "1. BIENVENIDA & GUÍA DE ESTUDIO",
-        beat: "ORIENTATION",
+        text: returningPhrase.text,
+        subtitleSpanish: returningPhrase.subtitle,
+        badgeLabel: "BIENVENIDA · RETOMANDO CLASE",
+        beat: "FORMULA",
+        formulaRevealCount: 1,
         targetStep: "RULE",
       });
-      this.markSoftwareIntroSeen();
     }
 
     const cleanWrong = (lesson.commonMistake.wrong || "").replace(/[.!?«»"']/g, "").trim();
@@ -129,7 +170,7 @@ export class PathwayLectureEngine {
 
     // Bases con guion declarativo aprobado (src/features/pathway/speech/profiles/).
     // Una pista = un idioma. Los textos salen del perfil, no de literales aquí.
-    const speechProfile = resolveSpeechProfile(node.orderIndex, topicTitle);
+    const speechProfile = resolveSpeechProfile(node.orderIndex, topicTitle, options?.cefrLevel);
     if (speechProfile) {
       // BUILD no es un beat de clase: se marca con targetStep. SPEAK lo maneja el hook.
       const LECTURE_BEATS = new Set(["FORMULA", "TRAP", "TRAP_CHECK", "EXAMPLES"]);
@@ -585,8 +626,8 @@ export class PathwayLectureEngine {
 
     segments.push({
       language: "es",
-      text: `Si te surge cualquier duda, toca "Preguntar" abajo. Ahora constrúyela tú: abro las fichas ${surfaceRef} para activar tu memoria motriz. ¡Adelante!`,
-      subtitleSpanish: "Arma la oración en orden natural para pasar al reto de voz.",
+      text: UNIVERSAL_PHRASES.build_intro!.text,
+      subtitleSpanish: UNIVERSAL_PHRASES.build_intro!.subtitle,
       badgeLabel: "ACTIVACIÓN EN PANTALLA",
       targetStep: "BUILD",
     });
@@ -615,6 +656,9 @@ export class PathwayLectureEngine {
     const script = options?.script ?? this.buildLectureScript(node);
     const startIdx = Math.max(0, Math.min(options?.startFromIndex ?? 0, script.segments.length));
     let isCancelled = false;
+    let isDispatchingSpeak = false;
+    let resolveCurrentSegment: (() => void) | null = null;
+    let unregisterExternalStop: (() => void) | null = null;
 
     if (startIdx < script.segments.length) {
       const firstSeg = script.segments[startIdx]!;
@@ -622,101 +666,135 @@ export class PathwayLectureEngine {
       void SpeechSynthesisService.prefetch(firstSeg.text, firstVoice);
     }
 
-    const stop = () => {
+    const cleanupSession = () => {
       isCancelled = true;
+      unregisterExternalStop?.();
+      unregisterExternalStop = null;
+      const pendingResolve = resolveCurrentSegment;
+      resolveCurrentSegment = null;
+      pendingResolve?.();
+    };
+
+    const stop = () => {
+      cleanupSession();
       SpeechSynthesisService.stop();
       onEnd();
     };
 
+    unregisterExternalStop = SpeechSynthesisService.registerExternalStop(() => {
+      if (isCancelled || isDispatchingSpeak) return;
+      cleanupSession();
+      onEnd();
+    });
+
     const run = async () => {
-      for (let i = startIdx; i < script.segments.length; i++) {
-        if (isCancelled || this.activeSessionId !== currentSessionId) break;
+      try {
+        for (let i = startIdx; i < script.segments.length; i++) {
+          if (isCancelled || this.activeSessionId !== currentSessionId) break;
 
-        const segment = script.segments[i]!;
-        if (segment.targetStep && onStepTrigger) {
-          onStepTrigger(segment.targetStep);
-        }
-        onProgress(i, segment);
+          const segment = script.segments[i]!;
+          if (segment.targetStep && onStepTrigger) {
+            onStepTrigger(segment.targetStep);
+          }
+          onProgress(i, segment);
 
-        // Prioritized lookahead: prefetch strictly the NEXT segment in background while current segment speaks
-        if (i + 1 < script.segments.length) {
-          const nextSeg = script.segments[i + 1]!;
-          const nextVoice = nextSeg.language === "en" ? "liam" : spanishVoice;
-          void SpeechSynthesisService.prefetch(nextSeg.text, nextVoice);
-        }
-
-        await new Promise<void>((resolve) => {
-          if (isCancelled || this.activeSessionId !== currentSessionId) {
-            resolve();
-            return;
+          // Prioritized lookahead: prefetch strictly the NEXT segment in background while current segment speaks
+          if (i + 1 < script.segments.length) {
+            const nextSeg = script.segments[i + 1]!;
+            const nextVoice = nextSeg.language === "en" ? "liam" : spanishVoice;
+            void SpeechSynthesisService.prefetch(nextSeg.text, nextVoice);
           }
 
-          const completeSegment = () => {
-            resolve();
-          };
-
-          const handlePlayError = (err: any) => {
-            const isAutoplay =
-              err?.name === "NotAllowedError" ||
-              String(err?.message || "").toLowerCase().includes("user didn't interact") ||
-              String(err || "").includes("NotAllowedError");
-            if (isAutoplay) {
-              isCancelled = true;
-              SpeechSynthesisService.stop();
-              if (onAutoplayBlocked) {
-                onAutoplayBlocked();
-              } else {
-                onEnd();
-              }
+          await new Promise<void>((resolve) => {
+            if (isCancelled || this.activeSessionId !== currentSessionId) {
               resolve();
               return;
             }
-            completeSegment();
-          };
 
-          if (segment.language === "en") {
-            void SpeechSynthesisService.speak(segment.text, {
-              lang: "en",
-              voice: "liam",
-              rate: 0.95,
-              preventSyntheticFallback: true,
-              onEnd: completeSegment,
-              onError: handlePlayError,
-            });
-          } else {
-            void SpeechSynthesisService.speak(segment.text, {
-              lang: "es",
-              voice: spanishVoice,
-              rate: 0.96,
-              preventSyntheticFallback: true,
-              onEnd: completeSegment,
-              onError: handlePlayError,
-            });
+            let segmentSettled = false;
+            const completeSegment = () => {
+              if (segmentSettled) return;
+              segmentSettled = true;
+              if (resolveCurrentSegment === completeSegment) {
+                resolveCurrentSegment = null;
+              }
+              resolve();
+            };
+            resolveCurrentSegment = completeSegment;
+
+            const handlePlayError = (err: any) => {
+              const isAutoplay =
+                err?.name === "NotAllowedError" ||
+                String(err?.message || "").toLowerCase().includes("user didn't interact") ||
+                String(err || "").includes("NotAllowedError");
+              if (isAutoplay && !SpeechSynthesisService.isMuted()) {
+                cleanupSession();
+                SpeechSynthesisService.stop();
+                if (onAutoplayBlocked) {
+                  onAutoplayBlocked();
+                } else {
+                  onEnd();
+                }
+                completeSegment();
+                return;
+              }
+              completeSegment();
+            };
+
+            isDispatchingSpeak = true;
+            try {
+              if (segment.language === "en") {
+                void SpeechSynthesisService.speak(segment.text, {
+                  lang: "en",
+                  voice: "liam",
+                  rate: 0.95,
+                  preventSyntheticFallback: true,
+                  onEnd: completeSegment,
+                  onError: handlePlayError,
+                });
+              } else {
+                void SpeechSynthesisService.speak(segment.text, {
+                  lang: "es",
+                  voice: spanishVoice,
+                  rate: 0.96,
+                  preventSyntheticFallback: true,
+                  onEnd: completeSegment,
+                  onError: handlePlayError,
+                });
+              }
+            } finally {
+              isDispatchingSpeak = false;
+            }
+          });
+
+          if (
+            !isCancelled &&
+            this.activeSessionId === currentSessionId &&
+            segment.pauseAfterForCheck &&
+            options?.onPauseForCheck
+          ) {
+            cleanupSession();
+            options.onPauseForCheck(segment.beat || "TRAP_CHECK", i + 1);
+            return;
           }
-        });
 
-        if (
-          !isCancelled &&
-          this.activeSessionId === currentSessionId &&
-          segment.pauseAfterForCheck &&
-          options?.onPauseForCheck
-        ) {
-          options.onPauseForCheck(segment.beat || "TRAP_CHECK", i + 1);
-          return;
+          // Cognitive Breathing Cadence (Ley 5 del Master Standard)
+          if (!isCancelled && this.activeSessionId === currentSessionId && i < script.segments.length - 1) {
+            const isEnglishModel = segment.language === "en";
+            const isCaseIntro = segment.formulaRevealCount === 1;
+            const isTrapIntro = segment.trapPhase === 0;
+            const cognitivePauseMs = isEnglishModel ? 750 : (isCaseIntro || isTrapIntro) ? 380 : 260;
+            await new Promise((res) => setTimeout(res, cognitivePauseMs));
+          }
         }
 
-        // Cognitive Breathing Cadence (Ley 5 del Master Standard)
-        if (!isCancelled && this.activeSessionId === currentSessionId && i < script.segments.length - 1) {
-          const isEnglishModel = segment.language === "en";
-          const isCaseIntro = segment.formulaRevealCount === 1;
-          const isTrapIntro = segment.trapPhase === 0;
-          const cognitivePauseMs = isEnglishModel ? 750 : (isCaseIntro || isTrapIntro) ? 380 : 260;
-          await new Promise((res) => setTimeout(res, cognitivePauseMs));
+        if (!isCancelled && this.activeSessionId === currentSessionId) {
+          cleanupSession();
+          onEnd();
         }
-      }
-
-      if (!isCancelled && this.activeSessionId === currentSessionId) {
-        onEnd();
+      } finally {
+        unregisterExternalStop?.();
+        unregisterExternalStop = null;
       }
     };
 

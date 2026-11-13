@@ -8,6 +8,7 @@ import b2Manifest from "../../data/b2AudioManifest.json";
 import c1Manifest from "../../data/c1AudioManifest.json";
 import c2Manifest from "../../data/c2AudioManifest.json";
 import { speechProfiles } from "../../speech/profiles";
+import { UNIVERSAL_PHRASES } from "../../speech/universalPhrases";
 import { buildProceduralSeedNodes } from "../aiPathwayCurriculumService";
 import { PathwayLectureEngine } from "../PathwayLectureEngine";
 
@@ -173,5 +174,17 @@ describe("Cobertura de voz del Pathway", () => {
       console.error(`\nManifiesto apunta a ${unique.length} archivos inexistentes:\n  ` + unique.slice(0, 20).join("\n  "));
     }
     expect(unique).toEqual([]);
+  });
+
+  it("todas las 14 frases universales apuntan exactamente al audio correcto y existen en disco", () => {
+    const root = process.cwd();
+    const phrases = Object.values(UNIVERSAL_PHRASES);
+    expect(phrases.length).toBe(14);
+    for (const phrase of phrases) {
+      const mapped = hasAudio(phrase.text);
+      expect(mapped, `Sin entrada en manifiesto para "${phrase.id}": ${phrase.text}`).toBe(phrase.audioUrl);
+      const abs = path.join(root, "public", phrase.audioUrl.replace(/^\//, ""));
+      expect(fs.existsSync(abs), `Falta archivo de audio en disco: ${abs}`).toBe(true);
+    }
   });
 });

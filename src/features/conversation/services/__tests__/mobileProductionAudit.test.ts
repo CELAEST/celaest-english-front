@@ -222,4 +222,61 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
       expect(onStart).toHaveBeenCalled();
     });
   });
+
+  describe("5. Aria / Christopher Isolation from Pathway Mode", () => {
+    it("defaults omitted voice to en-US-AriaNeural and preserves English punctuation without Pathway manifest hijacking", async () => {
+      const { readingAudioPrefetcher } = await import("../../../reading/services/readingAudioPrefetcher");
+      const { pathwayAudioLog } = await import("../../../pathway/audio/pathwayAudioLog");
+
+      const prefetchSpy = vi.spyOn(readingAudioPrefetcher, "prefetchText").mockResolvedValue(null);
+      const getCacheSpy = vi.spyOn(readingAudioPrefetcher, "get").mockReturnValue(null);
+      const logSpy = vi.spyOn(pathwayAudioLog, "record");
+      const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+      const phrase = "I'm ready & focused / clear";
+      await SpeechSynthesisService.prefetch(phrase);
+      expect(prefetchSpy).toHaveBeenCalledWith(phrase, "en-US-AriaNeural");
+
+      await SpeechSynthesisService.speak(phrase);
+      expect(getCacheSpy).toHaveBeenCalledWith(phrase, "en-US-AriaNeural");
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(playSpy).toHaveBeenCalledTimes(1);
+
+      prefetchSpy.mockRestore();
+      getCacheSpy.mockRestore();
+      logSpy.mockRestore();
+      playSpy.mockRestore();
+    });
+
+    it("preserves explicit en-US-ChristopherNeural stream text without Spanish sanitation", async () => {
+      const { readingAudioPrefetcher } = await import("../../../reading/services/readingAudioPrefetcher");
+      const getCacheSpy = vi.spyOn(readingAudioPrefetcher, "get").mockReturnValue(null);
+      const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+      const phrase = "Why didn't it ship?";
+      await SpeechSynthesisService.speak(phrase, { voice: "en-US-ChristopherNeural" });
+      expect(getCacheSpy).toHaveBeenCalledWith(phrase, "en-US-ChristopherNeural");
+      expect(playSpy).toHaveBeenCalledTimes(1);
+
+      getCacheSpy.mockRestore();
+      playSpy.mockRestore();
+    });
+
+    it("keeps Pathway Liam mode isolated with sanitation and manifest logging", async () => {
+      const { readingAudioPrefetcher } = await import("../../../reading/services/readingAudioPrefetcher");
+      const { pathwayAudioLog } = await import("../../../pathway/audio/pathwayAudioLog");
+
+      const getCacheSpy = vi.spyOn(readingAudioPrefetcher, "get").mockReturnValue(null);
+      const logSpy = vi.spyOn(pathwayAudioLog, "record");
+      const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+      await SpeechSynthesisService.speak("A & B", { voice: "liam" });
+      expect(getCacheSpy).toHaveBeenCalledWith("A y B", "liam");
+      expect(logSpy).toHaveBeenCalled();
+
+      getCacheSpy.mockRestore();
+      logSpy.mockRestore();
+      playSpy.mockRestore();
+    });
+  });
 });

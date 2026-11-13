@@ -56,11 +56,19 @@ class ReadingAudioPrefetcher {
   }
 
   /**
+   * Returns an in-flight prefetch promise for the exact text & voice, if one is active.
+   */
+  public getInFlight(text: string, voice: string): Promise<CachedAudioItem | null> | null {
+    const key = this.makeKey(text, voice);
+    return this.inFlight.get(key) ?? null;
+  }
+
+  /**
    * Prefetches a single text block for a specific voice in background.
    */
   public async prefetchText(
     text: string,
-    voice: SupportedTtsVoice = "liam",
+    voice: SupportedTtsVoice = "en-US-AriaNeural",
   ): Promise<CachedAudioItem | null> {
     const trimmed = text.trim();
     if (!trimmed) return null;
@@ -76,13 +84,19 @@ class ReadingAudioPrefetcher {
 
     const fetchPromise = (async (): Promise<CachedAudioItem | null> => {
       try {
-        const streamUrl = `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(
-          trimmed,
-        )}&voice=${encodeURIComponent(voice)}&rate=%2B0%25&volume=%2B100%25`;
-
-        const response = await fetch(streamUrl, {
-          method: "GET",
-          headers: { Accept: "audio/mpeg" },
+        // Use POST + JSON so long Reading pages never hit GET URL limits or WAF query-param false positives
+        const response = await fetch(`${ENV.apiUrl}/tts/stream`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+          },
+          body: JSON.stringify({
+            text: trimmed,
+            voice,
+            rate: "+0%",
+            volume: "+100%",
+          }),
         });
 
         if (!response.ok) {

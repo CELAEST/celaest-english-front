@@ -39,7 +39,9 @@ export const LiveBoardOrientationScene: React.FC<LiveBoardOrientationSceneProps>
         <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[#C4B2F7]">
             <BookOpen size={12} />
-            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">1. Pizarra</span>
+            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">
+              1. Pizarra
+            </span>
           </div>
           <p className="text-[11px] text-white/60 font-light leading-snug">
             Regla visual, fórmula paso a paso y caza de trampas.
@@ -49,7 +51,9 @@ export const LiveBoardOrientationScene: React.FC<LiveBoardOrientationSceneProps>
         <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[#22D3EE]">
             <Layers size={12} />
-            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">2. Práctica</span>
+            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">
+              2. Práctica
+            </span>
           </div>
           <p className="text-[11px] text-white/60 font-light leading-snug">
             Armado de fichas táctiles para forjar memoria motriz.
@@ -59,7 +63,9 @@ export const LiveBoardOrientationScene: React.FC<LiveBoardOrientationSceneProps>
         <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[#4ade80]">
             <Mic size={12} />
-            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">3. Tu Voz</span>
+            <span className="text-[10.5px] font-mono uppercase tracking-wider font-medium">
+              3. Tu Voz
+            </span>
           </div>
           <p className="text-[11px] text-white/60 font-light leading-snug">
             Activación y certificación acústica en tiempo real.
@@ -67,14 +73,24 @@ export const LiveBoardOrientationScene: React.FC<LiveBoardOrientationSceneProps>
         </div>
       </div>
 
-      {/* 3. Subtitle Bar synced with Liam's speech */}
-      <div className="flex items-start gap-2 pt-1 border-t border-white/[0.05]">
+      {/* 3. Tools reminder: Guía de Estudio & Preguntar */}
+      <div className="flex flex-wrap items-center gap-2 text-[10.5px] font-mono text-white/55">
+        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">
+          Guía de Estudio arriba (14 bloques + 44 fonemas)
+        </span>
+        <span className="px-2 py-0.5 rounded-md bg-[#A27FF3]/10 border border-[#A27FF3]/25 text-[#DDD6FE]">
+          Preguntar a Liam con IA en vivo
+        </span>
+      </div>
+
+      {/* 4. Subtitle Bar synced with Liam's speech */}
+      <div className="flex items-start gap-2 pt-1.5 border-t border-white/[0.05]">
         <div className="w-1.5 h-1.5 rounded-full bg-[#A27FF3] shadow-[0_0_8px_#A27FF3] shrink-0 mt-1.5 animate-pulse" />
         <p className="text-xs sm:text-[12.5px] text-white/85 font-light leading-relaxed italic">
-          {subtitleSpanish || "Liam te acompaña paso a paso. Escucha su explicación inicial antes de comenzar."}
+          {subtitleSpanish ||
+            "Liam te acompaña paso a paso. Escucha su bienvenida antes de comenzar."}
         </p>
       </div>
     </div>
   );
 };
-

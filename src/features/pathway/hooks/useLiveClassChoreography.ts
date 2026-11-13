@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resolveSpeechProfile, speechMomentText } from "../speech/profiles";
+import { UNIVERSAL_PHRASES } from "../speech/universalPhrases";
 import { PathwayNode, PathwayStepId } from "../../../domain/entities/LearningPathway";
 import { MobileAudioUnlocker, SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 import {
@@ -9,17 +10,21 @@ import {
   PathwayLectureScript,
 } from "../services/PathwayLectureEngine";
 
+const SESSION_WELCOMED_KEY = "celaest:tutor:session_welcomed";
+
 export interface UseLiveClassChoreographyOptions {
   node: PathwayNode;
   step: PathwayStepId;
+  cefrLevel?: string | undefined;
   isActive: boolean;
+  hasBlockingOverlay?: boolean | undefined;
   initialOpenAsking?: boolean | undefined;
   onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined;
   onBeforeLectureStart: () => void;
 }
 
 export function useLiveClassChoreography({
-  node, step, isActive, initialOpenAsking, onStepChange, onBeforeLectureStart,
+  node, step, cefrLevel, isActive, hasBlockingOverlay = false, initialOpenAsking, onStepChange, onBeforeLectureStart,
 }: UseLiveClassChoreographyOptions) {
   const [isDictating, setIsDictating] = useState(false);
   const [lectureSegment, setLectureSegment] = useState<LectureSegment | null>(null);
@@ -34,8 +39,12 @@ export function useLiveClassChoreography({
   const cancelLectureRef = useRef<(() => void) | null>(null);
   const scriptRef = useRef<PathwayLectureScript | null>(null);
   const resumeIndexRef = useRef<number | null>(null);
+  const lastSegmentIndexRef = useRef<number>(0);
+  const pausedSegmentIndexRef = useRef<number | null>(null);
   const lectureTriggeredStepRef = useRef<PathwayStepId | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasBlockingOverlayRef = useRef<boolean>(hasBlockingOverlay);
+  hasBlockingOverlayRef.current = hasBlockingOverlay;
 
   const clearTimersAndLecture = () => {
     if (resumeTimerRef.current) { clearTimeout(resumeTimerRef.current); resumeTimerRef.current = null; }
@@ -46,9 +55,29 @@ export function useLiveClassChoreography({
     setIsTrapCelebrating(false);
   };
 
+  useEffect(() => {
+    if (hasBlockingOverlay) {
+      clearTimersAndLecture();
+    }
+  }, [hasBlockingOverlay]);
+
   const ensureScript = (): PathwayLectureScript => {
     if (!scriptRef.current) {
-      scriptRef.current = PathwayLectureEngine.buildLectureScript(node);
+      let includeReturningWelcome = false;
+      if (PathwayLectureEngine.isSoftwareIntroSeen() && typeof window !== "undefined") {
+        try {
+          if (!sessionStorage.getItem(SESSION_WELCOMED_KEY)) {
+            sessionStorage.setItem(SESSION_WELCOMED_KEY, "1");
+            includeReturningWelcome = true;
+          }
+        } catch {
+          // ignore storage unavailability
+        }
+      }
+      scriptRef.current = PathwayLectureEngine.buildLectureScript(node, {
+        cefrLevel,
+        includeReturningWelcome,
+      });
     }
     return scriptRef.current;
   };
@@ -57,6 +86,8 @@ export function useLiveClassChoreography({
     clearTimersAndLecture();
     onBeforeLectureStart();
     const script = ensureScript();
+    lastSegmentIndexRef.current = startIdx;
+    pausedSegmentIndexRef.current = null;
     const targetSeg = script.segments[startIdx];
     if (targetSeg?.beat) setActiveBeat(targetSeg.beat);
     if (targetSeg?.activeFormulaCaseIndex !== undefined) setActiveFormulaCaseIndex(targetSeg.activeFormulaCaseIndex);
@@ -67,7 +98,8 @@ export function useLiveClassChoreography({
 
     void PathwayLectureEngine.playLecture(
       node,
-      (_i, seg) => {
+      (i, seg) => {
+        lastSegmentIndexRef.current = i;
         setIsAutoplayWaiting(false);
         setLectureSegment(seg);
         if (seg.beat) setActiveBeat(seg.beat);
@@ -115,6 +147,8 @@ export function useLiveClassChoreography({
     clearTimersAndLecture();
     scriptRef.current = null;
     resumeIndexRef.current = null;
+    lastSegmentIndexRef.current = 0;
+    pausedSegmentIndexRef.current = null;
     setLectureSegment(null);
     setActiveBeat("FORMULA");
     setActiveFormulaCaseIndex(0);
@@ -123,8 +157,17 @@ export function useLiveClassChoreography({
     setTrapCheckPassed(false);
 
     let timer: ReturnType<typeof setTimeout> | null = null;
-    if (isActive && !initialOpenAsking && step === "RULE") {
-      timer = setTimeout(() => startLectureAt(0), 120);
+    if (
+      isActive &&
+      !initialOpenAsking &&
+      !hasBlockingOverlayRef.current &&
+      step === "RULE"
+    ) {
+      timer = setTimeout(() => {
+        if (!hasBlockingOverlayRef.current) {
+          startLectureAt(0);
+        }
+      }, 120);
     }
     return () => {
       if (timer) clearTimeout(timer);
@@ -134,9 +177,21 @@ export function useLiveClassChoreography({
 
   const handleToggleLecture = () => {
     MobileAudioUnlocker.unlock();
-    if (isDictating) { clearTimersAndLecture(); return; }
+    if (isDictating || SpeechSynthesisService.isAiPlaying()) {
+      pausedSegmentIndexRef.current = lastSegmentIndexRef.current;
+      clearTimersAndLecture();
+      return;
+    }
     if (step !== "RULE") onStepChange?.("RULE");
     const script = ensureScript();
+    if (
+      pausedSegmentIndexRef.current !== null &&
+      pausedSegmentIndexRef.current >= 0 &&
+      pausedSegmentIndexRef.current < script.segments.length
+    ) {
+      startLectureAt(pausedSegmentIndexRef.current);
+      return;
+    }
     const currentIdx = script.segments.findIndex((s) => s.beat === activeBeat);
     startLectureAt(currentIdx >= 0 ? currentIdx : 0);
   };
@@ -165,44 +220,13 @@ export function useLiveClassChoreography({
   const handleAnswerTrapCheck = (isCorrect: boolean) => {
     MobileAudioUnlocker.unlock();
     clearTimersAndLecture();
-    const why = node.lessonPayload?.commonMistake.whySpanish || "Revisa el orden natural en inglés.";
-    const speechProfile = resolveSpeechProfile(node.orderIndex, node.title);
-    const isBase01 =
-      node.orderIndex === 0 ||
-      node.title.toLowerCase().includes("orden mágico");
-    const isBase02 =
-      node.orderIndex === 1 ||
-      node.title.toLowerCase().includes("it' fantasma") ||
-      node.title.toLowerCase().includes("el it fantasma");
-    const isBase03 =
-      node.orderIndex === 2 ||
-      node.title.toLowerCase().includes("ser o estar sin enredos") ||
-      node.title.toLowerCase().includes("am · is · are");
-    const isBase04 =
-      node.orderIndex === 3 ||
-      node.title.toLowerCase().includes("la trampa de 'tener'") ||
-      node.title.toLowerCase().includes("la trampa de tener") ||
-      node.title.toLowerCase().includes("estados y edad");
-    const isBase05 =
-      node.orderIndex === 4 ||
-      node.title.toLowerCase().includes("negativo & pregunta") ||
-      node.title.toLowerCase().includes("negativo y pregunta");
+    const speechProfile = resolveSpeechProfile(node.orderIndex, node.title, cefrLevel);
 
     if (!isCorrect) {
       setIsWaitingTrapCheck(true);
       const trapErrorSpeech =
         speechMomentText(speechProfile, "trapcheck.error") ??
-        (isBase01
-          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda siempre abrir tu frase nombrando a la persona: ya sea I, you, we, o they... Toca la otra opción en tu pantalla."
-          : isBase02
-          ? "¡Mucho ojo! Esa es justo la trampa del español... En inglés nunca dejes el verbo huérfano: coloca siempre el sujeto neutro It diciendo por ejemplo:... It is cold today... Toca la otra opción en tu pantalla."
-          : isBase03
-          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que para una sola persona ajena como ella, la pareja fija siempre es... is... diciendo... She is ready... Toca la otra opción en tu pantalla."
-          : isBase04
-          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que la edad en inglés se dice con am o is, nunca con have... diciendo... I am 25 years old... Toca la otra opción en tu pantalla."
-          : isBase05
-          ? "¡Mucho ojo! Esa es justo la trampa del español... Recuerda que en preguntas directas colocamos primero el verbo: diciendo... Are you ready?... Toca la otra opción en tu pantalla."
-          : `¡Ojo! Esa es la trampa del español: ${why} Toca la otra opción.`);
+        UNIVERSAL_PHRASES.trap_fail!.text;
       void SpeechSynthesisService.speak(trapErrorSpeech, {
         lang: "es", voice: "liam", rate: 0.97, preventSyntheticFallback: true,
       });
@@ -228,17 +252,7 @@ export function useLiveClassChoreography({
     resumeTimerRef.current = setTimeout(proceed, 15000);
     const trapSuccessSpeech =
       speechMomentText(speechProfile, "trapcheck.success") ??
-      (isBase01
-        ? "¡Exacto! Cazaste la trampa a la perfección... Escucha ahora con atención cómo suena en ejemplos reales."
-        : isBase02
-        ? "¡Exacto! Cazaste la trampa a la perfección... Nunca dejamos el verbo huérfano... Escucha ahora con atención cómo suena en ejemplos reales."
-        : isBase03
-        ? "¡Exacto! Cazaste la trampa a la perfección... Una sola persona siempre va con... is... Escucha ahora con atención cómo suena en ejemplos reales."
-        : isBase04
-        ? "¡Exacto! Cazaste la trampa a la perfección... La edad se dice con el verbo tu bi... Escucha ahora con atención cómo suena en ejemplos reales."
-        : isBase05
-        ? "¡Exacto! Cazaste la trampa a la perfección... En preguntas siempre invertimos el orden... Escucha ahora con atención cómo suena en ejemplos reales."
-        : "¡Exacto! Cazaste la trampa. Escucha ahora cómo suena en ejemplos reales.");
+      UNIVERSAL_PHRASES.trap_pass!.text;
     void SpeechSynthesisService.speak(trapSuccessSpeech, {
       lang: "es", voice: "liam", rate: 0.97, preventSyntheticFallback: true,
       onEnd: () => {

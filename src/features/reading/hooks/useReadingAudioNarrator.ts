@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
 import {
   readingAudioPrefetcher,
@@ -35,6 +34,7 @@ export { type FlagshipVoiceId };
 
 export interface UseReadingAudioNarratorReturn {
   isPlaying: boolean;
+  isLoading: boolean;
   isPaused: boolean;
   currentWordIndex: number | null;
   playbackRate: number;
@@ -256,6 +256,7 @@ export function useReadingAudioNarrator(
   isActive: boolean = true,
 ): UseReadingAudioNarratorReturn {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
   const [playbackRate, setPlaybackRate] = useState<number>(0.85);
@@ -282,6 +283,10 @@ export function useReadingAudioNarrator(
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const domTimestampsRef = useRef<DOMWordTimestamp[]>([]);
+  const playRequestIdRef = useRef<number>(0);
+  const usingBufferRef = useRef<boolean>(false);
+  const bufferStartPerfRef = useRef<number>(0);
+  const bufferDurationSecRef = useRef<number>(0);
 
   const rawWords = useMemo(() => {
     return text ? text.trim().split(/\s+/).filter(Boolean) : [];
@@ -302,6 +307,9 @@ export function useReadingAudioNarrator(
           domTimestampsRef.current = alignBoundariesToDomWords(rawWords, item.wordBoundaries);
         }
       });
+      const alternateVoice: FlagshipVoiceId =
+        selectedVoice === "en-US-AriaNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
+      void readingAudioPrefetcher.prefetchText(trimmed, alternateVoice);
     }
 
     // Only prefetch the immediate next page if audio is actively playing
@@ -321,7 +329,12 @@ export function useReadingAudioNarrator(
   }, []);
 
   const stop = useCallback(() => {
+    playRequestIdRef.current++;
     stopTracker();
+    if (usingBufferRef.current) {
+      MobileAudioUnlocker.stopSourceNode();
+      usingBufferRef.current = false;
+    }
     if (audioRef.current) {
       audioRef.current.onplay = null;
       audioRef.current.onpause = null;
@@ -334,6 +347,7 @@ export function useReadingAudioNarrator(
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+    setIsLoading(false);
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentWordIndex(null);
@@ -356,17 +370,22 @@ export function useReadingAudioNarrator(
   }, [isActive, stop]);
 
   const pause = useCallback(() => {
+    if (usingBufferRef.current) {
+      stop();
+      return;
+    }
     if (audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
       setIsPaused(true);
       stopTracker();
+      return;
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       setIsPlaying(false);
       setIsPaused(false);
     }
-  }, [stopTracker]);
+  }, [stop, stopTracker]);
 
   const cyclePlaybackRate = useCallback(() => {
     setPlaybackRate((prev) => {
@@ -392,25 +411,32 @@ export function useReadingAudioNarrator(
 
     const trackLoop = () => {
       const audio = audioRef.current;
-      if (!audio || audio.paused || audio.ended) {
+      const isBufferActive = usingBufferRef.current;
+      if (!isBufferActive && (!audio || audio.paused || audio.ended)) {
         return;
       }
+
+      const elapsedSec = isBufferActive
+        ? ((performance.now() - bufferStartPerfRef.current) / 1000) * playbackRate
+        : audio!.currentTime;
+      const duration = isBufferActive
+        ? bufferDurationSecRef.current
+        : audio!.duration;
 
       const domTimestamps = domTimestampsRef.current;
 
       // 1. High-Precision Neural Timestamps Path (100% Sub-Millisecond Exact)
       if (domTimestamps && domTimestamps.length > 0) {
-        const currMs = audio.currentTime * 1000;
+        const currMs = elapsedSec * 1000;
         const matchedIndex = findCurrentWordIndex(domTimestamps, currMs);
         if (matchedIndex !== null) {
           setCurrentWordIndex(matchedIndex);
         }
       } else {
         // 2. Multi-Anchor Sentence Acoustic Fallback
-        const duration = audio.duration;
         if (duration && duration > 0 && phoneticSpans.length > 0) {
           const leadTimeSec = 0.05 * playbackRate;
-          const adjustedTime = Math.min(duration, audio.currentTime + leadTimeSec);
+          const adjustedTime = Math.min(duration, elapsedSec + leadTimeSec);
           const progress = Math.min(1, Math.max(0, adjustedTime / duration));
 
           let matchedIndex: number | null = null;
@@ -438,7 +464,7 @@ export function useReadingAudioNarrator(
     animFrameRef.current = requestAnimationFrame(trackLoop);
   }, [playbackRate, phoneticSpans, stopTracker]);
 
-  const playSpeechSynthesisFallback = useCallback((trimmed: string) => {
+  const playSpeechSynthesisFallback = useCallback((trimmed: string, voiceToUse?: FlagshipVoiceId) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       setIsPlaying(false);
       setIsPaused(false);
@@ -449,6 +475,22 @@ export function useReadingAudioNarrator(
     const utterance = new SpeechSynthesisUtterance(trimmed);
     utterance.rate = playbackRate;
     utterance.lang = "en-US";
+    const voices = window.speechSynthesis.getVoices?.() ?? [];
+    if (voices.length > 0) {
+      const enVoices = voices.filter((v) => v.lang.startsWith("en"));
+      const preferMale = voiceToUse === "en-US-ChristopherNeural";
+      const kw = preferMale
+        ? ["christopher", "guy", "daniel", "david", "male"]
+        : ["aria", "jenny", "samantha", "zira", "female"];
+      const picked =
+        enVoices.find((v) => kw.some((k) => v.name.toLowerCase().includes(k))) ??
+        enVoices.find((v) => !v.name.toLowerCase().includes("google")) ??
+        enVoices[0];
+      if (picked) {
+        utterance.voice = picked;
+        utterance.lang = picked.lang;
+      }
+    }
 
     utterance.onstart = () => {
       setIsPlaying(true);
@@ -489,30 +531,32 @@ export function useReadingAudioNarrator(
   }, [playbackRate, phoneticSpans]);
 
   const startPlayback = useCallback(
-    (voiceToUse: FlagshipVoiceId, startFromSec: number = 0) => {
+    async (voiceToUse: FlagshipVoiceId, startFromSec: number = 0) => {
       const trimmed = text ? text.trim() : "";
       if (!trimmed) return;
 
       stop();
+      const reqId = ++playRequestIdRef.current;
 
       try {
         let cached = readingAudioPrefetcher.get(trimmed, voiceToUse);
-        if (cached && cached.wordBoundaries && cached.wordBoundaries.length > 0) {
+        if (!cached) {
+          setIsLoading(true);
+          cached = await readingAudioPrefetcher.prefetchText(trimmed, voiceToUse);
+          if (playRequestIdRef.current !== reqId) return;
+          setIsLoading(false);
+        }
+
+        if (!cached?.blobUrl) {
+          playSpeechSynthesisFallback(trimmed, voiceToUse);
+          return;
+        }
+
+        if (cached.wordBoundaries && cached.wordBoundaries.length > 0) {
           domTimestampsRef.current = alignBoundariesToDomWords(rawWords, cached.wordBoundaries);
         } else {
           domTimestampsRef.current = [];
-          readingAudioPrefetcher.prefetchText(trimmed, voiceToUse).then((item) => {
-            if (item && item.wordBoundaries && item.wordBoundaries.length > 0) {
-              domTimestampsRef.current = alignBoundariesToDomWords(rawWords, item.wordBoundaries);
-            }
-          });
         }
-
-        const audioSource = cached
-          ? cached.blobUrl
-          : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(trimmed)}&voice=${encodeURIComponent(
-              voiceToUse,
-            )}&rate=%2B0%25&volume=%2B100%25`;
 
         const audio = new Audio();
         // @ts-ignore
@@ -521,47 +565,53 @@ export function useReadingAudioNarrator(
           audio.setAttribute("playsinline", "true");
           audio.setAttribute("webkit-playsinline", "true");
         } catch {}
-        audio.src = audioSource;
+        audio.src = cached.blobUrl;
         audio.preload = "auto";
         audio.volume = 1.0;
         audio.playbackRate = playbackRate;
         audioRef.current = audio;
 
         if (startFromSec > 0) {
-          audio.currentTime = startFromSec;
+          if (audio.readyState >= 1) {
+            audio.currentTime = startFromSec;
+          } else {
+            audio.addEventListener(
+              "loadedmetadata",
+              () => {
+                if (audioRef.current === audio && playRequestIdRef.current === reqId) {
+                  try {
+                    audio.currentTime = startFromSec;
+                  } catch {}
+                }
+              },
+              { once: true },
+            );
+          }
         }
 
-        audio.onplay = () => {
-          setIsPlaying(true);
-          setIsPaused(false);
-          startTracking();
-        };
-
-        audio.onpause = () => {
-          setIsPaused(true);
-          stopTracker();
-        };
-
-        audio.onended = () => {
-          stopTracker();
-          setIsPlaying(false);
-          setIsPaused(false);
-          setCurrentWordIndex(null);
-        };
-
-        audio.onerror = async () => {
-          logger.warn("[ReadingTTS] Stream error, attempting Web Audio buffer playback");
+        const fallbackToNeuralBuffer = async () => {
+          if (playRequestIdRef.current !== reqId) return;
+          audioRef.current = null;
           try {
+            const lastTs = domTimestampsRef.current[domTimestampsRef.current.length - 1];
+            bufferDurationSecRef.current = lastTs
+              ? lastTs.endTimeMs / 1000
+              : Math.max(4, rawWords.length * 0.45);
             const played = await MobileAudioUnlocker.playNeuralBuffer(
-              audioSource,
+              cached!.blob,
               { rate: playbackRate },
-              0,
+              () => playRequestIdRef.current === reqId,
               () => {
+                if (playRequestIdRef.current !== reqId) return;
+                usingBufferRef.current = true;
+                bufferStartPerfRef.current = performance.now();
                 setIsPlaying(true);
                 setIsPaused(false);
                 startTracking();
               },
               () => {
+                if (playRequestIdRef.current !== reqId) return;
+                usingBufferRef.current = false;
                 stopTracker();
                 setIsPlaying(false);
                 setIsPaused(false);
@@ -570,43 +620,54 @@ export function useReadingAudioNarrator(
             );
             if (played) return;
           } catch {}
-          audioRef.current = null;
-          playSpeechSynthesisFallback(trimmed);
+          if (playRequestIdRef.current === reqId) {
+            usingBufferRef.current = false;
+            playSpeechSynthesisFallback(trimmed, voiceToUse);
+          }
+        };
+
+        audio.onplay = () => {
+          if (playRequestIdRef.current !== reqId) return;
+          usingBufferRef.current = false;
+          setIsPlaying(true);
+          setIsPaused(false);
+          startTracking();
+        };
+
+        audio.onpause = () => {
+          if (playRequestIdRef.current !== reqId) return;
+          setIsPaused(true);
+          stopTracker();
+        };
+
+        audio.onended = () => {
+          if (playRequestIdRef.current !== reqId) return;
+          stopTracker();
+          setIsPlaying(false);
+          setIsPaused(false);
+          setCurrentWordIndex(null);
+        };
+
+        audio.onerror = () => {
+          logger.warn("[ReadingTTS] Blob playback error, attempting Web Audio buffer playback");
+          void fallbackToNeuralBuffer();
         };
 
         audio
           .play()
           .then(() => {
-            startTracking();
+            if (playRequestIdRef.current === reqId) startTracking();
           })
-          .catch(async (err: any) => {
-            if (err?.name === "AbortError") return;
+          .catch((err: any) => {
+            if (err?.name === "AbortError" || playRequestIdRef.current !== reqId) return;
             logger.warn("[ReadingTTS] HTMLAudioElement blocked, playing via Web Audio buffer:", err);
-            try {
-              const played = await MobileAudioUnlocker.playNeuralBuffer(
-                audioSource,
-                { rate: playbackRate },
-                0,
-                () => {
-                  setIsPlaying(true);
-                  setIsPaused(false);
-                  startTracking();
-                },
-                () => {
-                  stopTracker();
-                  setIsPlaying(false);
-                  setIsPaused(false);
-                  setCurrentWordIndex(null);
-                },
-              );
-              if (played) return;
-            } catch {}
-            audioRef.current = null;
-            playSpeechSynthesisFallback(trimmed);
+            void fallbackToNeuralBuffer();
           });
       } catch {
+        if (playRequestIdRef.current !== reqId) return;
+        setIsLoading(false);
         audioRef.current = null;
-        playSpeechSynthesisFallback(trimmed);
+        playSpeechSynthesisFallback(trimmed, voiceToUse);
       }
     },
     [text, rawWords, playbackRate, stop, startTracking, stopTracker, playSpeechSynthesisFallback],
@@ -614,6 +675,7 @@ export function useReadingAudioNarrator(
 
   const setSelectedVoice = useCallback(
     (voice: FlagshipVoiceId) => {
+      MobileAudioUnlocker.unlock();
       setSelectedVoiceState(voice);
       if (typeof window !== "undefined") {
         try {
@@ -623,18 +685,19 @@ export function useReadingAudioNarrator(
         }
       }
 
-      // If audio is currently playing or paused, seamlessly hot-swap to the new mentor voice!
-      if (isPlaying) {
+      // If audio is currently playing or loading, seamlessly hot-swap to the new mentor voice!
+      if (isPlaying || isLoading) {
         const currentSec = audioRef.current ? audioRef.current.currentTime : 0;
-        startPlayback(voice, currentSec);
+        void startPlayback(voice, currentSec);
       } else {
         stop();
       }
     },
-    [isPlaying, startPlayback, stop],
+    [isPlaying, isLoading, startPlayback, stop],
   );
 
   const restart = useCallback(() => {
+    MobileAudioUnlocker.unlock();
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       setCurrentWordIndex(0);
@@ -649,15 +712,25 @@ export function useReadingAudioNarrator(
           .catch(() => {});
       }
     } else {
-      startPlayback(selectedVoiceRef.current, 0);
+      void startPlayback(selectedVoiceRef.current, 0);
     }
   }, [isPaused, startPlayback, startTracking]);
 
   const togglePlay = useCallback(() => {
     const trimmed = text ? text.trim() : "";
     if (!trimmed) return;
+    MobileAudioUnlocker.unlock();
+
+    if (isLoading) {
+      stop();
+      return;
+    }
 
     if (isPlaying) {
+      if (usingBufferRef.current) {
+        stop();
+        return;
+      }
       if (audioRef.current) {
         if (isPaused) {
           audioRef.current
@@ -691,11 +764,12 @@ export function useReadingAudioNarrator(
       }
     }
 
-    startPlayback(selectedVoiceRef.current);
-  }, [text, isPlaying, isPaused, startPlayback, startTracking, stopTracker]);
+    void startPlayback(selectedVoiceRef.current);
+  }, [text, isLoading, isPlaying, isPaused, startPlayback, startTracking, stop, stopTracker]);
 
   return {
     isPlaying,
+    isLoading,
     isPaused,
     currentWordIndex,
     playbackRate,

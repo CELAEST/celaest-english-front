@@ -4,27 +4,53 @@ import { PathwayNode, PathwayStepId } from "../../../domain/entities/LearningPat
 import { useProfessorStageState } from "../hooks/useProfessorStageState";
 import { LiveBoardState, MobileBoardInteractiveContext } from "./professor-board/LessonBoardBody";
 import { ProfessorLessonBoard } from "./professor-board/ProfessorLessonBoard";
+import { PathwayMuteButton } from "./PathwayMuteButton";
 
 export interface PathwayProfessorStageProps {
-  node: PathwayNode; step: PathwayStepId; isActive: boolean;
-  isSpeakingAudio: boolean; isRecordingMic: boolean;
-  isMobileUnified?: boolean | undefined; mobileContext?: MobileBoardInteractiveContext | undefined;
+  node: PathwayNode;
+  cefrLevel?: string | undefined;
+  step: PathwayStepId;
+  isActive: boolean;
+  isSpeakingAudio: boolean;
+  isRecordingMic: boolean;
+  isMobileUnified?: boolean | undefined;
+  mobileContext?: MobileBoardInteractiveContext | undefined;
   onPlaySample: (text: string) => void;
-  onSwitchToPractice?: (() => void) | undefined; className?: string;
+  onSwitchToPractice?: (() => void) | undefined;
+  className?: string;
   stageState: ReturnType<typeof useProfessorStageState>;
   liveBoard: LiveBoardState;
+  onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
 }
 
 export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
-  node, step, isActive, isSpeakingAudio, isMobileUnified = false, mobileContext,
-  onPlaySample, onSwitchToPractice, className = "", stageState: s, liveBoard,
+  node,
+  cefrLevel,
+  step,
+  isActive,
+  isSpeakingAudio,
+  isMobileUnified = false,
+  mobileContext,
+  onPlaySample,
+  onSwitchToPractice,
+  className = "",
+  stageState: s,
+  liveBoard,
+  onAiError,
 }) => {
   return (
-    <div className={`relative w-full h-full min-h-0 lg:w-[42%] xl:w-[45%] flex flex-col justify-end shrink-0 select-none overflow-hidden pb-20 lg:pb-0 ${className}`}>
+    <div
+      className={`relative w-full h-full min-h-0 lg:w-[42%] xl:w-[45%] flex flex-col justify-end shrink-0 select-none overflow-hidden pb-20 lg:pb-0 ${className}`}
+    >
       <div className="relative flex-1 min-h-[154px] w-full [container-type:size] flex items-end justify-center pointer-events-none z-0 lg:block lg:flex-none lg:min-h-0 lg:[container-type:normal] lg:absolute lg:inset-0 lg:h-full">
+        <div className="absolute top-3 right-1 sm:top-3.5 sm:right-2 lg:top-3 lg:right-1 z-20 pointer-events-auto">
+          <PathwayMuteButton />
+        </div>
         <div className="pointer-events-auto shrink-0 w-[min(104cqw,118cqh)] h-[min(104cqw,118cqh)] mb-[calc(min(104cqw,118cqh)*-0.17)] transition-[width,height,margin] duration-300 ease-out lg:w-full lg:h-full lg:mb-0">
           <ProfessorStageCanvas
-            state={s.animState} preset="tutor-stage" isActive={isActive}
+            state={s.animState}
+            preset="tutor-stage"
+            isActive={isActive}
             onTapProfessor={() => {
               if (s.speech.sampleAudioText) {
                 onPlaySample(s.speech.sampleAudioText);
@@ -39,15 +65,31 @@ export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
       <div className="relative z-10 w-full shrink-0 pointer-events-auto">
         <ProfessorLessonBoard
           node={node}
-          lesson={node.lessonPayload} step={step} isMobileUnified={isMobileUnified}
-          hasQaOverride={s.hasQaOverride} isAutoplayWaiting={s.isAutoplayWaiting} mobileContext={mobileContext} liveBoard={liveBoard}
-          speech={s.speech} mode={s.mode} isShowingExamples={s.isShowingExamples}
-          isDictating={s.isDictating} isSpeakingAudio={isSpeakingAudio || s.isAnsweringVoice}
-          isAskingOpen={s.isAskingOpen} isAskingQA={s.isAskingQA} suggestedQuestions={s.suggestedQuestions}
-          onModeChange={s.setMode} onToggleLecture={s.handleToggleLecture} onPlaySample={s.handlePlaySample}
-          onToggleAsking={() => s.setIsAskingOpen((prev) => !prev)} onSubmitQuestion={s.handleAskQuestion}
-          onDismissQaOverride={s.clearQaAnswer} onSwitchToPractice={onSwitchToPractice}
+          cefrLevel={cefrLevel}
+          lesson={node.lessonPayload}
+          step={step}
+          isMobileUnified={isMobileUnified}
+          hasQaOverride={s.hasQaOverride}
+          isAutoplayWaiting={s.isAutoplayWaiting}
+          mobileContext={mobileContext}
+          liveBoard={liveBoard}
+          speech={s.speech}
+          mode={s.mode}
+          isShowingExamples={s.isShowingExamples}
+          isDictating={s.isDictating}
+          isSpeakingAudio={isSpeakingAudio || s.isAnsweringVoice}
+          isAskingOpen={s.isAskingOpen}
+          isAskingQA={s.isAskingQA}
+          suggestedQuestions={s.suggestedQuestions}
+          onModeChange={s.setMode}
+          onToggleLecture={s.handleToggleLecture}
+          onPlaySample={s.handlePlaySample}
+          onToggleAsking={() => s.setIsAskingOpen((prev) => !prev)}
+          onSubmitQuestion={s.handleAskQuestion}
+          onDismissQaOverride={s.clearQaAnswer}
+          onSwitchToPractice={onSwitchToPractice}
           onThinkingChange={(thinking) => s.setIsAskingQA(thinking)}
+          onAiError={onAiError}
         />
       </div>
     </div>

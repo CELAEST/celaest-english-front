@@ -1,6 +1,10 @@
 import { PathwayNode } from "../../../domain/entities/LearningPathway";
 import { SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
-import { directClientAiService } from "../../settings/services/directClientAiService";
+import {
+  AiInfrastructureError,
+  directClientAiService,
+  extractFirstJsonObject,
+} from "../../settings/services/directClientAiService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { ENV } from "../../../shared/constants/env";
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
@@ -25,8 +29,16 @@ export interface ProfessorAnswer {
 export interface AskProfessorParams {
   question: string;
   node: PathwayNode;
-  profession?: string;
-  cefrLevel?: string;
+  profession?: string | undefined;
+  cefrLevel?: string | undefined;
+}
+
+export class PathwayByokRequiredError extends Error {
+  public readonly code = "BYOK_REQUIRED";
+  constructor(message = "Configura tu clave gratuita de Groq o Gemini para hacer preguntas en vivo a Liam.") {
+    super(message);
+    this.name = "PathwayByokRequiredError";
+  }
 }
 
 /**
@@ -69,103 +81,20 @@ function isQuestionOffTopic(question: string, nodeTitle?: string): boolean {
   return offTopicMarkers.some((m) => q.includes(m));
 }
 
-function buildProceduralAnswer(params: AskProfessorParams): ProfessorAnswer {
-  const { question, node } = params;
-
-  if (isQuestionOffTopic(question, node.title)) {
-    const directAnswer = "Como mentor de CELAEST, mi rol es exclusivamente ayudarte a dominar el idioma inglés.";
-    const mentalModel = `Por favor formula tu duda sobre esta regla ("${node.title}") o sobre cualquier aspecto del inglés (gramática, vocabulario, pronunciación o estructura).`;
-    const fullSpeechText = `${directAnswer} ${mentalModel}`;
-    const speechSegments: QASpeechSegment[] = [
-      { language: "es", text: fullSpeechText },
-    ];
-
-    return {
-      question,
-      directAnswer,
-      mentalModel,
-      exampleEnglish: "",
-      exampleSpanish: "",
-      pronunciationTip: "",
-      fullSpeechText,
-      speechSegments,
-      isOffTopic: true,
-    };
-  }
-
-  const qLower = question.toLowerCase();
-  const lesson = node.lessonPayload;
-  const examples = lesson?.examples || [];
-
-  let directAnswer = "";
-  let mentalModel = "";
-  let exampleEnglish = "";
-  let exampleSpanish = "";
-  let pronunciationTip = "";
-
-  if (qLower.includes("ejemplo") || qLower.includes("otro") || qLower.includes("práctico")) {
-    const ex = examples[1] || examples[0] || {
-      english: "I work with the team every day.",
-      spanish: "Trabajo con el equipo todos los días.",
-      pronunciationHint: "Enlaza 'work' con 'with'.",
-    };
-    directAnswer = `Aquí tienes un ejemplo práctico aplicado a "${node.title}":`;
-    mentalModel = `Aplica siempre el modelo: ${node.blueprint.nativeIntuitionRule}.`;
-    exampleEnglish = ex.english;
-    exampleSpanish = ex.spanish;
-    pronunciationTip = ex.pronunciationHint || "Pronuncia con ritmo continuo y articulación clara.";
-  } else if (qLower.includes("error") || qLower.includes("común") || qLower.includes("trampa") || qLower.includes("cuidado")) {
-    directAnswer = `El error más frecuente en ${node.title} ocurre al traducir directamente pensando en español.`;
-    mentalModel = lesson?.commonMistake.whySpanish || node.blueprint.l1InterferenceTrap;
-    const ex = examples[0] || {
-      english: lesson?.voicePractice.sentenceEnglish || "We build high-impact solutions.",
-      spanish: "Construimos soluciones de alto impacto.",
-      pronunciationHint: "Sujeto sonoro y claro.",
-    };
-    exampleEnglish = ex.english;
-    exampleSpanish = ex.spanish;
-    pronunciationTip = "Fíjate en las dos piezas juntas antes de emitir la frase.";
-  } else if (qLower.includes("diferen") || qLower.includes("español") || qLower.includes("por qué") || qLower.includes("porque")) {
-    directAnswer = `En español el verbo ya indica quién habla, pero en inglés la estructura requiere explicitar cada componente.`;
-    mentalModel = `En ${node.title}: ${lesson?.ruleTaglineSpanish || node.blueprint.nativeIntuitionRule}. Si omites una parte, la frase carece de sentido.`;
-    const ex = examples[0] || {
-      english: "They learn English together.",
-      spanish: "Ellos aprenden inglés juntos.",
-      pronunciationHint: "La 'th' de 'They' suena vibrante contra los dientes.",
-    };
-    exampleEnglish = ex.english;
-    exampleSpanish = ex.spanish;
-    pronunciationTip = "Mantén la entonación estable y sin pausas indebidas.";
-  } else {
-    directAnswer = `Sobre tu consulta: en ${node.title}, el principio clave es ${lesson?.ruleTaglineSpanish || node.blueprint.nativeIntuitionRule}.`;
-    mentalModel = `El objetivo es ${node.blueprint.objectiveSpanish}. Recuerda: ${lesson?.commonMistake.whySpanish || node.blueprint.l1InterferenceTrap}`;
-    const ex = examples[0] || {
-      english: lesson?.voicePractice.sentenceEnglish || "I understand the concept.",
-      spanish: lesson?.voicePractice.spanishMeaning || "Entiendo el concepto.",
-      pronunciationHint: "Pronuncia continuo.",
-    };
-    exampleEnglish = ex.english;
-    exampleSpanish = ex.spanish;
-    pronunciationTip = ex.pronunciationHint || "Pronuncia con ritmo continuo sin pausar entre palabras.";
-  }
-
-  const fullSpeechText = `${directAnswer} ${mentalModel} Fíjate en este ejemplo: ${exampleEnglish}, que significa ${exampleSpanish}. ${pronunciationTip}`;
-  const speechSegments: QASpeechSegment[] = [
-    { language: "es", text: `${directAnswer} ${mentalModel} Por ejemplo:` },
-    { language: "en", text: exampleEnglish },
-    { language: "es", text: `Significa: ${exampleSpanish}. Recuerda: ${pronunciationTip}` },
-  ];
-
+function buildOffTopicAnswer(question: string, nodeTitle: string): ProfessorAnswer {
+  const directAnswer = "Como mentor de CELAEST, mi rol es exclusivamente ayudarte a dominar el idioma inglés.";
+  const mentalModel = `Por favor formula tu duda sobre esta regla ("${nodeTitle}") o sobre cualquier aspecto del inglés (gramática, vocabulario, pronunciación o estructura).`;
+  const fullSpeechText = `${directAnswer} ${mentalModel}`;
   return {
     question,
     directAnswer,
     mentalModel,
-    exampleEnglish,
-    exampleSpanish,
-    pronunciationTip,
+    exampleEnglish: "",
+    exampleSpanish: "",
+    pronunciationTip: "",
     fullSpeechText,
-    speechSegments,
-    isOffTopic: false,
+    speechSegments: [{ language: "es", text: fullSpeechText }],
+    isOffTopic: true,
   };
 }
 
@@ -182,24 +111,19 @@ async function callCoreAiMesh(systemPrompt: string, userPrompt: string): Promise
   const isBrowser = typeof window !== "undefined";
   const candidateUrls: string[] = [];
 
-  // In the browser, ALWAYS use the same-origin relative proxy (/core-ai).
-  // - In dev: Vite proxies /core-ai -> https://celaest-core.onrender.com/api/v1
-  // - In prod: Vercel rewrites /core-ai/:path* -> https://celaest-core.onrender.com/api/v1/:path*
-  // Same-origin eliminates all CORS preflight blocks and localhost port failures.
-  // Direct cross-origin calls to Render MUST NEVER be made from the browser.
   if (isBrowser) {
     candidateUrls.push("/core-ai/ai/chat/simple");
   } else {
-    // In Node.js / SSR / Unit test environments:
     if (ENV.coreAiUrl && !ENV.coreAiUrl.includes("127.0.0.1") && !ENV.coreAiUrl.includes("localhost")) {
       candidateUrls.push(`${ENV.coreAiUrl}/ai/chat/simple`);
     }
     candidateUrls.push("https://celaest-core.onrender.com/api/v1/ai/chat/simple");
   }
 
+  let lastError: unknown = null;
+
   for (const url of candidateUrls) {
     try {
-      // 35s timeout to comfortably accommodate Render free-tier cold starts (~15-20s)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 35_000);
 
@@ -222,13 +146,39 @@ async function callCoreAiMesh(systemPrompt: string, userPrompt: string): Promise
         if (content && typeof content === "string" && content.trim()) {
           return content.trim();
         }
+        lastError = new AiInfrastructureError(
+          "CLUSTER_OUTAGE",
+          "El clúster central devolvió una respuesta vacía.",
+          502,
+        );
+      } else {
+        const errCode =
+          res.status === 401
+            ? "AUTH_DECLINED_KEY"
+            : res.status === 429
+            ? "RATE_LIMIT_COOLDOWN"
+            : res.status === 504
+            ? "GATEWAY_TIMEOUT"
+            : "AI_KEYS_EXHAUSTED";
+        lastError = new AiInfrastructureError(
+          errCode,
+          `El clúster central respondió con estado ${res.status}.`,
+          res.status,
+        );
       }
-    } catch {
-      // Continue to next candidate URL
+    } catch (err: any) {
+      const isAbort = err?.name === "AbortError";
+      lastError = isAbort
+        ? new AiInfrastructureError("GATEWAY_TIMEOUT", "Tiempo de espera agotado al conectar con el clúster central.", 504)
+        : err;
     }
   }
 
-  throw new Error("Core AI mesh unreachable");
+  throw lastError ?? new AiInfrastructureError(
+    "AI_KEYS_EXHAUSTED",
+    "El clúster central de IA no está disponible en este momento.",
+    503,
+  );
 }
 
 export class PathwayQAService {
@@ -241,6 +191,10 @@ export class PathwayQAService {
     }
 
     const { node, profession = "Professional", cefrLevel = "A1" } = params;
+    if (isQuestionOffTopic(trimmedQuestion, node.title)) {
+      return buildOffTopicAnswer(trimmedQuestion, node.title);
+    }
+
     const lesson = node.lessonPayload;
 
     const systemPrompt = `You are a world-class, ultra-pedagogical English professor for Spanish native speakers (CELAEST Mentor).
@@ -288,88 +242,91 @@ Return ONLY a valid JSON object matching this schema:
     const userPrompt = `Student question: "${trimmedQuestion}"
 Explain clearly why English works this way and give me the best intuitive mental model.`;
 
-    let raw = "";
+    const activeProvider = await providerKeyVault.getActiveProviderId();
+    const isCore = await providerKeyVault.isCentralCoreEnabled();
+    const hasActiveKey = await providerKeyVault.hasKey(activeProvider || "groq");
+    const hasAnyKey = hasActiveKey || (await providerKeyVault.hasAnyConfiguredKey());
+    const isTestSpy = Boolean((directClientAiService.chatCompletion as any).mock);
 
-    // 1. Check if user configured BYOK keys in vault or if test mock/spy is active
-    try {
-      const activeProvider = await providerKeyVault.getActiveProviderId();
-      const hasKey = await providerKeyVault.hasKey(activeProvider || "groq");
-      const isTestSpy = Boolean((directClientAiService.chatCompletion as any).mock);
-      if (hasKey || isTestSpy) {
-        raw = await directClientAiService.chatCompletion({
-          systemPrompt,
-          userPrompt,
-          maxTokens: 600,
-        });
-      }
-    } catch {
-      // Continue to Core AI mesh
+    if (!isTestSpy && !isCore && !hasAnyKey) {
+      throw new PathwayByokRequiredError();
     }
 
-    // 2. Primary Tier: CELAEST-CORE IA-Mesh (Live central server cluster, zero BYOK needed)
-    if (!raw) {
+    let raw = "";
+
+    if (isTestSpy || (!isCore && hasAnyKey)) {
+      raw = await directClientAiService.chatCompletion({
+        systemPrompt,
+        userPrompt,
+        maxTokens: 600,
+      });
+    } else {
       try {
         raw = await callCoreAiMesh(systemPrompt, userPrompt);
-      } catch {
-        // 3. Secondary Tier Fallback: Direct Client AI
-        try {
+      } catch (coreErr) {
+        if (hasAnyKey) {
           raw = await directClientAiService.chatCompletion({
             systemPrompt,
             userPrompt,
             maxTokens: 600,
           });
-        } catch {
-          // Proceed to Tier 3 dynamic offline answer
+        } else {
+          throw coreErr;
         }
       }
     }
 
-    if (raw) {
-      const cleanJson = raw
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
+    const cleanJson = (extractFirstJsonObject(raw) || raw)
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
-      try {
-        const parsed = JSON.parse(cleanJson);
-        if (parsed && typeof parsed.directAnswer === "string") {
-          const isOffTopic = Boolean(parsed.isOffTopic);
-          const directAnswer = parsed.directAnswer.trim();
-          const mentalModel = (parsed.mentalModel || "").trim();
-          const exampleEnglish = (parsed.exampleEnglish || "").trim();
-          const exampleSpanish = (parsed.exampleSpanish || "").trim();
-          const pronunciationTip = (parsed.pronunciationTip || "").trim();
-
-          const fullSpeechText = isOffTopic
-            ? `${directAnswer} ${mentalModel}`.trim()
-            : `${directAnswer} ${mentalModel} Por ejemplo: ${exampleEnglish}. Significa: ${exampleSpanish}. ${pronunciationTip}`.trim();
-
-          const speechSegments: QASpeechSegment[] = isOffTopic
-            ? [{ language: "es", text: `${directAnswer} ${mentalModel}`.trim() }]
-            : [
-                { language: "es", text: `${directAnswer} ${mentalModel} Por ejemplo:` },
-                { language: "en", text: exampleEnglish },
-                { language: "es", text: `Significa: ${exampleSpanish}. ${pronunciationTip ? `Consejo: ${pronunciationTip}` : ""}`.trim() },
-              ];
-
-          return {
-            question: trimmedQuestion,
-            directAnswer,
-            mentalModel,
-            exampleEnglish,
-            exampleSpanish,
-            pronunciationTip,
-            fullSpeechText,
-            speechSegments,
-            isOffTopic,
-          };
-        }
-      } catch {
-        // Proceed to Tier 3 dynamic offline answer
-      }
+    let parsed: Record<string, any> | null = null;
+    try {
+      parsed = JSON.parse(cleanJson);
+    } catch {
+      parsed = null;
     }
 
-    return buildProceduralAnswer(params);
+    if (!parsed || typeof parsed.directAnswer !== "string" || !parsed.directAnswer.trim()) {
+      throw new AiInfrastructureError(
+        "CLUSTER_OUTAGE",
+        "La respuesta de la IA llegó incompleta. Intenta nuevamente.",
+        502,
+        activeProvider ?? undefined,
+      );
+    }
+
+    const isOffTopic = Boolean(parsed.isOffTopic);
+    const directAnswer = parsed.directAnswer.trim();
+    const mentalModel = String(parsed.mentalModel || "").trim();
+    const exampleEnglish = String(parsed.exampleEnglish || "").trim();
+    const exampleSpanish = String(parsed.exampleSpanish || "").trim();
+    const pronunciationTip = String(parsed.pronunciationTip || "").trim();
+
+    const fullSpeechText = isOffTopic
+      ? `${directAnswer} ${mentalModel}`.trim()
+      : `${directAnswer} ${mentalModel} Por ejemplo: ${exampleEnglish}. Significa: ${exampleSpanish}. ${pronunciationTip}`.trim();
+
+    const speechSegments: QASpeechSegment[] = isOffTopic
+      ? [{ language: "es", text: `${directAnswer} ${mentalModel}`.trim() }]
+      : [
+          { language: "es", text: `${directAnswer} ${mentalModel} Por ejemplo:` },
+          { language: "en", text: exampleEnglish },
+          { language: "es", text: `Significa: ${exampleSpanish}. ${pronunciationTip ? `Consejo: ${pronunciationTip}` : ""}`.trim() },
+        ];
+
+    return {
+      question: trimmedQuestion,
+      directAnswer,
+      mentalModel,
+      exampleEnglish,
+      exampleSpanish,
+      pronunciationTip,
+      fullSpeechText,
+      speechSegments,
+      isOffTopic,
+    };
   }
 
   public static async playAnswer(

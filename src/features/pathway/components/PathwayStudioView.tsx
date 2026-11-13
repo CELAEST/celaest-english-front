@@ -5,11 +5,14 @@ import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { LinguaMarketplacePaywallModal } from "../../workspace/components/LinguaMarketplacePaywallModal";
 import { LinguaByokRequiredModal } from "../../workspace/components/LinguaByokRequiredModal";
+import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { useIsDesktopViewport } from "../hooks/useIsDesktopViewport";
 import { useLearningPathway } from "../hooks/useLearningPathway";
+import { usePathwayAiModals } from "../hooks/usePathwayAiModals";
 import { usePathwayStageSession } from "../hooks/usePathwayStageSession";
 import { useProfessorStageState } from "../hooks/useProfessorStageState";
+import { PhoneticAudioService } from "../services/PhoneticAudioService";
 import { GuideSection } from "./knowledge/GuideHeaderTitle";
 import { PathwayAnatomyModal } from "./knowledge/PathwayAnatomyModal";
 import { PathwayCurriculumSheet } from "./PathwayCurriculumSheet";
@@ -34,20 +37,31 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [byokOpen, setByokOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const {
+    byokOpen, setByokOpen, recoveryState, handleAiFailure,
+    handleByokConfigured, handleByokClose, handleRecoveryClose, handleRecoveryResume,
+  } = usePathwayAiModals();
+  const hasBlockingOverlay = Boolean(
+    curriculumOpen || guideSection !== null || paywallOpen || byokOpen || tourOpen || recoveryState.isOpen,
+  );
   const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, isByokMode } = useLinguaEntitlement();
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
   useEffect(() => { warmProfessorModelCache(); }, []);
   useEffect(() => {
+    if (hasBlockingOverlay || guideSection === null) {
+      PhoneticAudioService.stop();
+    }
+  }, [hasBlockingOverlay, guideSection]);
+  useEffect(() => {
     if (isByokMode) {
       void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
         if (!hasKey) setByokOpen(true);
       });
     }
-  }, [isByokMode]);
+  }, [isByokMode, setByokOpen]);
   useEffect(() => {
     if (entitlement.hasAccess) { setPaywallOpen(false); return; }
     if (!isEntitlementLoading && activeNodeIndex > 0 && pathway.nodes[0]) {
@@ -75,12 +89,19 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const canAdvanceNode = Boolean(nextUnlocked && nextUnlocked.status !== "LOCKED");
   const isConquered = session.isCompletedBanner || activeNode.status === "MASTERED";
   const professorState = useProfessorStageState({
-    node: activeNode, step: session.step, isActive, isSpeakingAudio: session.speakingText !== null,
+    node: activeNode, step: session.step, cefrLevel: pathway.cefrLevel, isActive, hasBlockingOverlay,
+    isSpeakingAudio: session.speakingText !== null,
     isRecordingMic: session.isRecording, isEvaluatingVoice: session.isEvaluatingVoice,
     isBuildCorrect: session.isBuildCorrect, hasBuildMistake: session.hasBuildMistake,
     isConquered, onPlaySample: session.playAudio, onStepChange: session.setStep,
-    initialOpenAsking: false,
+    onAiError: handleAiFailure, initialOpenAsking: false,
   });
+
+  const handlePersonalizeAi = () => {
+    void personalizeWithAi().catch((err) => {
+      handleAiFailure(err, handlePersonalizeAi, `Personalizar ruta ${pathway.cefrLevel}`);
+    });
+  };
 
   const liveBoard: LiveBoardState = useMemo(() => ({
     nodeOrderIndex: activeNode.orderIndex, activeBeat: professorState.activeBeat,
@@ -117,18 +138,27 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
         <PathwayMobileTopBar nodeIndex={activeNodeIndex} currentLevel={pathway.cefrLevel} activeStep={session.step} onSelectStep={session.setStep} onOpenCurriculum={() => setCurriculumOpen(true)} onOpenGuide={() => setGuideSection("structure")} onSelectLevel={onSelectLevel} />
       )}
       <PathwayProfessorStage
-        node={activeNode} step={session.step} isActive={isActive} isSpeakingAudio={session.speakingText !== null}
+        node={activeNode} cefrLevel={pathway.cefrLevel} step={session.step} isActive={isActive} isSpeakingAudio={session.speakingText !== null}
         isRecordingMic={session.isRecording} isMobileUnified={!isDesktop}
         mobileContext={!isDesktop ? { session, isConquered, onNextFoundation: handleNextFoundation, onBridgeNavigate: onNavigateModule } : undefined}
         onPlaySample={session.playAudio}
         onSwitchToPractice={() => { professorState.setIsAskingOpen(false); session.setStep("BUILD"); }}
-        stageState={professorState} liveBoard={liveBoard}
+        stageState={professorState} liveBoard={liveBoard} onAiError={handleAiFailure}
         className="order-2 flex-1 lg:flex-none"
       />
-      <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={() => void personalizeWithAi()} />
+      <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={handlePersonalizeAi} />
       <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
       <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={(code) => void startDirectCheckout(code)} onRefreshEntitlement={() => void refreshEntitlement()} />
-      <LinguaByokRequiredModal isOpen={byokOpen} onClose={() => setByokOpen(false)} onConfigured={() => setByokOpen(false)} />
+      <LinguaByokRequiredModal isOpen={byokOpen} onClose={handleByokClose} onConfigured={handleByokConfigured} />
+      <AiInfrastructureRecoveryModal
+        isOpen={recoveryState.isOpen}
+        scenario={recoveryState.scenario}
+        cooldown={recoveryState.cooldown}
+        contextType="general"
+        {...(recoveryState.previewText ? { bufferDetail: { previewText: recoveryState.previewText } } : {})}
+        onClose={handleRecoveryClose}
+        onImmediateResume={handleRecoveryResume}
+      />
       <AppEcosystemTour
         isOpen={tourOpen}
         userId={roleName}

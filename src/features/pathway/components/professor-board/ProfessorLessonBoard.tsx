@@ -12,6 +12,7 @@ import { LiveClassBeatBar } from "./live-scenes/LiveClassBeatBar";
 export interface ProfessorLessonBoardProps {
   lesson?: PathwayLessonPayload | undefined;
   node?: PathwayNode | undefined;
+  cefrLevel?: string | undefined;
   step?: PathwayStepId | undefined;
   isMobileUnified?: boolean | undefined;
   hasQaOverride?: boolean | undefined;
@@ -34,11 +35,13 @@ export interface ProfessorLessonBoardProps {
   onDismissQaOverride?: (() => void) | undefined;
   onSwitchToPractice?: (() => void) | undefined;
   onThinkingChange?: ((isThinking: boolean) => void) | undefined;
+  onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
 }
 
 export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
   lesson,
   node,
+  cefrLevel,
   step = "RULE",
   isMobileUnified = false,
   hasQaOverride = false,
@@ -61,6 +64,7 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
   onDismissQaOverride,
   onSwitchToPractice,
   onThinkingChange,
+  onAiError,
 }) => {
   const cps = isDictating || isSpeakingAudio ? 17 : 55;
   const { typed, progress, isDone, finish } = useTypewriter(speech.text, cps);
@@ -80,10 +84,12 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
         {isAskingOpen ? (
           <LessonBoardChatMode
             node={node}
+            cefrLevel={cefrLevel}
             baseCode={baseCode}
             suggestedQuestions={suggestedQuestions}
             onClose={() => onToggleAsking?.()}
             onThinkingChange={onThinkingChange}
+            onAiError={onAiError}
           />
         ) : (
           <>

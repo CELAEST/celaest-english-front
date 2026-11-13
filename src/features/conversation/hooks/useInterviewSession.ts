@@ -195,6 +195,9 @@ export const useInterviewSession = (
     if (!isActive || !questionText) return;
     if (questionText.startsWith("Generating") || questionText.startsWith("Preparing")) return;
     SpeechSynthesisService.prefetch(questionText, selectedVoice);
+    const alternateVoice =
+      selectedVoice === "en-US-AriaNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
+    SpeechSynthesisService.prefetch(questionText, alternateVoice);
 
     const nextQ = questions.sessionQuestions[currentQuestionIndex + 1];
     if (nextQ?.question) {

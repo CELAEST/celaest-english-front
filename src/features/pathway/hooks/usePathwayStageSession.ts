@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveSpeechProfile, speechMomentText } from "../speech/profiles";
+import { UNIVERSAL_PHRASES } from "../speech/universalPhrases";
 import {
   PathwayNode,
   PathwayStepId,
@@ -146,27 +147,7 @@ export function usePathwayStageSession(
   }, []);
 
   useEffect(() => {
-    const isBase01 =
-      activeNode?.orderIndex === 0 ||
-      Boolean(activeNode?.title.toLowerCase().includes("orden mágico"));
-    const isBase02 =
-      activeNode?.orderIndex === 1 ||
-      Boolean(activeNode?.title.toLowerCase().includes("it' fantasma")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("el it fantasma"));
-    const isBase03 =
-      activeNode?.orderIndex === 2 ||
-      Boolean(activeNode?.title.toLowerCase().includes("ser o estar sin enredos")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("am · is · are"));
-    const isBase04 =
-      activeNode?.orderIndex === 3 ||
-      Boolean(activeNode?.title.toLowerCase().includes("trampa de 'tener'")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("trampa de tener"));
-    const isBase05 =
-      activeNode?.orderIndex === 4 ||
-      Boolean(activeNode?.title.toLowerCase().includes("negativo & pregunta")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("negativo y pregunta"));
-
-    const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+    const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
 
     if (step === "BUILD" && activeNode?.lessonPayload) {
       if (!hasSpokenInBuildRef.current) {
@@ -175,56 +156,22 @@ export function usePathwayStageSession(
         if (!speakingText && !SpeechSynthesisService.isAiPlaying()) {
           const buildActivationText =
             speechMomentText(speechProfile, "build.transition") ??
-            (isBase01 || isBase02 || isBase03 || isBase04 || isBase05
-              ? "Ahora es tu turno de construir... Voy a abrir las fichas en tu pantalla para que las toques en orden y forjes tu memoria motriz... ¡Adelante, tú puedes!"
-              : "Ahora es tu turno de construir. Voy a abrir las fichas en tu pizarra para que las toques en orden y forjes tu memoria motriz. ¡Adelante, tú puedes!");
+            UNIVERSAL_PHRASES.build_intro!.text;
           playAudio(buildActivationText);
         }
       }
     } else {
       hasSpokenInBuildRef.current = false;
     }
-  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, speakingText, playAudio]);
+  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, speakingText, playAudio]);
 
   const hasSpokenInSpeakRef = useRef<boolean>(false);
   useEffect(() => {
-    const isBase01 =
-      activeNode?.orderIndex === 0 ||
-      Boolean(activeNode?.title.toLowerCase().includes("orden mágico"));
-    const isBase02 =
-      activeNode?.orderIndex === 1 ||
-      Boolean(activeNode?.title.toLowerCase().includes("it' fantasma")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("el it fantasma"));
-    const isBase03 =
-      activeNode?.orderIndex === 2 ||
-      Boolean(activeNode?.title.toLowerCase().includes("ser o estar sin enredos")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("am · is · are"));
-    const isBase04 =
-      activeNode?.orderIndex === 3 ||
-      Boolean(activeNode?.title.toLowerCase().includes("trampa de 'tener'")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("trampa de tener"));
-    const isBase05 =
-      activeNode?.orderIndex === 4 ||
-      Boolean(activeNode?.title.toLowerCase().includes("negativo & pregunta")) ||
-      Boolean(activeNode?.title.toLowerCase().includes("negativo y pregunta"));
-
     if (step === "SPEAK" && activeNode?.lessonPayload) {
       if (!hasSpokenInSpeakRef.current) {
         if (!speakingText && !SpeechSynthesisService.isAiPlaying()) {
           hasSpokenInSpeakRef.current = true;
-          const sentence = activeNode.lessonPayload.voicePractice.sentenceEnglish.replace(/[.!?]+$/, "");
-          const instruction = isBase01
-            ? "Escucha con atención cómo lo pronuncio yo:... I learn English today... Ahora activa tu micrófono y dilo tú para certificar tu avance."
-            : isBase02
-            ? "Escucha con atención cómo lo pronuncio yo:... It is cold today... Ahora activa tu micrófono y dilo tú para certificar tu avance."
-            : isBase03
-            ? "Escucha con atención cómo lo pronuncio yo:... I am ready today... Ahora activa tu micrófono y dilo tú para certificar tu avance."
-            : isBase04
-            ? "Escucha con atención cómo lo pronuncio yo:... I am hungry now... Ahora activa tu micrófono y dilo tú para certificar tu avance."
-            : isBase05
-            ? "Escucha con atención cómo lo pronuncio yo:... Are you ready today?... Ahora activa tu micrófono y dilo tú para certificar tu avance."
-            : `Escucha con atención cómo lo pronuncio yo: ${sentence}. Ahora activa tu micrófono y dilo tú para certificar tu avance.`;
-          const speakProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+          const speakProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
           if (speakProfile) {
             // SPEAK en 3 pistas: lead (es) -> modelo (en) -> instrucción (es).
             playAudio(speechMomentText(speakProfile, "speak.lead") ?? "", () =>
@@ -233,14 +180,14 @@ export function usePathwayStageSession(
               ),
             );
           } else {
-            playAudio(instruction);
+            playAudio(UNIVERSAL_PHRASES.speak_intro!.text);
           }
         }
       }
     } else {
       hasSpokenInSpeakRef.current = false;
     }
-  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, playAudio]);
+  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, speakingText, playAudio]);
 
   const tapAvailableChip = useCallback(
     (chipId: string) => {
@@ -275,7 +222,7 @@ export function usePathwayStageSession(
             Boolean(activeNode?.title.toLowerCase().includes("negativo & pregunta")) ||
             Boolean(activeNode?.title.toLowerCase().includes("negativo y pregunta"));
 
-          const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+          const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
 
           if (sentence.toLowerCase() === targetNaturalSentence.toLowerCase()) {
             const successText =
@@ -371,7 +318,7 @@ export function usePathwayStageSession(
       activeNode?.orderIndex === 4 ||
       Boolean(activeNode?.title.toLowerCase().includes("negativo & pregunta")) ||
       Boolean(activeNode?.title.toLowerCase().includes("negativo y pregunta"));
-    const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+    const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
     const targetVoice =
       activeNode?.lessonPayload?.voicePractice.sentenceEnglish || targetSentence;
     if (isRecording) {
@@ -397,9 +344,7 @@ export function usePathwayStageSession(
             setFailedVoiceAttempts(0);
             const victorySpeech =
               speechMomentText(speechProfile, "voice.victory") ??
-              (isBase01 || isBase02 || isBase03 || isBase04 || isBase05
-                ? "¡Excelente pronunciación! Dijiste cada palabra en orden natural y con una cadencia impecable... Base conquistada con éxito."
-                : "¡Impecable! Base conquistada con éxito. Ya estás listo para el siguiente reto.");
+              UNIVERSAL_PHRASES.base_mastered!.text;
             playAudio(victorySpeech);
             await finishLesson(captured, {
               overallScore: evalResult.overallScore,
@@ -426,9 +371,7 @@ export function usePathwayStageSession(
             setFailedVoiceAttempts((prev) => prev + 1);
             const retrySpeech =
               speechMomentText(speechProfile, "voice.retry") ??
-              (isBase01 || isBase02 || isBase03 || isBase04 || isBase05
-                ? "¡Casi lo tienes! Escucha el modelo una vez más con atención, y dilo con calma para certificar tu avance."
-                : "Casi lo tienes. Escucha el modelo de nuevo con atención y dilo con calma para certificar tu avance.");
+              UNIVERSAL_PHRASES.speak_retry!.text;
             playAudio(retrySpeech);
           }
         } else {
@@ -516,10 +459,10 @@ export function usePathwayStageSession(
         extractedErrors: [],
       },
     });
-    const localProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title);
+    const localProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
     const victorySpeech =
       speechMomentText(localProfile, "voice.victory") ??
-      "¡Impecable! Base conquistada con éxito. Ya estás listo para el siguiente reto.";
+      UNIVERSAL_PHRASES.base_mastered!.text;
     playAudio(victorySpeech);
   }, [activeNode, targetSentence, finishLesson, playAudio]);
 

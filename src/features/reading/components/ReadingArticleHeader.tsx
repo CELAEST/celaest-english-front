@@ -8,6 +8,7 @@ export interface ReadingArticleHeaderProps {
   title?: string | undefined;
   subtitle?: string | undefined;
   isPlayingAudio?: boolean | undefined;
+  isLoadingAudio?: boolean | undefined;
   isPausedAudio?: boolean | undefined;
   playbackRate?: number | undefined;
   selectedVoice?: any;
@@ -28,6 +29,7 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
     title = "The Art of Clear Communication",
     subtitle = "Building clarity in a complex world.",
     isPlayingAudio = false,
+    isLoadingAudio = false,
     isPausedAudio = false,
     playbackRate = 1.0,
     selectedVoice = "en-US-AriaNeural",
@@ -68,6 +70,7 @@ export const ReadingArticleHeader: React.FC<ReadingArticleHeaderProps> = React.m
             {onToggleAudio && (
               <ReadingAudioNarratorButton
                 isPlaying={isPlayingAudio}
+                isLoading={isLoadingAudio}
                 isPaused={isPausedAudio}
                 playbackRate={playbackRate}
                 selectedVoice={selectedVoice}

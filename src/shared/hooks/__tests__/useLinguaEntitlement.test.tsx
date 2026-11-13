@@ -247,5 +247,26 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("LinguaByokRequiredModal in trial_choice mode shows Free Trial header and switches to Paywall cleanly", () => {
+    const onClose = vi.fn();
+    const onOpenPaywall = vi.fn();
+
+    render(
+      <LinguaByokRequiredModal
+        isOpen={true}
+        mode="trial_choice"
+        onClose={onClose}
+        onOpenPaywall={onOpenPaywall}
+      />,
+    );
+
+    expect(screen.getByText(/Prueba Gratuita \(Base 01\)/i)).toBeTruthy();
+    const upgradeBtn = screen.getByRole("button", { name: /Ver Planes Lingua Pro/i });
+    fireEvent.click(upgradeBtn);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onOpenPaywall).toHaveBeenCalledTimes(1);
+  });
 });
 

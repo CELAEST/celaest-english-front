@@ -31,6 +31,13 @@ export interface UseInterviewTurnEvaluationOptions {
   lastCapturedAudioRef: React.MutableRefObject<CapturedAudioMeta>;
   setSpeechNotice: React.Dispatch<React.SetStateAction<string | null>>;
   isMountedRef: React.MutableRefObject<boolean>;
+  onAiFailure?:
+    | ((
+        err: unknown,
+        retryFn?: () => void | Promise<void>,
+        opts?: { featureName?: string; bufferDetail?: { durationSeconds?: number } },
+      ) => unknown)
+    | undefined;
 }
 
 export function useInterviewTurnEvaluation({
@@ -50,6 +57,7 @@ export function useInterviewTurnEvaluation({
   lastCapturedAudioRef,
   setSpeechNotice,
   isMountedRef,
+  onAiFailure,
 }: UseInterviewTurnEvaluationOptions) {
   let queryClient: ReturnType<typeof useQueryClient> | undefined;
   try {
@@ -113,10 +121,23 @@ export function useInterviewTurnEvaluation({
         }
       } catch (err: unknown) {
         logger.warn("Interview turn evaluation failed:", err);
-        const { scenario, cooldownSeconds } = classifyAiError(err);
-        setInfrastructureErrorScenario(scenario);
-        setRecoveryCooldown(cooldownSeconds);
-        setIsRecoveryModalOpen(true);
+        if (onAiFailure) {
+          await onAiFailure(
+            err,
+            () => {
+              void processTurn(answerText, audioUrl, durationSeconds);
+            },
+            {
+              featureName: "Evaluación Oral IA",
+              ...(typeof durationSeconds === "number" ? { bufferDetail: { durationSeconds } } : {}),
+            },
+          );
+        } else {
+          const { scenario, cooldownSeconds } = classifyAiError(err);
+          setInfrastructureErrorScenario(scenario);
+          setRecoveryCooldown(cooldownSeconds);
+          setIsRecoveryModalOpen(true);
+        }
       } finally {
         isEvaluatingRef.current = false;
         if (isMountedRef.current) {
@@ -125,7 +146,7 @@ export function useInterviewTurnEvaluation({
         }
       }
     },
-    [currentQuestion, effectiveRoleName, activeCefrLevel, isMountedRef, setStatus, setSpeakingSeconds],
+    [currentQuestion, effectiveRoleName, activeCefrLevel, isMountedRef, setStatus, setSpeakingSeconds, onAiFailure],
   );
 
   const submitCurrentTurn = useCallback(

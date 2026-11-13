@@ -181,4 +181,24 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
     fireEvent.click(resumeBtn);
     expect(onResumeMock).toHaveBeenCalled();
   });
+
+  it("renders session renewal view without BYOK selector for jwt-expired-mid-interview and calls onReauth", () => {
+    const onReauthMock = vi.fn();
+    render(
+      <AiInfrastructureRecoveryModal
+        isOpen={true}
+        scenario={ERROR_DATA["jwt-expired-mid-interview"]}
+        cooldown={0}
+        onClose={onCloseMock}
+        onImmediateResume={onResumeMock}
+        onReauth={onReauthMock}
+      />,
+    );
+
+    expect(screen.queryByText(/Proveedor de inferencia:/i)).not.toBeInTheDocument();
+    const reauthBtn = screen.getByRole("button", { name: /Iniciar Sesión \/ Renovar/i });
+    fireEvent.click(reauthBtn);
+    expect(onReauthMock).toHaveBeenCalledTimes(1);
+    expect(onResumeMock).not.toHaveBeenCalled();
+  });
 });

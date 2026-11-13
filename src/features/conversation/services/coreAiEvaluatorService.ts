@@ -14,12 +14,14 @@ import { MasterAiFeedbackEngine, StrategicFeedbackItem } from "./masterAiFeedbac
 import { UniversalLinguisticParser } from "./universalLinguisticParser";
 import { normalizeTranslationAndExplanation } from "./linguisticTranslationNormalizer";
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
-import { ENV } from "../../../shared/constants/env";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  buildByokHeadersSafe,
+  callBackendAiChatGateway,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
 import { logger } from "../../../shared/utils/logger";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
-
-const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
 
 export function sanitizeFeedbackTone(raw: string): string {
   if (!raw) return "";
@@ -370,58 +372,50 @@ Candidate Spoken Answer: "${cleanText}"`;
 
     try {
       let parsed: LlmEvaluationPayload | null = null;
-      const isCoreEnabled = await providerKeyVault.isCentralCoreEnabled();
+      const ctx = await resolveProviderContextSafe();
+      const isCoreEnabled = ctx.isCore;
+      const hasAuthToken = typeof HttpClient.getAuthToken === "function" ? Boolean(HttpClient.getAuthToken()) : false;
 
-      if (!isCoreEnabled) {
-        // Direct BYOK evaluation with active provider key
-        const activeId = (await providerKeyVault.getActiveProviderId()) || "groq";
-        const hasKey = await providerKeyVault.hasKey(activeId);
-        if (!hasKey) {
-          throw new AiInfrastructureError(
-            "AI_KEYS_EXHAUSTED",
-            `No se encontró una clave privada para ${activeId.toUpperCase()} y el Clúster Central está desactivado.`,
-            401,
-            activeId,
-          );
+      if (!isCoreEnabled && ctx.hasAnyKey) {
+        try {
+          const rawJson = await directClientAiService.chatCompletion({
+            systemPrompt,
+            userPrompt: userMessage,
+            providerId: ctx.providerId,
+            maxTokens: 4096,
+          });
+          parsed = repairAndParseJson(rawJson);
+          if (!parsed) {
+            throw new AiInfrastructureError(
+              "GATEWAY_TIMEOUT",
+              `El modelo ${ctx.providerId.toUpperCase()} no devolvió una estructura JSON válida.`,
+              500,
+              ctx.providerId,
+            );
+          }
+        } catch (directErr) {
+          if (
+            directErr instanceof AiInfrastructureError &&
+            directErr.code === "AUTH_DECLINED_KEY"
+          ) {
+            throw directErr;
+          }
+          if (!hasAuthToken) {
+            throw directErr;
+          }
+          // Try backend proxy if direct client hit browser CORS/network limits
         }
-        const rawJson = await directClientAiService.chatCompletion({
-          systemPrompt,
-          userPrompt: userMessage,
-          providerId: activeId,
-          maxTokens: 4096,
-        });
-        parsed = repairAndParseJson(rawJson);
-        if (!parsed) {
-          throw new AiInfrastructureError(
-            "GATEWAY_TIMEOUT",
-            `El modelo ${activeId.toUpperCase()} no devolvió una estructura JSON válida.`,
-            500,
-            activeId,
-          );
-        }
-      } else {
+      }
+
+      if (!parsed) {
         // 1. Tier 1: Evaluate via CELAEST-English Backend (Auth, Caching, Rate Limiting, Telemetry)
         try {
-          let byokHeaders: Record<string, string> = {};
-          let byokBody: Record<string, string> = {};
-          try {
-            const activeId = await providerKeyVault.getActiveProviderId();
-            if (activeId) {
-              const cfg = await providerKeyVault.getConfig(activeId);
-              const hasKey = await providerKeyVault.hasKey(activeId);
-              byokHeaders["X-Active-Provider"] = activeId;
-              if (cfg?.defaultModel) byokHeaders["X-Provider-Model"] = cfg.defaultModel;
-              if (cfg?.endpoint) byokHeaders["X-Provider-Endpoint"] = cfg.endpoint;
-              byokHeaders["X-Provider-Has-Key"] = hasKey ? "1" : "0";
-              byokBody = {
-                providerId: activeId,
-                ...(cfg?.defaultModel ? { providerModel: cfg.defaultModel } : {}),
-                ...(cfg?.endpoint ? { providerEndpoint: cfg.endpoint } : {}),
-              };
-            }
-          } catch {
-            // Vault read failure must never block evaluation
-          }
+          const byokHeaders = await buildByokHeadersSafe();
+          const byokBody: Record<string, string> = {
+            providerId: ctx.providerId,
+            ...(ctx.config?.defaultModel ? { providerModel: ctx.config.defaultModel } : {}),
+            ...(ctx.config?.endpoint ? { providerEndpoint: ctx.config.endpoint } : {}),
+          };
 
           parsed = await HttpClient.post<LlmEvaluationPayload>(
             "/interview/evaluate",
@@ -436,145 +430,45 @@ Candidate Spoken Answer: "${cleanText}"`;
             { timeoutMs: 25_000, headers: byokHeaders },
           );
         } catch (backendErr: any) {
+          if (
+            backendErr instanceof ApiError &&
+            [401, 402, 403, 422].includes(backendErr.status)
+          ) {
+            throw backendErr;
+          }
+          if (backendErr instanceof AiInfrastructureError) {
+            throw backendErr;
+          }
+
+          const canCheckAuthToken = typeof HttpClient.getAuthToken === "function";
+          const currentAuthToken = canCheckAuthToken
+            ? HttpClient.getAuthToken()
+            : null;
+          if (!currentAuthToken) {
+            if (canCheckAuthToken && !ctx.hasAnyKey) {
+              throw new ApiError(
+                "Sesión no iniciada o expirada",
+                401,
+                "AUTHENTICATION_REQUIRED",
+              );
+            }
+            throw backendErr;
+          }
+
           logger.warn(
-            "[CoreAiEvaluator] Go Backend failed, trying direct Core AI Mesh fallback:",
+            "[CoreAiEvaluator] Go Backend failed, trying Authenticated AI Gateway:",
             backendErr,
           );
 
-          // Identify if backend explicitly failed due to key exhaustion or rate limiting
-          const beMsg = String(backendErr?.message || "").toLowerCase();
-          const beDetails = String(backendErr?.details || backendErr?.rawErrorDetails || "").toLowerCase();
-          const beCode = String(backendErr?.code || "").toLowerCase();
-          const isBackendKeyExhaustion =
-            beCode === "ai_keys_exhausted" ||
-            beMsg.includes("exhausted") ||
-            beMsg.includes("cooldown") ||
-            beDetails.includes("exhausted") ||
-            beDetails.includes("cooldown");
-
-          // 2. Tier 2: Direct Core AI fallback — respect BYOK provider if set
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-          let fallbackProvider = "groq";
-          try {
-            const a = await providerKeyVault.getActiveProviderId();
-            if (a) fallbackProvider = a;
-          } catch {
-            // ignore
-          }
-
-          const bodyPayload = {
-            system: systemPrompt,
-            message: userMessage,
-            provider: fallbackProvider,
-            max_tokens: 4096,
-          };
-
-          try {
-            const token = HttpClient.getAuthToken();
-            const headers: Record<string, string> = {
-              "Content-Type": "application/json",
-              "X-Internal-Service": "celaest-english-front",
-            };
-            if (token) {
-              headers["Authorization"] = `Bearer ${token}`;
-            }
-
-            const response = await fetch(CORE_AI_URL, {
-              method: "POST",
-              headers,
-              body: JSON.stringify(bodyPayload),
-              signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-              const data = (await response.json()) as { response?: string; content?: string };
-              parsed = repairAndParseJson(data.response || data.content || "");
-            } else {
-              const errBodyText = await response.text().catch(() => "");
-              let errJson: any = null;
-              try {
-                errJson = JSON.parse(errBodyText);
-              } catch {
-                // ignore
-              }
-              const errDetails =
-                errJson?.details || errJson?.error || errJson?.message || errBodyText;
-              const errCode = String(errJson?.code || "");
-              const fullErr = `${response.status} ${errCode} ${errDetails}`.toLowerCase();
-
-              if (
-                response.status === 429 ||
-                errCode === "AI_KEYS_EXHAUSTED" ||
-                fullErr.includes("exhausted") ||
-                fullErr.includes("cooldown") ||
-                fullErr.includes("quota") ||
-                fullErr.includes("saldo") ||
-                fullErr.includes("all keys")
-              ) {
-                throw new AiInfrastructureError(
-                  "AI_KEYS_EXHAUSTED",
-                  typeof errDetails === "string" && errDetails.length > 0
-                    ? errDetails
-                    : "All AI keys in the pool are exhausted or in cooldown",
-                  response.status || 429,
-                  fallbackProvider as any,
-                  errBodyText,
-                );
-              }
-
-              if (
-                response.status === 401 ||
-                response.status === 403 ||
-                fullErr.includes("unauthorized") ||
-                fullErr.includes("api key")
-              ) {
-                throw new AiInfrastructureError(
-                  "AUTH_DECLINED_KEY",
-                  `Clave de ${fallbackProvider.toUpperCase()} no válida o revocada.`,
-                  response.status,
-                  fallbackProvider as any,
-                  errBodyText,
-                );
-              }
-
-              if (response.status === 504 || fullErr.includes("timeout")) {
-                throw new AiInfrastructureError(
-                  "GATEWAY_TIMEOUT",
-                  `Tiempo de espera agotado al conectar con el motor de IA.`,
-                  response.status,
-                  fallbackProvider as any,
-                  errBodyText,
-                );
-              }
-
-              throw new AiInfrastructureError(
-                "CLUSTER_OUTAGE",
-                `Error en el servicio de IA (${response.status}): ${errDetails}`,
-                response.status,
-                fallbackProvider as any,
-                errBodyText,
-              );
-            }
-          } catch (fetchErr: any) {
-            clearTimeout(timeoutId);
-            if (fetchErr instanceof AiInfrastructureError) {
-              throw fetchErr;
-            }
-            if (isBackendKeyExhaustion) {
-              throw new AiInfrastructureError(
-                "AI_KEYS_EXHAUSTED",
-                backendErr?.message || "All AI keys in the pool are exhausted or in cooldown",
-                429,
-                fallbackProvider as any,
-                JSON.stringify(backendErr?.details || {}),
-              );
-            }
-            throw fetchErr;
-          }
+          // 2. Tier 2: Authenticated Backend AI Gateway (/api/v1/ai/chat/simple)
+          const rawGateway = await callBackendAiChatGateway({
+            systemPrompt,
+            userPrompt: userMessage,
+            providerId: ctx.providerId,
+            maxTokens: 4096,
+            timeoutMs: 20_000,
+          });
+          parsed = repairAndParseJson(rawGateway);
         }
       }
 
@@ -790,80 +684,45 @@ Candidate Spoken Answer: "${cleanText}"`;
         }
     } catch (err: any) {
       logger.warn(`[CoreAiEvaluator] Error in evaluation pipeline:`, err);
-      const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => true);
 
-      // Re-throw any AiInfrastructureError or infrastructure failure so the UI modal can display!
+      // Re-throw ApiError or any AiInfrastructureError / infrastructure failure so the exact use-case modal displays!
+      if (err instanceof ApiError || err instanceof AiInfrastructureError) {
+        throw err;
+      }
+
       const errMsg = String(err?.message || err || "").toLowerCase();
       const errDetails = String(err?.rawErrorDetails || err?.details || "").toLowerCase();
       const fullErrStr = `${errMsg} ${errDetails} ${String(err?.code || "")}`.toLowerCase();
 
-      const isInfraError =
-        err instanceof AiInfrastructureError ||
+      const infraCode =
         fullErrStr.includes("exhausted") ||
         fullErrStr.includes("cooldown") ||
-        fullErrStr.includes("rate_limit") ||
-        fullErrStr.includes("rate limit") ||
-        fullErrStr.includes("ai_error") ||
-        fullErrStr.includes("ai_keys_exhausted") ||
-        fullErrStr.includes("insufficient_quota") ||
         fullErrStr.includes("quota") ||
         fullErrStr.includes("saldo") ||
-        fullErrStr.includes("auth_declined") ||
-        fullErrStr.includes("all keys") ||
-        err?.status === 429 ||
-        err?.status === 401 ||
-        err?.status === 504 ||
-        err?.code === "AI_KEYS_EXHAUSTED" ||
-        err?.code === "RATE_LIMIT_COOLDOWN" ||
-        err?.code === "AUTH_DECLINED_KEY";
+        fullErrStr.includes("all keys")
+          ? "AI_KEYS_EXHAUSTED"
+          : fullErrStr.includes("rate") || err?.status === 429
+            ? "RATE_LIMIT_COOLDOWN"
+            : fullErrStr.includes("auth") || fullErrStr.includes("unauthorized") || err?.status === 401
+              ? "AUTH_DECLINED_KEY"
+              : fullErrStr.includes("timeout") || err?.status === 504
+                ? "GATEWAY_TIMEOUT"
+                : "CLUSTER_OUTAGE";
 
-      if (!isCore || isInfraError) {
-        if (err instanceof AiInfrastructureError) {
-          throw err;
-        }
-        const infraCode =
-          fullErrStr.includes("exhausted") ||
-          fullErrStr.includes("cooldown") ||
-          fullErrStr.includes("quota") ||
-          fullErrStr.includes("saldo") ||
-          fullErrStr.includes("all keys")
-            ? "AI_KEYS_EXHAUSTED"
-            : fullErrStr.includes("rate") || err?.status === 429
-              ? "RATE_LIMIT_COOLDOWN"
-              : fullErrStr.includes("auth") || fullErrStr.includes("unauthorized") || err?.status === 401
-                ? "AUTH_DECLINED_KEY"
-                : fullErrStr.includes("timeout") || err?.status === 504
-                  ? "GATEWAY_TIMEOUT"
-                  : "CLUSTER_OUTAGE";
-
-        throw new AiInfrastructureError(
-          infraCode,
-          err?.message || "AI request failed: all keys exhausted or in cooldown",
-          err?.status || 500,
-          undefined,
-          errDetails || errMsg,
-        );
-      }
-    }
-
-    // When Central Core is deactivated, NEVER simulate or fall back to MasterAiFeedbackEngine!
-    const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => true);
-    if (!isCore) {
       throw new AiInfrastructureError(
-        "GATEWAY_TIMEOUT",
-        "No se pudo completar la evaluación con la clave de IA configurada. Por favor verifica tu cuota o el modelo seleccionado.",
-        500,
+        infraCode,
+        err?.message || "AI request failed",
+        err?.status || 503,
+        undefined,
+        errDetails || errMsg,
       );
     }
 
-    // High-fidelity local fallback ONLY when remote Central Core cluster fails or times out.
-    logger.warn("[CoreAiEvaluator] Falling back to MasterAiFeedbackEngine.");
-    const fallbackResult = MasterAiFeedbackEngine.evaluateTurn(cleanText, currentQuestion);
-    if (EVALUATION_CACHE.size >= MAX_CACHE_SIZE) {
-      const firstKey = EVALUATION_CACHE.keys().next().value;
-      if (firstKey) EVALUATION_CACHE.delete(firstKey);
-    }
-    EVALUATION_CACHE.set(cacheKey, fallbackResult);
-    return fallbackResult;
+    // Zero fake evaluations: if parsing returned empty/invalid AI response, raise infrastructure outage for modal recovery.
+    throw new AiInfrastructureError(
+      "CLUSTER_OUTAGE",
+      "No se pudo completar la evaluación real con el motor de IA. Intenta nuevamente.",
+      502,
+    );
   }
 }

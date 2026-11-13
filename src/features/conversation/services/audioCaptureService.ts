@@ -1248,15 +1248,6 @@ export class AudioCaptureService {
       if (!candidateEndpoints.includes(publicBackTranscribe)) {
         candidateEndpoints.push(publicBackTranscribe);
       }
-
-      if (ENV.coreAiUrl && !candidateEndpoints.includes(`${ENV.coreAiUrl}/ai/audio/transcribe`)) {
-        candidateEndpoints.push(`${ENV.coreAiUrl}/ai/audio/transcribe`);
-      }
-
-      const defaultCoreTranscribe = "https://celaest-core.onrender.com/api/v1/ai/audio/transcribe";
-      if (!candidateEndpoints.includes(defaultCoreTranscribe)) {
-        candidateEndpoints.push(defaultCoreTranscribe);
-      }
     }
 
     const activeToken = typeof window !== "undefined" ? localStorage.getItem("lingua_access_token") : null;

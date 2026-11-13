@@ -47,6 +47,28 @@ export interface StoredProviderConfig {
   defaultModel?: string;
 }
 
+export const CLOUD_BYOK_PROVIDERS: readonly AiProviderId[] = [
+  "groq",
+  "gemini",
+  "openai",
+  "anthropic",
+  "grok",
+  "deepseek",
+  "openrouter",
+  "perplexity",
+  "huggingface",
+  "qwen",
+  "meta",
+];
+
+export interface ResolvedProviderContext {
+  providerId: AiProviderId;
+  apiKey: string | null;
+  keys: string[];
+  config: StoredProviderConfig | null;
+  hasAnyKey: boolean;
+}
+
 export const providerKeyVault = {
   async isCentralCoreEnabled(): Promise<boolean> {
     const entry = await EncryptedLocalStorageVault.getItem<{ enabled: boolean }>(
@@ -184,20 +206,70 @@ export const providerKeyVault = {
   },
 
   async hasAnyConfiguredKey(): Promise<boolean> {
-    const allProviders: AiProviderId[] = [
-      "groq",
-      "gemini",
-      "openai",
-      "anthropic",
-      "grok",
-      "deepseek",
-      "openrouter",
-    ];
-    for (const pid of allProviders) {
+    for (const pid of CLOUD_BYOK_PROVIDERS) {
       const keys = await this.getKeys(pid);
       if (keys.length > 0) return true;
     }
     return false;
+  },
+
+  async resolveConfiguredProvider(): Promise<ResolvedProviderContext> {
+    const activeId = await this.getActiveProviderId();
+    if (activeId) {
+      const activeKeys = await this.getKeys(activeId);
+      if (activeKeys.length > 0) {
+        return {
+          providerId: activeId,
+          apiKey: activeKeys[0] ?? null,
+          keys: activeKeys,
+          config: await this.getConfig(activeId),
+          hasAnyKey: true,
+        };
+      }
+    }
+
+    for (const pid of CLOUD_BYOK_PROVIDERS) {
+      const keys = await this.getKeys(pid);
+      if (keys.length > 0) {
+        return {
+          providerId: pid,
+          apiKey: keys[0] ?? null,
+          keys,
+          config: await this.getConfig(pid),
+          hasAnyKey: true,
+        };
+      }
+    }
+
+    const fallbackId: AiProviderId = activeId || "groq";
+    return {
+      providerId: fallbackId,
+      apiKey: null,
+      keys: [],
+      config: await this.getConfig(fallbackId),
+      hasAnyKey: false,
+    };
+  },
+
+  async getByokRequestHeaders(options?: { includeKey?: boolean }): Promise<Record<string, string>> {
+    const ctx = await this.resolveConfiguredProvider();
+    const isCore = await this.isCentralCoreEnabled().catch(() => false);
+    const shouldIncludeKey = options?.includeKey ?? !isCore;
+    const headers: Record<string, string> = {
+      "X-Active-Provider": ctx.providerId,
+      "X-Provider-Id": ctx.providerId,
+      "X-Provider-Has-Key": ctx.hasAnyKey ? "1" : "0",
+    };
+    if (shouldIncludeKey && ctx.apiKey) {
+      headers["X-Provider-Key"] = ctx.apiKey;
+    }
+    if (ctx.config?.defaultModel) {
+      headers["X-Provider-Model"] = ctx.config.defaultModel;
+    }
+    if (ctx.config?.endpoint) {
+      headers["X-Provider-Endpoint"] = ctx.config.endpoint;
+    }
+    return headers;
   },
 
   async getKey(providerId: AiProviderId, index = 0): Promise<string | null> {

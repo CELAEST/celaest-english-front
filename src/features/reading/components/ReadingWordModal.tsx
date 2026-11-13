@@ -12,7 +12,7 @@ export interface ReadingWordModalProps {
   coords: { top: number; left: number };
   onClose: () => void;
   onAddToMemory?: ((wordData: WordLookup) => Promise<void>) | undefined;
-  onOpenRecoveryModal?: ((word: string, context?: string) => void) | undefined;
+  onOpenRecoveryModal?: ((word: string, context?: string, err?: unknown) => void) | undefined;
   onDirectTranslate?: ((word: string, context?: string) => Promise<string | null>) | undefined;
   isAlreadyInMemory?: boolean | undefined;
 }
@@ -209,6 +209,7 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
         e.stopPropagation();
         if (!wordData) return;
 
+        let capturedError: unknown = "NO_KEY";
         if (onDirectTranslate) {
           setIsTranslatingDirect(true);
           try {
@@ -218,15 +219,15 @@ export const ReadingWordModal: React.FC<ReadingWordModalProps> = React.memo(
               setIsTranslatingDirect(false);
               return;
             }
-          } catch {
-            // Fall through to open recovery modal if direct translation fails or no key
+          } catch (err) {
+            capturedError = err;
           } finally {
             setIsTranslatingDirect(false);
           }
         }
 
         if (onOpenRecoveryModal) {
-          onOpenRecoveryModal(wordData.word, wordData.exampleSentence);
+          onOpenRecoveryModal(wordData.word, wordData.exampleSentence, capturedError);
         }
       },
       [wordData, onDirectTranslate, onOpenRecoveryModal],

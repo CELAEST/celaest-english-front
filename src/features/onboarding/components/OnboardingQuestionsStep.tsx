@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { OnboardingStepProgress } from "./OnboardingStepProgress";
 import { LearnerProfileData } from "../types";
 import { ProfessionNormalizerService } from "../services/professionNormalizerService";
-import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
-import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
-import { ErrorScenarioData, ERROR_DATA } from "../../../shared/constants/errorScenarios";
+import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
+import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
 import { Loader2 } from "lucide-react";
 import { logger } from "../../../shared/utils/logger";
 
@@ -44,9 +43,7 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
   const [subStep, setSubStep] = useState<0 | 1 | 2 | 3>(0);
   const [professionInput, setProfessionInput] = useState(profile.profession || "");
   const [isNormalizing, setIsNormalizing] = useState(false);
-  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
-  const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(ERROR_DATA["keys-exhausted-pool"]);
-  const [recoveryCooldown, setRecoveryCooldown] = useState(0);
+  const aiModals = useAiUseCaseModals("general");
   const [engineErrorMessage, setEngineErrorMessage] = useState<string | null>(null);
 
   const canAdvance =
@@ -71,13 +68,17 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
         onNext();
       } catch (err: any) {
         logger.warn("[OnboardingQuestionsStep] AI Provider failure during profession normalization:", err);
-        const { scenario, cooldownSeconds } = classifyAiError(err);
-        setRecoveryScenario(scenario);
-        setRecoveryCooldown(cooldownSeconds);
         setEngineErrorMessage(
-          err?.message || "Tu proveedor de IA no tiene saldo disponible (Insufficient Balance).",
+          err?.message || "No se pudo validar tu perfil con el motor de IA. Configura o verifica tu acceso para continuar.",
         );
-        setIsRecoveryModalOpen(true);
+        void aiModals.handleAiFailure(
+          err,
+          () => {
+            setEngineErrorMessage(null);
+            void handleNextSubStep();
+          },
+          { featureName: "Personalización de Perfil IA" },
+        );
       } finally {
         setIsNormalizing(false);
       }
@@ -247,10 +248,10 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsRecoveryModalOpen(true)}
+                    onClick={() => void handleNextSubStep()}
                     className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-white text-black font-medium text-[11px] hover:bg-white/90 transition-all shrink-0 cursor-pointer shadow-sm"
                   >
-                    Cambiar a Groq Gratis
+                    Configurar / Reintentar IA
                   </button>
                 </div>
               )}
@@ -302,21 +303,8 @@ export const OnboardingQuestionsStep: React.FC<OnboardingQuestionsStepProps> = (
         <div className="shrink-0 h-1 sm:h-2" />
       </div>
 
-      {/* Luxury AI Infrastructure Recovery Modal */}
-      <AiInfrastructureRecoveryModal
-        isOpen={isRecoveryModalOpen}
-        scenario={recoveryScenario}
-        cooldown={recoveryCooldown}
-        contextType="writing"
-        onClose={() => setIsRecoveryModalOpen(false)}
-        onImmediateResume={() => {
-          setIsRecoveryModalOpen(false);
-          setEngineErrorMessage(null);
-          setTimeout(() => {
-            void handleNextSubStep();
-          }, 350);
-        }}
-      />
+      {/* Universal AI Use-Case Modals Host */}
+      <AiUseCaseModalsHost controller={aiModals} />
     </div>
   );
 };

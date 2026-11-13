@@ -5,9 +5,12 @@ import {
   directClientAiService,
   extractFirstJsonObject,
 } from "../../settings/services/directClientAiService";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
-import { ENV } from "../../../shared/constants/env";
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  callBackendAiChatGateway,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
 
 export interface QASpeechSegment {
   language: "es" | "en";
@@ -99,86 +102,12 @@ function buildOffTopicAnswer(question: string, nodeTitle: string): ProfessorAnsw
 }
 
 async function callCoreAiMesh(systemPrompt: string, userPrompt: string): Promise<string> {
-  const token = HttpClient.getAuthToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Internal-Service": "celaest-english-front",
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const isBrowser = typeof window !== "undefined";
-  const candidateUrls: string[] = [];
-
-  if (isBrowser) {
-    candidateUrls.push("/core-ai/ai/chat/simple");
-  } else {
-    if (ENV.coreAiUrl && !ENV.coreAiUrl.includes("127.0.0.1") && !ENV.coreAiUrl.includes("localhost")) {
-      candidateUrls.push(`${ENV.coreAiUrl}/ai/chat/simple`);
-    }
-    candidateUrls.push("https://celaest-core.onrender.com/api/v1/ai/chat/simple");
-  }
-
-  let lastError: unknown = null;
-
-  for (const url of candidateUrls) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35_000);
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          system: systemPrompt,
-          message: userPrompt,
-          max_tokens: 800,
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const content = data?.response || data?.content || "";
-        if (content && typeof content === "string" && content.trim()) {
-          return content.trim();
-        }
-        lastError = new AiInfrastructureError(
-          "CLUSTER_OUTAGE",
-          "El clúster central devolvió una respuesta vacía.",
-          502,
-        );
-      } else {
-        const errCode =
-          res.status === 401
-            ? "AUTH_DECLINED_KEY"
-            : res.status === 429
-            ? "RATE_LIMIT_COOLDOWN"
-            : res.status === 504
-            ? "GATEWAY_TIMEOUT"
-            : "AI_KEYS_EXHAUSTED";
-        lastError = new AiInfrastructureError(
-          errCode,
-          `El clúster central respondió con estado ${res.status}.`,
-          res.status,
-        );
-      }
-    } catch (err: any) {
-      const isAbort = err?.name === "AbortError";
-      lastError = isAbort
-        ? new AiInfrastructureError("GATEWAY_TIMEOUT", "Tiempo de espera agotado al conectar con el clúster central.", 504)
-        : err;
-    }
-  }
-
-  throw lastError ?? new AiInfrastructureError(
-    "AI_KEYS_EXHAUSTED",
-    "El clúster central de IA no está disponible en este momento.",
-    503,
-  );
+  return callBackendAiChatGateway({
+    systemPrompt,
+    userPrompt,
+    maxTokens: 800,
+    timeoutMs: 35_000,
+  });
 }
 
 export class PathwayQAService {
@@ -242,38 +171,55 @@ Return ONLY a valid JSON object matching this schema:
     const userPrompt = `Student question: "${trimmedQuestion}"
 Explain clearly why English works this way and give me the best intuitive mental model.`;
 
-    const activeProvider = await providerKeyVault.getActiveProviderId();
-    const isCore = await providerKeyVault.isCentralCoreEnabled();
-    const hasActiveKey = await providerKeyVault.hasKey(activeProvider || "groq");
-    const hasAnyKey = hasActiveKey || (await providerKeyVault.hasAnyConfiguredKey());
+    const ctx = await resolveProviderContextSafe();
+    const activeProvider = ctx.providerId;
+    const isCore = ctx.isCore;
+    const hasAnyKey = ctx.hasAnyKey;
     const isTestSpy = Boolean((directClientAiService.chatCompletion as any).mock);
+    const hasAuthToken = Boolean(HttpClient.getAuthToken());
 
-    if (!isTestSpy && !isCore && !hasAnyKey) {
+    if (!isTestSpy && !isCore && !hasAnyKey && !hasAuthToken) {
       throw new PathwayByokRequiredError();
     }
 
     let raw = "";
 
-    if (isTestSpy || (!isCore && hasAnyKey)) {
+    if (isTestSpy) {
       raw = await directClientAiService.chatCompletion({
         systemPrompt,
         userPrompt,
         maxTokens: 600,
       });
-    } else {
+    } else if (hasAuthToken) {
       try {
         raw = await callCoreAiMesh(systemPrompt, userPrompt);
       } catch (coreErr) {
-        if (hasAnyKey) {
+        if (coreErr instanceof ApiError) {
+          throw coreErr;
+        }
+        if (coreErr instanceof AiInfrastructureError && coreErr.code === "AUTH_DECLINED_KEY") {
+          throw coreErr;
+        }
+        if (!isCore && hasAnyKey) {
           raw = await directClientAiService.chatCompletion({
             systemPrompt,
             userPrompt,
+            providerId: activeProvider,
             maxTokens: 600,
           });
         } else {
           throw coreErr;
         }
       }
+    } else if (!isCore && hasAnyKey) {
+      raw = await directClientAiService.chatCompletion({
+        systemPrompt,
+        userPrompt,
+        providerId: activeProvider,
+        maxTokens: 600,
+      });
+    } else {
+      raw = await callCoreAiMesh(systemPrompt, userPrompt);
     }
 
     const cleanJson = (extractFirstJsonObject(raw) || raw)

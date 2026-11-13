@@ -5,6 +5,7 @@ import {
 } from "../../domain/repositories/IWritingRepository";
 import { WritingSubmission } from "../../domain/entities/WritingSubmission";
 import { HttpClient } from "../http/HttpClient";
+import { buildByokHeadersSafe } from "../http/coreAiGatewayClient";
 
 export class ApiWritingRepository implements IWritingRepository {
   async evaluate(
@@ -15,6 +16,7 @@ export class ApiWritingRepository implements IWritingRepository {
     roleName?: string,
     targetLevel?: string,
   ): Promise<WritingSubmission> {
+    const headers = await buildByokHeadersSafe();
     return HttpClient.post<WritingSubmission>(
       "/writing/evaluate",
       {
@@ -25,7 +27,7 @@ export class ApiWritingRepository implements IWritingRepository {
         roleName,
         targetLevel,
       },
-      { timeoutMs: 60_000 },
+      { timeoutMs: 60_000, headers },
     );
   }
 

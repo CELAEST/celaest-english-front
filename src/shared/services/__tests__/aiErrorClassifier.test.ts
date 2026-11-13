@@ -9,6 +9,24 @@ describe("classifyAiError", () => {
     expect(result.scenario.id).toBe("invalid-key-401");
   });
 
+  it("classifies JWT_EXPIRED and AUTHENTICATION_REQUIRED separately from invalid-key-401", () => {
+    const jwtResult = classifyAiError({
+      status: 401,
+      code: "JWT_EXPIRED",
+      message: "Tu sesión expiró",
+    });
+    expect(jwtResult.errorType).toBe("jwt-expired-mid-interview");
+    expect(jwtResult.scenario.specialActionType).toBe("re-auth");
+
+    const authReqResult = classifyAiError({
+      status: 401,
+      code: "AUTHENTICATION_REQUIRED",
+      message: "Sesión no iniciada o expirada",
+    });
+    expect(authReqResult.errorType).toBe("jwt-expired-mid-interview");
+    expect(authReqResult.scenario.specialActionType).toBe("re-auth");
+  });
+
   it("classifies 429 rate limit correctly and preserves custom cooldown", () => {
     const err = { message: "Rate limit reached 429", cooldownSeconds: 30 };
     const result = classifyAiError(err);

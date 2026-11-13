@@ -15,7 +15,7 @@ export interface ReadingArticleReaderProps {
   articlePhrasalVerbs?: string[] | undefined;
   onLookupWord?: (word: string, context?: string) => Promise<WordLookup>;
   onAddToMemory?: (wordData: WordLookup) => Promise<void>;
-  onOpenRecoveryModal?: (word: string, context?: string) => void;
+  onOpenRecoveryModal?: (word: string, context?: string, err?: unknown) => void;
   onDirectTranslate?: (word: string, context?: string) => Promise<string | null>;
   activeKaraokeWordIndex?: number | null | undefined;
   isWordSaved?: ((word: string) => boolean) | undefined;

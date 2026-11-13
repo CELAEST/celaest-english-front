@@ -17,10 +17,9 @@ import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { validateSpeechIntelligibility } from "../../conversation/services/speechIntelligibilityGuard";
 import { appToast } from "../../../design-system/components/Toast";
 import { logger } from "../../../shared/utils/logger";
-import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
-import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
-import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
+import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
+import { resolveProviderContextSafe } from "../../../infrastructure/http/coreAiGatewayClient";
 import { directClientAiService, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { AiWritingTaskGenerator } from "../services/aiWritingTaskGenerator";
 import { normalizeCefr, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
@@ -57,11 +56,7 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
     const [isLocalEvaluating, setIsLocalEvaluating] = useState<boolean>(false);
     const isEvaluatingActive = isEvaluating || isLocalEvaluating;
 
-    const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
-    const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
-      ERROR_DATA["keys-exhausted-pool"] || Object.values(ERROR_DATA)[0],
-    );
-    const [recoveryCooldown, setRecoveryCooldown] = useState<number>(14);
+    const aiModals = useAiUseCaseModals("writing");
     const [isGeneratingTask, setIsGeneratingTask] = useState<boolean>(false);
     const [areHintsRevealed, setAreHintsRevealed] = useState<boolean>(false);
 
@@ -414,22 +409,12 @@ export const WritingPracticeView: React.FC<WritingPracticeViewProps> = React.mem
       return;
     }
 
-    const isCore = await providerKeyVault.isCentralCoreEnabled();
-    const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-    const hasKey = await providerKeyVault.hasKey(activeProvider);
-
-    // If CELAEST-CORE is disabled and no private API key is configured, immediately trigger recovery modal
-    if (!isCore && !hasKey) {
-      setRecoveryScenario(ERROR_DATA["keys-exhausted-pool"]);
-      setRecoveryCooldown(0);
-      setIsRecoveryModalOpen(true);
-      return;
-    }
+    const { isCore, hasAnyKey, providerId: activeProvider } = await resolveProviderContextSafe();
 
     setIsLocalEvaluating(true);
     try {
       let result: WritingSubmission;
-      if (!isCore) {
+      if (!isCore && hasAnyKey) {
         // BYOK direct execution using user's private key
         const systemPrompt =
           "You are an empathetic English writing mentor and executive coach. Always use direct 2nd person (tú) in Spanish. Respond ONLY with valid raw JSON.";
@@ -530,20 +515,23 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
       DynamicWritingTaskService.saveActiveSubmission(result, true, Array.from(initialSaved));
     } catch (err: any) {
       logger.warn("Writing evaluation failed", err);
-      const { scenario, cooldownSeconds } = classifyAiError(err);
-      setRecoveryScenario(scenario);
-      setRecoveryCooldown(cooldownSeconds);
-      setIsRecoveryModalOpen(true);
+      void aiModals.handleAiFailure(
+        err,
+        () => {
+          void handleSubmit();
+        },
+        {
+          featureName: "Evaluación de Writing IA",
+          bufferDetail: { wordCount },
+        },
+      );
     } finally {
       setIsLocalEvaluating(false);
     }
   };
 
-  const lastClosedModalTimeRef = useRef<number>(0);
-
   // When clicking the X button in the modal: Keep the text, keep the task, just hide modal and allow reopening
   const handleCloseModal = () => {
-    lastClosedModalTimeRef.current = Date.now();
     setShowResultModal(false);
     if (activeSubmission) {
       DynamicWritingTaskService.saveActiveSubmission(
@@ -641,17 +629,6 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
 
     // 3. Otherwise, fetch the next fresh batch now
     try {
-      const isCore = await providerKeyVault.isCentralCoreEnabled();
-      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-      const hasKey = await providerKeyVault.hasKey(activeProvider);
-
-      if (!isCore && !hasKey) {
-        setRecoveryScenario(ERROR_DATA["keys-exhausted-pool"]);
-        setRecoveryCooldown(0);
-        setIsRecoveryModalOpen(true);
-        return;
-      }
-
       setIsGeneratingTask(true);
       const avoid = Array.from(new Set([...seenPromptsRef.current, ...taskBatch.map((t) => t.description)]));
       const freshBatch = await AiWritingTaskGenerator.generateBatchTasks({
@@ -680,10 +657,13 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         appToast.success("Nuevo lote de tareas listo", freshBatch[0].title);
       }
     } catch (err: any) {
-      const { scenario, cooldownSeconds } = classifyAiError(err);
-      setRecoveryScenario(scenario);
-      setRecoveryCooldown(cooldownSeconds);
-      setIsRecoveryModalOpen(true);
+      void aiModals.handleAiFailure(
+        err,
+        () => {
+          void advanceOrFetchNextBatch(toastTitle);
+        },
+        { featureName: "Generación de Tareas de Writing IA" },
+      );
     } finally {
       setIsGeneratingTask(false);
     }
@@ -700,9 +680,6 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
   };
 
   const handleOpenModal = () => {
-    if (Date.now() - lastClosedModalTimeRef.current < 400) {
-      return;
-    }
     if (activeSubmission) {
       setShowResultModal(true);
       DynamicWritingTaskService.saveActiveSubmission(
@@ -943,21 +920,8 @@ Extract all real grammar errors. If there are no real grammar errors, "extracted
         />
       )}
 
-      {/* Luxury AI Infrastructure Recovery Modal */}
-      <AiInfrastructureRecoveryModal
-        isOpen={isRecoveryModalOpen}
-        scenario={recoveryScenario}
-        cooldown={recoveryCooldown}
-        contextType="writing"
-        bufferDetail={{ wordCount }}
-        onClose={() => setIsRecoveryModalOpen(false)}
-        onImmediateResume={() => {
-          setIsRecoveryModalOpen(false);
-          setTimeout(() => {
-            void handleSubmit();
-          }, 350);
-        }}
-      />
+      {/* Universal AI Use-Case Modals Host */}
+      <AiUseCaseModalsHost controller={aiModals} />
     </div>
   );
 });

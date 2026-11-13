@@ -24,6 +24,8 @@ export interface HttpRequestOptions extends RequestInit {
 }
 
 interface EnvelopeResponse {
+  success?: boolean;
+  code?: string;
   data?: unknown;
   error?: unknown;
 }
@@ -133,11 +135,30 @@ export class HttpClient {
                 ? errorPayload.message
                 : undefined;
           const message = rawMessage || `HTTP error ${response.status}`;
-          const code = typeof errorPayload.code === "string" ? errorPayload.code : undefined;
+          const code =
+            (typeof errorPayload === "object" &&
+            errorPayload !== null &&
+            typeof errorPayload.code === "string"
+              ? errorPayload.code
+              : undefined) ?? (typeof json.code === "string" ? json.code : undefined);
 
-          if (response.status === 401 && typeof window !== "undefined") {
+          const mergedDetails: Record<string, unknown> = {
+            ...(typeof errorPayload === "object" && errorPayload !== null ? errorPayload : {}),
+            ...(typeof json.data === "object" && json.data !== null
+              ? (json.data as Record<string, unknown>)
+              : {}),
+            ...(code ? { code } : {}),
+          };
+
+          const isProviderAuthDeclined = code === "AUTH_DECLINED_KEY";
+          if (response.status === 401 && !isProviderAuthDeclined && typeof window !== "undefined") {
             if (import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) {
-              throw new ApiError(message, response.status, code);
+              throw new ApiError(
+                message,
+                response.status,
+                code,
+                Object.keys(mergedDetails).length > 0 ? mergedDetails : undefined,
+              );
             }
             try {
               localStorage.removeItem("lingua_access_token");
@@ -155,7 +176,7 @@ export class HttpClient {
             message,
             response.status,
             code,
-            typeof errorPayload === "object" && errorPayload !== null ? errorPayload : undefined,
+            Object.keys(mergedDetails).length > 0 ? mergedDetails : undefined,
           );
         }
 

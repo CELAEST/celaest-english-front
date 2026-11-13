@@ -77,12 +77,13 @@ export interface AiInfrastructureRecoveryModalProps {
   cooldown: number; // in seconds
   onClose: () => void;
   onImmediateResume: () => void;
-  contextType?: "writing" | "reading" | "speaking" | "general";
+  onReauth?: () => void;
+  contextType?: "writing" | "reading" | "speaking" | "pathway" | "general";
   bufferDetail?: {
-    wordCount?: number;
-    durationSeconds?: number;
-    previewText?: string;
-  };
+    wordCount?: number | undefined;
+    durationSeconds?: number | undefined;
+    previewText?: string | undefined;
+  } | undefined;
 }
 
 const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModalProps> = ({
@@ -91,6 +92,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
   cooldown: _cooldown,
   onClose,
   onImmediateResume,
+  onReauth,
   contextType = "writing",
   bufferDetail,
 }) => {
@@ -110,6 +112,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
 
   if (!isOpen) return null;
 
+  const isReauthScenario = scenario.specialActionType === "re-auth";
   const currentProvider = PROVIDERS.find((p) => p.id === selectedProvider) || PROVIDERS[0];
 
   const handleActivate = async () => {
@@ -327,7 +330,12 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
             <span>{reassuranceText}</span>
           </div>
 
-          {/* Multi-Provider Selection: CERO CAJAS DE COLORES, CERO BORDES RECARGADOS */}
+          {/* Multi-Provider Selection or Re-Auth Notice */}
+          {isReauthScenario ? (
+            <div className="p-3.5 rounded-2xl border border-amber-400/20 bg-amber-500/[0.05] text-xs text-white/80 font-light leading-relaxed">
+              Tu sesión de usuario expiró o no está activa. Tus avances locales siguen guardados en tu navegador; vuelve a iniciar sesión para continuar sin interrupciones.
+            </div>
+          ) : (
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between text-xs px-1">
               <span className="text-white/60 font-light">Proveedor de inferencia:</span>
@@ -570,18 +578,37 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
               )}
             </div>
           </div>
+          )}
         </div>
 
         {/* Fixed Bottom Action (Always Visible, Never Cut Off) */}
         <div className="p-4 sm:p-5 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-5 shrink-0 border-t border-white/[0.06] bg-[#04040A]/95 backdrop-blur-md flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <span className="text-xs text-[#8E8EA8] font-light text-center sm:text-left">
-            Elige un proveedor o ingresa tu clave para continuar.
+            {isReauthScenario
+              ? "Inicia sesión nuevamente para renovar tu acceso."
+              : "Elige un proveedor o ingresa tu clave para continuar."}
           </span>
           <button
-            onClick={onImmediateResume}
+            onClick={
+              isReauthScenario
+                ? () => {
+                    if (onReauth) {
+                      onReauth();
+                    } else if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
+                    }
+                  }
+                : onImmediateResume
+            }
             className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-black text-xs font-medium hover:bg-white/90 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2"
           >
-            <span>{isResolved ? "Continuando..." : "Reanudar Ahora"}</span>
+            <span>
+              {isReauthScenario
+                ? "Iniciar Sesión / Renovar"
+                : isResolved
+                  ? "Continuando..."
+                  : "Reanudar Ahora"}
+            </span>
             <span className="text-xs">→</span>
           </button>
         </div>

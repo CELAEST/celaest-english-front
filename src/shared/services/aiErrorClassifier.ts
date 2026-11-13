@@ -19,21 +19,47 @@ export function classifyAiError(err: any): ClassifiedAiError {
   const errMsg = String(err?.message || err || "").toLowerCase();
   const errDetails = String(err?.rawErrorDetails || err?.details || "").toLowerCase();
   const errCode = String(err?.code || "").toLowerCase();
+  const status = typeof err?.status === "number" ? err.status : undefined;
   const fullErr = `${errMsg} ${errDetails} ${errCode}`;
+
+  const mentionsApiKey =
+    errCode === "auth_declined_key" ||
+    fullErr.includes("auth_declined") ||
+    fullErr.includes("invalid_api_key") ||
+    fullErr.includes("invalid key") ||
+    fullErr.includes("incorrect api key") ||
+    fullErr.includes("api key");
 
   let errorType: AiApiErrorType = "rate-limit-429";
 
   if (
+    errCode === "jwt_expired" ||
+    errCode === "authentication_required" ||
+    errCode === "jwt_session_refresh" ||
+    (errCode === "unauthorized" && !mentionsApiKey) ||
+    (status === 401 && !mentionsApiKey) ||
+    (fullErr.includes("jwt") && (fullErr.includes("expired") || fullErr.includes("expir")))
+  ) {
+    errorType = "jwt-expired-mid-interview";
+  } else if (
     err?.code === "AUTH_DECLINED_KEY" ||
-    fullErr.includes("401") ||
-    fullErr.includes("auth_declined") ||
-    fullErr.includes("invalid_api_key") ||
-    fullErr.includes("invalid key") ||
+    status === 422 ||
+    status === 401 ||
+    mentionsApiKey ||
     fullErr.includes("unauthorized")
   ) {
     errorType = "invalid-key-401";
   } else if (
+    err?.code === "RATE_LIMIT_COOLDOWN" ||
+    status === 429 ||
+    fullErr.includes("429") ||
+    fullErr.includes("rate limit") ||
+    fullErr.includes("rate_limit")
+  ) {
+    errorType = "rate-limit-429";
+  } else if (
     err?.code === "AI_KEYS_EXHAUSTED" ||
+    err?.code === "AI_QUOTA_EXHAUSTED" ||
     fullErr.includes("exhausted") ||
     fullErr.includes("cooldown") ||
     fullErr.includes("all keys") ||
@@ -45,17 +71,12 @@ export function classifyAiError(err: any): ClassifiedAiError {
   ) {
     errorType = "keys-exhausted-pool";
   } else if (
-    err?.code === "RATE_LIMIT_COOLDOWN" ||
-    fullErr.includes("429") ||
-    fullErr.includes("rate limit") ||
-    fullErr.includes("rate_limit")
-  ) {
-    errorType = "rate-limit-429";
-  } else if (
     err?.code === "GATEWAY_TIMEOUT" ||
+    status === 504 ||
     fullErr.includes("504") ||
     fullErr.includes("timeout") ||
-    fullErr.includes("tiempo de espera")
+    fullErr.includes("tiempo de espera") ||
+    fullErr.includes("abort")
   ) {
     errorType = "gateway-timeout-504";
   } else {

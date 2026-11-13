@@ -5,8 +5,13 @@ import { WordLookup, GenerateQuizResponse } from "../../../domain/repositories/I
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
 import { AiReadingArticleGenerator } from "../services/aiReadingArticleGenerator";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
-import { directClientAiService } from "../../settings/services/directClientAiService";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  callBackendAiChatGateway,
+  getAuthTokenSafe,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
 import { logger } from "../../../shared/utils/logger";
 import { phoneticLookupService } from "../services/phoneticLookupService";
 import { onDeviceTranslatorService } from "../services/onDeviceTranslatorService";
@@ -716,11 +721,12 @@ export const useReadingArticles = (
         }
       }
 
-      // 2. Tier 2: Remote BYOK LLM Provider
-      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-      const hasKey = await providerKeyVault.hasKey(activeProvider);
+      // 2. Tier 2: Remote AI Translation (BYOK or Authenticated Gateway)
+      const ctx = await resolveProviderContextSafe();
+      const activeProvider = ctx.providerId || "groq";
+      const hasAuthToken = Boolean(getAuthTokenSafe());
 
-      if (!hasKey) {
+      if (!ctx.hasAnyKey && !ctx.isCore && !hasAuthToken) {
         throw new Error("NO_KEY");
       }
 
@@ -730,12 +736,56 @@ export const useReadingArticles = (
         ? `Translate "${cleanWord}" to Spanish in the context of this sentence: "${context}". Return ONLY the Spanish translation.`
         : `Translate "${cleanWord}" to natural Spanish. Return ONLY the Spanish translation.`;
 
-      const translationRaw = await directClientAiService.chatCompletion({
-        systemPrompt,
-        userPrompt,
-        providerId: activeProvider,
-        maxTokens: 60,
-      });
+      let translationRaw = "";
+      if (!ctx.isCore && ctx.hasAnyKey) {
+        try {
+          translationRaw = await directClientAiService.chatCompletion({
+            systemPrompt,
+            userPrompt,
+            providerId: activeProvider,
+            maxTokens: 60,
+          });
+        } catch (directErr) {
+          if (
+            hasAuthToken &&
+            !(directErr instanceof AiInfrastructureError && directErr.code === "AUTH_DECLINED_KEY")
+          ) {
+            translationRaw = await callBackendAiChatGateway({
+              systemPrompt,
+              userPrompt,
+              providerId: activeProvider,
+              maxTokens: 60,
+              timeoutMs: 12_000,
+            });
+          } else {
+            throw directErr;
+          }
+        }
+      } else {
+        try {
+          translationRaw = await callBackendAiChatGateway({
+            systemPrompt,
+            userPrompt,
+            providerId: activeProvider,
+            maxTokens: 60,
+            timeoutMs: 12_000,
+          });
+        } catch (gatewayErr) {
+          if (gatewayErr instanceof ApiError) {
+            throw gatewayErr;
+          }
+          if (ctx.hasAnyKey) {
+            translationRaw = await directClientAiService.chatCompletion({
+              systemPrompt,
+              userPrompt,
+              providerId: activeProvider,
+              maxTokens: 60,
+            });
+          } else {
+            throw gatewayErr;
+          }
+        }
+      }
 
       const cleanTranslation = translationRaw
         .replace(/^["'`]|["'`]$/g, "")
@@ -833,16 +883,15 @@ export const useReadingArticles = (
                 }
               }
 
-              // 2. Fall back to BYOK LLM if still untranslated
+              // 2. Fall back to BYOK / Gateway LLM if still untranslated
               if (!lookupResult.spanishTranslation || lookupResult.metadata?.translationSource === "untranslated") {
-                const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-                const hasKey = await providerKeyVault.hasKey(activeProvider);
-                if (hasKey) {
+                const ctx = await resolveProviderContextSafe();
+                if (ctx.hasAnyKey || ctx.isCore) {
                   const directTr = await translateWordDirect(cleanWord, context);
                   if (directTr) {
                     lookupResult.spanishTranslation = directTr;
                     if (lookupResult.metadata) {
-                      lookupResult.metadata.translationSource = `client_${activeProvider}`;
+                      lookupResult.metadata.translationSource = `client_${ctx.providerId}`;
                     }
                   }
                 }

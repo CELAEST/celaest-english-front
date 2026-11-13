@@ -17,10 +17,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSettingsProfile } from "../../settings/hooks/useSettingsProfile";
 import { WordLookup } from "../../../domain/repositories/IReadingRepository";
 import { apiMemoryRepository } from "../../../infrastructure/repositories/ApiMemoryRepository";
-import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
-import { ERROR_DATA, ErrorScenarioData } from "../../../shared/constants/errorScenarios";
-import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
+import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
 import { logger } from "../../../shared/utils/logger";
 import { QUERY_KEYS } from "../../../shared/constants/queryKeys";
 import { getUserCefrLevel, normalizeCefrLevel } from "../../../shared/services/levelStore";
@@ -81,16 +79,7 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
     });
   }, []);
 
-  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState<boolean>(false);
-  const [recoveryScenario, setRecoveryScenario] = useState<ErrorScenarioData>(
-    ERROR_DATA["keys-exhausted-pool"],
-  );
-  const [recoveryCooldown, setRecoveryCooldown] = useState<number>(0);
-  const [recoveryAction, setRecoveryAction] = useState<
-    | { type: "generate_article" }
-    | { type: "word_lookup"; word: string; context?: string | undefined }
-    | null
-  >(null);
+  const aiModals = useAiUseCaseModals("reading");
 
   const { profile } = useSettingsProfile();
   const effectiveProfession = useMemo(() => {
@@ -245,59 +234,40 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
 
   const handleNextReading = useCallback(async () => {
     try {
-      const isCore = await providerKeyVault.isCentralCoreEnabled();
-      const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-      const hasKey = await providerKeyVault.hasKey(activeProvider);
-
-      if (!isCore && !hasKey) {
-        setRecoveryAction({ type: "generate_article" });
-        setRecoveryScenario(ERROR_DATA["keys-exhausted-pool"]);
-        setRecoveryCooldown(0);
-        setIsRecoveryModalOpen(true);
-        return;
-      }
-
       await generateNextArticle(articleCategory);
     } catch (err: any) {
-      setRecoveryAction({ type: "generate_article" });
-      const { scenario, cooldownSeconds } = classifyAiError(err);
-      setRecoveryScenario(scenario);
-      setRecoveryCooldown(cooldownSeconds);
-      setIsRecoveryModalOpen(true);
+      void aiModals.handleAiFailure(
+        err,
+        () => {
+          void handleNextReading();
+        },
+        { featureName: "Lectura Adaptativa IA" },
+      );
     }
-  }, [generateNextArticle, articleCategory]);
+  }, [generateNextArticle, articleCategory, aiModals]);
 
-  const handleOpenWordRecoveryModal = useCallback((word: string, context?: string) => {
-    setRecoveryAction({ type: "word_lookup", word, context });
-    const baseScenario = ERROR_DATA["keys-exhausted-pool"];
-    setRecoveryScenario({
-      ...baseScenario,
-      humanHeadline: "Clúster Central Inactivo",
-      humanSubtext: `El clúster central de IA no está disponible para traducir "${word}". Agrega tu clave gratuita de Groq, Gemini u OpenRouter para traducir este vocablo y continuar con tu lectura normalmente.`,
-    });
-    setRecoveryCooldown(0);
-    setIsRecoveryModalOpen(true);
-  }, []);
-
-  const handleResumeFromRecovery = useCallback(async () => {
-    setIsRecoveryModalOpen(false);
-    if (recoveryAction?.type === "word_lookup") {
-      try {
-        const tr = await translateWordDirect(recoveryAction.word, recoveryAction.context);
-        if (tr && typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("celaest:word-translated", {
-              detail: { word: recoveryAction.word, translation: tr },
-            }),
-          );
-        }
-      } catch (err) {
-        logger.warn("Failed direct translation after recovery resume:", err);
-      }
-      return;
-    }
-    void handleNextReading();
-  }, [recoveryAction, translateWordDirect, handleNextReading]);
+  const handleOpenWordRecoveryModal = useCallback(
+    (word: string, context?: string, err: unknown = "NO_KEY") => {
+      void aiModals.handleAiFailure(
+        err,
+        async () => {
+          const tr = await translateWordDirect(word, context);
+          if (tr && typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("celaest:word-translated", {
+                detail: { word, translation: tr },
+              }),
+            );
+          }
+        },
+        {
+          featureName: "Diccionario IA en Lectura",
+          bufferDetail: { previewText: `${word}${context ? ` — ${context}` : ""}` },
+        },
+      );
+    },
+    [aiModals, translateWordDirect],
+  );
 
   const queryClient = useQueryClient();
   const { cards: memoryCards = [] } = useMemoryCards();
@@ -442,6 +412,11 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
                   onGetQuiz={getOrFetchQuiz}
                   onNextReading={handleNextReading}
                   onReviewReading={prevPage}
+                  onQuizError={(err, retryFn) => {
+                    void aiModals.handleAiFailure(err, retryFn, {
+                      featureName: "Evaluación de Lectura IA",
+                    });
+                  }}
                 />
               ) : (
                 <ReadingArticleReader
@@ -504,15 +479,8 @@ export const ReadingPracticeView: React.FC<ReadingPracticeViewProps> = ({
         </aside>
       </div>
 
-      {/* High-Luxury AI Infrastructure Recovery Modal */}
-      <AiInfrastructureRecoveryModal
-        isOpen={isRecoveryModalOpen}
-        scenario={recoveryScenario}
-        cooldown={recoveryCooldown}
-        contextType="reading"
-        onClose={() => setIsRecoveryModalOpen(false)}
-        onImmediateResume={handleResumeFromRecovery}
-      />
+      {/* Universal AI Use-Case Modals Host */}
+      <AiUseCaseModalsHost controller={aiModals} />
     </div>
   );
 };

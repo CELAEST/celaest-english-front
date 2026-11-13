@@ -213,11 +213,11 @@ Return ONLY a JSON array of 6 objects matching this exact schema:
           };
         });
       }
-    } catch {
-      // Fallback seamlessly to curated step-by-step foundations
-    }
 
-    return baseSeeds;
+      throw new Error("El motor de IA devolvió un currículo incompleto.");
+    } catch (err) {
+      throw err;
+    }
   }
 
   public static async synthesizeLessonPayload(

@@ -5,6 +5,7 @@ import {
 } from "../../domain/repositories/IReadingRepository";
 import { ReadingArticle } from "../../domain/entities/ReadingArticle";
 import { HttpClient } from "../http/HttpClient";
+import { buildByokHeadersSafe } from "../http/coreAiGatewayClient";
 
 export class ApiReadingRepository implements IReadingRepository {
   async getArticles(level: string = "B1", profession?: string): Promise<ReadingArticle[]> {
@@ -21,12 +22,17 @@ export class ApiReadingRepository implements IReadingRepository {
     topic?: string,
     profession?: string,
   ): Promise<ReadingArticle> {
-    return HttpClient.post<ReadingArticle>("/reading/generate", {
-      category,
-      cefrLevel: level,
-      topic,
-      profession,
-    });
+    const headers = await buildByokHeadersSafe();
+    return HttpClient.post<ReadingArticle>(
+      "/reading/generate",
+      {
+        category,
+        cefrLevel: level,
+        topic,
+        profession,
+      },
+      { headers },
+    );
   }
 
   async lookupWord(word: string, context?: string): Promise<WordLookup> {
@@ -43,13 +49,18 @@ export class ApiReadingRepository implements IReadingRepository {
     keywords: string[],
     level: string = "B1",
   ): Promise<GenerateQuizResponse> {
-    return HttpClient.post<GenerateQuizResponse>("/reading/quiz", {
-      articleId,
-      title,
-      content,
-      keywords,
-      cefrLevel: level,
-    });
+    const headers = await buildByokHeadersSafe();
+    return HttpClient.post<GenerateQuizResponse>(
+      "/reading/quiz",
+      {
+        articleId,
+        title,
+        content,
+        keywords,
+        cefrLevel: level,
+      },
+      { headers },
+    );
   }
 }
 

@@ -123,4 +123,59 @@ describe("usePathwayBaseChat", () => {
     expect(result.current.messages).toEqual([]);
     expect(localStorage.getItem("celaest_pathway_chat_node_base_01_test")).toBeNull();
   });
+
+  it("removes orphan unanswered question on modal dismiss and preserves single message on retry", async () => {
+    let capturedRetry: (() => void) | undefined;
+    let capturedDismiss: (() => void) | undefined;
+
+    const askSpy = vi
+      .spyOn(PathwayQAService, "askProfessor")
+      .mockRejectedValueOnce(new Error("AI_TRIAL_ACCESS_REQUIRED"))
+      .mockResolvedValueOnce({
+        question: "¿Cómo hablo con mi mamá?",
+        directAnswer: "Usa el pasado o would dependiendo del contexto.",
+        mentalModel: "Orden Quién + Acción",
+        exampleEnglish: "I talked to my mom.",
+        exampleSpanish: "Hablé con mi mamá.",
+        pronunciationTip: "Marca talked /tókt/",
+        fullSpeechText: "Usa el pasado.",
+        speechSegments: [],
+      });
+
+    const onAiError = vi.fn((_err, retry, _preview, onDismiss) => {
+      capturedRetry = retry;
+      capturedDismiss = onDismiss;
+    });
+
+    const { result } = renderHook(() =>
+      usePathwayBaseChat(mockNode, { cefrLevel: "A1", onAiError }),
+    );
+
+    await act(async () => {
+      await result.current.askQuestion("¿Cómo hablo con mi mamá?");
+    });
+
+    expect(onAiError).toHaveBeenCalledTimes(1);
+    expect(result.current.messages).toHaveLength(1);
+
+    // Retry succeeds without duplicating user message
+    await act(async () => {
+      capturedRetry?.();
+    });
+    expect(askSpy).toHaveBeenCalledTimes(2);
+    expect(result.current.messages).toHaveLength(2);
+    expect(result.current.messages[1]?.sender).toBe("liam");
+
+    // Second failure followed by modal dismiss removes orphan question cleanly
+    askSpy.mockRejectedValueOnce(new Error("NETWORK_ERROR"));
+    await act(async () => {
+      await result.current.askQuestion("Pregunta fallida");
+    });
+    expect(result.current.messages).toHaveLength(3);
+
+    act(() => {
+      capturedDismiss?.();
+    });
+    expect(result.current.messages).toHaveLength(2);
+  });
 });

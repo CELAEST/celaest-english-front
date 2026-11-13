@@ -12,7 +12,9 @@ export interface PathwayChatMessage {
 
 export interface UsePathwayBaseChatOptions {
   cefrLevel?: string | undefined;
-  onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
+  onAiError?:
+    | ((err: unknown, retryFn: () => void, previewText?: string, onDismiss?: () => void) => void)
+    | undefined;
 }
 
 export function usePathwayBaseChat(
@@ -76,12 +78,13 @@ export function usePathwayBaseChat(
       const trimmed = questionText.trim();
       if (!trimmed || isSubmitting || !node) return;
 
+      const userMsgId = `u_${Date.now()}`;
       const updatedWithUser = askOpts?.skipAppendUser
         ? messagesRef.current
         : [
             ...messagesRef.current,
             {
-              id: `u_${Date.now()}`,
+              id: userMsgId,
               sender: "user" as const,
               timestamp: Date.now(),
               text: trimmed,
@@ -115,6 +118,11 @@ export function usePathwayBaseChat(
               void askQuestion(trimmed, { skipAppendUser: true });
             },
             trimmed,
+            () => {
+              if (!askOpts?.skipAppendUser) {
+                persistMessages(messagesRef.current.filter((m) => m.id !== userMsgId));
+              }
+            },
           );
         } else {
           const errorNotice: PathwayChatMessage = {

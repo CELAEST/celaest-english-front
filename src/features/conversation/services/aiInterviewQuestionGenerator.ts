@@ -12,9 +12,13 @@
 
 import { InterviewQuestionItem } from "./interviewEngineService";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
-import { ENV } from "../../../shared/constants/env";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  buildByokHeadersSafe,
+  callBackendAiChatGateway,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
 import { logger } from "../../../shared/utils/logger";
 
 export interface GenerateSessionQuestionsParams {
@@ -90,44 +94,42 @@ Output format: Return ONLY valid raw JSON with the following structure:
     const userPrompt = `Generate ${count} progressive, unique interview questions for a ${role} at CEFR ${level} level.`;
 
     const executeRequest = (async (): Promise<InterviewQuestionItem[]> => {
+      let lastDirectErr: unknown = null;
       try {
-        const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-        const hasKey = await providerKeyVault.hasKey(activeProvider);
+        const ctx = await resolveProviderContextSafe();
+        const activeProvider = ctx.providerId || "groq";
+        const hasKey = ctx.hasAnyKey;
+        const hasAuthToken = Boolean(HttpClient.getAuthToken());
 
         let rawResponse = "";
 
-        // Tier 1: Direct Client AI (Groq / BYOK) when key is configured in client vault
-        if (hasKey) {
+        // Tier 1: Direct Client AI (Groq / BYOK) when NOT using Cloud and key is configured in client vault
+        if (!ctx.isCore && hasKey) {
           try {
             rawResponse = await directClientAiService.chatCompletion({
               systemPrompt,
               userPrompt,
+              providerId: activeProvider,
               maxTokens: 2500,
             });
           } catch (byokErr) {
+            lastDirectErr = byokErr;
+            if (byokErr instanceof AiInfrastructureError && byokErr.code === "AUTH_DECLINED_KEY") {
+              throw byokErr;
+            }
             logger.warn("[AiInterviewQuestionGenerator] Direct client AI call failed, trying backend tier:", byokErr);
           }
         }
 
         // Tier 2: CELAEST-English Backend (/interview/questions)
-        if (!rawResponse || !rawResponse.trim()) {
+        if ((!rawResponse || !rawResponse.trim()) && (hasAuthToken || ctx.isCore || !hasKey)) {
           try {
-            let byokHeaders: Record<string, string> = {};
-            let byokBody: Record<string, string> = {};
-            try {
-              const cfg = await providerKeyVault.getConfig(activeProvider);
-              byokHeaders["X-Active-Provider"] = activeProvider;
-              if (cfg?.defaultModel) byokHeaders["X-Provider-Model"] = cfg.defaultModel;
-              if (cfg?.endpoint) byokHeaders["X-Provider-Endpoint"] = cfg.endpoint;
-              byokHeaders["X-Provider-Has-Key"] = hasKey ? "1" : "0";
-              byokBody = {
-                providerId: activeProvider,
-                ...(cfg?.defaultModel ? { providerModel: cfg.defaultModel } : {}),
-                ...(cfg?.endpoint ? { providerEndpoint: cfg.endpoint } : {}),
-              };
-            } catch {
-              // ignore
-            }
+            const byokHeaders = await buildByokHeadersSafe();
+            const byokBody: Record<string, string> = {
+              providerId: activeProvider,
+              ...(ctx.config?.defaultModel ? { providerModel: ctx.config.defaultModel } : {}),
+              ...(ctx.config?.endpoint ? { providerEndpoint: ctx.config.endpoint } : {}),
+            };
 
             const backendResult = await HttpClient.post<InterviewQuestionItem[]>(
               "/interview/questions",
@@ -155,43 +157,31 @@ Output format: Return ONLY valid raw JSON with the following structure:
               }));
             }
           } catch (backendErr) {
+            if (
+              backendErr instanceof ApiError &&
+              [401, 402, 403, 422].includes(backendErr.status)
+            ) {
+              throw backendErr;
+            }
+            if (backendErr instanceof AiInfrastructureError) {
+              throw backendErr;
+            }
             logger.warn("[AiInterviewQuestionGenerator] Backend questions endpoint failed:", backendErr);
           }
         }
 
-        // Tier 3: CELAEST-CORE IA Mesh Fallback (fast 6s timeout)
+        // Tier 3: Authenticated Backend AI Gateway (/api/v1/ai/chat/simple)
         if (!rawResponse || !rawResponse.trim()) {
-          try {
-            const isCore = await providerKeyVault.isCentralCoreEnabled();
-            if (isCore) {
-              const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 6000);
-              const token = HttpClient.getAuthToken();
-              const headers: Record<string, string> = {
-                "Content-Type": "application/json",
-                "X-Internal-Service": "celaest-english-front",
-              };
-              if (token) headers["Authorization"] = `Bearer ${token}`;
-              const response = await fetch(CORE_AI_URL, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({
-                  system: systemPrompt,
-                  message: userPrompt,
-                  provider: activeProvider,
-                  max_tokens: 2500,
-                }),
-                signal: controller.signal,
-              });
-              clearTimeout(timeoutId);
-              if (response.ok) {
-                const data = (await response.json()) as { response?: string; content?: string };
-                rawResponse = data.response || data.content || "";
-              }
-            }
-          } catch {
-            // Core mesh unavailable or timed out
+          if (hasAuthToken || ctx.isCore) {
+            rawResponse = await callBackendAiChatGateway({
+              systemPrompt,
+              userPrompt,
+              providerId: activeProvider,
+              maxTokens: 2500,
+              timeoutMs: 12_000,
+            });
+          } else if (lastDirectErr) {
+            throw lastDirectErr;
           }
         }
 
@@ -199,7 +189,7 @@ Output format: Return ONLY valid raw JSON with the following structure:
           throw new AiInfrastructureError(
             hasKey ? "CLUSTER_OUTAGE" : "AI_KEYS_EXHAUSTED",
             `No pudimos conectar con el motor de IA para generar tus preguntas personalizadas. Revisa tu conexión o tu clave de ${activeProvider.toUpperCase()}.`,
-            503,
+            hasKey ? 503 : 401,
             activeProvider as any,
           );
         }

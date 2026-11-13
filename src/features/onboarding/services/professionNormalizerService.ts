@@ -9,7 +9,12 @@
  */
 
 import { HttpClient } from "../../../infrastructure/http/HttpClient";
-import { ENV } from "../../../shared/constants/env";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  callBackendAiChatGateway,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
+import { AiInfrastructureError } from "../../settings/services/directClientAiService";
 import { logger } from "../../../shared/utils/logger";
 
 // Baseline bilingual dictionary for offline synchronous tests & instant fallbacks
@@ -285,90 +290,73 @@ export class ProfessionNormalizerService {
       return match;
     }
 
-    // 2. Query BYOK Provider (when Core is deactivated) or CELAEST Core IA-Mesh
-    try {
-      const { providerKeyVault } = await import("../../settings/services/providerKeyVault");
-      const isCore = await providerKeyVault.isCentralCoreEnabled().catch(() => false);
+    // 3. Query BYOK Provider or Authenticated AI Gateway
+    const ctx = await resolveProviderContextSafe();
+    const hasAuthToken = Boolean(HttpClient.getAuthToken());
 
-      if (!isCore) {
-        const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-        const hasKey = await providerKeyVault.hasKey(activeProvider);
-        if (hasKey) {
-          const { directClientAiService } = await import("../../settings/services/directClientAiService");
-          const rawTitle = await directClientAiService.chatCompletion({
-            systemPrompt: "You are an English linguistic normalizer. Translate the given occupation or profession into standard English professional title-case (for example: 'Cocinero' -> 'Chef', 'Médico' -> 'Medical Doctor', 'Abogado' -> 'Lawyer', 'Profesor' -> 'Teacher'). Return ONLY the title-cased English occupational title, absolutely nothing else. No punctuation, no quotes.",
-            userPrompt: `Occupation to translate: "${cleaned}"`,
-            providerId: activeProvider,
-            maxTokens: 1024,
-          });
-          const cleanTitle = rawTitle.replace(/^["'`]+|["'`.]+$/g, "").trim();
-          if (cleanTitle && cleanTitle.length < 60) {
-            memoryCache.set(lower, cleanTitle);
-            if (typeof window !== "undefined" && window.sessionStorage) {
-              try {
-                sessionStorage.setItem(CACHE_PREFIX + lower, cleanTitle);
-              } catch {
-                // ignore
-              }
-            }
-            return cleanTitle;
-          }
-        }
-        // When Core is deactivated, do not call remote central core; return local baseline fallback
-        const fallback = this.normalize(cleaned);
-        memoryCache.set(lower, fallback);
-        return fallback;
-      }
+    if (!ctx.isCore && !ctx.hasAnyKey && !hasAuthToken) {
+      const fallback = this.normalize(cleaned);
+      memoryCache.set(lower, fallback);
+      return fallback;
+    }
 
-      const coreAiEndpoint = `${ENV.coreAiUrl}/ai/chat/simple`;
-      const prompt = `Translate and normalize the following occupation or professional specialty into standard, natural English professional title-case (e.g. 'carpintero' -> 'Carpenter', 'médico forense' -> 'Forensic Pathologist', 'profesora de yoga' -> 'Yoga Instructor', 'luthier' -> 'Luthier', 'abogado laboral' -> 'Labor Lawyer', 'albañil' -> 'Bricklayer / Mason').
+    const systemPrompt =
+      "You are an English linguistic normalizer. Translate the given occupation or profession into standard English professional title-case (for example: 'Cocinero' -> 'Chef', 'Médico' -> 'Medical Doctor', 'Abogado' -> 'Lawyer', 'Profesor' -> 'Teacher'). Return ONLY the title-cased English occupational title, absolutely nothing else. No punctuation, no quotes.";
+    const userPrompt = `Translate and normalize the following occupation or professional specialty into standard, natural English professional title-case (e.g. 'carpintero' -> 'Carpenter', 'médico forense' -> 'Forensic Pathologist', 'profesora de yoga' -> 'Yoga Instructor', 'luthier' -> 'Luthier', 'abogado laboral' -> 'Labor Lawyer', 'albañil' -> 'Bricklayer / Mason').
 Role to normalize: "${cleaned}"
 CRITICAL: Return ONLY the normalized English title in title-case, absolutely nothing else. No explanation, no intro, no punctuation.`;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-      const token = HttpClient.getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "X-Internal-Service": "celaest-english-front",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const response = await fetch(coreAiEndpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ message: prompt }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = (await response.json()) as { response?: string; content?: string };
-        const rawTitle = (data.response || data.content || "").trim();
-        // Remove surrounding quotes or trailing periods
-        const cleanTitle = rawTitle.replace(/^["'`]+|["'`.]+$/g, "").trim();
-
-        if (cleanTitle && cleanTitle.length < 60) {
-          memoryCache.set(lower, cleanTitle);
-          if (typeof window !== "undefined" && window.sessionStorage) {
-            try {
-              sessionStorage.setItem(CACHE_PREFIX + lower, cleanTitle);
-            } catch {
-              // ignore
-            }
-          }
-          return cleanTitle;
-        }
+    try {
+      let rawTitle = "";
+      if (hasAuthToken) {
+        rawTitle = await callBackendAiChatGateway({
+          systemPrompt,
+          userPrompt,
+          providerId: ctx.providerId,
+          maxTokens: 120,
+          timeoutMs: 6000,
+        });
+      } else if (!ctx.isCore && ctx.hasAnyKey) {
+        const { directClientAiService } = await import("../../settings/services/directClientAiService");
+        rawTitle = await directClientAiService.chatCompletion({
+          systemPrompt,
+          userPrompt: `Occupation to translate: "${cleaned}"`,
+          providerId: ctx.providerId,
+          maxTokens: 120,
+        });
       }
-    } catch (err: any) {
-      logger.warn("[ProfessionNormalizerService] AI normalization call failed or timed out, falling back to heuristic", err);
-    }
 
-    // 3. Fallback to synchronous heuristic
-    const fallback = this.normalize(cleaned);
-    memoryCache.set(lower, fallback);
-    return fallback;
+      const cleanTitle = rawTitle.replace(/^["'`]+|["'`.]+$/g, "").trim();
+      if (cleanTitle && cleanTitle.length < 60) {
+        memoryCache.set(lower, cleanTitle);
+        if (typeof window !== "undefined" && window.sessionStorage) {
+          try {
+            sessionStorage.setItem(CACHE_PREFIX + lower, cleanTitle);
+          } catch {
+            // ignore
+          }
+        }
+        return cleanTitle;
+      }
+
+      throw new AiInfrastructureError(
+        "CLUSTER_OUTAGE",
+        "No se pudo normalizar la profesión con el motor de IA.",
+        502,
+        ctx.providerId,
+      );
+    } catch (err: any) {
+      logger.warn("[ProfessionNormalizerService] AI normalization failed:", err);
+      if (err instanceof ApiError || err instanceof AiInfrastructureError) {
+        throw err;
+      }
+      throw new AiInfrastructureError(
+        "CLUSTER_OUTAGE",
+        err?.message || "No se pudo conectar con el servicio de IA.",
+        503,
+        ctx.providerId,
+      );
+    }
   }
 
   private static cleanInput(raw: string): string {

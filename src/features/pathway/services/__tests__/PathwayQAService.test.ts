@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveFormulaCases } from "../../../../domain/entities/LearningPathway";
+import { HttpClient } from "../../../../infrastructure/http/HttpClient";
+import { ApiError } from "../../../../infrastructure/http/ApiError";
 import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
 import { AiInfrastructureError, directClientAiService } from "../../../settings/services/directClientAiService";
 import { resolveSpeechProfile } from "../../speech/profiles";
@@ -275,5 +277,53 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     PhoneticAudioService.stop();
     expect(stopHook).toHaveBeenCalledTimes(1);
     unsub();
+  });
+
+  it("rethrows backend gateway errors (401, 402 trial/byok, 403 entitlement, 503 outage) without returning fake answers", async () => {
+    const gatewayCases = [
+      { status: 401, code: "AUTHENTICATION_REQUIRED", message: "Auth required", expectedCode: "AUTHENTICATION_REQUIRED", isApiError: true },
+      { status: 402, code: "AI_TRIAL_ACCESS_REQUIRED", message: "Trial key or plan needed", expectedCode: "AI_TRIAL_ACCESS_REQUIRED", isApiError: true },
+      { status: 402, code: "AI_BYOK_REQUIRED", message: "BYOK key required", expectedCode: "AI_BYOK_REQUIRED", isApiError: true },
+      { status: 403, code: "ENTITLEMENT_EXPIRED", message: "License expired", expectedCode: "ENTITLEMENT_EXPIRED", isApiError: true },
+      { status: 503, code: "AI_CORE_UNAVAILABLE", message: "Core AI temporarily unavailable", expectedCode: "CLUSTER_OUTAGE", isApiError: false },
+    ];
+
+    for (const tc of gatewayCases) {
+      vi.restoreAllMocks();
+      vi.spyOn(HttpClient, "getAuthToken").mockReturnValue("jwt-token");
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: tc.code, message: tc.message },
+          }),
+          { status: tc.status, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+      let caught: unknown;
+      try {
+        await PathwayQAService.askProfessor({
+          question: "¿Cómo uso el verbo to be aquí?",
+          node,
+          cefrLevel: "A1",
+        });
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught).toBeDefined();
+      if (tc.isApiError) {
+        expect(caught).toBeInstanceOf(ApiError);
+      } else {
+        expect(caught).toBeInstanceOf(AiInfrastructureError);
+      }
+      expect(caught).toMatchObject({
+        status: tc.status,
+        code: tc.expectedCode,
+      });
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    }
   });
 });

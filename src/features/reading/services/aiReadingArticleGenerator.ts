@@ -11,7 +11,9 @@
 
 import { ReadingArticle } from "../../../domain/entities/ReadingArticle";
 import { apiReadingRepository } from "../../../infrastructure/repositories/ApiReadingRepository";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { HttpClient } from "../../../infrastructure/http/HttpClient";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import { resolveProviderContextSafe } from "../../../infrastructure/http/coreAiGatewayClient";
 import { directClientAiService, AiInfrastructureError, extractFirstJsonObject } from "../../settings/services/directClientAiService";
 import { logger } from "../../../shared/utils/logger";
 
@@ -151,12 +153,14 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
    * Main Generation Pipeline
    */
   public static async generateArticle(options: GenerateReadingOptions): Promise<ReadingArticle> {
-    const isCore = await providerKeyVault.isCentralCoreEnabled();
-    const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-    const hasKey = await providerKeyVault.hasKey(activeProvider);
+    const ctx = await resolveProviderContextSafe();
+    const isCore = ctx.isCore;
+    const activeProvider = ctx.providerId || "groq";
+    const hasKey = ctx.hasAnyKey;
+    const hasAuthToken = Boolean(HttpClient.getAuthToken());
 
-    // 1. If Central Core is disabled and user has NO private key configured:
-    if (!isCore && !hasKey) {
+    // 1. If Central Core is disabled, no key is configured, and unauthenticated (offline/unit tests):
+    if (!isCore && !hasKey && !hasAuthToken) {
       throw new AiInfrastructureError(
         "AI_KEYS_EXHAUSTED",
         `El Clúster Central está desactivado y no hay clave configurada para ${activeProvider.toUpperCase()}.`,
@@ -165,7 +169,7 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
       );
     }
 
-    // 2. BYOK Direct Mode: If Central Core is disabled OR user has private key and requests direct inference
+    // 2. BYOK Direct Mode when not using Central Core (prefers direct client when CORS-friendly or offline tests)
     if (!isCore && hasKey) {
       const { systemPrompt, userPrompt } = this.buildPrompt(
         options.level || "B1",
@@ -174,17 +178,26 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
         options.topic,
       );
 
-      const rawResponse = await directClientAiService.chatCompletion({
-        systemPrompt,
-        userPrompt,
-        providerId: activeProvider,
-        maxTokens: 2500,
-      });
+      try {
+        const rawResponse = await directClientAiService.chatCompletion({
+          systemPrompt,
+          userPrompt,
+          providerId: activeProvider,
+          maxTokens: 2500,
+        });
 
-      return this.parseAiResponse(rawResponse, options);
+        return this.parseAiResponse(rawResponse, options);
+      } catch (directErr) {
+        // Fallback to authenticated backend /reading/generate only on CORS/network failure (keeps server BYOK proxy working for Anthropic/Qwen/etc.)
+        if (hasAuthToken && !(directErr instanceof AiInfrastructureError && directErr.code === "AUTH_DECLINED_KEY")) {
+          logger.warn("[AiReadingArticleGenerator] Direct client BYOK failed, trying backend BYOK proxy:", directErr);
+        } else {
+          throw directErr;
+        }
+      }
     }
 
-    // 3. Central Core Mode: Attempt backend /reading/generate with strict timeout
+    // 3. Central Core or Authenticated Gateway Mode (/reading/generate)
     const backendPromise = apiReadingRepository.generateArticle(
       options.category || "BUSINESS",
       options.level || "B1",
@@ -205,34 +218,57 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
     } catch (backendErr: any) {
       logger.warn("[AiReadingArticleGenerator] Backend clúster failed or timed out:", backendErr);
 
-      // If user has a configured fallback key (e.g. Groq/Gemini), seamlessly fulfill using BYOK
-      if (hasKey) {
-        try {
+      if (backendErr instanceof ApiError) {
+        if (
+          (backendErr.code === "AI_BYOK_REQUIRED" || backendErr.code === "AI_TRIAL_ACCESS_REQUIRED") &&
+          hasKey
+        ) {
           const { systemPrompt, userPrompt } = this.buildPrompt(
             options.level || "B1",
             options.category || "BUSINESS",
             options.profession || "Professional",
             options.topic,
           );
-
           const directRaw = await directClientAiService.chatCompletion({
             systemPrompt,
             userPrompt,
             providerId: activeProvider,
             maxTokens: 2500,
           });
-
           return this.parseAiResponse(directRaw, options);
-        } catch (directErr) {
-          logger.error("[AiReadingArticleGenerator] Direct BYOK fallback also failed:", directErr);
+        }
+        if ([401, 402, 403, 422].includes(backendErr.status)) {
+          throw backendErr;
         }
       }
 
-      // No working fallback available: propagate clear infrastructure error to trigger modal
+      if (backendErr instanceof AiInfrastructureError) {
+        throw backendErr;
+      }
+
+      // If user has a configured fallback key, fulfill using BYOK
+      if (hasKey) {
+        const { systemPrompt, userPrompt } = this.buildPrompt(
+          options.level || "B1",
+          options.category || "BUSINESS",
+          options.profession || "Professional",
+          options.topic,
+        );
+
+        const directRaw = await directClientAiService.chatCompletion({
+          systemPrompt,
+          userPrompt,
+          providerId: activeProvider,
+          maxTokens: 2500,
+        });
+
+        return this.parseAiResponse(directRaw, options);
+      }
+
       const isTimeout = String(backendErr?.message || "").includes("Tiempo de espera") || String(backendErr?.message || "").includes("timeout");
       throw new AiInfrastructureError(
-        isTimeout ? "GATEWAY_TIMEOUT" : "AI_KEYS_EXHAUSTED",
-        backendErr?.message || "El clúster central de IA no está disponible y no hay clave de respaldo.",
+        isTimeout ? "GATEWAY_TIMEOUT" : "CLUSTER_OUTAGE",
+        backendErr?.message || "El clúster central de IA no está disponible en este momento.",
         isTimeout ? 504 : 503,
         activeProvider,
       );

@@ -24,6 +24,7 @@ export interface ReadingCompletionQuizProps {
     | undefined;
   onFinishQuiz: (score: number) => void;
   onSkip?: (() => void) | undefined;
+  onQuizError?: ((err: unknown, retryFn: () => void) => void) | undefined;
 }
 
 export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React.memo(
@@ -37,6 +38,7 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React
     onGetQuiz,
     onFinishQuiz,
     onSkip,
+    onQuizError,
   }) => {
     const [questions, setQuestions] = useState<QuizQuestion[]>(() => {
       return cachedQuiz?.questions && cachedQuiz.questions.length > 0 ? cachedQuiz.questions : [];
@@ -44,6 +46,8 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React
     const [loading, setLoading] = useState<boolean>(() => {
       return !(cachedQuiz?.questions && cachedQuiz.questions.length > 0);
     });
+    const [loadError, setLoadError] = useState<unknown | null>(null);
+    const [retryNonce, setRetryNonce] = useState(0);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -68,20 +72,29 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React
 
     const hasFetchedRef = useRef<string | null>(null);
 
+    const handleRetryQuiz = useCallback(() => {
+      hasFetchedRef.current = null;
+      setLoadError(null);
+      setLoading(true);
+      setRetryNonce((n) => n + 1);
+    }, []);
+
     useEffect(() => {
       if (cachedQuiz?.questions && cachedQuiz.questions.length > 0) {
         setQuestions(cachedQuiz.questions);
+        setLoadError(null);
         setLoading(false);
         return;
       }
 
-      const targetKey = `${articleId || articleTitle}-${cefrLevel}`;
+      const targetKey = `${articleId || articleTitle}-${cefrLevel}-${retryNonce}`;
       if (hasFetchedRef.current === targetKey) {
         return;
       }
       hasFetchedRef.current = targetKey;
 
       setLoading(true);
+      setLoadError(null);
 
       const fetcher = onGetQuiz
         ? onGetQuiz(articleId, articleTitle, articleContent, keywords, cefrLevel)
@@ -99,17 +112,35 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React
             const qs = res?.questions || [];
             if (qs.length > 0) {
               setQuestions(qs);
+              setLoadError(null);
+            } else {
+              const emptyErr = new Error("EMPTY_QUIZ_RESPONSE");
+              setLoadError(emptyErr);
+              onQuizError?.(emptyErr, handleRetryQuiz);
             }
             setLoading(false);
           }
         })
         .catch((err) => {
-          logger.warn("Quiz fetch fallback trigger", err);
+          logger.warn("Quiz fetch failed cleanly (no fake fallback):", err);
           if (isMountedRef.current) {
+            setLoadError(err);
             setLoading(false);
+            onQuizError?.(err, handleRetryQuiz);
           }
         });
-    }, [articleId, articleTitle, articleContent, keywords, cefrLevel, cachedQuiz, onGetQuiz]);
+    }, [
+      articleId,
+      articleTitle,
+      articleContent,
+      keywords,
+      cefrLevel,
+      retryNonce,
+      cachedQuiz,
+      onGetQuiz,
+      onQuizError,
+      handleRetryQuiz,
+    ]);
 
     const currentQ = questions[currentIdx];
 
@@ -215,17 +246,30 @@ export const ReadingCompletionQuiz: React.FC<ReadingCompletionQuizProps> = React
       );
     }
 
-    if (!currentQ || questions.length === 0) {
+    if (!currentQ || questions.length === 0 || loadError) {
       return (
         <div className="w-full max-w-[560px] flex flex-col items-center justify-center space-y-4 text-center py-6">
-          <p className="text-sm text-white font-light">Comprehension check is complete.</p>
-          <button
-            type="button"
-            onClick={() => onFinishQuiz(3)}
-            className="px-6 py-2.5 bg-[#7048E8] text-white rounded-xl text-xs font-semibold cursor-pointer"
-          >
-            Continue
-          </button>
+          <p className="text-sm text-white font-light">
+            No se pudo generar el cuestionario de comprensión con la IA.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRetryQuiz}
+              className="px-6 py-2.5 bg-[#7048E8] hover:bg-[#8264C3] text-white rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+            >
+              Reintentar evaluación IA
+            </button>
+            {onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="px-5 py-2.5 border border-white/15 text-white/75 hover:text-white rounded-xl text-xs cursor-pointer transition-colors"
+              >
+                Volver al resumen
+              </button>
+            )}
+          </div>
         </div>
       );
     }

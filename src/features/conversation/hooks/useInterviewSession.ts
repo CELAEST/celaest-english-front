@@ -16,7 +16,7 @@ import {
   loadPersistedInterview,
   PersistedInterviewState,
 } from "../services/interviewPersistence";
-import { classifyAiError } from "../../../shared/services/aiErrorClassifier";
+import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
 import { normalizeCefrLevel } from "../../../shared/services/levelStore";
 
 export { __resetInterviewHydrationForTest };
@@ -55,6 +55,9 @@ export const useInterviewSession = (
   // ──────────────────────────────────────────────
   // 2. Question Progression Sub-Hook
   // ──────────────────────────────────────────────
+  const aiModals = useAiUseCaseModals("speaking");
+  const { handleAiFailure } = aiModals;
+  const questionsRef = useRef<ReturnType<typeof useInterviewQuestionManager> | null>(null);
   const evaluationRef = useRef<ReturnType<typeof useInterviewTurnEvaluation> | null>(null);
   const cloudSyncRef = useRef<ReturnType<typeof useInterviewCloudSync> | null>(null);
   const speechRef = useRef<ReturnType<typeof useInterviewSpeechAudio> | null>(null);
@@ -76,14 +79,18 @@ export const useInterviewSession = (
     lastSpokenQuestionRef.current = "";
   }, []);
 
-  const handleAiInfrastructureError = useCallback((err: unknown) => {
-    const { scenario, cooldownSeconds } = classifyAiError(err);
-    if (evaluationRef.current) {
-      evaluationRef.current.setInfrastructureErrorScenario(scenario);
-      evaluationRef.current.setRecoveryCooldown(cooldownSeconds);
-      evaluationRef.current.setIsRecoveryModalOpen(true);
-    }
-  }, []);
+  const handleAiInfrastructureError = useCallback(
+    (err: unknown) => {
+      void handleAiFailure(
+        err,
+        () => {
+          questionsRef.current?.retryGeneration();
+        },
+        { featureName: "Generación de Preguntas de Entrevista IA" },
+      );
+    },
+    [handleAiFailure],
+  );
 
   const questions = useInterviewQuestionManager({
     roleName,
@@ -105,6 +112,7 @@ export const useInterviewSession = (
       });
     },
   });
+  questionsRef.current = questions;
 
   // ──────────────────────────────────────────────
   // 3. Audio & Speech Sub-Hook
@@ -141,6 +149,7 @@ export const useInterviewSession = (
     lastCapturedAudioRef: speech.lastCapturedAudioRef,
     setSpeechNotice: speech.setSpeechNotice,
     isMountedRef: speech.isMountedRef,
+    onAiFailure: handleAiFailure,
   });
 
   evaluationRef.current = evaluation;
@@ -400,11 +409,13 @@ export const useInterviewSession = (
     setIsMicRecoveryModalOpen: speech.setIsMicRecoveryModalOpen,
     resumeFromMicRecovery: speech.resumeFromMicRecovery,
 
-    // AI infrastructure recovery
-    isRecoveryModalOpen: evaluation.isRecoveryModalOpen,
+    // AI infrastructure recovery & universal modals controller
+    aiModals,
+    isRecoveryModalOpen: evaluation.isRecoveryModalOpen || aiModals.recovery.isOpen,
     setIsRecoveryModalOpen: evaluation.setIsRecoveryModalOpen,
-    infrastructureErrorScenario: evaluation.infrastructureErrorScenario,
-    recoveryCooldown: evaluation.recoveryCooldown,
+    infrastructureErrorScenario:
+      aiModals.recovery.scenario ?? evaluation.infrastructureErrorScenario,
+    recoveryCooldown: aiModals.recovery.cooldown || evaluation.recoveryCooldown,
     resumeFromRecoveryModal,
 
     // Speech notice

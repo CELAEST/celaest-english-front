@@ -5,10 +5,20 @@ import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { AiProviderId } from "../../../domain/entities/AiProvider";
 
 export interface LinguaByokRequiredModalProps {
-  isOpen: boolean; onClose: () => void; onConfigured?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfigured?: () => void;
+  mode?: "promo_byok" | "trial_choice";
+  onOpenPaywall?: () => void;
 }
 
-export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = ({ isOpen, onClose, onConfigured }) => {
+export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = ({
+  isOpen,
+  onClose,
+  onConfigured,
+  mode = "promo_byok",
+  onOpenPaywall,
+}) => {
   const [provider, setProvider] = useState<AiProviderId>("groq");
   const [key, setKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -48,14 +58,37 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
         <span>Obtener API Key gratuita de {provider === "groq" ? "Groq" : "Google Gemini"}</span>
         <ExternalLink className="w-3 h-3" />
       </a>
+      {mode === "trial_choice" && onOpenPaywall && (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onOpenPaywall();
+          }}
+          className="w-full h-9 mt-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] text-xs font-medium hover:border-[var(--border-hover)] transition-colors cursor-pointer"
+        >
+          Ver Planes Lingua Pro (IA Cloud incluida)
+        </button>
+      )}
     </div>
   );
 
+  const isTrialChoice = mode === "trial_choice";
   return (
-    <AppModal isOpen={isOpen} onClose={onClose} size="sm" icon={<KeyRound className="w-4 h-4 text-[var(--text-accent)]" />} title="Motor de IA (Modo BYOK)" subtitle="Licencia Promocional Activa" footer={footerNode}>
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="sm"
+      icon={<KeyRound className="w-4 h-4 text-[var(--text-accent)]" />}
+      title="Motor de IA (Modo BYOK)"
+      subtitle={isTrialChoice ? "Prueba Gratuita (Base 01)" : "Licencia Promocional Activa"}
+      footer={footerNode}
+    >
       <div className="space-y-3.5 select-none text-xs">
         <p className="text-[var(--text-secondary)] font-light leading-relaxed">
-          Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita.
+          {isTrialChoice
+            ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq o Google Gemini para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
+            : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita."}
         </p>
         <div className="flex gap-2">
           {(["groq", "gemini"] as const).map((p) => (

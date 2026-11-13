@@ -14,9 +14,12 @@
 import { WritingTaskItem, getDefaultStarterPhrases } from "./dynamicWritingTaskService";
 import { normalizeCefr, classifyProfession, CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
 import { directClientAiService, AiInfrastructureError } from "../../settings/services/directClientAiService";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
-import { HttpClient } from "../../../infrastructure/http/HttpClient";
-import { ENV } from "../../../shared/constants/env";
+import { ApiError } from "../../../infrastructure/http/ApiError";
+import {
+  callBackendAiChatGateway,
+  getAuthTokenSafe,
+  resolveProviderContextSafe,
+} from "../../../infrastructure/http/coreAiGatewayClient";
 import { logger } from "../../../shared/utils/logger";
 
 export interface GenerateWritingTaskParams {
@@ -212,63 +215,69 @@ Every task in this new batch MUST be completely brand new with different scenari
 
     const executeBatchRequest = (async (): Promise<WritingTaskItem[]> => {
       try {
-        const isCore = await providerKeyVault.isCentralCoreEnabled();
-        const activeProvider = (await providerKeyVault.getActiveProviderId()) || "groq";
-        const hasKey = await providerKeyVault.hasKey(activeProvider);
+        const ctx = await resolveProviderContextSafe();
+        const isCore = ctx.isCore;
+        const activeProvider = ctx.providerId || "groq";
+        const hasKey = ctx.hasAnyKey;
+        const hasAuthToken = Boolean(getAuthTokenSafe());
 
         let rawResponse = "";
 
-        if (!isCore) {
-          if (!hasKey) {
-            throw new AiInfrastructureError(
-              "AI_KEYS_EXHAUSTED",
-              `El Clúster Central está desactivado y no hay clave configurada para ${activeProvider.toUpperCase()}.`,
-              401,
-              activeProvider,
-            );
-          }
-          rawResponse = await directClientAiService.chatCompletion({
-            systemPrompt,
-            userPrompt,
-            maxTokens: 2000,
-          });
-        } else {
+        if (!isCore && hasKey) {
           try {
-            const CORE_AI_URL = `${ENV.coreAiUrl}/ai/chat/simple`;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000);
-            const token = HttpClient.getAuthToken();
-            const headers: Record<string, string> = {
-              "Content-Type": "application/json",
-              "X-Internal-Service": "celaest-english-front",
-            };
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-
-            const response = await fetch(CORE_AI_URL, {
-              method: "POST",
-              headers,
-              body: JSON.stringify({
-                system: systemPrompt,
-                message: userPrompt,
-                provider: activeProvider,
-                max_tokens: 2000,
-              }),
-              signal: controller.signal,
+            rawResponse = await directClientAiService.chatCompletion({
+              systemPrompt,
+              userPrompt,
+              providerId: activeProvider,
+              maxTokens: 2000,
             });
-            clearTimeout(timeoutId);
-            if (response.ok) {
-              const data = (await response.json()) as { response?: string; content?: string };
-              rawResponse = data.response || data.content || "";
+          } catch (directErr) {
+            if (
+              hasAuthToken &&
+              !(directErr instanceof AiInfrastructureError && directErr.code === "AUTH_DECLINED_KEY")
+            ) {
+              rawResponse = await callBackendAiChatGateway({
+                systemPrompt,
+                userPrompt,
+                providerId: activeProvider,
+                maxTokens: 2000,
+                timeoutMs: 25_000,
+              });
+            } else {
+              throw directErr;
             }
-          } catch {
-            if (hasKey) {
+          }
+        } else if (isCore || hasAuthToken) {
+          try {
+            rawResponse = await callBackendAiChatGateway({
+              systemPrompt,
+              userPrompt,
+              providerId: activeProvider,
+              maxTokens: 2000,
+              timeoutMs: 25_000,
+            });
+          } catch (coreErr) {
+            if (coreErr instanceof ApiError) {
+              throw coreErr;
+            }
+            if (hasKey && !(coreErr instanceof AiInfrastructureError && coreErr.code === "AUTH_DECLINED_KEY")) {
               rawResponse = await directClientAiService.chatCompletion({
                 systemPrompt,
                 userPrompt,
+                providerId: activeProvider,
                 maxTokens: 2000,
               });
+            } else {
+              throw coreErr;
             }
           }
+        } else {
+          throw new AiInfrastructureError(
+            "AI_KEYS_EXHAUSTED",
+            `El Clúster Central está desactivado y no hay clave configurada para ${activeProvider.toUpperCase()}.`,
+            401,
+            activeProvider,
+          );
         }
 
         const parsedBatch = this.parseAiBatchResponse(
@@ -279,6 +288,7 @@ Every task in this new batch MUST be completely brand new with different scenari
           maxWords,
           timeLimit,
           count,
+          Boolean(params.throwOnAuthError),
         );
 
         if (parsedBatch && parsedBatch.length > 0 && typeof window !== "undefined") {
@@ -293,7 +303,10 @@ Every task in this new batch MUST be completely brand new with different scenari
 
         return parsedBatch;
       } catch (err) {
-        if (params.throwOnAuthError && err instanceof AiInfrastructureError) {
+        if (
+          params.throwOnAuthError &&
+          (err instanceof ApiError || err instanceof AiInfrastructureError || err instanceof Error)
+        ) {
           throw err;
         }
         logger.warn("[AiWritingTaskGenerator] AI batch generation failed, using procedural seed batch", err);
@@ -404,8 +417,16 @@ Every task in this new batch MUST be completely brand new with different scenari
     maxWords: number,
     timeLimit: string,
     expectedCount: number = 6,
+    strict: boolean = false,
   ): WritingTaskItem[] {
     if (!raw || !raw.trim()) {
+      if (strict) {
+        throw new AiInfrastructureError(
+          "CLUSTER_OUTAGE",
+          "El motor de IA devolvió una respuesta vacía al generar tareas.",
+          502,
+        );
+      }
       return this.createProceduralSeedBatch(role, level, expectedCount);
     }
 
@@ -480,6 +501,14 @@ Every task in this new batch MUST be completely brand new with different scenari
       }
     } catch (e) {
       logger.warn("[AiWritingTaskGenerator] Failed to parse AI batch JSON response", e);
+    }
+
+    if (strict) {
+      throw new AiInfrastructureError(
+        "CLUSTER_OUTAGE",
+        "El motor de IA devolvió un formato incompleto al generar tareas.",
+        502,
+      );
     }
 
     return this.createProceduralSeedBatch(role, level, expectedCount);

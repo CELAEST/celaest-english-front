@@ -12,6 +12,10 @@ const ENTITLEMENT_SYNC_EVENT = "celaest:entitlement-synced";
 let cachedEntitlement: ProductEntitlement = DEFAULT_FREE_ENTITLEMENT;
 let hasFetchedInitial = false;
 
+export function getCachedLinguaEntitlement(): ProductEntitlement {
+  return cachedEntitlement;
+}
+
 function broadcastEntitlement(next: ProductEntitlement) {
   cachedEntitlement = next;
   hasFetchedInitial = true;
@@ -33,7 +37,7 @@ export function useLinguaEntitlement() {
     if (!SupabaseAuthAdapter.getInstance().isAuthenticated()) {
       broadcastEntitlement(DEFAULT_FREE_ENTITLEMENT);
       setEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      await providerKeyVault.setCentralCoreEnabled(false);
+      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
       setIsLoading(false);
       return DEFAULT_FREE_ENTITLEMENT;
     }
@@ -49,12 +53,12 @@ export function useLinguaEntitlement() {
         resolved.status !== "revoked" &&
         resolved.status !== "suspended" &&
         resolved.status !== "cancelled";
-      await providerKeyVault.setCentralCoreEnabled(isEligibleForCloud);
+      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(isEligibleForCloud)).catch(() => {});
       return resolved;
     } catch {
       broadcastEntitlement(DEFAULT_FREE_ENTITLEMENT);
       setEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      await providerKeyVault.setCentralCoreEnabled(false);
+      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
       return DEFAULT_FREE_ENTITLEMENT;
     } finally {
       setIsLoading(false);

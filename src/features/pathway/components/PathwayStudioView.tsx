@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
 import { BridgeModuleTarget } from "../../../domain/entities/LearningPathway";
-import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
+import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
 import { CefrLevelCode } from "../../conversation/services/dynamicQuestionService";
-import { LinguaMarketplacePaywallModal } from "../../workspace/components/LinguaMarketplacePaywallModal";
-import { LinguaByokRequiredModal } from "../../workspace/components/LinguaByokRequiredModal";
-import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { useIsDesktopViewport } from "../hooks/useIsDesktopViewport";
 import { useLearningPathway } from "../hooks/useLearningPathway";
@@ -36,16 +33,27 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   const isDesktop = useIsDesktopViewport();
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
-  const [paywallOpen, setPaywallOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const {
-    byokOpen, setByokOpen, recoveryState, handleAiFailure,
-    handleByokConfigured, handleByokClose, handleRecoveryClose, handleRecoveryResume,
+    controller: modalController,
+    byokOpen,
+    paywallOpen,
+    openPaywallModal,
+    closePaywall,
+    openByokModal,
+    recoveryState,
+    handleAiFailure,
   } = usePathwayAiModals();
+  const {
+    entitlement,
+    isEntitlementLoading,
+    canAccessNode,
+    refreshEntitlement,
+    isByokMode,
+  } = modalController;
   const hasBlockingOverlay = Boolean(
     curriculumOpen || guideSection !== null || paywallOpen || byokOpen || tourOpen || recoveryState.isOpen,
   );
-  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, isByokMode } = useLinguaEntitlement();
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
   const session = usePathwayStageSession(activeNode, roleName, completeActiveNode, pathway.cefrLevel);
@@ -58,28 +66,28 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   useEffect(() => {
     if (isByokMode) {
       void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
-        if (!hasKey) setByokOpen(true);
+        if (!hasKey) openByokModal("promo_byok");
       });
     }
-  }, [isByokMode, setByokOpen]);
+  }, [isByokMode, openByokModal]);
   useEffect(() => {
-    if (entitlement.hasAccess) { setPaywallOpen(false); return; }
+    if (entitlement.hasAccess) { closePaywall(); return; }
     if (!isEntitlementLoading && activeNodeIndex > 0 && pathway.nodes[0]) {
       selectNode(pathway.nodes[0].id);
-      setPaywallOpen(true);
+      openPaywallModal();
     } else if (!isEntitlementLoading && (entitlement.status === "revoked" || entitlement.status === "suspended" || entitlement.status === "cancelled" || entitlement.status === "expired")) {
-      setPaywallOpen(true);
+      openPaywallModal();
     }
-  }, [entitlement.hasAccess, entitlement.status, isEntitlementLoading, activeNodeIndex, pathway.nodes, selectNode]);
+  }, [entitlement.hasAccess, entitlement.status, isEntitlementLoading, activeNodeIndex, pathway.nodes, selectNode, openPaywallModal, closePaywall]);
   if (!activeNode?.lessonPayload) return <PathwaySkeleton />;
 
   const handleSelectNodeGated = (nodeId: string) => {
     const idx = pathway.nodes.findIndex((n) => n.id === nodeId);
-    if (idx > 0 && !canAccessNode(idx)) { setPaywallOpen(true); return; }
+    if (idx > 0 && !canAccessNode(idx)) { openPaywallModal(); return; }
     selectNode(nodeId);
     if (idx > 0) {
       void refreshEntitlement().then((fresh) => {
-        if (!fresh.hasAccess && pathway.nodes[0]) { selectNode(pathway.nodes[0].id); setPaywallOpen(true); }
+        if (!fresh.hasAccess && pathway.nodes[0]) { selectNode(pathway.nodes[0].id); openPaywallModal(); }
       });
     }
   };
@@ -148,17 +156,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
       />
       <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={handlePersonalizeAi} />
       <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
-      <LinguaMarketplacePaywallModal isOpen={paywallOpen} entitlement={entitlement} isCheckoutLoading={isCheckoutLoading} isRefreshing={isEntitlementLoading} onClose={() => setPaywallOpen(false)} onCheckout={(code) => void startDirectCheckout(code)} onRefreshEntitlement={() => void refreshEntitlement()} />
-      <LinguaByokRequiredModal isOpen={byokOpen} onClose={handleByokClose} onConfigured={handleByokConfigured} />
-      <AiInfrastructureRecoveryModal
-        isOpen={recoveryState.isOpen}
-        scenario={recoveryState.scenario}
-        cooldown={recoveryState.cooldown}
-        contextType="general"
-        {...(recoveryState.previewText ? { bufferDetail: { previewText: recoveryState.previewText } } : {})}
-        onClose={handleRecoveryClose}
-        onImmediateResume={handleRecoveryResume}
-      />
+      <AiUseCaseModalsHost controller={modalController} />
       <AppEcosystemTour
         isOpen={tourOpen}
         userId={roleName}

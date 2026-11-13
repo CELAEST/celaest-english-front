@@ -7,7 +7,7 @@ import { ConversationWaveformSpectrum } from "./ConversationWaveformSpectrum";
 import { ConversationMicControl } from "./ConversationMicControl";
 import { ConversationAudioSettingsModal } from "./ConversationAudioSettingsModal";
 import { MicHardwareRecoveryModal } from "./MicHardwareRecoveryModal";
-import { AiInfrastructureRecoveryModal } from "../../lab/components/AiInfrastructureRecoveryModal";
+import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
 import { InterviewAnalysisModal } from "./InterviewAnalysisModal";
 import { ResponsiveInterviewHUD } from "./ResponsiveInterviewHUD";
 import { SessionCardsSidenav } from "./SessionCardsSidenav";
@@ -66,11 +66,7 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
     isMicRecoveryModalOpen,
     setIsMicRecoveryModalOpen,
     resumeFromMicRecovery,
-    isRecoveryModalOpen,
-    setIsRecoveryModalOpen,
-    infrastructureErrorScenario,
-    recoveryCooldown,
-    resumeFromRecoveryModal,
+    aiModals,
     activeCefrLevel,
     setActiveCefrLevel,
   } = useInterviewSession(roleName, userLevel, isActive);
@@ -348,18 +344,8 @@ export const InterviewPracticeView: React.FC<InterviewPracticeViewProps> = ({
         />
       )}
 
-      {/* 7. Luxury AI Infrastructure Recovery Modal */}
-      {isRecoveryModalOpen && (
-        <AiInfrastructureRecoveryModal
-          isOpen={isRecoveryModalOpen}
-          scenario={infrastructureErrorScenario}
-          cooldown={recoveryCooldown}
-          contextType="speaking"
-          bufferDetail={{ durationSeconds: speakingSeconds }}
-          onClose={() => setIsRecoveryModalOpen(false)}
-          onImmediateResume={resumeFromRecoveryModal}
-        />
-      )}
+      {/* 7. Universal AI Use-Case Modals Host */}
+      <AiUseCaseModalsHost controller={aiModals} />
     </motion.div>
   );
 };

@@ -30,6 +30,7 @@ export interface ReadingCompleteViewProps {
     | undefined;
   onNextReading: () => void;
   onReviewReading?: () => void;
+  onQuizError?: ((err: unknown, retryFn: () => void) => void) | undefined;
 }
 
 export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.memo(
@@ -44,6 +45,7 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
     onGetQuiz,
     onNextReading,
     onReviewReading,
+    onQuizError,
   }) => {
     const [showQuiz, setShowQuiz] = useState(false);
     const [quizScore, setQuizScore] = useState<number | null>(null);
@@ -70,6 +72,7 @@ export const ReadingCompleteView: React.FC<ReadingCompleteViewProps> = React.mem
               setShowQuiz(false);
             }}
             onSkip={() => setShowQuiz(false)}
+            onQuizError={onQuizError}
           />
         </div>
       );

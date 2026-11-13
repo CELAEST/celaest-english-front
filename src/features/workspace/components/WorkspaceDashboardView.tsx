@@ -643,8 +643,10 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         />
         <LinguaByokRequiredModal
           isOpen={byokOpen}
+          mode={isByokMode ? "promo_byok" : "trial_choice"}
           onClose={() => setByokOpen(false)}
           onConfigured={() => setByokOpen(false)}
+          onOpenPaywall={() => setPaywallOpen(true)}
         />
       </main>
     </div>

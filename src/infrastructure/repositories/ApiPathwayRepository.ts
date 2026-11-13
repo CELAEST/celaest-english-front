@@ -14,8 +14,8 @@ import {
   AiPathwayCurriculumService,
   buildProceduralSeedNodes,
 } from "../../features/pathway/services/aiPathwayCurriculumService";
-import { providerKeyVault } from "../../features/settings/services/providerKeyVault";
 import { HttpClient } from "../http/HttpClient";
+import { buildByokHeadersSafe } from "../http/coreAiGatewayClient";
 
 const LOCAL_PATHWAY_PREFIX = "celaest:pathway:guide:v4";
 
@@ -55,18 +55,7 @@ function notifyPathwayUpdated(pathway: LearningPathway): void {
 }
 
 async function buildProviderHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {};
-  try {
-    const activeProvider = await providerKeyVault.getActiveProviderId();
-    if (activeProvider) {
-      headers["X-Provider-Id"] = activeProvider;
-      const keys = await providerKeyVault.getKeys(activeProvider);
-      if (keys[0]) headers["X-Provider-Key"] = keys[0];
-    }
-  } catch {
-    // optional BYOK headers
-  }
-  return headers;
+  return buildByokHeadersSafe();
 }
 
 function ensureNodesCarryPayloads(

@@ -109,17 +109,14 @@ describe("CoreAiEvaluatorService enrichment", () => {
     expect(feedback.strategicFeedback?.recommendation.length ?? 0).toBeGreaterThan(10);
   });
 
-  it("falls back to the comprehensive local engine when the backend is unreachable", async () => {
+  it("throws AiInfrastructureError instead of fabricating fake evaluation when backend and gateway are unreachable", async () => {
     vi.mocked(HttpClient.post).mockRejectedValue(new Error("backend down"));
 
-    const feedback = await CoreAiEvaluatorService.evaluate(
-      "I have work during 4 years",
-      baseQuestion,
-    );
-
-    expect(feedback).toBeDefined();
-    expect(typeof feedback.improvedFullAnswer).toBe("string");
-    expect(Array.isArray(feedback.unclearOrErrorWords)).toBe(true);
+    await expect(
+      CoreAiEvaluatorService.evaluate("I have work during 4 years", baseQuestion),
+    ).rejects.toMatchObject({
+      name: "AiInfrastructureError",
+    });
   });
 
   it("strictly enforces zero simulated mocks and re-throws when Central Core is disabled", async () => {

@@ -76,6 +76,10 @@ const resolvedCoreAiUrl = trimTrailingSlash(
 export const ENV = {
   /** Backend REST API base URL (no trailing slash). */
   apiUrl: resolvedApiUrl,
+  /** Authenticated CELAEST-English backend gateway for AI chat completions. */
+  aiGatewayChatUrl: `${resolvedApiUrl}/ai/chat/simple`,
+  /** Authenticated CELAEST-English backend gateway for AI audio transcription. */
+  aiGatewayTranscribeUrl: `${resolvedApiUrl}/ai/audio/transcribe`,
   /** CELAEST Core Auth & Billing Backend (no trailing slash). */
   celaestBackUrl: resolvedCelaestBackUrl,
   /** CELAEST-CORE IA-Mesh base URL for AI chat/transcription (no trailing slash). */

@@ -16,7 +16,7 @@ export interface PathwayDesktopClassroomProps {
   canAdvanceNode: boolean; onSelectLevel?: ((level: CefrLevelCode) => void) | undefined;
   onOpenCurriculum: () => void; onOpenAskTutor: () => void;
   onOpenGuideSection: (section: GuideSection) => void;
-  onNextNode?: (() => void) | undefined; onPrevAction?: (() => void) | undefined;
+  onNextNode?: (() => void) | undefined; nextLevelCode?: CefrLevelCode | undefined; onPrevAction?: (() => void) | undefined;
   onNextAction?: (() => void) | undefined; onNavigateModule?: ((target: BridgeModuleTarget) => void) | undefined;
   liveBoard?: LiveBoardState | undefined;
 }
@@ -24,7 +24,7 @@ export interface PathwayDesktopClassroomProps {
 export const PathwayDesktopClassroom: React.FC<PathwayDesktopClassroomProps> = ({
   pathway, activeNode, activeNodeIndex, masteredCount, roleName, session, canAdvanceNode,
   onSelectLevel, onOpenCurriculum, onOpenAskTutor, onOpenGuideSection,
-  onNextNode, onPrevAction, onNextAction, onNavigateModule, liveBoard,
+  onNextNode, nextLevelCode, onPrevAction, onNextAction, onNavigateModule, liveBoard,
 }) => {
   const lesson = activeNode.lessonPayload!;
 
@@ -66,14 +66,16 @@ export const PathwayDesktopClassroom: React.FC<PathwayDesktopClassroomProps> = (
             speakingText={session.speakingText} pronunciationResult={session.pronunciationResult}
             onPlayAudio={session.playAudio} onToggleRecording={() => void session.toggleRecording()}
             onCompleteWithoutMic={() => void session.completeWithoutMic()}
-            onNextFoundation={canAdvanceNode ? onNextNode : undefined} onBridgeNavigate={onNavigateModule}
+            onNextFoundation={canAdvanceNode ? onNextNode : undefined}
+            nextFoundationLabel={nextLevelCode ? `Siguiente Nivel (${nextLevelCode}) →` : undefined}
+            onBridgeNavigate={onNavigateModule}
           />
         )}
       </div>
       <PathwayBottomBar
         activeStep={session.step} nodeIndex={activeNodeIndex} totalNodes={pathway.nodes.length}
         masteryIndex={pathway.masteryIndex} onPrev={onPrevAction} onNext={onNextAction}
-        nextLabel={session.step === "SPEAK" ? "Siguiente clase" : "Siguiente paso"}
+        nextLabel={session.step === "SPEAK" ? (nextLevelCode ? `Siguiente nivel (${nextLevelCode})` : "Siguiente clase") : "Siguiente paso"}
       />
     </div>
   );

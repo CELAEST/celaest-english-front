@@ -94,8 +94,16 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
 
   const masteredCount = pathway.nodes.filter((n) => n.status === "MASTERED" || n.status === "CONSOLIDATED").length;
   const nextUnlocked = pathway.nodes[activeNodeIndex + 1];
-  const canAdvanceNode = Boolean(nextUnlocked && nextUnlocked.status !== "LOCKED");
   const isConquered = session.isCompletedBanner || activeNode.status === "MASTERED";
+  const cefrOrder: CefrLevelCode[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const currentLevelIdx = cefrOrder.indexOf(pathway.cefrLevel as CefrLevelCode);
+  const nextLevel =
+    currentLevelIdx >= 0 && currentLevelIdx < cefrOrder.length - 1
+      ? cefrOrder[currentLevelIdx + 1]
+      : undefined;
+  const isLastNode = activeNodeIndex === pathway.nodes.length - 1;
+  const canAdvanceToNextLevel = Boolean(isLastNode && isConquered && nextLevel && onSelectLevel);
+  const canAdvanceNode = Boolean((nextUnlocked && nextUnlocked.status !== "LOCKED") || canAdvanceToNextLevel);
   const professorState = useProfessorStageState({
     node: activeNode, step: session.step, cefrLevel: pathway.cefrLevel, isActive, hasBlockingOverlay,
     isSpeakingAudio: session.speakingText !== null,
@@ -127,7 +135,11 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
     onAnswerTrapCheck: professorState.handleAnswerTrapCheck,
   }), [activeNode.orderIndex, professorState]);
 
-  const handleNextFoundation = canAdvanceNode ? () => handleSelectNodeGated(nextUnlocked!.id) : undefined;
+  const handleNextFoundation = canAdvanceToNextLevel
+    ? () => onSelectLevel!(nextLevel!)
+    : nextUnlocked && nextUnlocked.status !== "LOCKED"
+      ? () => handleSelectNodeGated(nextUnlocked.id)
+      : undefined;
   const handlePrev = session.step === "SPEAK" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("RULE") : activeNodeIndex > 0 ? () => handleSelectNodeGated(pathway.nodes[activeNodeIndex - 1]!.id) : undefined;
   const handleNext = session.step === "RULE" ? () => session.setStep("BUILD") : session.step === "BUILD" ? () => session.setStep("SPEAK") : handleNextFoundation;
 
@@ -139,6 +151,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
           roleName={roleName} session={session} canAdvanceNode={canAdvanceNode} onSelectLevel={onSelectLevel}
           onOpenCurriculum={() => setCurriculumOpen(true)} onOpenAskTutor={() => professorState.setIsAskingOpen((p) => !p)}
           onOpenGuideSection={setGuideSection} onNextNode={handleNextFoundation}
+          nextLevelCode={canAdvanceToNextLevel ? nextLevel : undefined}
           onPrevAction={handlePrev} onNextAction={handleNext} onNavigateModule={onNavigateModule}
           liveBoard={liveBoard}
         />

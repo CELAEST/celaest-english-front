@@ -11,13 +11,15 @@ export interface PathwayVoiceUnlockStepProps {
   speakingText: string | null; pronunciationResult?: PronunciationEvaluationResult | null | undefined;
   onPlayAudio: (text: string) => void; onToggleRecording: () => void;
   onCompleteWithoutMic: () => void; onNextFoundation?: (() => void) | undefined;
+  nextFoundationLabel?: string | undefined;
   onBridgeNavigate?: ((target: BridgeModuleTarget) => void) | undefined;
 }
 
 export const PathwayVoiceUnlockStep: React.FC<PathwayVoiceUnlockStepProps> = ({
   lesson, isNodeMastered, isCompletedBanner, isRecording, isEvaluatingVoice = false,
   isSavingCompletion, canSkipWithoutMic = false, failedAttempts = 0, spokenTranscript, speakingText,
-  pronunciationResult, onPlayAudio, onToggleRecording, onCompleteWithoutMic, onNextFoundation, onBridgeNavigate,
+  pronunciationResult, onPlayAudio, onToggleRecording, onCompleteWithoutMic, onNextFoundation,
+  nextFoundationLabel = "Siguiente Clase →", onBridgeNavigate,
 }) => {
   const { voicePractice, bridgeModule } = lesson;
   const conquered = isCompletedBanner || isNodeMastered;
@@ -72,7 +74,7 @@ export const PathwayVoiceUnlockStep: React.FC<PathwayVoiceUnlockStepProps> = ({
             )}
             {onNextFoundation && (
               <button type="button" onClick={onNextFoundation} className="text-xs font-mono tracking-[0.16em] uppercase text-white/80 hover:text-white cursor-pointer">
-                Siguiente Clase →
+                {nextFoundationLabel}
               </button>
             )}
           </div>

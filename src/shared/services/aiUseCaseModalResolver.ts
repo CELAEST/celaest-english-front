@@ -140,6 +140,7 @@ export function resolveAiModalUseCase(
   const isExplicitByokCode =
     code === "AI_BYOK_REQUIRED" ||
     code === "BYOK_REQUIRED" ||
+    code === "AI_QUOTA_EXCEEDED" ||
     errObj?.name === "PathwayByokRequiredError";
   const isMissingKeyWithoutCloud =
     !context.entitlement?.aiCloudIncluded &&

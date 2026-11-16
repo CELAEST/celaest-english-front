@@ -432,7 +432,8 @@ Candidate Spoken Answer: "${cleanText}"`;
         } catch (backendErr: any) {
           if (
             backendErr instanceof ApiError &&
-            [401, 402, 403, 422].includes(backendErr.status)
+            ([401, 402, 403, 422, 429].includes(backendErr.status) ||
+              backendErr.code === "AI_QUOTA_EXCEEDED")
           ) {
             throw backendErr;
           }

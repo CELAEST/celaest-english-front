@@ -75,6 +75,8 @@ export function useInterviewRecording({
   // ────────────────────────────────────────
   const startRecording = useCallback(async () => {
     if (typeof window === "undefined") return;
+    // Desbloquear AudioContext síncronamente dentro del gesto del usuario (clave en macOS Safari)
+    AudioCaptureService.unlockAudioInputContextSync?.();
     if (isAiSpeakingRef.current) {
       SpeechSynthesisService.stop();
       isAiSpeakingRef.current = false;
@@ -219,11 +221,10 @@ export function useInterviewRecording({
         }
         currentLive = baseMobile;
       } else if (
-        // Safety net for brief (<1.8s) spoken phrases stopped before interim tick when Web Speech was deaf
+        // Safety net for brief (<1.8s) spoken phrases or macOS low-gain / suspended AudioContext where Web Speech stays silent
         !currentLive &&
-        audioResult.hadVoicedSpeech &&
         audioResult.audioBlob &&
-        audioResult.audioBlob.size > 800
+        audioResult.audioBlob.size >= 300
       ) {
         const fallbackRes = await AudioCaptureService.transcribeAudio(audioResult.audioBlob, {
           roleName: effectiveRoleName,

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, Volume2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { AudioCaptureService, acquireOptimalMicStream, isMobileDevice } from "../services/audioCaptureService";
+import { MicDeviceSelector } from "./MicDeviceSelector";
 import { useFocusTrap } from "../../../shared/hooks/useFocusTrap";
 
 export interface MicHardwareRecoveryModalProps {
@@ -130,7 +131,8 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
-  const [browserBrand, setBrowserBrand] = useState<string>("Google Chrome");
+  const [browserBrand, setBrowserBrand] = useState<string>("tu navegador");
+  const [isMac, setIsMac] = useState<boolean>(false);
   const [deviceName, setDeviceName] = useState<string>("Buscando hardware...");
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -149,7 +151,7 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
   }, []);
 
   // 100% REAL HARDWARE ACTIVATION — Zero mocks, Zero synthetic audio, Zero Math.random
-  const activateRealMicrophone = useCallback(async () => {
+  const activateRealMicrophone = useCallback(async (explicitDeviceId?: string) => {
     setPermissionState("requesting");
     setErrorMessage(null);
     stopAudio();
@@ -160,14 +162,14 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
         const isInsecure = typeof window !== "undefined" && !window.isSecureContext;
         setErrorMessage(
           isInsecure
-            ? "El navegador móvil bloquea el acceso al micrófono en conexiones HTTP no seguras. Abre la app con HTTPS o escribe tu respuesta en el área de texto inferior."
+            ? "El navegador bloquea el acceso al micrófono en conexiones HTTP no seguras. Abre la app con HTTPS o escribe tu respuesta en el área de texto inferior."
             : "Este navegador no soporta captura de audio con la Web Audio API.",
         );
         return;
       }
 
-      // Solicitud real al hardware óptimo del sistema operativo (evita wrappers virtuales mudos como ASUS Utility)
-      const stream = await acquireOptimalMicStream(isMobileDevice());
+      // Solicitud real al hardware óptimo del sistema operativo (evita Continuity iPhone o drivers virtuales mudos)
+      const stream = await acquireOptimalMicStream(isMobileDevice(), explicitDeviceId);
 
       streamRef.current = stream;
       const track = stream.getAudioTracks()[0];
@@ -202,39 +204,58 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
       setAnalyserNode(null);
 
       const errString = String(err);
+      const hostLabel = typeof window !== "undefined" && window.location.host ? window.location.host : "esta página";
       if (
         errString.includes("NotAllowedError") ||
         errString.includes("Permission") ||
         errString.includes("not-allowed")
       ) {
         setErrorMessage(
-          `Chrome tiene bloqueado el acceso al micrófono para localhost. En la ventanita de permisos de la barra de Chrome, activa el interruptor "Micrófono" a ON (o dale a "Restablecer permisos") y pulsa "Encender Micrófono".`,
+          isMac
+            ? `${browserBrand} o macOS tienen bloqueado el micrófono para ${hostLabel}. En Mac, abre Ajustes del Sistema → Privacidad y seguridad → Micrófono y activa ${browserBrand}; luego permite el micrófono en la barra del navegador y pulsa "Encender Micrófono Real".`
+            : `${browserBrand} tiene bloqueado el acceso al micrófono para ${hostLabel}. En la ventana de permisos de la barra del navegador, activa "Micrófono" a ON (o pulsa "Restablecer permisos") y luego "Encender Micrófono Real".`,
         );
       } else if (errString.includes("NotFoundError") || errString.includes("DevicesNotFoundError")) {
-        setErrorMessage("No se detectó ningún micrófono físico conectado al equipo.");
+        setErrorMessage(
+          isMac
+            ? "No se detectó ningún micrófono disponible en macOS. Conecta tus auriculares o revisa Ajustes del Sistema → Sonido → Entrada."
+            : "No se detectó ningún micrófono físico conectado al equipo.",
+        );
       } else {
         setErrorMessage("Error al acceder al hardware: " + ((err as Error)?.message || errString));
       }
-      setDeviceName("Micrófono bloqueado en navegador");
+      setDeviceName("Micrófono bloqueado o desconectado");
     }
-  }, [stopAudio]);
+  }, [browserBrand, isMac, stopAudio]);
 
-  // Detección de navegador y listener en vivo a cambios de permisos de Chrome
+  // Detección de sistema/navegador (incluye macOS Safari/Chrome/Brave) y listener en vivo a cambios de permisos
   useEffect(() => {
+    let detectedBrand = "tu navegador";
+    let detectedMac = false;
     if (typeof navigator !== "undefined") {
       const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("safari") && !ua.includes("chrome")) {
-        setBrowserBrand("Safari");
-      } else if (ua.includes("firefox")) {
-        setBrowserBrand("Firefox");
+      detectedMac =
+        ua.includes("macintosh") ||
+        ua.includes("mac os") ||
+        navigator.platform?.toLowerCase().includes("mac");
+      setIsMac(detectedMac);
+
+      const navWithBrave = navigator as Navigator & { brave?: { isBrave?: () => Promise<boolean> } };
+      if (ua.includes("safari") && !ua.includes("chrome") && !ua.includes("crios") && !ua.includes("fxios")) {
+        detectedBrand = "Safari";
+      } else if (ua.includes("firefox") || ua.includes("fxios")) {
+        detectedBrand = "Firefox";
       } else if (ua.includes("edg")) {
-        setBrowserBrand("Edge");
-      } else {
-        setBrowserBrand("Google Chrome");
+        detectedBrand = "Edge";
+      } else if (navWithBrave.brave) {
+        detectedBrand = "Brave";
+      } else if (ua.includes("chrome") || ua.includes("crios")) {
+        detectedBrand = "Google Chrome";
       }
+      setBrowserBrand(detectedBrand);
     }
 
-    // Escuchar en vivo si el usuario cambia el permiso en Chrome
+    // Escuchar en vivo si el usuario cambia el permiso en el navegador
     if (navigator?.permissions?.query) {
       navigator.permissions
         .query({ name: "microphone" as PermissionName })
@@ -243,9 +264,11 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
             void activateRealMicrophone();
           } else if (perm.state === "denied") {
             setPermissionState("denied");
-            setDeviceName("Micrófono bloqueado en Chrome");
+            setDeviceName(`Micrófono bloqueado en ${detectedBrand}`);
             setErrorMessage(
-              `El interruptor de micrófono está en OFF en Chrome. Actívalo en la barra superior y pulsa "Encender Micrófono".`,
+              detectedMac
+                ? `El micrófono está bloqueado en ${detectedBrand} o en Ajustes del Sistema → Privacidad y seguridad → Micrófono. Actívalo y pulsa "Encender Micrófono Real".`
+                : `El interruptor de micrófono está en OFF en ${detectedBrand}. Actívalo en la barra superior y pulsa "Encender Micrófono Real".`,
             );
           }
 
@@ -255,9 +278,11 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
             } else if (perm.state === "denied") {
               stopAudio();
               setPermissionState("denied");
-              setDeviceName("Micrófono bloqueado en Chrome");
+              setDeviceName(`Micrófono bloqueado en ${detectedBrand}`);
               setErrorMessage(
-                `El micrófono fue desactivado en Chrome. Activa el interruptor y pulsa "Encender Micrófono".`,
+                detectedMac
+                  ? `El micrófono fue desactivado en ${detectedBrand} o macOS. Revisa permisos del sitio y Privacidad → Micrófono.`
+                  : `El micrófono fue desactivado en ${detectedBrand}. Activa el interruptor y pulsa "Encender Micrófono Real".`,
               );
             }
           };
@@ -338,8 +363,10 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
         {/* ── 2. NATURAL HUMAN SUBTEXT ── */}
         <p className="text-xs text-[#C5C6D0] font-light leading-relaxed">
           {permissionState === "granted"
-            ? "Tu hardware físico está encendido y capturando a 48 kHz. El evaluador lingüístico y Whisper recibirán tu voz real con fidelidad de estudio."
-            : `Google Chrome tiene la captura de audio bloqueada en los ajustes del sitio. Activa el interruptor en la barra superior para permitir que el navegador encienda tu hardware.`}
+            ? "Tu hardware físico está encendido y capturando audio real. El evaluador lingüístico y Whisper recibirán tu voz con fidelidad de estudio."
+            : isMac
+              ? `${browserBrand} o macOS tienen la captura de audio bloqueada. Revisa el permiso del sitio en la barra superior y Ajustes del Sistema → Privacidad y seguridad → Micrófono.`
+              : `${browserBrand} tiene la captura de audio bloqueada en los ajustes del sitio. Activa el interruptor en la barra superior para permitir que el navegador encienda tu hardware.`}
         </p>
 
         {/* ── 3. DUAL METRIC DIALS (REAL HARDWARE STATUS) ── */}
@@ -379,20 +406,28 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
           </div>
         </div>
 
-        {/* ── 4. DIAGNÓSTICO DIRECTO SI ESTÁ BLOQUEADO EN CHROME ── */}
+        {/* ── 4. DIAGNÓSTICO DIRECTO SI ESTÁ BLOQUEADO ── */}
         {permissionState !== "granted" ? (
           <div className="p-4 rounded-2xl bg-rose-500/[0.06] border border-rose-500/20 text-xs text-rose-200/90 font-light flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-medium text-rose-300 block">
-                Permiso desactivado en {browserBrand}:
+                Permiso desactivado en {isMac ? `macOS / ${browserBrand}` : browserBrand}:
               </span>
               <p className="leading-relaxed text-[11px] text-rose-200/80">
                 {errorMessage || (
-                  <>
-                    Por seguridad del navegador, ninguna web puede encender tu micrófono si el interruptor está en OFF.
-                    En la ventanita de permisos que abriste arriba, pon <strong>"Micrófono" en ON</strong> (o pulsa <strong>"Restablecer permisos"</strong>) y haz clic en <strong>"Encender Micrófono"</strong>.
-                  </>
+                  isMac ? (
+                    <>
+                      En Mac, asegúrate de permitir el acceso en dos lugares: 1){" "}
+                      <strong>Ajustes del Sistema → Privacidad y seguridad → Micrófono → {browserBrand}</strong> en ON, y 2) en el icono de permisos de este sitio en {browserBrand}, pon{" "}
+                      <strong>"Micrófono" en ON</strong> y haz clic en <strong>"Encender Micrófono Real"</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Por seguridad del navegador, ninguna web puede encender tu micrófono si el interruptor está en OFF.
+                      En los permisos del sitio, pon <strong>"Micrófono" en ON</strong> (o pulsa <strong>"Restablecer permisos"</strong>) y haz clic en <strong>"Encender Micrófono Real"</strong>.
+                    </>
+                  )
                 )}
               </p>
             </div>
@@ -419,6 +454,12 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
               </span>
             </span>
           </div>
+
+          <MicDeviceSelector
+            onSelectDevice={async (deviceId) => {
+              await activateRealMicrophone(deviceId || undefined);
+            }}
+          />
 
           {/* Cápsula de micrófono & 16 barras FFT reales */}
           <div className="py-2.5 flex items-center justify-between px-1">

@@ -9,7 +9,18 @@ import { CompletePathwayNodeParams } from "../../../domain/repositories/IPathway
 import { AudioCaptureService } from "../../conversation/services/audioCaptureService";
 import { SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
 import { PronunciationEvaluationResult } from "../services/PathwayPronunciationEngine";
+import { PathwayLectureEngine } from "../services/PathwayLectureEngine";
 import { stopAndEvaluatePathwayVoice } from "../services/pathwayVoiceEvaluator";
+
+function shouldPreserveStageHydration(
+  prev: { id?: string | undefined; orderIndex?: number | undefined },
+  next: { id?: string | undefined; orderIndex?: number | undefined },
+): boolean {
+  if (!prev.id || prev.id === next.id) return false;
+  if (!PathwayLectureEngine.isSoftwareIntroSeen()) return true;
+  const isSeedId = (id?: string) => Boolean(id && /^guide-/i.test(id));
+  return isSeedId(prev.id) && !isSeedId(next.id) && prev.orderIndex === next.orderIndex;
+}
 
 export interface WordChipItem {
   id: string;
@@ -51,11 +62,17 @@ export function usePathwayStageSession(
   const [pronunciationResult, setPronunciationResult] = useState<PronunciationEvaluationResult | null>(null);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasSpokenInBuildRef = useRef<boolean>(false);
+  const stepTokenRef = useRef<number>(0);
 
   const setStep = useCallback((newStep: PathwayStepId, options?: { skipAudio?: boolean }) => {
+    stepTokenRef.current++;
     if (autoAdvanceTimerRef.current) {
       clearTimeout(autoAdvanceTimerRef.current);
       autoAdvanceTimerRef.current = null;
+    }
+    if (!options?.skipAudio) {
+      SpeechSynthesisService.stop();
+      setSpeakingText(null);
     }
     if (options?.skipAudio && newStep === "BUILD") {
       hasSpokenInBuildRef.current = true;
@@ -104,7 +121,16 @@ export function usePathwayStageSession(
     builtSentence.toLowerCase() === targetSentence.toLowerCase();
   const hasBuildMistake = isBuildComplete && !isBuildCorrect;
 
+  const prevStageNodeRef = useRef<{ id?: string | undefined; orderIndex?: number | undefined }>({});
+
   useEffect(() => {
+    const prev = prevStageNodeRef.current;
+    const next = { id: activeNode?.id, orderIndex: activeNode?.orderIndex };
+    const preserveHydration = shouldPreserveStageHydration(prev, next);
+    prevStageNodeRef.current = next;
+    if (preserveHydration) return;
+
+    stepTokenRef.current++;
     if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     SpeechSynthesisService.stop();
     setSpeakingText(null);
@@ -121,30 +147,40 @@ export function usePathwayStageSession(
 
   useEffect(() => {
     return () => {
+      stepTokenRef.current++;
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
       SpeechSynthesisService.stop();
     };
   }, []);
 
-  const playAudio = useCallback((text: string, onComplete?: () => void) => {
-    if (!text.trim()) {
-      onComplete?.();
-      return;
-    }
-    setSpeakingText(text);
-    void SpeechSynthesisService.speak(text, {
-      voice: "liam",
-      preventSyntheticFallback: true,
-      onEnd: () => {
-        setSpeakingText(null);
-        onComplete?.();
-      },
-      onError: () => {
-        setSpeakingText(null);
-        onComplete?.();
-      },
-    });
-  }, []);
+  const playAudio = useCallback(
+    (
+      text: string,
+      onComplete?: () => void,
+      playOptions?: { continueOnError?: boolean },
+    ) => {
+      const capturedToken = stepTokenRef.current;
+      const shouldChainOnError = playOptions?.continueOnError ?? true;
+      if (!text.trim()) {
+        if (stepTokenRef.current === capturedToken) onComplete?.();
+        return;
+      }
+      setSpeakingText(text);
+      void SpeechSynthesisService.speak(text, {
+        voice: "liam",
+        preventSyntheticFallback: true,
+        onEnd: () => {
+          setSpeakingText(null);
+          if (stepTokenRef.current === capturedToken) onComplete?.();
+        },
+        onError: () => {
+          setSpeakingText(null);
+          if (shouldChainOnError && stepTokenRef.current === capturedToken) onComplete?.();
+        },
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     const speechProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
@@ -152,8 +188,7 @@ export function usePathwayStageSession(
     if (step === "BUILD" && activeNode?.lessonPayload) {
       if (!hasSpokenInBuildRef.current) {
         hasSpokenInBuildRef.current = true;
-        // Only play build activation if Liam/AI is not ALREADY speaking (prevents overlapping duplicate speech)
-        if (!speakingText && !SpeechSynthesisService.isAiPlaying()) {
+        if (!SpeechSynthesisService.isAiPlaying()) {
           const buildActivationText =
             speechMomentText(speechProfile, "build.transition") ??
             UNIVERSAL_PHRASES.build_intro!.text;
@@ -163,31 +198,36 @@ export function usePathwayStageSession(
     } else {
       hasSpokenInBuildRef.current = false;
     }
-  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, speakingText, playAudio]);
+  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, playAudio]);
 
   const hasSpokenInSpeakRef = useRef<boolean>(false);
   useEffect(() => {
     if (step === "SPEAK" && activeNode?.lessonPayload) {
       if (!hasSpokenInSpeakRef.current) {
-        if (!speakingText && !SpeechSynthesisService.isAiPlaying()) {
+        if (!SpeechSynthesisService.isAiPlaying()) {
           hasSpokenInSpeakRef.current = true;
           const speakProfile = resolveSpeechProfile(activeNode?.orderIndex, activeNode?.title, cefrLevel);
           if (speakProfile) {
             // SPEAK en 3 pistas: lead (es) -> modelo (en) -> instrucción (es).
-            playAudio(speechMomentText(speakProfile, "speak.lead") ?? "", () =>
-              playAudio(speechMomentText(speakProfile, "speak.model") ?? "", () =>
-                playAudio(speechMomentText(speakProfile, "speak.instruction") ?? ""),
-              ),
+            playAudio(
+              speechMomentText(speakProfile, "speak.lead") ?? "",
+              () =>
+                playAudio(
+                  speechMomentText(speakProfile, "speak.model") ?? "",
+                  () => playAudio(speechMomentText(speakProfile, "speak.instruction") ?? "", undefined, { continueOnError: false }),
+                  { continueOnError: false },
+                ),
+              { continueOnError: false },
             );
           } else {
-            playAudio(UNIVERSAL_PHRASES.speak_intro!.text);
+            playAudio(UNIVERSAL_PHRASES.speak_intro!.text, undefined, { continueOnError: false });
           }
         }
       }
     } else {
       hasSpokenInSpeakRef.current = false;
     }
-  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, speakingText, playAudio]);
+  }, [step, activeNode?.orderIndex, activeNode?.title, activeNode?.lessonPayload, cefrLevel, playAudio]);
 
   const tapAvailableChip = useCallback(
     (chipId: string) => {
@@ -399,13 +439,22 @@ export function usePathwayStageSession(
       return;
     }
 
+    const entryToken = stepTokenRef.current;
+    // En macOS Safari, getUserMedia y AudioContext.resume() pierden la activación del gesto si hay un await largo antes.
+    // Desbloquear y pre-adquirir el micrófono de forma inmediata al pulsar el botón, antes de reproducir el modelo.
+    AudioCaptureService.unlockAudioInputContextSync?.();
+    let preAcquiredMic = AudioCaptureService.hasLiveMicStream();
+    if (!preAcquiredMic) {
+      preAcquiredMic = await AudioCaptureService.initMicrophone();
+      if (stepTokenRef.current !== entryToken) return;
+    }
+
     SpeechSynthesisService.stop();
     setSpeakingText(null);
     setPronunciationResult(null);
     setSpokenTranscript("");
 
-    // El modelo nativo suena antes de abrir el micrófono, para que funcione
-    // igual al entrar al paso que al tocar "Hablarle al Profesor".
+    // El modelo nativo suena antes de abrir la escucha, manteniendo el permiso del micrófono ya otorgado.
     if (speechProfile) {
       const modelText = speechMomentText(speechProfile, "speak.model");
       if (modelText) {
@@ -415,8 +464,12 @@ export function usePathwayStageSession(
         });
       }
     }
+    if (stepTokenRef.current !== entryToken) return;
 
-    const ready = await AudioCaptureService.initMicrophone();
+    const ready = AudioCaptureService.hasLiveMicStream()
+      ? true
+      : await AudioCaptureService.initMicrophone();
+    if (stepTokenRef.current !== entryToken) return;
     if (!ready && !AudioCaptureService.isSpeechRecognitionSupported()) {
       setMicUnavailable(true);
       playAudio(

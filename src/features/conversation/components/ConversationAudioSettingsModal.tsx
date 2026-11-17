@@ -2,6 +2,8 @@ import React from "react";
 import { Volume2, Mic, SlidersHorizontal } from "lucide-react";
 import { AppModal } from "../../../design-system/components/Modal/AppModal";
 import { useMicVolume } from "../hooks/micVolumeStore";
+import { AudioCaptureService } from "../services/audioCaptureService";
+import { MicDeviceSelector } from "./MicDeviceSelector";
 
 export interface ConversationAudioSettingsModalProps {
   isOpen: boolean;
@@ -100,7 +102,15 @@ const ConversationAudioSettingsModalInner: React.FC<ConversationAudioSettingsMod
           </div>
         </div>
 
-        {/* Section 2: Live Mic Volume Indicator (Isolated 60fps subscriber) */}
+        {/* Section 2: Microphone Input Device Selector */}
+        <MicDeviceSelector
+          compact
+          onSelectDevice={async (deviceId) => {
+            await AudioCaptureService.initMicrophone(deviceId || null);
+          }}
+        />
+
+        {/* Section 3: Live Mic Volume Indicator (Isolated 60fps subscriber) */}
         <LiveMicVolumeIndicator />
       </div>
     </AppModal>

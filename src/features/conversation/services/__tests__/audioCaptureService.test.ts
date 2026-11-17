@@ -6,6 +6,9 @@ import {
   shouldUseAiLiveTranscription,
   cleanVerbatimTranscription,
   isVirtualLoopbackMicLabel,
+  isContinuityPhoneMicLabel,
+  acquireOptimalMicStream,
+  setPreferredMicDeviceId,
 } from "../audioCaptureService";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 
@@ -812,6 +815,159 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
         winRecord.AudioContext = originalAudioContext;
         delete winRecord.SpeechRecognition;
       }
+    });
+  });
+
+  describe("macOS CoreAudio & Safari Mic Resilience", () => {
+    it("filters macOS virtual audio drivers and swaps Continuity iPhone mic for physical MacBook mic", async () => {
+      const originalUserAgent = navigator.userAgent;
+      const originalMediaDevices = navigator.mediaDevices;
+
+      try {
+        Object.defineProperty(navigator, "userAgent", {
+          value:
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+          configurable: true,
+        });
+        setPreferredMicDeviceId(null);
+
+        expect(isVirtualLoopbackMicLabel("ZoomAudioDevice")).toBe(true);
+        expect(isVirtualLoopbackMicLabel("Krisp Microphone")).toBe(true);
+        expect(isContinuityPhoneMicLabel("iPhone Microphone")).toBe(true);
+        expect(isContinuityPhoneMicLabel("Micrófono de iPhone de Carlos")).toBe(true);
+        expect(isContinuityPhoneMicLabel("MacBook Pro Microphone")).toBe(false);
+
+        const continuityStop = vi.fn();
+        const continuityStream = {
+          active: true,
+          getAudioTracks: () => [
+            { label: "iPhone Microphone", readyState: "live", muted: false, stop: continuityStop },
+          ],
+          getTracks: () => [{ stop: continuityStop }],
+        } as unknown as MediaStream;
+
+        const macStream = {
+          active: true,
+          getAudioTracks: () => [
+            { label: "MacBook Pro Microphone", readyState: "live", muted: false, stop: vi.fn() },
+          ],
+          getTracks: () => [{ stop: vi.fn() }],
+        } as unknown as MediaStream;
+
+        const getUserMediaMock = vi
+          .fn()
+          .mockResolvedValueOnce(continuityStream)
+          .mockResolvedValueOnce(macStream);
+
+        const enumerateDevicesMock = vi.fn().mockResolvedValue([
+          { kind: "audioinput", deviceId: "iphone-continuity", label: "iPhone Microphone" },
+          { kind: "audioinput", deviceId: "mac-built-in", label: "MacBook Pro Microphone" },
+        ]);
+
+        Object.defineProperty(navigator, "mediaDevices", {
+          value: { getUserMedia: getUserMediaMock, enumerateDevices: enumerateDevicesMock },
+          configurable: true,
+        });
+
+        const selected = await acquireOptimalMicStream(false);
+        expect(selected).toBe(macStream);
+        expect(continuityStop).toHaveBeenCalledTimes(1);
+        expect(getUserMediaMock).toHaveBeenCalledTimes(2);
+      } finally {
+        setPreferredMicDeviceId(null);
+        Object.defineProperty(navigator, "userAgent", {
+          value: originalUserAgent,
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "mediaDevices", {
+          value: originalMediaDevices,
+          configurable: true,
+        });
+      }
+    });
+
+    it("falls back to minimal { audio: true } when macOS CoreAudio rejects strict constraints with OverconstrainedError", async () => {
+      const originalUserAgent = navigator.userAgent;
+      const originalMediaDevices = navigator.mediaDevices;
+
+      try {
+        Object.defineProperty(navigator, "userAgent", {
+          value:
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+          configurable: true,
+        });
+        setPreferredMicDeviceId(null);
+
+        const fallbackStream = {
+          active: true,
+          getAudioTracks: () => [
+            { label: "MacBook Air Microphone", readyState: "live", muted: false, stop: vi.fn() },
+          ],
+          getTracks: () => [{ stop: vi.fn() }],
+        } as unknown as MediaStream;
+
+        const getUserMediaMock = vi
+          .fn()
+          .mockRejectedValueOnce(Object.assign(new Error("Unsupported sampleRate"), { name: "OverconstrainedError" }))
+          .mockResolvedValueOnce(fallbackStream);
+
+        Object.defineProperty(navigator, "mediaDevices", {
+          value: {
+            getUserMedia: getUserMediaMock,
+            enumerateDevices: vi.fn().mockResolvedValue([
+              { kind: "audioinput", deviceId: "mac-air", label: "MacBook Air Microphone" },
+            ]),
+          },
+          configurable: true,
+        });
+
+        const stream = await acquireOptimalMicStream(false);
+        expect(stream).toBe(fallbackStream);
+        expect(getUserMediaMock).toHaveBeenNthCalledWith(2, { audio: true });
+      } finally {
+        setPreferredMicDeviceId(null);
+        Object.defineProperty(navigator, "userAgent", {
+          value: originalUserAgent,
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "mediaDevices", {
+          value: originalMediaDevices,
+          configurable: true,
+        });
+      }
+    });
+
+    it("recognizes Safari macOS fragmented audio/mp4 (moof) and short ADTS AAC (>300B) clips for Whisper", async () => {
+      vi.spyOn(providerKeyVault, "getKeys").mockImplementation(async (provider) =>
+        provider === "groq" ? ["gsk_test_key_mac"] : [],
+      );
+
+      const capturedNames: string[] = [];
+      const mockFetch = vi.fn().mockImplementation(async (_url, init?: RequestInit) => {
+        const body = init?.body as FormData | undefined;
+        const file = body?.get("file") as File | undefined;
+        if (file?.name) capturedNames.push(file.name);
+        return {
+          ok: true,
+          json: async () => ({ text: "Hello from Safari on Mac.", language: "en", duration: 1.1 }),
+        };
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      // 1. Fragmented MP4 chunk with `moof` box at bytes [4..8] and 520B size (< 1024B)
+      const moofBytes = new Uint8Array(520);
+      moofBytes.set([0x6d, 0x6f, 0x6f, 0x66], 4); // "moof"
+      const mp4Res = await AudioCaptureService.transcribeAudio(new Blob([moofBytes], { type: "audio/mp4" }));
+      expect(mp4Res?.text).toBe("Hello from Safari on Mac.");
+
+      // 2. Raw ADTS AAC header (0xff 0xf1) with 420B size and empty MIME
+      const adtsBytes = new Uint8Array(420);
+      adtsBytes[0] = 0xff;
+      adtsBytes[1] = 0xf1;
+      const aacRes = await AudioCaptureService.transcribeAudio(new Blob([adtsBytes], { type: "" }));
+      expect(aacRes?.text).toBe("Hello from Safari on Mac.");
+
+      expect(capturedNames).toEqual(["speech.mp4", "speech.m4a"]);
     });
   });
 

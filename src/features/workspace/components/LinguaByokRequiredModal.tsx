@@ -8,7 +8,7 @@ export interface LinguaByokRequiredModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfigured?: () => void;
-  mode?: "promo_byok" | "trial_choice";
+  mode?: "promo_byok" | "trial_choice" | "quota_exceeded";
   onOpenPaywall?: () => void;
 }
 
@@ -24,13 +24,26 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleKeyChange = (val: string) => {
+    setKey(val);
+    if (error) setError(null);
+    const trimmed = val.trim();
+    if (/^gsk_/i.test(trimmed) && provider !== "groq") {
+      setProvider("groq");
+    } else if (/^AIza/i.test(trimmed) && provider !== "gemini") {
+      setProvider("gemini");
+    }
+  };
+
   const handleSave = async () => {
-    if (!key.trim()) { setError("Ingresa una API Key válida"); return; }
+    const cleanKey = key.trim();
+    if (!cleanKey) { setError("Ingresa una API Key válida"); return; }
     setSaving(true); setError(null);
     try {
-      await providerKeyVault.saveKey(provider, key.trim());
+      await providerKeyVault.saveKey(provider, cleanKey);
       await providerKeyVault.saveActiveProviderId(provider);
       await providerKeyVault.setCentralCoreEnabled(false);
+      setKey("");
       onConfigured?.();
       onClose();
     } catch {
@@ -58,7 +71,7 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
         <span>Obtener API Key gratuita de {provider === "groq" ? "Groq" : "Google Gemini"}</span>
         <ExternalLink className="w-3 h-3" />
       </a>
-      {mode === "trial_choice" && onOpenPaywall && (
+      {(mode === "trial_choice" || mode === "quota_exceeded") && onOpenPaywall && (
         <button
           type="button"
           onClick={() => {
@@ -67,28 +80,39 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
           }}
           className="w-full h-9 mt-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] text-xs font-medium hover:border-[var(--border-hover)] transition-colors cursor-pointer"
         >
-          Ver Planes Lingua Pro (IA Cloud incluida)
+          {mode === "quota_exceeded"
+            ? "Ver Planes / Ampliar Cuota Cloud"
+            : "Ver Planes Lingua Pro (IA Cloud incluida)"}
         </button>
       )}
     </div>
   );
 
   const isTrialChoice = mode === "trial_choice";
+  const isQuotaExceeded = mode === "quota_exceeded";
   return (
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
       size="sm"
       icon={<KeyRound className="w-4 h-4 text-[var(--text-accent)]" />}
-      title="Motor de IA (Modo BYOK)"
-      subtitle={isTrialChoice ? "Prueba Gratuita (Base 01)" : "Licencia Promocional Activa"}
+      title={isQuotaExceeded ? "Cuota Mensual Completada" : "Motor de IA (Modo BYOK)"}
+      subtitle={
+        isQuotaExceeded
+          ? "Límite mensual de IA Cloud alcanzado"
+          : isTrialChoice
+            ? "Prueba Gratuita (Base 01)"
+            : "Licencia Promocional Activa"
+      }
       footer={footerNode}
     >
       <div className="space-y-3.5 select-none text-xs">
         <p className="text-[var(--text-secondary)] font-light leading-relaxed">
-          {isTrialChoice
-            ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq o Google Gemini para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
-            : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita."}
+          {isQuotaExceeded
+            ? "Alcanzaste el límite mensual de respuestas en la nube de tu plan. Conecta tu clave gratuita de Groq o Gemini para continuar sin límites de inmediato, o revisa los planes disponibles."
+            : isTrialChoice
+              ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq o Google Gemini para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
+              : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita."}
         </p>
         <div className="flex gap-2">
           {(["groq", "gemini"] as const).map((p) => (
@@ -98,7 +122,7 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
           ))}
         </div>
         <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--surface-0)]/80 px-3 py-2">
-          <input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] font-mono outline-none" />
+          <input type="password" value={key} onChange={(e) => handleKeyChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] font-mono outline-none" />
         </div>
       </div>
     </AppModal>

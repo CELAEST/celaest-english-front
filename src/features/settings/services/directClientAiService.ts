@@ -303,6 +303,39 @@ export const directClientAiService = {
         if (!res.ok) {
           const errBody = await res.text().catch(() => "");
           logger.warn(`[directClientAiService] Gemini HTTP ${res.status}:`, errBody);
+
+          const isRateLimitOrQuota =
+            res.status === 429 ||
+            errBody.includes("RESOURCE_EXHAUSTED") ||
+            errBody.includes("quota");
+          if (isRateLimitOrQuota && keyIndex + 1 < keys.length) {
+            return directClientAiService.chatCompletion({
+              ...params,
+              _keyIndex: keyIndex + 1,
+            });
+          }
+
+          const isGeminiModelOrOverload =
+            res.status === 404 ||
+            res.status === 429 ||
+            res.status === 503 ||
+            errBody.includes("not found") ||
+            errBody.includes("not supported for generateContent");
+          if (isGeminiModelOrOverload) {
+            const GEMINI_CANDIDATES = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+            const tried = params._triedModels || [model];
+            const nextModel = GEMINI_CANDIDATES.find((m) => !tried.includes(m));
+            if (nextModel) {
+              logger.warn(`[directClientAiService] Gemini model '${model}' unavailable/limited. Cascading to '${nextModel}'...`);
+              await providerKeyVault.saveConfig("gemini", { ...config, endpoint, defaultModel: nextModel }).catch(() => {});
+              return directClientAiService.chatCompletion({
+                ...params,
+                overrideModel: nextModel,
+                _triedModels: [...tried, nextModel],
+              });
+            }
+          }
+
           throw parseProviderError(res.status, errBody, "gemini");
         }
 
@@ -353,9 +386,12 @@ export const directClientAiService = {
       // 3. OpenAI-compatible format (Groq, OpenAI, DeepSeek, Grok xAI)
       let effectiveMaxTokens = params.maxTokens || 4096;
       if (activeProvider === "groq") {
-        // Groq models support up to 8,192 completion tokens.
-        // Never clamp to 850 tokens, which truncates JSON arrays and cuts off evaluation cards prematurely.
-        effectiveMaxTokens = Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
+        // Keep generous 4096+ ceiling for JSON / mentor feedback while ensuring short plain-text
+        // calls (e.g. profession normalization) have >=1024 tokens so reasoning models finish in 1 call.
+        effectiveMaxTokens =
+          !expectsJson && params.maxTokens && params.maxTokens < 512
+            ? Math.max(params.maxTokens, 1024)
+            : Math.min(Math.max(params.maxTokens || 4096, 4096), 8192);
       }
 
       // Groq's server-side grammar constraint engine (response_format: { type: "json_object" }) is notoriously
@@ -377,6 +413,9 @@ export const directClientAiService = {
             { role: "system", content: params.systemPrompt },
             { role: "user", content: params.userPrompt },
           ],
+          ...(isGroq && model.toLowerCase().includes("gpt-oss")
+            ? { reasoning_effort: "low" }
+            : {}),
           ...(sendStrictJsonFormat ? { response_format: { type: "json_object" } } : {}),
           max_tokens: effectiveMaxTokens,
         }),
@@ -474,9 +513,12 @@ export const directClientAiService = {
 
         if (isModelIssue && activeProvider === "groq") {
           const GROQ_CANDIDATE_MODELS = [
-            "openai/gpt-oss-20b",
             "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
             "qwen/qwen3.8-27b",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
           ];
           const tried = params._triedModels || [model];
           const nextModel = GROQ_CANDIDATE_MODELS.find((m) => !tried.includes(m) && !m.includes("allam"));

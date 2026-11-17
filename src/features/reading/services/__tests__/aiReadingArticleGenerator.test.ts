@@ -3,6 +3,7 @@ import { AiReadingArticleGenerator } from "../aiReadingArticleGenerator";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 import { directClientAiService, AiInfrastructureError } from "../../../settings/services/directClientAiService";
 import { apiReadingRepository } from "../../../../infrastructure/repositories/ApiReadingRepository";
+import { ApiError } from "../../../../infrastructure/http/ApiError";
 
 vi.mock("../../../settings/services/providerKeyVault", () => ({
   providerKeyVault: {
@@ -212,5 +213,25 @@ describe("AiReadingArticleGenerator - Resilient Pipeline & Zero Masking", () => 
       undefined,
       "Marine Biologist",
     );
+  });
+
+  it("preserves semantic 429 RATE_LIMIT_COOLDOWN ApiError instead of rewriting to 503 CLUSTER_OUTAGE", async () => {
+    vi.mocked(providerKeyVault.isCentralCoreEnabled).mockResolvedValue(true);
+    vi.mocked(providerKeyVault.hasKey).mockResolvedValue(false);
+
+    vi.mocked(apiReadingRepository.generateArticle).mockRejectedValue(
+      new ApiError("Límite de velocidad alcanzado", 429, "RATE_LIMIT_COOLDOWN"),
+    );
+
+    await expect(
+      AiReadingArticleGenerator.generateArticle({
+        category: "BUSINESS",
+        level: "B1",
+        profession: "Nurse",
+      }),
+    ).rejects.toMatchObject({
+      status: 429,
+      code: "RATE_LIMIT_COOLDOWN",
+    });
   });
 });

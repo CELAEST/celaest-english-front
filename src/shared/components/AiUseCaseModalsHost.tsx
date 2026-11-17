@@ -41,6 +41,7 @@ export const AiUseCaseModalsHost: React.FC<AiUseCaseModalsHostProps> = ({
           isOpen={controller.recovery.isOpen}
           scenario={controller.recovery.scenario}
           cooldown={controller.recovery.cooldown}
+          cloudManaged={controller.recovery.cloudManaged}
           onClose={controller.closeRecovery}
           onImmediateResume={controller.handleRecoveryResume}
           onReauth={controller.handleReauth}

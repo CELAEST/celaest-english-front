@@ -123,14 +123,33 @@ describe("resolveAiModalUseCase - Strict 6 Production Scenarios", () => {
     }
   });
 
-  it("6. Maps AI Cloud upstream failures for Pro subscribers to infra_recovery (never byok_setup)", () => {
+  it("6. Maps AI Cloud upstream failures for Pro subscribers to infra_recovery (never byok_setup) with cloudManaged=true", () => {
     const cloudOutage = resolveAiModalUseCase(
       new ApiError("CELAEST Core unreachable", 503, "AI_CORE_UNAVAILABLE"),
-      { entitlement: PRO_CLOUD_ENTITLEMENT, hasAnyKey: false, isAuthenticated: true },
+      { entitlement: PRO_CLOUD_ENTITLEMENT, hasAnyKey: false, isAuthenticated: true, isByokMode: false },
     );
     expect(cloudOutage.kind).toBe("infra_recovery");
     if (cloudOutage.kind === "infra_recovery") {
       expect(cloudOutage.scenario.id).toBe("server-outage-503");
+      expect(cloudOutage.cloudManaged).toBe(true);
     }
+
+    const cloudRateLimit = resolveAiModalUseCase(
+      new ApiError("Too many requests", 429, "RATE_LIMIT_COOLDOWN"),
+      { entitlement: PRO_CLOUD_ENTITLEMENT, hasAnyKey: true, isAuthenticated: true, isByokMode: false },
+    );
+    expect(cloudRateLimit.kind).toBe("infra_recovery");
+    if (cloudRateLimit.kind === "infra_recovery") {
+      expect(cloudRateLimit.scenario.id).toBe("rate-limit-429");
+      expect(cloudRateLimit.cloudManaged).toBe(true);
+    }
+  });
+
+  it("7. Maps monthly Cloud AI quota exhaustion (AI_QUOTA_EXCEEDED) to quota_exceeded modal", () => {
+    const quotaExceeded = resolveAiModalUseCase(
+      new ApiError("Monthly quota reached", 429, "AI_QUOTA_EXCEEDED", { quotaExhausted: true }),
+      { entitlement: PRO_CLOUD_ENTITLEMENT, hasAnyKey: false, isAuthenticated: true, isByokMode: false },
+    );
+    expect(quotaExceeded).toEqual({ kind: "byok_setup", mode: "quota_exceeded" });
   });
 });

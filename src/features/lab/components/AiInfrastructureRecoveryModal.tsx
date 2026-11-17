@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ExternalLink, Info, Check, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { ProviderMark } from "../../settings/components/SettingsProviderIcons";
@@ -75,6 +75,7 @@ export interface AiInfrastructureRecoveryModalProps {
   isOpen: boolean;
   scenario: ErrorScenarioData;
   cooldown: number; // in seconds
+  cloudManaged?: boolean | undefined;
   onClose: () => void;
   onImmediateResume: () => void;
   onReauth?: () => void;
@@ -89,7 +90,8 @@ export interface AiInfrastructureRecoveryModalProps {
 const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModalProps> = ({
   isOpen,
   scenario,
-  cooldown: _cooldown,
+  cooldown,
+  cloudManaged = false,
   onClose,
   onImmediateResume,
   onReauth,
@@ -104,11 +106,37 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
   const [selectedProvider, setSelectedProvider] = useState<AiProviderId>("groq");
   const [keyInput, setKeyInput] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
+  const [showCloudByokOverride, setShowCloudByokOverride] = useState<boolean>(false);
+  const [cloudCountdown, setCloudCountdown] = useState<number>(0);
   const [isBespokeInfoHovered, setIsBespokeInfoHovered] = useState<boolean>(false);
   const [isResolved, setIsResolved] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [verifiedSuccessInfo, setVerifiedSuccessInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsResolved(false);
+      setIsVerifying(false);
+      setVerificationError(null);
+      setVerifiedSuccessInfo(null);
+      setShowCloudByokOverride(false);
+      setCloudCountdown(cloudManaged ? Math.min(Math.max(cooldown || 6, 3), 12) : 0);
+    }
+  }, [isOpen, cloudManaged, cooldown]);
+
+  useEffect(() => {
+    if (!isOpen || !cloudManaged || cloudCountdown <= 0) return;
+    const timer = window.setTimeout(() => {
+      if (cloudCountdown <= 1) {
+        setCloudCountdown(0);
+        onImmediateResume();
+      } else {
+        setCloudCountdown((prev) => prev - 1);
+      }
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, cloudManaged, cloudCountdown, onImmediateResume]);
 
   if (!isOpen) return null;
 
@@ -142,7 +170,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
     };
 
     const defaultModels: Record<AiProviderId, string> = {
-      groq: "qwen/qwen3.8-27b",
+      groq: "openai/gpt-oss-120b",
       gemini: "gemini-3.6-flash",
       openai: "gpt-4o-mini",
       anthropic: "claude-3-5-haiku-20241022",
@@ -174,6 +202,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
         if (isCorsOrNetwork) {
           await providerKeyVault.saveKey(selectedProvider, rawKey);
           await providerKeyVault.saveActiveProviderId(selectedProvider);
+          await providerKeyVault.setCentralCoreEnabled(false);
           await providerKeyVault.saveConfig(selectedProvider, { endpoint, defaultModel: model });
 
           setIsVerifying(false);
@@ -196,6 +225,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
       const targetModel = probe.discoveredModel || model;
       await providerKeyVault.saveKey(selectedProvider, rawKey);
       await providerKeyVault.saveActiveProviderId(selectedProvider);
+      await providerKeyVault.setCentralCoreEnabled(false);
       await providerKeyVault.saveConfig(selectedProvider, { endpoint, defaultModel: targetModel });
 
       setIsVerifying(false);
@@ -235,15 +265,23 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
           ? "Progreso de lectura seguro"
           : scenario.dial1Subtext;
 
-  const dial2Label = "PROVEEDOR IA";
-  const dial2Value = "BYOK Directo";
-  const dial2Subtext = "Pega tu clave para continuar sin esperas";
+  const dial2Label = cloudManaged ? "CELAEST CLOUD" : "PROVEEDOR IA";
+  const dial2Value = cloudManaged
+    ? cloudCountdown > 0
+      ? `${cloudCountdown}s`
+      : "LISTO"
+    : "BYOK Directo";
+  const dial2Subtext = cloudManaged
+    ? "Reconectando automáticamente"
+    : "Pega tu clave para continuar sin esperas";
 
-  const reassuranceText = isWriting
-    ? "Tu redacción permanece 100% intacta en el editor. No perderás ni una sola palabra."
-    : isReading
-      ? "Tu sesión y progreso de lectura permanecen seguros. Ingresa una clave gratuita para continuar."
-      : scenario.reassurance;
+  const reassuranceText = cloudManaged
+    ? "Tu sesión y avance permanecen 100% guardados. Tu plan Cloud está reconectando automáticamente."
+    : isWriting
+      ? "Tu redacción permanece 100% intacta en el editor. No perderás ni una sola palabra."
+      : isReading
+        ? "Tu sesión y progreso de lectura permanecen seguros. Ingresa una clave gratuita para continuar."
+        : scenario.reassurance;
 
   const modalNode = (
     <div
@@ -330,13 +368,33 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
             <span>{reassuranceText}</span>
           </div>
 
-          {/* Multi-Provider Selection or Re-Auth Notice */}
+          {/* Multi-Provider Selection, Cloud Auto-Retry Notice, or Re-Auth Notice */}
           {isReauthScenario ? (
             <div className="p-3.5 rounded-2xl border border-amber-400/20 bg-amber-500/[0.05] text-xs text-white/80 font-light leading-relaxed">
               Tu sesión de usuario expiró o no está activa. Tus avances locales siguen guardados en tu navegador; vuelve a iniciar sesión para continuar sin interrupciones.
             </div>
           ) : (
           <div className="space-y-3 pt-1">
+            {cloudManaged && (
+              <div className="space-y-2">
+                <div className="p-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] text-xs text-white/75 font-light leading-relaxed flex items-center justify-between gap-2">
+                  <span>
+                    Estamos rotando automáticamente entre nuestros nodos de IA Cloud para entregarte tu respuesta sin usar configuraciones manuales.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCloudByokOverride((prev) => !prev)}
+                  className="text-[11px] font-mono text-white/45 hover:text-white/80 underline-offset-4 hover:underline cursor-pointer px-1"
+                >
+                  {showCloudByokOverride
+                    ? "Ocultar configuración avanzada (BYOK)"
+                    : "¿Prefieres conectar tu propia clave de respaldo temporal? (Opcional)"}
+                </button>
+              </div>
+            )}
+            {(!cloudManaged || showCloudByokOverride) && (
+            <>
             <div className="flex items-center justify-between text-xs px-1">
               <span className="text-white/60 font-light">Proveedor de inferencia:</span>
               <span className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5">
@@ -577,6 +635,8 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
                 </div>
               )}
             </div>
+            </>
+            )}
           </div>
           )}
         </div>
@@ -586,7 +646,11 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
           <span className="text-xs text-[#8E8EA8] font-light text-center sm:text-left">
             {isReauthScenario
               ? "Inicia sesión nuevamente para renovar tu acceso."
-              : "Elige un proveedor o ingresa tu clave para continuar."}
+              : cloudManaged
+                ? cloudCountdown > 0
+                  ? `Reintento automático en ${cloudCountdown}s o reanuda ahora.`
+                  : "Listo para reintentar tu solicitud."
+                : "Elige un proveedor o ingresa tu clave para continuar."}
           </span>
           <button
             onClick={

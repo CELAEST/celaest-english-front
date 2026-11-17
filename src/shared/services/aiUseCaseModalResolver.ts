@@ -2,7 +2,7 @@ import { ProductEntitlement } from "../../domain/entities/ProductEntitlement";
 import { ERROR_DATA, ErrorScenarioData } from "../constants/errorScenarios";
 import { classifyAiError } from "./aiErrorClassifier";
 
-export type ByokModalMode = "trial_choice" | "promo_byok";
+export type ByokModalMode = "trial_choice" | "promo_byok" | "quota_exceeded";
 
 export type PaywallReason =
   | "expired"
@@ -15,6 +15,7 @@ export interface AiModalResolutionContext {
   entitlement?: ProductEntitlement | undefined;
   hasAnyKey?: boolean | undefined;
   isAuthenticated?: boolean | undefined;
+  isByokMode?: boolean | undefined;
 }
 
 export type ResolvedAiModalAction =
@@ -36,6 +37,7 @@ export type ResolvedAiModalAction =
       kind: "infra_recovery";
       scenario: ErrorScenarioData;
       cooldownSeconds: number;
+      cloudManaged?: boolean | undefined;
     };
 
 const EXPIRED_STATUSES = new Set<string>([
@@ -135,12 +137,20 @@ export function resolveAiModalUseCase(
     };
   }
 
-  // 3 & 4. Free Trial choice vs Promo BYOK setup (missing key)
+  // 3 & 4. Monthly Cloud Quota Exhausted vs Free Trial vs Promo BYOK setup
+  const isQuotaLimitReached =
+    code === "AI_QUOTA_EXCEEDED" ||
+    code === "MONTHLY_QUOTA_EXCEEDED" ||
+    errObj?.details?.quotaExhausted === true;
+
+  if (isQuotaLimitReached) {
+    return { kind: "byok_setup", mode: "quota_exceeded" };
+  }
+
   const isExplicitTrialCode = code === "AI_TRIAL_ACCESS_REQUIRED";
   const isExplicitByokCode =
     code === "AI_BYOK_REQUIRED" ||
     code === "BYOK_REQUIRED" ||
-    code === "AI_QUOTA_EXCEEDED" ||
     errObj?.name === "PathwayByokRequiredError";
   const isMissingKeyWithoutCloud =
     !context.entitlement?.aiCloudIncluded &&
@@ -174,9 +184,14 @@ export function resolveAiModalUseCase(
     };
   }
 
+  const cloudManaged =
+    Boolean(context.entitlement?.aiCloudIncluded) &&
+    context.isByokMode !== true;
+
   return {
     kind: "infra_recovery",
     scenario: classified.scenario,
     cooldownSeconds: classified.cooldownSeconds,
+    cloudManaged,
   };
 }

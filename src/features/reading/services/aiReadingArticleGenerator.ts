@@ -37,7 +37,7 @@ interface AiStoryRawResponse {
 }
 
 export class AiReadingArticleGenerator {
-  private static readonly CLIENT_TIMEOUT_MS = 15000;
+  private static readonly CLIENT_TIMEOUT_MS = 45000;
 
   private static buildPrompt(level: string, category: string, profession: string, topic?: string): { systemPrompt: string; userPrompt: string } {
     const normLevel = (level || "B1").toUpperCase().trim();
@@ -206,7 +206,7 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
     );
 
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Tiempo de espera agotado al conectar con el clúster de IA (15s).")), this.CLIENT_TIMEOUT_MS),
+      setTimeout(() => reject(new Error("Tiempo de espera agotado al conectar con el clúster de IA (45s).")), this.CLIENT_TIMEOUT_MS),
     );
 
     try {
@@ -237,7 +237,12 @@ Do not wrap in markdown quotes. Respond ONLY with valid JSON.`;
           });
           return this.parseAiResponse(directRaw, options);
         }
-        if ([401, 402, 403, 422].includes(backendErr.status)) {
+        // Preserve ALL explicit backend semantic codes (401, 402, 403, 422, 429 RATE_LIMIT_COOLDOWN / AI_QUOTA_EXCEEDED, 504)
+        // when no personal fallback key exists instead of rewriting them to fake 503 CLUSTER_OUTAGE.
+        if (
+          [401, 402, 403, 422, 429, 504].includes(backendErr.status) ||
+          (Boolean(backendErr.code) && !hasKey)
+        ) {
           throw backendErr;
         }
       }

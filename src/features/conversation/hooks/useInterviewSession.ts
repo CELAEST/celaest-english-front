@@ -194,25 +194,25 @@ export const useInterviewSession = (
   cloudSyncRef.current = cloudSync;
 
   // ──────────────────────────────────────────────
-  // 6. Proactive question TTS prefetch
+  // 6. Proactive question TTS prefetch (current question & active voice only)
   // ──────────────────────────────────────────────
   const { selectedVoice, speakQuestion } = speech;
-  const { currentQuestionIndex } = questions;
   const questionText = questions.currentQuestion?.question;
 
   useEffect(() => {
-    if (!isActive || !questionText) return;
+    if (!isActive || !hasCloudHydrated || !questionText) return;
     if (questionText.startsWith("Generating") || questionText.startsWith("Preparing")) return;
-    SpeechSynthesisService.prefetch(questionText, selectedVoice);
-    const alternateVoice =
-      selectedVoice === "en-US-AriaNeural" ? "en-US-ChristopherNeural" : "en-US-AriaNeural";
-    SpeechSynthesisService.prefetch(questionText, alternateVoice);
+    if (questions.isGeneratingQuestions || questions.sessionQuestions.length === 0) return;
 
-    const nextQ = questions.sessionQuestions[currentQuestionIndex + 1];
-    if (nextQ?.question) {
-      SpeechSynthesisService.prefetch(nextQ.question, selectedVoice);
-    }
-  }, [isActive, questionText, currentQuestionIndex, questions.sessionQuestions, selectedVoice]);
+    SpeechSynthesisService.prefetch(questionText, selectedVoice);
+  }, [
+    isActive,
+    hasCloudHydrated,
+    questionText,
+    selectedVoice,
+    questions.isGeneratingQuestions,
+    questions.sessionQuestions.length,
+  ]);
 
   // ──────────────────────────────────────────────
   // 7. Auto-speak question on activation / change

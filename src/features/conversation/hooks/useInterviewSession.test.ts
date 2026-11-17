@@ -697,7 +697,9 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
     const speakSpy = vi.spyOn(SpeechSynthesisService, "speak");
     speakSpy.mockClear();
 
-    let resolveGetProgress: ((val: any) => void) | null = null;
+    let resolveGetProgress:
+      | ((val: Awaited<ReturnType<typeof apiInterviewRepository.getProgress>>) => void)
+      | null = null;
     vi.mocked(apiInterviewRepository.getProgress).mockImplementation(() => {
       return new Promise((resolve) => {
         resolveGetProgress = resolve;
@@ -831,6 +833,76 @@ describe("useInterviewSession turn submission & AI evaluation (Zero Deadlock)", 
 
     // Assert: stop was called immediately when switching level
     expect(stopSpy).toHaveBeenCalled();
+  });
+
+  it("prefetches audio only once for the active question and selected voice upon entering", async () => {
+    localStorage.clear();
+    const prefetchSpy = vi.mocked(SpeechSynthesisService.prefetch);
+    prefetchSpy.mockClear();
+
+    let resolveGetProgress:
+      | ((val: Awaited<ReturnType<typeof apiInterviewRepository.getProgress>>) => void)
+      | null = null;
+    vi.mocked(apiInterviewRepository.getProgress).mockImplementation(() => {
+      return new Promise((resolve) => {
+        resolveGetProgress = resolve;
+      });
+    });
+
+    const { result } = renderHook(() =>
+      useInterviewSession("Software Engineer", "A1", true),
+    );
+
+    // Must not prefetch anything before cloud hydration resolves
+    expect(prefetchSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveGetProgress?.({
+        userId: "user-1",
+        roleName: "Software Engineer",
+        speechRate: 0.95,
+        currentQuestionIndex: 0,
+        userTranscript: "",
+        savedErrorIds: [],
+        showAnalysisModal: false,
+        latestTurn: null,
+        cefrLevel: "A1",
+        sessionQuestions: [
+          {
+            id: 1,
+            question: "Tell me about your typical workday.",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+          {
+            id: 2,
+            question: "What tools do you use every morning?",
+            category: "WARMUP",
+            starHint: "",
+            expectedKeywords: [],
+            round: 1,
+          },
+        ],
+        askedQuestions: [],
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.hasCloudHydrated).toBe(true);
+      expect(result.current.currentQuestion?.question).toBe(
+        "Tell me about your typical workday.",
+      );
+    });
+
+    // Strictly 1 stream prefetch call (no alternate voice, no eager next-question fetch)
+    expect(prefetchSpy).toHaveBeenCalledTimes(1);
+    expect(prefetchSpy).toHaveBeenCalledWith(
+      "Tell me about your typical workday.",
+      "en-US-AriaNeural",
+    );
   });
 });
 

@@ -1,12 +1,17 @@
 import { AiProviderId } from "../../domain/entities/AiProvider";
 import {
   AiInfrastructureError,
+  directClientAiService,
   parseProviderError,
 } from "../../features/settings/services/directClientAiService";
 import {
   providerKeyVault,
   ResolvedProviderContext,
 } from "../../features/settings/services/providerKeyVault";
+import {
+  SupabaseAuthAdapter,
+  isJwtExpired,
+} from "../adapters/auth/SupabaseAuthAdapter";
 import { ENV } from "../../shared/constants/env";
 import { ApiError } from "./ApiError";
 import { HttpClient } from "./HttpClient";
@@ -85,20 +90,53 @@ export async function buildByokHeadersSafe(options?: {
   return headers;
 }
 
+function parseGatewayErrorMeta(rawBody: string): {
+  code?: string | undefined;
+  message: string;
+  details: Record<string, unknown>;
+} {
+  let parsed: Record<string, any> = {};
+  try {
+    parsed = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
+  } catch {
+    parsed = {};
+  }
+
+  const errObj =
+    typeof parsed.error === "object" && parsed.error !== null
+      ? (parsed.error as Record<string, any>)
+      : null;
+  const code =
+    (typeof errObj?.code === "string" ? errObj.code : undefined) ||
+    (typeof parsed.code === "string" ? parsed.code : undefined);
+  const message =
+    (typeof parsed.details === "string" && parsed.details) ||
+    (typeof errObj?.message === "string" && errObj.message) ||
+    (typeof parsed.error === "string" && parsed.error) ||
+    (typeof parsed.message === "string" && parsed.message) ||
+    "Authentication required";
+
+  const details: Record<string, unknown> = {
+    ...(errObj || {}),
+    ...(typeof parsed.data === "object" && parsed.data !== null
+      ? (parsed.data as Record<string, unknown>)
+      : {}),
+    ...(code ? { code } : {}),
+  };
+
+  return { code, message, details };
+}
+
 function handleJwtUnauthorized(status: number, code: string | undefined, message: string, details: Record<string, unknown>): never {
   if (typeof window !== "undefined") {
     const isDevLocal =
       import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local");
-    if (!isDevLocal) {
-      try {
-        localStorage.removeItem("lingua_access_token");
-        localStorage.removeItem("lingua_refresh_token");
-        localStorage.removeItem("lingua_auth_user");
-      } catch {
-        // ignore storage errors
-      }
+    const onAuthCallbackRoute = window.location.pathname.startsWith("/auth/callback");
+    const storedToken = localStorage.getItem("lingua_access_token");
+    const hasActiveJwt = Boolean(storedToken && !isJwtExpired(storedToken));
+    if (!isDevLocal && !onAuthCallbackRoute && (code === "JWT_EXPIRED" || !hasActiveJwt)) {
+      SupabaseAuthAdapter.getInstance().clearDeadToken();
       window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
-      window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
     }
   }
   throw new ApiError(message, status, code || "AUTHENTICATION_REQUIRED", details);
@@ -210,7 +248,11 @@ export async function callBackendAiChatGateway(
   const ctx = await resolveProviderContextSafe();
   const providerId: AiProviderId = params.providerId || ctx.providerId || "groq";
 
-  const executeAttempt = async (includeKey: boolean): Promise<string> => {
+  const executeAttempt = async (
+    includeKey: boolean,
+    authRetryUsed = false,
+    tokenOverride?: string | null,
+  ): Promise<string> => {
     const controller = new AbortController();
     const timeoutMs = params.timeoutMs ?? 35_000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -218,7 +260,32 @@ export async function callBackendAiChatGateway(
     params.signal?.addEventListener("abort", onAbort, { once: true });
 
     try {
-      const token = getAuthTokenSafe();
+      let token = tokenOverride ?? getAuthTokenSafe();
+      const isDevLocal =
+        typeof window !== "undefined" &&
+        import.meta.env.DEV &&
+        Boolean(localStorage.getItem("lingua_auth_user")?.includes("dev-user-local"));
+      const onAuthCallbackRoute =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/auth/callback");
+
+      if (
+        !authRetryUsed &&
+        !tokenOverride &&
+        typeof window !== "undefined" &&
+        !isDevLocal &&
+        !onAuthCallbackRoute &&
+        (!token || isJwtExpired(token))
+      ) {
+        const authAdapter = SupabaseAuthAdapter.getInstance();
+        if (authAdapter.hasRecoverableRefreshSource()) {
+          const preflight = await authAdapter.refresh(token ?? undefined);
+          if (preflight.success && preflight.accessToken) {
+            token = preflight.accessToken;
+          }
+        }
+      }
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(await buildByokHeadersSafe({ includeKey })),
@@ -254,6 +321,38 @@ export async function callBackendAiChatGateway(
 
       const rawText = await res.text();
       if (!res.ok) {
+        if (res.status === 401 && !authRetryUsed) {
+          const { code, message, details } = parseGatewayErrorMeta(rawText);
+          const storedToken =
+            typeof window !== "undefined"
+              ? localStorage.getItem("lingua_access_token")
+              : null;
+          const hasActiveJwt = Boolean(storedToken && !isJwtExpired(storedToken));
+          if (
+            code !== "AUTH_DECLINED_KEY" &&
+            !isDevLocal &&
+            !onAuthCallbackRoute &&
+            (code === "JWT_EXPIRED" || !hasActiveJwt)
+          ) {
+            const refreshRes = await SupabaseAuthAdapter.getInstance().refresh(
+              token ?? undefined,
+            );
+            if (refreshRes.success && refreshRes.accessToken) {
+              return await executeAttempt(includeKey, true, refreshRes.accessToken);
+            }
+            if (
+              refreshRes.error === "Network error" ||
+              refreshRes.error === "Server error"
+            ) {
+              throw new ApiError(
+                message,
+                401,
+                code || "AUTHENTICATION_REQUIRED",
+                details,
+              );
+            }
+          }
+        }
         mapFailedGatewayResponse(res.status, rawText, providerId);
       }
 
@@ -311,6 +410,31 @@ export async function callBackendAiChatGateway(
     }
   };
 
+  const directCallParams = {
+    systemPrompt: params.systemPrompt || "You are a helpful AI English mentor.",
+    userPrompt: params.userPrompt,
+    providerId,
+    ...(params.maxTokens !== undefined ? { maxTokens: params.maxTokens } : {}),
+  };
+
+  // When BYOK Direct Mode is active (user connected their own API key and Cloud AI is off),
+  // execute directly against the user's configured provider first (zero shared-pool rate limits
+  // and full multi-key / multi-model resilience), falling back to backend proxy only on browser CORS/network blocks.
+  if (!ctx.isCore && ctx.hasAnyKey && ctx.apiKey) {
+    try {
+      return await directClientAiService.chatCompletion(directCallParams);
+    } catch (directErr) {
+      const isBrowserNetworkOrCors =
+        directErr instanceof AiInfrastructureError &&
+        directErr.code === "GATEWAY_TIMEOUT" &&
+        directErr.status === 500 &&
+        !directErr.rawErrorDetails;
+      if (!isBrowserNetworkOrCors) {
+        throw directErr;
+      }
+    }
+  }
+
   try {
     return await executeAttempt(!ctx.isCore);
   } catch (err) {
@@ -321,7 +445,11 @@ export async function callBackendAiChatGateway(
     ) {
       await providerKeyVault.setCentralCoreEnabled?.(false).catch(() => {});
       if (ctx.isCore && ctx.hasAnyKey && ctx.apiKey) {
-        return await executeAttempt(true);
+        try {
+          return await directClientAiService.chatCompletion(directCallParams);
+        } catch {
+          return await executeAttempt(true);
+        }
       }
     }
     throw err;

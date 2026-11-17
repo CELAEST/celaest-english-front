@@ -24,6 +24,12 @@ export const useOnboardingFlow = () => {
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  useEffect(() => {
+    if (!authAdapter.isAuthenticated() && authAdapter.hasRecoverableRefreshSource()) {
+      void authAdapter.refresh();
+    }
+  }, [authAdapter]);
+
   // Smart AI Onboarding Bypass: if the user acquired Lingua via CELAEST Marketplace
   // or active Plan (aiCloudIncluded === true), enable Central Core and skip API-Key step.
   useEffect(() => {
@@ -60,6 +66,14 @@ export const useOnboardingFlow = () => {
     const handleAuthChanged = () => {
       if (!authAdapter.isAuthenticated()) {
         setStep("auth");
+      } else {
+        const latestUser = authAdapter.getStoredUser();
+        const latestCompleted =
+          typeof window !== "undefined" &&
+          ((latestUser?.id ? localStorage.getItem(`lingua_onboarding_completed_${latestUser.id}`) === "true" : false) ||
+            (latestUser?.email ? localStorage.getItem(`lingua_onboarding_completed_${latestUser.email}`) === "true" : false) ||
+            latestUser?.onboardingCompleted === true);
+        setStep((current) => (current === "auth" ? (latestCompleted ? "ready" : "api-key") : current));
       }
     };
 

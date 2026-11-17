@@ -120,6 +120,7 @@ export function getJwtExpiresInMs(token: string | null): number | null {
 export class SupabaseAuthAdapter implements IAuthService {
   private static instance: SupabaseAuthAdapter | null = null;
   private refreshTimerId: ReturnType<typeof setTimeout> | null = null;
+  private refreshPromise: Promise<AuthResult> | null = null;
 
   public static getInstance(): SupabaseAuthAdapter {
     if (!SupabaseAuthAdapter.instance) {
@@ -133,6 +134,61 @@ export class SupabaseAuthAdapter implements IAuthService {
     if (existingToken) {
       HttpClient.setAuthToken(existingToken);
       this.scheduleSilentRefresh(existingToken);
+    }
+
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      const handleResumeRefresh = () => {
+        if (document.visibilityState && document.visibilityState !== "visible") {
+          return;
+        }
+        const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+        const remainingMs = getJwtExpiresInMs(token);
+        const needsProactiveRefresh =
+          remainingMs !== null && remainingMs <= 5 * 60 * 1000;
+        if (needsProactiveRefresh && this.hasRecoverableRefreshSource()) {
+          void this.refresh();
+        }
+      };
+      document.addEventListener("visibilitychange", handleResumeRefresh);
+      window.addEventListener("focus", handleResumeRefresh);
+    }
+  }
+
+  private hasSupabaseBrowserSession(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw) as {
+              access_token?: string;
+              refresh_token?: string;
+            };
+            if (parsed?.refresh_token || parsed?.access_token) {
+              return true;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  public hasRecoverableRefreshSource(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      if (refreshToken && refreshToken !== accessToken) {
+        return true;
+      }
+      return this.hasSupabaseBrowserSession();
+    } catch {
+      return false;
     }
   }
 
@@ -155,8 +211,7 @@ export class SupabaseAuthAdapter implements IAuthService {
 
     this.refreshTimerId = setTimeout(async () => {
       try {
-        const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (!storedRefresh) return;
+        if (!this.hasRecoverableRefreshSource()) return;
         logger.info("[AuthAdapter] Proactively refreshing JWT session...");
         const result = await this.refresh();
         if (!result.success) {
@@ -176,8 +231,15 @@ export class SupabaseAuthAdapter implements IAuthService {
         return token;
       }
       if (isJwtExpired(token)) {
-        logger.warn("[AuthAdapter] Stored JWT token has expired. Clearing dead session.");
-        this.clearDeadToken();
+        if (this.hasRecoverableRefreshSource()) {
+          // Preserve refresh token & user profile so single-flight refresh() can recover seamlessly.
+          logger.warn("[AuthAdapter] Stored JWT token expired; preserving refresh token for recovery.");
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          HttpClient.setAuthToken("");
+        } else {
+          logger.warn("[AuthAdapter] Stored JWT token has expired. Clearing dead session.");
+          this.clearDeadToken();
+        }
         return null;
       }
       return token;
@@ -341,9 +403,118 @@ export class SupabaseAuthAdapter implements IAuthService {
     }
   }
 
-  public async refresh(): Promise<AuthResult> {
+  public async refresh(failedToken?: string): Promise<AuthResult> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+    const promise = this.performRefresh(failedToken).finally(() => {
+      if (this.refreshPromise === promise) {
+        this.refreshPromise = null;
+      }
+    });
+    this.refreshPromise = promise;
+    return promise;
+  }
+
+  private async performRefresh(failedToken?: string): Promise<AuthResult> {
+    if (typeof window === "undefined") {
+      return { success: false, error: "No refresh token" };
+    }
+
+    const storedAccess = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const storedRemainingMs = getJwtExpiresInMs(storedAccess);
+    const storedHasFreshLifetime =
+      Boolean(storedAccess) &&
+      !isJwtExpired(storedAccess) &&
+      (storedRemainingMs === null || storedRemainingMs > 5 * 60 * 1000);
+    if (
+      storedAccess &&
+      !isJwtExpired(storedAccess) &&
+      ((failedToken && storedAccess !== failedToken) ||
+        (!failedToken && storedHasFreshLifetime))
+    ) {
+      HttpClient.setAuthToken(storedAccess);
+      return { success: true, accessToken: storedAccess };
+    }
+
+    if (this.hasSupabaseBrowserSession()) {
+      try {
+        const {
+          data: { session: currentSb },
+        } = await supabase.auth.getSession();
+
+        const sbRemainingMs = getJwtExpiresInMs(currentSb?.access_token ?? null);
+        const sbHasFreshLifetime =
+          Boolean(currentSb?.access_token) &&
+          !isJwtExpired(currentSb?.access_token ?? null) &&
+          (sbRemainingMs === null || sbRemainingMs > 5 * 60 * 1000);
+
+        if (
+          currentSb?.access_token &&
+          !isJwtExpired(currentSb.access_token) &&
+          ((failedToken && currentSb.access_token !== failedToken) ||
+            (!failedToken && sbHasFreshLifetime))
+        ) {
+          this.persistSession(
+            currentSb.access_token,
+            currentSb.refresh_token,
+            this.getStoredUser() ?? undefined,
+          );
+          return { success: true, accessToken: currentSb.access_token };
+        }
+
+        if (currentSb?.refresh_token) {
+          const { data, error } = await supabase.auth.refreshSession();
+          if (data?.session?.access_token) {
+            const existingUser = this.getStoredUser();
+            const resolvedUser: AuthUser | undefined =
+              existingUser ??
+              (data.session.user
+                ? {
+                    id: data.session.user.id,
+                    email: data.session.user.email || "",
+                    name:
+                      (data.session.user.user_metadata?.name as string | undefined) ||
+                      data.session.user.email?.split("@")[0] ||
+                      "Learner",
+                    role:
+                      (data.session.user.user_metadata?.role as string | undefined) ||
+                      "member",
+                  }
+                : undefined);
+            this.persistSession(
+              data.session.access_token,
+              data.session.refresh_token,
+              resolvedUser,
+            );
+            return { success: true, accessToken: data.session.access_token };
+          }
+          if (error) {
+            const status = (error as { status?: number }).status;
+            const msg = error.message?.toLowerCase() || "";
+            if (
+              !status ||
+              status >= 500 ||
+              msg.includes("fetch") ||
+              msg.includes("network")
+            ) {
+              return { success: false, error: "Network error" };
+            }
+          }
+        }
+      } catch {
+        return { success: false, error: "Network error" };
+      }
+    }
+
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!refreshToken) return { success: false, error: "No refresh token" };
+    if (
+      !refreshToken ||
+      refreshToken === storedAccess ||
+      refreshToken === failedToken
+    ) {
+      return { success: false, error: "No refresh token" };
+    }
 
     try {
       const response = await fetch(`${ENV.celaestBackUrl}/auth/refresh`, {
@@ -351,10 +522,17 @@ export class SupabaseAuthAdapter implements IAuthService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
+      if (response.status >= 500) {
+        return { success: false, error: "Server error" };
+      }
       const json = await response.json();
-      if (response.ok && json.success) {
+      if (response.ok && json.success && json.data?.access_token) {
         const data = json.data;
-        this.persistSession(data.access_token, data.refresh_token || refreshToken, this.getStoredUser()!);
+        this.persistSession(
+          data.access_token,
+          data.refresh_token || refreshToken,
+          this.getStoredUser() ?? undefined,
+        );
         return { success: true, accessToken: data.access_token };
       }
       return { success: false, error: "Refresh expired" };

@@ -9,6 +9,10 @@
 import { ApiError } from "./ApiError";
 import { ENV } from "../../shared/constants/env";
 import { logger } from "../../shared/utils/logger";
+import {
+  SupabaseAuthAdapter,
+  isJwtExpired,
+} from "../adapters/auth/SupabaseAuthAdapter";
 
 const BASE_URL = ENV.apiUrl;
 
@@ -62,6 +66,31 @@ function createTimeoutSignal(
   };
 }
 
+/**
+ * Checks whether the currently stored `lingua_access_token` is a structural JWT
+ * whose `exp` claim is still in the future. Prevents downstream 401 responses
+ * (e.g. during cross-service SSO handoff) from wiping an active, unexpired session.
+ */
+function hasUnexpiredStoredJwt(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const token = localStorage.getItem("lingua_access_token");
+    if (!token) return false;
+    const parts = token.split(".");
+    if (parts.length < 2 || !parts[1]) return false;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+    const payload = JSON.parse(atob(padded)) as { exp?: unknown };
+    if (typeof payload?.exp === "number") {
+      return Date.now() < payload.exp * 1000 - 5000;
+    }
+  } catch {
+    // ignore malformed JWT
+  }
+  return false;
+}
+
 export class HttpClient {
   private static token: string | null = null;
 
@@ -102,17 +131,82 @@ export class HttpClient {
     return headers;
   }
 
+  private static async handleUnauthorizedRecovery(
+    failedToken: string | undefined,
+    isExplicitJwtExpired: boolean,
+    headers: Record<string, string>,
+  ): Promise<"recovered" | "transient" | "fatal"> {
+    if (typeof window === "undefined") {
+      return "fatal";
+    }
+    if (
+      import.meta.env.DEV &&
+      localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")
+    ) {
+      return "transient";
+    }
+    if (window.location.pathname.startsWith("/auth/callback")) {
+      return "transient";
+    }
+
+    const shouldAttemptRecovery = isExplicitJwtExpired || !hasUnexpiredStoredJwt();
+    if (!shouldAttemptRecovery) {
+      return "transient";
+    }
+
+    const authAdapter = SupabaseAuthAdapter.getInstance();
+    const refreshed = await authAdapter.refresh(failedToken);
+    if (refreshed.success && refreshed.accessToken) {
+      this.token = refreshed.accessToken;
+      headers["Authorization"] = `Bearer ${refreshed.accessToken}`;
+      return "recovered";
+    }
+
+    if (refreshed.error === "Network error" || refreshed.error === "Server error") {
+      return "transient";
+    }
+
+    authAdapter.clearDeadToken();
+    this.token = null;
+    window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
+    return "fatal";
+  }
+
   private static async request<T>(endpoint: string, options: HttpRequestOptions = {}): Promise<T> {
     const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
-    const headers = {
-      ...this.getHeaders(),
-      ...options.headers,
+    const headers: Record<string, string> = {
+      ...(this.getHeaders() as Record<string, string>),
+      ...(options.headers as Record<string, string> | undefined),
     };
     const method = (options.method ?? "GET").toUpperCase();
     const maxAttempts = RETRYABLE_METHODS.has(method) ? MAX_RETRIES + 1 : 1;
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let failedToken = headers["Authorization"]?.startsWith("Bearer ")
+      ? headers["Authorization"].slice(7).trim()
+      : undefined;
+
+    if (
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/auth/callback") &&
+      !(import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) &&
+      (!failedToken || isJwtExpired(failedToken))
+    ) {
+      const authAdapter = SupabaseAuthAdapter.getInstance();
+      if (authAdapter.hasRecoverableRefreshSource()) {
+        const preflight = await authAdapter.refresh(failedToken);
+        if (preflight.success && preflight.accessToken) {
+          this.token = preflight.accessToken;
+          failedToken = preflight.accessToken;
+          headers["Authorization"] = `Bearer ${preflight.accessToken}`;
+        }
+      }
+    }
+
+    let attempt = 1;
+    let hasAttemptedAuthRecovery = false;
+
+    while (attempt <= maxAttempts) {
       const { signal, cleanup, timedOut } = createTimeoutSignal(options.signal, timeoutMs);
 
       try {
@@ -151,25 +245,25 @@ export class HttpClient {
           };
 
           const isProviderAuthDeclined = code === "AUTH_DECLINED_KEY";
-          if (response.status === 401 && !isProviderAuthDeclined && typeof window !== "undefined") {
-            if (import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) {
-              throw new ApiError(
-                message,
-                response.status,
-                code,
-                Object.keys(mergedDetails).length > 0 ? mergedDetails : undefined,
+          const isExplicitJwtExpired = code === "JWT_EXPIRED";
+          if (response.status === 401 && !isProviderAuthDeclined) {
+            if (!hasAttemptedAuthRecovery) {
+              hasAttemptedAuthRecovery = true;
+              const status = await this.handleUnauthorizedRecovery(
+                failedToken,
+                isExplicitJwtExpired,
+                headers,
               );
+              if (status === "recovered") {
+                failedToken = headers["Authorization"]?.slice(7).trim();
+                continue;
+              }
+            } else if (typeof window !== "undefined") {
+              const authAdapter = SupabaseAuthAdapter.getInstance();
+              authAdapter.clearDeadToken();
+              this.token = null;
+              window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
             }
-            try {
-              localStorage.removeItem("lingua_access_token");
-              localStorage.removeItem("lingua_refresh_token");
-              localStorage.removeItem("lingua_auth_user");
-            } catch {
-              // ignore
-            }
-            HttpClient.token = null;
-            window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
-            window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
           }
 
           throw new ApiError(
@@ -189,20 +283,23 @@ export class HttpClient {
           (rawData.error.toLowerCase().includes("jwt") ||
             rawData.error.toLowerCase().includes("unauthorized"));
 
-        if (isExpiredJwtBody && typeof window !== "undefined") {
-          if (import.meta.env.DEV && localStorage.getItem("lingua_auth_user")?.includes("dev-user-local")) {
-            throw new ApiError(rawData.error, 401, "UNAUTHORIZED");
+        if (isExpiredJwtBody) {
+          if (!hasAttemptedAuthRecovery) {
+            hasAttemptedAuthRecovery = true;
+            const status = await this.handleUnauthorizedRecovery(
+              failedToken,
+              false,
+              headers,
+            );
+            if (status === "recovered") {
+              failedToken = headers["Authorization"]?.slice(7).trim();
+              continue;
+            }
+          } else if (typeof window !== "undefined" && !hasUnexpiredStoredJwt()) {
+            SupabaseAuthAdapter.getInstance().clearDeadToken();
+            this.token = null;
+            window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
           }
-          try {
-            localStorage.removeItem("lingua_access_token");
-            localStorage.removeItem("lingua_refresh_token");
-            localStorage.removeItem("lingua_auth_user");
-          } catch {
-            // ignore
-          }
-          HttpClient.token = null;
-          window.dispatchEvent(new CustomEvent("celaest:unauthorized"));
-          window.dispatchEvent(new CustomEvent("celaest:auth-changed"));
           throw new ApiError(rawData.error, 401, "UNAUTHORIZED");
         }
 
@@ -226,10 +323,11 @@ export class HttpClient {
         );
 
         if (attempt < maxAttempts) {
+          attempt++;
           // Jittered exponential backoff avoids synchronized retry storms.
           const jitter = Math.random() * BASE_RETRY_DELAY_MS * 0.3;
           await new Promise((resolve) =>
-            setTimeout(resolve, BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + jitter),
+            setTimeout(resolve, BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1) + jitter),
           );
           continue;
         }

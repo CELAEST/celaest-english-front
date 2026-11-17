@@ -120,9 +120,11 @@ function WorkspaceWrapper() {
   );
 
   // Global Unauthorized Event Listener (from HttpClient 401s)
+  // Passive token expiration must NEVER invoke authAdapter.logout() (POST /auth/logout),
+  // which revokes the user's sessions server-side across CELAEST Dashboard too.
   useEffect(() => {
     const handleUnauthorized = () => {
-      authAdapter.logout();
+      authAdapter.clearDeadToken();
       navigate(ROUTES.ONBOARDING, { replace: true });
     };
 
@@ -179,7 +181,10 @@ function WorkspaceWrapper() {
 
 export const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const authAdapter = SupabaseAuthAdapter.getInstance();
+  const hasExplicitHashToken =
+    typeof window !== "undefined" && window.location.hash.includes("access_token=");
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -192,6 +197,14 @@ export const AppRoutes: React.FC = () => {
       window.removeEventListener("celaest:unauthorized", handleUnauthorized);
     };
   }, [authAdapter, navigate]);
+
+  if (hasExplicitHashToken && location.pathname !== ROUTES.AUTH_CALLBACK) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <AuthCallbackView />
+      </Suspense>
+    );
+  }
 
   return (
     <Suspense fallback={<RouteFallback />}>

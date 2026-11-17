@@ -52,4 +52,16 @@ describe("classifyAiError", () => {
     const result = classifyAiError(err);
     expect(result.errorType).toBe("server-outage-503");
   });
+
+  it("never misclassifies provider 401 errors as jwt-expired session logout", () => {
+    const providerErr = {
+      name: "AiInfrastructureError",
+      providerId: "groq",
+      status: 401,
+      message: "Unauthorized",
+    };
+    const result = classifyAiError(providerErr);
+    expect(result.errorType).toBe("invalid-key-401");
+    expect(result.scenario.specialActionType).not.toBe("re-auth");
+  });
 });

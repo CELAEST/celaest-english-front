@@ -19,7 +19,7 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
   mode = "promo_byok",
   onOpenPaywall,
 }) => {
-  const [provider, setProvider] = useState<AiProviderId>("groq");
+  const provider: AiProviderId = "groq";
   const [key, setKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,17 +27,11 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
   const handleKeyChange = (val: string) => {
     setKey(val);
     if (error) setError(null);
-    const trimmed = val.trim();
-    if (/^gsk_/i.test(trimmed) && provider !== "groq") {
-      setProvider("groq");
-    } else if (/^AIza/i.test(trimmed) && provider !== "gemini") {
-      setProvider("gemini");
-    }
   };
 
   const handleSave = async () => {
     const cleanKey = key.trim();
-    if (!cleanKey) { setError("Ingresa una API Key válida"); return; }
+    if (!cleanKey) { setError("Ingresa una API Key válida de Groq"); return; }
     setSaving(true); setError(null);
     try {
       await providerKeyVault.saveKey(provider, cleanKey);
@@ -53,8 +47,8 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
     }
   };
 
-  const portalUrl = provider === "groq" ? "https://console.groq.com/keys" : "https://aistudio.google.com/app/apikey";
-  const placeholder = provider === "groq" ? "gsk_..." : "AIzaSy...";
+  const portalUrl = "https://console.groq.com/keys";
+  const placeholder = "gsk_...";
 
   const footerNode = (
     <div className="flex flex-col gap-2">
@@ -65,10 +59,10 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
         className="w-full h-10 rounded-xl text-[var(--text-primary)] font-medium text-xs tracking-wide flex items-center justify-center gap-2 transition-opacity hover:opacity-95 cursor-pointer disabled:opacity-50"
       >
         <Sparkles className="w-3.5 h-3.5 text-[var(--text-accent)]" />
-        <span>{saving ? "Guardando..." : "Guardar y Activar IA"}</span>
+        <span>{saving ? "Guardando..." : "Guardar y Activar Groq"}</span>
       </button>
       <a href={portalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors pt-1">
-        <span>Obtener API Key gratuita de {provider === "groq" ? "Groq" : "Google Gemini"}</span>
+        <span>Obtener API Key gratuita de Groq</span>
         <ExternalLink className="w-3 h-3" />
       </a>
       {(mode === "trial_choice" || mode === "quota_exceeded") && onOpenPaywall && (
@@ -96,7 +90,7 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
       onClose={onClose}
       size="sm"
       icon={<KeyRound className="w-4 h-4 text-[var(--text-accent)]" />}
-      title={isQuotaExceeded ? "Cuota Mensual Completada" : "Motor de IA (Modo BYOK)"}
+      title={isQuotaExceeded ? "Cuota Mensual Completada" : "Motor Groq (Modo BYOK)"}
       subtitle={
         isQuotaExceeded
           ? "Límite mensual de IA Cloud alcanzado"
@@ -109,17 +103,14 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
       <div className="space-y-3.5 select-none text-xs">
         <p className="text-[var(--text-secondary)] font-light leading-relaxed">
           {isQuotaExceeded
-            ? "Alcanzaste el límite mensual de respuestas en la nube de tu plan. Conecta tu clave gratuita de Groq o Gemini para continuar sin límites de inmediato, o revisa los planes disponibles."
+            ? "Alcanzaste el límite mensual de respuestas en la nube de tu plan. Conecta tu clave gratuita de Groq para continuar sin límites de inmediato, o revisa los planes disponibles."
             : isTrialChoice
-              ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq o Google Gemini para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
-              : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita."}
+              ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
+              : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita de Groq."}
         </p>
-        <div className="flex gap-2">
-          {(["groq", "gemini"] as const).map((p) => (
-            <button key={p} type="button" onClick={() => setProvider(p)} className={`flex-1 py-2 rounded-xl text-xs font-mono border transition-all cursor-pointer ${provider === p ? "border-[var(--accent-violet-400)] bg-[var(--surface-2)] text-[var(--text-primary)]" : "border-[var(--glass-border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface-1)]"}`}>
-              {p === "groq" ? "Groq (Recomendado)" : "Google Gemini"}
-            </button>
-          ))}
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-[var(--accent-violet-400)] bg-[var(--surface-2)] text-xs font-mono text-[var(--text-primary)]">
+          <span>Groq · Motor Oficial</span>
+          <span className="text-[10px] text-[var(--text-accent)] uppercase">100% Gratis</span>
         </div>
         <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--surface-0)]/80 px-3 py-2">
           <input type="password" value={key} onChange={(e) => handleKeyChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] font-mono outline-none" />

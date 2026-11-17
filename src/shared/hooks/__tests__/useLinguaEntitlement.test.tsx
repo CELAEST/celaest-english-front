@@ -12,8 +12,7 @@ import { LinguaByokRequiredModal } from "../../../features/workspace/components/
 import { DEFAULT_FREE_ENTITLEMENT } from "../../../domain/entities/ProductEntitlement";
 
 const Harness: React.FC = () => {
-  const { entitlement, isLoading, hasFullAccess, canAccessNode } =
-    useLinguaEntitlement();
+  const { entitlement, isLoading, hasFullAccess, canAccessNode } = useLinguaEntitlement();
   if (isLoading) return <div data-testid="loading">loading</div>;
   return (
     <div>
@@ -32,9 +31,7 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
   });
 
   it("grants Base 01 trial access and gates Base 02+ when user has no Marketplace entitlement", async () => {
-    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(
-      true,
-    );
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
     vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValue({
       ...DEFAULT_FREE_ENTITLEMENT,
       hasAccess: false,
@@ -51,12 +48,8 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
   });
 
   it("unlocks all bases and enables Central Core AI when Marketplace entitlement includes AI cloud", async () => {
-    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(
-      true,
-    );
-    const centralCoreSpy = vi
-      .spyOn(providerKeyVault, "setCentralCoreEnabled")
-      .mockResolvedValue();
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    const centralCoreSpy = vi.spyOn(providerKeyVault, "setCentralCoreEnabled").mockResolvedValue();
 
     vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValue({
       ...DEFAULT_FREE_ENTITLEMENT,
@@ -78,14 +71,8 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
   });
 
   it("verifies Stripe checkout session_id on return and strips query params", async () => {
-    window.history.replaceState(
-      {},
-      "",
-      "/workspace?success=true&session_id=cs_live_999",
-    );
-    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(
-      true,
-    );
+    window.history.replaceState({}, "", "/workspace?success=true&session_id=cs_live_999");
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
     const verifySpy = vi
       .spyOn(ApiEntitlementRepository, "verifyCheckoutSession")
       .mockResolvedValue({ status: "completed" });
@@ -127,9 +114,7 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     expect(screen.getByText(/Desbloquea CELAEST Lingua AI/i)).toBeTruthy();
     expect(screen.getByText("$29.99")).toBeTruthy();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Desbloquear Acceso Ahora/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Desbloquear Acceso Ahora/i }));
     expect(onCheckout).toHaveBeenCalledTimes(1);
   });
 
@@ -225,20 +210,15 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     const onConfigured = vi.fn();
     const onClose = vi.fn();
 
-    render(
-      <LinguaByokRequiredModal
-        isOpen={true}
-        onClose={onClose}
-        onConfigured={onConfigured}
-      />,
-    );
+    render(<LinguaByokRequiredModal isOpen={true} onClose={onClose} onConfigured={onConfigured} />);
 
-    expect(screen.getByText(/Motor de IA \(Modo BYOK\)/i)).toBeTruthy();
+    expect(screen.getByText(/Motor Groq \(Modo BYOK\)/i)).toBeTruthy();
+    expect(screen.queryByText(/Google Gemini/i)).toBeNull();
 
     const input = screen.getByPlaceholderText("gsk_...");
     fireEvent.change(input, { target: { value: "gsk_live_test_key_123" } });
 
-    const saveButton = screen.getByRole("button", { name: /Guardar y Activar IA/i });
+    const saveButton = screen.getByRole("button", { name: /Guardar y Activar Groq/i });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -271,29 +251,24 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     expect(onOpenPaywall).toHaveBeenCalledTimes(1);
   });
 
-  it("LinguaByokRequiredModal auto-aligns provider to gemini when pasting an AIza key to avoid mismatch", async () => {
+  it("LinguaByokRequiredModal operates exclusively with Groq and hides other providers", async () => {
     const saveKeySpy = vi.spyOn(providerKeyVault, "saveKey").mockResolvedValue();
     const setActiveSpy = vi.spyOn(providerKeyVault, "saveActiveProviderId").mockResolvedValue();
     const setCentralSpy = vi.spyOn(providerKeyVault, "setCentralCoreEnabled").mockResolvedValue();
     const onConfigured = vi.fn();
 
-    render(
-      <LinguaByokRequiredModal
-        isOpen={true}
-        onClose={vi.fn()}
-        onConfigured={onConfigured}
-      />,
-    );
+    render(<LinguaByokRequiredModal isOpen={true} onClose={vi.fn()} onConfigured={onConfigured} />);
 
+    expect(screen.queryByRole("button", { name: /Gemini/i })).toBeNull();
     const input = screen.getByPlaceholderText("gsk_...");
-    fireEvent.change(input, { target: { value: "AIzaSyAutoAlignedGeminiKey99" } });
+    fireEvent.change(input, { target: { value: "gsk_OnlyGroqAllowed99" } });
 
-    const saveButton = screen.getByRole("button", { name: /Guardar y Activar IA/i });
+    const saveButton = screen.getByRole("button", { name: /Guardar y Activar Groq/i });
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(saveKeySpy).toHaveBeenCalledWith("gemini", "AIzaSyAutoAlignedGeminiKey99");
-      expect(setActiveSpy).toHaveBeenCalledWith("gemini");
+      expect(saveKeySpy).toHaveBeenCalledWith("groq", "gsk_OnlyGroqAllowed99");
+      expect(setActiveSpy).toHaveBeenCalledWith("groq");
       expect(setCentralSpy).toHaveBeenCalledWith(false);
       expect(onConfigured).toHaveBeenCalledTimes(1);
     });
@@ -403,4 +378,3 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     expect(httpSpy).toHaveBeenCalledTimes(2);
   });
 });
-

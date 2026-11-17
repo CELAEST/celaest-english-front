@@ -59,8 +59,8 @@ describe("Onboarding Registration Flow - Begin Screen Contract", () => {
     // onFinish MUST NOT be called for a fresh unonboarded user
     expect(onFinish).not.toHaveBeenCalled();
 
-    // The user MUST see the "Conecta tu Motor de IA" (api-key) screen directly
-    expect(screen.getByText("Conecta tu Motor de IA")).toBeInTheDocument();
+    // The user MUST see the "Conecta tu Motor Groq" (api-key) screen directly
+    expect(screen.getByText("Conecta tu Motor Groq")).toBeInTheDocument();
   });
 
   it("returning user with onboardingCompleted=true triggers onFinish to direct to dashboard", async () => {

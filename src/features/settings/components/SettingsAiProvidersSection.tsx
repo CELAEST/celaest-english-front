@@ -21,69 +21,14 @@ import { SettingsProviderTestButton } from "./SettingsProviderPrimitives";
 import { ProviderMark } from "./SettingsProviderIcons";
 import { SettingsSection } from "./SettingsSection";
 
-const PROVIDER_HINTS: Record<AiProviderId, string> = {
+const PROVIDER_HINTS: Partial<Record<AiProviderId, string>> = {
   groq: "gsk_…",
-  openai: "sk-…",
-  anthropic: "sk-ant-…",
-  gemini: "AIza…",
-  deepseek: "sk-…",
-  ollama: "No requiere clave",
-  grok: "xai-…",
-  perplexity: "pplx-…",
-  openrouter: "sk-or-…",
-  huggingface: "hf_…",
-  qwen: "sk-…",
-  meta: "llama-…",
 };
 
-export const PROVIDER_CONSOLE_URLS: Record<AiProviderId, { label: string; url: string }> = {
+export const PROVIDER_CONSOLE_URLS: Partial<Record<AiProviderId, { label: string; url: string }>> = {
   groq: {
     label: "Obtener clave en Groq Console (Gratis)",
     url: "https://console.groq.com/keys",
-  },
-  gemini: {
-    label: "Obtener clave en Google AI Studio (Gratis)",
-    url: "https://aistudio.google.com/app/apikey",
-  },
-  openai: {
-    label: "Obtener clave en OpenAI Platform",
-    url: "https://platform.openai.com/api-keys",
-  },
-  anthropic: {
-    label: "Obtener clave en Anthropic Console",
-    url: "https://console.anthropic.com/settings/keys",
-  },
-  grok: {
-    label: "Obtener clave en xAI Console",
-    url: "https://console.x.ai",
-  },
-  deepseek: {
-    label: "Obtener clave en DeepSeek Platform",
-    url: "https://platform.deepseek.com/api_keys",
-  },
-  openrouter: {
-    label: "Obtener clave en OpenRouter",
-    url: "https://openrouter.ai/keys",
-  },
-  perplexity: {
-    label: "Obtener clave en Perplexity API",
-    url: "https://www.perplexity.ai/settings/api",
-  },
-  huggingface: {
-    label: "Obtener token en Hugging Face",
-    url: "https://huggingface.co/settings/tokens",
-  },
-  qwen: {
-    label: "Obtener clave en Alibaba DashScope",
-    url: "https://dashscope.console.aliyun.com/apiKey",
-  },
-  meta: {
-    label: "Documentación Llama API",
-    url: "https://llama.meta.com",
-  },
-  ollama: {
-    label: "Descargar Ollama local",
-    url: "https://ollama.com",
   },
 };
 
@@ -272,11 +217,11 @@ export const SettingsAiProvidersSection: React.FC = () => {
   };
 
   return (
-    <SettingsSection label="AI PROVIDERS & KEY POOL">
+    <SettingsSection label="MOTOR DE IA · GROQ">
       {/* Subheader */}
       <div className="mb-4 px-1">
         <p className="text-xs text-zinc-400 font-light leading-relaxed">
-          Tus credenciales se cifran localmente con <strong className="text-zinc-200 font-medium">AES-GCM de 256 bits</strong> en este dispositivo y están estrictamente aisladas por cuenta de usuario.
+          Lingua utiliza <strong className="text-zinc-200 font-medium">Groq</strong> como motor oficial. Tus claves opcionales se cifran localmente con <strong className="text-zinc-200 font-medium">AES-GCM de 256 bits</strong> y están aisladas por usuario.
         </p>
       </div>
 
@@ -286,9 +231,9 @@ export const SettingsAiProvidersSection: React.FC = () => {
         </div>
       ) : null}
 
-      {/* Provider List: Matches Learning and Personal quiet-row standard */}
+      {/* Provider List: Groq-only official engine */}
       <div className="divide-y divide-white/[0.06]">
-        {providers.map((provider) => {
+        {providers.filter((provider) => provider.id === "groq").map((provider) => {
           const isActive = provider.status === "active";
           const isExpanded = expandedId === provider.id;
           const isGroq = provider.id === "groq";
@@ -526,8 +471,8 @@ export const SettingsAiProvidersSection: React.FC = () => {
                               }}
                               placeholder={
                                 keys.length === 0
-                                  ? `Pega tu clave (${PROVIDER_HINTS[provider.id]})`
-                                  : `Agregar clave (${PROVIDER_HINTS[provider.id]})`
+                                  ? `Pega tu clave (${PROVIDER_HINTS[provider.id] ?? "gsk_…"})`
+                                  : `Agregar clave (${PROVIDER_HINTS[provider.id] ?? "gsk_…"})`
                               }
                               autoComplete="off"
                               spellCheck={false}

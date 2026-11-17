@@ -14,6 +14,7 @@ import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { apiSettingsRepository } from "../../../infrastructure/repositories/ApiSettingsRepository";
 import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
+import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { logger } from "../../../shared/utils/logger";
 
@@ -30,6 +31,7 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
     openAuth,
     learnerProfile,
     updateLearnerProfile,
+    isCloudEntitled,
     selectBeginnerTrack,
     selectExperiencedTrack,
     answers,
@@ -54,6 +56,8 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
   }, [isAuth, settings?.onboardingCompleted, storedUser?.id, storedUser?.email, storedUser?.onboardingCompleted, onFinish]);
 
   const handleStartLearning = async () => {
+    // Synchronously unlock audio hardware on Start Learning click before awaiting network persistence
+    MobileAudioUnlocker.unlock();
     try {
       await updateProfileSettings({
         name: learnerProfile.name || "Learner",
@@ -155,15 +159,24 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
                       (authUser?.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true") ||
                       authUser?.onboardingCompleted === true;
 
-                    if (profile && (profile.onboardingCompleted || isUserCompletedLocal)) {
+                    const profileHasProgress = Boolean(
+                      profile &&
+                        (profile.onboardingCompleted ||
+                          (profile.cefrLevel && profile.cefrLevel.toUpperCase() !== "B1") ||
+                          (profile.profession &&
+                            profile.profession.trim() !== "" &&
+                            profile.profession !== "Professional")),
+                    );
+
+                    if (profileHasProgress || isUserCompletedLocal) {
                       updateLearnerProfile({
-                        name: (profile.name || authUser?.name || learnerProfile.name || "Learner") as string,
-                        email: (profile.email || authUser?.email || learnerProfile.email || "") as string,
-                        cefrLevel: profile.cefrLevel || learnerProfile.cefrLevel,
-                        dailyFocus: profile.dailyFocus || learnerProfile.dailyFocus,
-                        learningGoal: profile.learningGoal || learnerProfile.learningGoal,
-                        preferenceStyle: profile.preferenceStyle || learnerProfile.preferenceStyle,
-                        profession: profile.profession || learnerProfile.profession,
+                        name: (profile?.name || authUser?.name || learnerProfile.name || "Learner") as string,
+                        email: (profile?.email || authUser?.email || learnerProfile.email || "") as string,
+                        cefrLevel: profile?.cefrLevel || learnerProfile.cefrLevel,
+                        dailyFocus: profile?.dailyFocus || learnerProfile.dailyFocus,
+                        learningGoal: profile?.learningGoal || learnerProfile.learningGoal,
+                        preferenceStyle: profile?.preferenceStyle || learnerProfile.preferenceStyle,
+                        profession: profile?.profession || learnerProfile.profession,
                       });
                       localStorage.setItem("lingua_onboarding_completed", "true");
                       if (authUser?.id) localStorage.setItem(`lingua_onboarding_completed_${authUser.id}`, "true");
@@ -241,7 +254,7 @@ const OnboardingViewInner: React.FC<OnboardingViewProps> = ({ onFinish }) => {
               profile={learnerProfile}
               onSelectBeginner={(prof) => selectBeginnerTrack(prof)}
               onSelectExperienced={() => selectExperiencedTrack()}
-              onPrev={prevStep}
+              onPrev={!isAuth || !isCloudEntitled ? prevStep : undefined}
             />
           )}
           {step === "questions" && (

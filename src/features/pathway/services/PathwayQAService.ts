@@ -38,7 +38,7 @@ export interface AskProfessorParams {
 
 export class PathwayByokRequiredError extends Error {
   public readonly code = "BYOK_REQUIRED";
-  constructor(message = "Configura tu clave gratuita de Groq o Gemini para hacer preguntas en vivo a Liam.") {
+  constructor(message = "Configura tu clave gratuita de Groq para hacer preguntas en vivo a Liam.") {
     super(message);
     this.name = "PathwayByokRequiredError";
   }

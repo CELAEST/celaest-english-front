@@ -50,10 +50,10 @@ export const OnboardingApiKeyStep: React.FC<OnboardingApiKeyStepProps> = ({
         <div className="flex-1 flex flex-col justify-center max-w-xl min-h-0 my-auto py-1 space-y-3">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl md:text-[34px] font-light tracking-tight text-white leading-tight animate-[fadeSlideUp_0.4s_ease-out_both]">
-              Conecta tu Motor de IA
+              Conecta tu Motor Groq
             </h1>
             <p className="text-xs sm:text-sm text-[#999a9b] font-light leading-relaxed">
-              Lingua analiza tu fluidez y diagnostica tu nivel CEFR en tiempo real. Configura tu proveedor de inferencia favorito para una práctica continua.
+              Lingua analiza tu fluidez y diagnostica tu nivel CEFR en tiempo real con Groq. Ingresa tu clave gratuita para practicar sin interrupciones.
             </p>
           </div>
 

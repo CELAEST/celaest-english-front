@@ -23,6 +23,7 @@ export const useOnboardingFlow = () => {
   });
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isCloudEntitled, setIsCloudEntitled] = useState(false);
 
   useEffect(() => {
     if (!authAdapter.isAuthenticated() && authAdapter.hasRecoverableRefreshSource()) {
@@ -39,9 +40,11 @@ export const useOnboardingFlow = () => {
       .then(async (ent) => {
         if (!active) return;
         if (ent.hasAccess && ent.aiCloudIncluded) {
+          setIsCloudEntitled(true);
           await providerKeyVault.setCentralCoreEnabled(true);
           setStep((current) => (current === "api-key" ? "beginner-check" : current));
         } else if (ent.hasAccess && !ent.aiCloudIncluded) {
+          setIsCloudEntitled(false);
           await providerKeyVault.setCentralCoreEnabled(false);
           const hasKey = await providerKeyVault.hasAnyConfiguredKey();
           if (hasKey) {
@@ -123,11 +126,17 @@ export const useOnboardingFlow = () => {
   };
 
   const prevStep = () => {
+    const authed = authAdapter.isAuthenticated();
     if (step === "welcome") {
-      if (!isAuth) setStep("auth");
-    } else if (step === "api-key") setStep("auth");
-    else if (step === "beginner-check") setStep("auth");
-    else if (step === "questions") setStep("beginner-check");
+      if (!authed) setStep("auth");
+    } else if (step === "api-key") {
+      if (!authed) setStep("welcome");
+    } else if (step === "beginner-check") {
+      // Never loop an authenticated user back to the login screen ("auth")
+      if (!authed || !isCloudEntitled) {
+        setStep("api-key");
+      }
+    } else if (step === "questions") setStep("beginner-check");
     else if (step === "dna-analysis") setStep("questions");
     else if (step === "placement-quiz") setStep("dna-analysis");
     else if (step === "first-conversation") setStep("placement-quiz");
@@ -188,6 +197,7 @@ export const useOnboardingFlow = () => {
     prevStep,
     goToStep,
     isBeginnerTrack,
+    isCloudEntitled,
     selectBeginnerTrack,
     selectExperiencedTrack,
   };

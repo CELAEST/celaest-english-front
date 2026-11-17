@@ -22,6 +22,9 @@ export function classifyAiError(err: any): ClassifiedAiError {
   const status = typeof err?.status === "number" ? err.status : undefined;
   const fullErr = `${errMsg} ${errDetails} ${errCode}`;
 
+  const isProviderEngineError =
+    err?.name === "AiInfrastructureError" || Boolean(err?.providerId);
+
   const mentionsApiKey =
     errCode === "auth_declined_key" ||
     fullErr.includes("auth_declined") ||
@@ -33,12 +36,13 @@ export function classifyAiError(err: any): ClassifiedAiError {
   let errorType: AiApiErrorType = "rate-limit-429";
 
   if (
-    errCode === "jwt_expired" ||
-    errCode === "authentication_required" ||
-    errCode === "jwt_session_refresh" ||
-    (errCode === "unauthorized" && !mentionsApiKey) ||
-    (status === 401 && !mentionsApiKey) ||
-    (fullErr.includes("jwt") && (fullErr.includes("expired") || fullErr.includes("expir")))
+    !isProviderEngineError &&
+    (errCode === "jwt_expired" ||
+      errCode === "authentication_required" ||
+      errCode === "jwt_session_refresh" ||
+      (errCode === "unauthorized" && !mentionsApiKey) ||
+      (status === 401 && !mentionsApiKey) ||
+      (fullErr.includes("jwt") && (fullErr.includes("expired") || fullErr.includes("expir"))))
   ) {
     errorType = "jwt-expired-mid-interview";
   } else if (
@@ -86,7 +90,7 @@ export function classifyAiError(err: any): ClassifiedAiError {
   const baseScenario = ERROR_DATA[errorType] || ERROR_DATA["keys-exhausted-pool"];
   const humanSubtext =
     errorType === "keys-exhausted-pool"
-      ? "Todas las claves del clúster de IA completaron su límite o el clúster está inactivo. Puedes activar una clave gratuita de Groq o Gemini para continuar."
+      ? "Todas las claves del clúster de IA completaron su límite o el clúster está inactivo. Puedes activar una clave gratuita de Groq para continuar."
       : err?.message &&
           err.message.length > 5 &&
           !err.message.startsWith("[object")

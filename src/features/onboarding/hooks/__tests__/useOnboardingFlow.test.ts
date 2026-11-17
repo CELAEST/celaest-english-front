@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useOnboardingFlow } from "../useOnboardingFlow";
+import { SupabaseAuthAdapter } from "../../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 
 describe("useOnboardingFlow - Track Selection & Question Reusability", () => {
   it("transitions from welcome to api-key upon nextStep()", () => {
@@ -86,5 +87,20 @@ describe("useOnboardingFlow - Track Selection & Question Reusability", () => {
       result.current.nextStep();
     });
     expect(result.current.step).toBe("ready");
+  });
+
+  it("never loops an authenticated user back to auth login screen on prevStep from beginner-check", () => {
+    const authSpy = vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    const { result } = renderHook(() => useOnboardingFlow());
+    act(() => {
+      result.current.goToStep("beginner-check");
+    });
+    expect(result.current.step).toBe("beginner-check");
+
+    act(() => {
+      result.current.prevStep();
+    });
+    expect(result.current.step).not.toBe("auth");
+    authSpy.mockRestore();
   });
 });

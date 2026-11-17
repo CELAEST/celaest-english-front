@@ -29,46 +29,6 @@ const PROVIDERS: ProviderOption[] = [
     url: "https://console.groq.com/keys",
     isFree: true,
   },
-  {
-    id: "grok",
-    name: "Grok",
-    badge: "$25 Gratis",
-    placeholder: "xai-...",
-    url: "https://console.x.ai/",
-    isFree: true,
-  },
-  {
-    id: "openai",
-    name: "OpenAI",
-    badge: "GPT-4o",
-    placeholder: "sk-proj-...",
-    url: "https://platform.openai.com/api-keys",
-    isFree: false,
-  },
-  {
-    id: "anthropic",
-    name: "Claude",
-    badge: "3.5 Sonnet",
-    placeholder: "sk-ant-...",
-    url: "https://console.anthropic.com/settings/keys",
-    isFree: false,
-  },
-  {
-    id: "gemini",
-    name: "Gemini",
-    badge: "Flash Gratis",
-    placeholder: "AIzaSy...",
-    url: "https://aistudio.google.com/app/apikey",
-    isFree: true,
-  },
-  {
-    id: "deepseek",
-    name: "DeepSeek",
-    badge: "V3",
-    placeholder: "sk-...",
-    url: "https://platform.deepseek.com/api_keys",
-    isFree: false,
-  },
 ];
 
 export interface AiInfrastructureRecoveryModalProps {
@@ -103,7 +63,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
     onClose,
   });
 
-  const [selectedProvider, setSelectedProvider] = useState<AiProviderId>("groq");
+  const selectedProvider: AiProviderId = "groq";
   const [keyInput, setKeyInput] = useState<string>("");
   const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const [showCloudByokOverride, setShowCloudByokOverride] = useState<boolean>(false);
@@ -154,38 +114,8 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
     setVerificationError(null);
     setVerifiedSuccessInfo(null);
 
-    const defaultEndpoints: Record<AiProviderId, string> = {
-      groq: "https://api.groq.com/openai/v1",
-      gemini: "https://generativelanguage.googleapis.com/v1beta",
-      openai: "https://api.openai.com/v1",
-      anthropic: "https://api.anthropic.com/v1",
-      deepseek: "https://api.deepseek.com/v1",
-      grok: "https://api.x.ai/v1",
-      ollama: "http://localhost:11434",
-      perplexity: "https://api.perplexity.ai",
-      openrouter: "https://openrouter.ai/api/v1",
-      huggingface: "https://api-inference.huggingface.co/models",
-      qwen: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-      meta: "https://api.llama-api.com",
-    };
-
-    const defaultModels: Record<AiProviderId, string> = {
-      groq: "openai/gpt-oss-120b",
-      gemini: "gemini-3.6-flash",
-      openai: "gpt-4o-mini",
-      anthropic: "claude-3-5-haiku-20241022",
-      deepseek: "deepseek-chat",
-      grok: "grok-2",
-      ollama: "llama3",
-      perplexity: "llama-3.1-sonar-small-128k-online",
-      openrouter: "meta-llama/llama-3.3-70b-instruct",
-      huggingface: "meta-llama/Llama-3.2-3B-Instruct",
-      qwen: "qwen-plus",
-      meta: "llama3.3-70b",
-    };
-
-    const endpoint = defaultEndpoints[selectedProvider];
-    const model = defaultModels[selectedProvider];
+    const endpoint = "https://api.groq.com/openai/v1";
+    const model = "openai/gpt-oss-120b";
 
     try {
       const probe = await probeProviderConnection(selectedProvider, rawKey, endpoint, model);
@@ -395,121 +325,35 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
             )}
             {(!cloudManaged || showCloudByokOverride) && (
             <>
-            <div className="flex items-center justify-between text-xs px-1">
-              <span className="text-white/60 font-light">Proveedor de inferencia:</span>
-              <span className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5">
-                <span className="text-white/80">{currentProvider.name}</span>
+            <div className="flex items-center justify-between text-xs px-3 py-2.5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex items-center gap-2.5">
+                <ProviderMark providerId={currentProvider.id} isActive={true} size="md" />
+                <span className="text-white font-medium">{currentProvider.name}</span>
                 <span className="text-white/30">·</span>
-                {currentProvider.id === "groq" ? (
-                  <span className="inline-flex items-center gap-1">
-                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                        fill="url(#goldHeaderGradModal)"
-                        stroke="#FFAA00"
-                        strokeWidth="0.8"
-                        strokeLinejoin="round"
-                      />
-                      <circle cx="12" cy="12" r="1.6" fill="#FFFBEB" />
-                      <defs>
-                        <linearGradient id="goldHeaderGradModal" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                          <stop stopColor="#FF7A00" />
-                          <stop offset="0.5" stopColor="#FFAA00" />
-                          <stop offset="1" stopColor="#FFD600" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <span className="font-bold font-sans tracking-tight bg-gradient-to-r from-[#FF7A00] via-[#FFAA00] to-[#FFD600] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(255,140,0,0.25)]">
-                      Recomendada (100% Gratis)
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-white/60">{currentProvider.badge}</span>
-                )}
+                <span className="text-white/55 font-light">Motor Oficial</span>
+              </div>
+              <span className="text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1">
+                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+                    fill="url(#goldHeaderGradModal)"
+                    stroke="#FFAA00"
+                    strokeWidth="0.8"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="12" r="1.6" fill="#FFFBEB" />
+                  <defs>
+                    <linearGradient id="goldHeaderGradModal" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#FF7A00" />
+                      <stop offset="0.5" stopColor="#FFAA00" />
+                      <stop offset="1" stopColor="#FFD600" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span className="font-bold font-sans tracking-tight bg-gradient-to-r from-[#FF7A00] via-[#FFAA00] to-[#FFD600] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(255,140,0,0.25)]">
+                  100% Gratis
+                </span>
               </span>
-            </div>
-
-            {/* Íconos Nativos sin Cajas Ni Bordes (Ultra-Clean, Adaptativo 3x2 en móvil, 6 en desktop) */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 py-1">
-              {PROVIDERS.map((prov) => {
-                const isActive = selectedProvider === prov.id;
-                return (
-                  <button
-                    key={prov.id}
-                    onClick={() => {
-                      setSelectedProvider(prov.id);
-                      setKeyInput("");
-                    }}
-                    className="group flex flex-col items-center justify-center py-1.5 sm:py-2 px-1 cursor-pointer transition-all duration-300 relative outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 select-none border-0"
-                    style={{ outline: "none", boxShadow: "none", WebkitTapHighlightColor: "transparent" }}
-                  >
-                    {/* Ícono sin caja contenedora */}
-                    <div
-                      className={`transition-all duration-300 flex items-center justify-center ${
-                        isActive ? "scale-110" : "opacity-45 group-hover:opacity-90 group-hover:scale-105"
-                      }`}
-                    >
-                      <ProviderMark providerId={prov.id} isActive={isActive} size="md" />
-                    </div>
-
-                    {/* Nombre del Proveedor */}
-                    <span
-                      className={`text-[11px] mt-1.5 transition-colors font-medium tracking-tight ${
-                        isActive ? "text-white font-semibold" : "text-white/50 group-hover:text-white/80"
-                      }`}
-                    >
-                      {prov.name}
-                    </span>
-
-                    {/* Modelo / Badge en Oro Feedback para Groq */}
-                    {prov.id === "groq" ? (
-                      <div className="inline-flex items-center gap-1 mt-0.5">
-                        <svg className="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
-                            fill="url(#goldSparkleGradModal)"
-                            stroke="#FFAA00"
-                            strokeWidth="0.8"
-                            strokeLinejoin="round"
-                          />
-                          <circle cx="12" cy="12" r="1.6" fill="#FFFBEB" />
-                          <defs>
-                            <linearGradient id="goldSparkleGradModal" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#FF7A00" />
-                              <stop offset="0.5" stopColor="#FFAA00" />
-                              <stop offset="1" stopColor="#FFD600" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                        <span className="text-[9.5px] font-bold font-sans tracking-tight bg-gradient-to-r from-[#FF7A00] via-[#FFAA00] to-[#FFD600] bg-clip-text text-transparent drop-shadow-[0_1px_4px_rgba(255,140,0,0.25)]">
-                          Recomendada
-                        </span>
-                      </div>
-                    ) : (
-                      <span
-                        className={`text-[9.5px] font-mono transition-colors ${
-                          isActive ? "text-[#C4B5FD]" : "text-white/25"
-                        }`}
-                      >
-                        {prov.badge}
-                      </span>
-                    )}
-
-                    {/* Indicador sutil de línea inferior únicamente para el activo */}
-                    {isActive ? (
-                      <div
-                        className={`w-5 h-[2px] rounded-full mt-1.5 animate-[fadeIn_0.2s_ease-out] ${
-                          prov.id === "groq"
-                            ? "bg-gradient-to-r from-[#FF7A00] via-[#FFAA00] to-[#FFD600] shadow-[0_0_8px_rgba(255,170,0,0.5)]"
-                            : "bg-gradient-to-r from-[#C4B5FD] to-white"
-                        }`}
-                      />
-                    ) : (
-                      <div className="w-5 h-[2px] mt-1.5 opacity-0" />
-                    )}
-                  </button>
-                );
-              })}
             </div>
 
             {/* Input Strip Integrado */}
@@ -650,7 +494,7 @@ const AiInfrastructureRecoveryModalInner: React.FC<AiInfrastructureRecoveryModal
                 ? cloudCountdown > 0
                   ? `Reintento automático en ${cloudCountdown}s o reanuda ahora.`
                   : "Listo para reintentar tu solicitud."
-                : "Elige un proveedor o ingresa tu clave para continuar."}
+                : "Ingresa tu clave gratuita de Groq para continuar."}
           </span>
           <button
             onClick={

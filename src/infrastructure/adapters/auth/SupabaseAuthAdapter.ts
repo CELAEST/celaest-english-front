@@ -257,7 +257,7 @@ export class SupabaseAuthAdapter implements IAuthService {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-      StorageLifecycleService.purgeOnLogout();
+      StorageLifecycleService.purgeOnLogout({ preserveOnboarding: true });
     } catch {
       // ignore
     }

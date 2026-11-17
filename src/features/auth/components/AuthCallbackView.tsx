@@ -40,6 +40,16 @@ function decodeJwtPayload(token: string): Record<string, any> | null {
   }
 }
 
+export function isClaimsExpired(claims: Record<string, any> | null, skewSeconds = 30): boolean {
+  if (!claims || typeof claims.exp !== "number") return false;
+  return Math.floor(Date.now() / 1000) >= claims.exp - skewSeconds;
+}
+
+export function isSupabaseCloudToken(claims: Record<string, any> | null): boolean {
+  const iss = typeof claims?.iss === "string" ? claims.iss.toLowerCase() : "";
+  return iss.includes(".supabase.co") && !iss.includes("your-project.supabase.co");
+}
+
 function formatOAuthErrorMessage(rawError: string): { title: string; description: string } {
   const lower = rawError.toLowerCase();
   if (lower.includes("access_denied") || lower.includes("cancelled") || lower.includes("canceled")) {
@@ -72,24 +82,92 @@ const AuthCallbackViewInner: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Capture incoming URL handoff params synchronously BEFORE Supabase detectSessionInUrl or cached sessions mutate state
+    const initialHashParams = parseHashParams(window.location.hash);
+    const initialHashAccessToken = initialHashParams["access_token"] || "";
+    const initialHashRefreshToken =
+      initialHashParams["refresh_token"] || initialHashAccessToken;
+    const initialSearchParams = new URLSearchParams(window.location.search);
+    const initialCode = initialSearchParams.get("code");
+    const hasExplicitUrlAuth = Boolean(initialHashAccessToken || initialCode);
+
     const completeAuth = async (
       accessToken: string,
       refreshToken: string,
       userPayload?: Partial<AuthUser> | null,
+      options?: { fromSupabaseSession?: boolean },
     ) => {
       if (isHandledRef.current || !isMounted) return;
       isHandledRef.current = true;
+
+      if (window.location.hash.includes("access_token")) {
+        window.history.replaceState(
+          {},
+          "",
+          window.location.pathname + window.location.search,
+        );
+      }
 
       setStage(3);
       setStatusMessage("Calibrating your learning profile...");
       const authAdapter = SupabaseAuthAdapter.getInstance();
 
-      const jwtClaims = decodeJwtPayload(accessToken);
-      const sub = userPayload?.id || jwtClaims?.sub || jwtClaims?.user_id || `google-${Date.now()}`;
-      const email = userPayload?.email || jwtClaims?.email || "";
+      let activeAccessToken = accessToken;
+      let activeRefreshToken = refreshToken;
+      let activeUserPayload = userPayload;
+      let jwtClaims = decodeJwtPayload(activeAccessToken);
+
+      if (isSupabaseCloudToken(jwtClaims)) {
+        // Hydrate & transparently refresh Supabase session if access_token expired in transit
+        if (
+          !options?.fromSupabaseSession &&
+          activeRefreshToken &&
+          activeRefreshToken !== activeAccessToken
+        ) {
+          try {
+            const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
+              access_token: activeAccessToken,
+              refresh_token: activeRefreshToken,
+            });
+            if (sessionData?.session?.access_token) {
+              activeAccessToken = sessionData.session.access_token;
+              activeRefreshToken = sessionData.session.refresh_token || activeRefreshToken;
+              if (sessionData.session.user) {
+                activeUserPayload = {
+                  id: sessionData.session.user.id,
+                  email: sessionData.session.user.email || "",
+                  name:
+                    sessionData.session.user.user_metadata?.full_name ||
+                    sessionData.session.user.user_metadata?.display_name ||
+                    sessionData.session.user.email?.split("@")[0] ||
+                    "Learner",
+                };
+              }
+              jwtClaims = decodeJwtPayload(activeAccessToken);
+            } else if (sessionErr) {
+              logger.warn("[AuthCallback] supabase.auth.setSession notice:", sessionErr.message);
+            }
+          } catch (e) {
+            logger.warn("[AuthCallback] supabase.auth.setSession exception:", e);
+          }
+        }
+      } else {
+        logger.info("[AuthCallback] Non-Supabase cross-service JWT detected; skipping Supabase setSession");
+      }
+
+      if (isClaimsExpired(jwtClaims)) {
+        if (isMounted) {
+          setErrorDetails(formatOAuthErrorMessage("expired"));
+        }
+        return;
+      }
+
+      const sub =
+        activeUserPayload?.id || jwtClaims?.sub || jwtClaims?.user_id || `google-${Date.now()}`;
+      const email = activeUserPayload?.email || jwtClaims?.email || "";
       const userMeta = jwtClaims?.user_metadata || {};
       const name =
-        userPayload?.name ||
+        activeUserPayload?.name ||
         userMeta.full_name ||
         userMeta.display_name ||
         userMeta.name ||
@@ -103,14 +181,7 @@ const AuthCallbackViewInner: React.FC = () => {
         onboardingCompleted: false,
       };
 
-      authAdapter.persistSession(accessToken, refreshToken, authUser);
-
-      supabase.auth
-        .setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-        .catch((e) => logger.warn("[AuthCallback] supabase.auth.setSession background notice", e));
+      authAdapter.persistSession(activeAccessToken, activeRefreshToken, authUser);
 
       try {
         const [profile, entitlement] = await Promise.all([
@@ -120,13 +191,21 @@ const AuthCallbackViewInner: React.FC = () => {
         if (entitlement?.hasAccess && entitlement.aiCloudIncluded) {
           await providerKeyVault.setCentralCoreEnabled(true);
         }
-        const isCompleted =
-          profile?.onboardingCompleted === true ||
+        const profileHasProgress = Boolean(
+          profile &&
+            (profile.onboardingCompleted === true ||
+              (profile.cefrLevel && profile.cefrLevel.toUpperCase() !== "B1") ||
+              (profile.profession &&
+                profile.profession.trim() !== "" &&
+                profile.profession !== "Professional")),
+        );
+        const localCompleted =
           Boolean(authUser.id && localStorage.getItem(`lingua_onboarding_completed_${authUser.id}`) === "true") ||
           Boolean(authUser.email && localStorage.getItem(`lingua_onboarding_completed_${authUser.email}`) === "true");
+        const isCompleted = profileHasProgress || localCompleted;
 
         if (isCompleted) {
-          authAdapter.persistSession(accessToken, refreshToken, {
+          authAdapter.persistSession(activeAccessToken, activeRefreshToken, {
             ...authUser,
             onboardingCompleted: true,
           });
@@ -135,20 +214,29 @@ const AuthCallbackViewInner: React.FC = () => {
           if (authUser.email) localStorage.setItem(`lingua_onboarding_completed_${authUser.email}`, "true");
           if (isMounted) navigate(ROUTES.HOME, { replace: true });
         } else {
-          localStorage.removeItem("lingua_onboarding_completed");
-          if (authUser.id) localStorage.removeItem(`lingua_onboarding_completed_${authUser.id}`);
-          if (authUser.email) localStorage.removeItem(`lingua_onboarding_completed_${authUser.email}`);
+          authAdapter.persistSession(activeAccessToken, activeRefreshToken, {
+            ...authUser,
+            onboardingCompleted: false,
+          });
+          if (profile !== null) {
+            localStorage.removeItem("lingua_onboarding_completed");
+            if (authUser.id) localStorage.removeItem(`lingua_onboarding_completed_${authUser.id}`);
+            if (authUser.email) localStorage.removeItem(`lingua_onboarding_completed_${authUser.email}`);
+          }
           if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
         }
       } catch (err) {
         logger.warn("[AuthCallback] Error checking onboarding completion", err);
+        authAdapter.persistSession(activeAccessToken, activeRefreshToken, authUser);
         if (isMounted) navigate(ROUTES.ONBOARDING, { replace: true });
       }
     };
 
-    // 1. Listen for Supabase auto-auth events (fired by detectSessionInUrl)
+    // 1. Listen for Supabase auto-auth events (fired by detectSessionInUrl / OAuth)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
+      if (!isMounted || isHandledRef.current) return;
+      if (event === "INITIAL_SESSION" && hasExplicitUrlAuth) return;
+      if (initialHashAccessToken && session?.access_token !== initialHashAccessToken) return;
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
         logger.info("[AuthCallback] onAuthStateChange event detected:", event);
         completeAuth(
@@ -165,6 +253,7 @@ const AuthCallbackViewInner: React.FC = () => {
                   "Learner",
               }
             : null,
+          { fromSupabaseSession: true },
         );
       }
     });
@@ -190,6 +279,7 @@ const AuthCallbackViewInner: React.FC = () => {
                       "Learner",
                   }
                 : null,
+              { fromSupabaseSession: true },
             );
             return;
           }
@@ -205,61 +295,32 @@ const AuthCallbackViewInner: React.FC = () => {
       }
     }, 5000);
 
-    // 3. Process URL tokens, code exchange, and existing session
+    // 3. Process explicit URL tokens FIRST (Dashboard SSO #access_token or OAuth ?code), then fallback to cached session
     const processTokens = async () => {
-      // Priority A: Existing active session (e.g. from detectSessionInUrl)
-      try {
-        const { data: existingData } = await supabase.auth.getSession();
-        if (existingData?.session && isMounted) {
-          logger.info("[AuthCallback] Immediate existing session resolved");
-          await completeAuth(
-            existingData.session.access_token,
-            existingData.session.refresh_token,
-            existingData.session.user
-              ? {
-                  id: existingData.session.user.id,
-                  email: existingData.session.user.email || "",
-                  name:
-                    existingData.session.user.user_metadata?.full_name ||
-                    existingData.session.user.user_metadata?.display_name ||
-                    existingData.session.user.email?.split("@")[0] ||
-                    "Learner",
-                }
-              : null,
-          );
-          return;
-        }
-      } catch (err) {
-        logger.warn("[AuthCallback] Initial getSession lookup notice", err);
-      }
-
-      // Priority B: Hash Fragment Tokens (#access_token=...)
-      const hashParams = parseHashParams(window.location.hash);
-      const hashAccessToken = hashParams["access_token"];
-      const hashRefreshToken = hashParams["refresh_token"] || hashAccessToken;
-
-      if (hashAccessToken && isMounted) {
+      // Priority A: Explicit Hash Fragment Tokens (#access_token=... from Dashboard SSO or implicit OAuth)
+      if (initialHashAccessToken && isMounted) {
         setStage(2);
         setStatusMessage("Securing cryptographic token handshake...");
-        await completeAuth(hashAccessToken, hashRefreshToken);
+        await completeAuth(initialHashAccessToken, initialHashRefreshToken, undefined, {
+          fromSupabaseSession: false,
+        });
         return;
       }
 
-      // Priority C: URL Search Params (OAuth PKCE code or error)
-      const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get("code");
-      const errorParam = searchParams.get("error_description") || searchParams.get("error");
+      // Priority B: URL Search Params (OAuth PKCE code or error)
+      const errorParam =
+        initialSearchParams.get("error_description") || initialSearchParams.get("error");
 
       if (errorParam && isMounted) {
         setErrorDetails(formatOAuthErrorMessage(decodeURIComponent(errorParam)));
         return;
       }
 
-      if (code && isMounted) {
+      if (initialCode && isMounted) {
         setStage(2);
         setStatusMessage("Exchanging security tokens with Google...");
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          const { data, error } = await supabase.auth.exchangeCodeForSession(initialCode);
           if (data?.session && isMounted) {
             await completeAuth(
               data.session.access_token,
@@ -275,6 +336,7 @@ const AuthCallbackViewInner: React.FC = () => {
                       "Learner",
                   }
                 : null,
+              { fromSupabaseSession: true },
             );
             return;
           }
@@ -298,6 +360,7 @@ const AuthCallbackViewInner: React.FC = () => {
                         "Learner",
                     }
                   : null,
+                { fromSupabaseSession: true },
               );
               return;
             }
@@ -311,7 +374,9 @@ const AuthCallbackViewInner: React.FC = () => {
           logger.error("[AuthCallback] Code exchange exception", err);
           const { data: fallbackData } = await supabase.auth.getSession().catch(() => ({ data: null }));
           if (fallbackData?.session && isMounted) {
-            await completeAuth(fallbackData.session.access_token, fallbackData.session.refresh_token);
+            await completeAuth(fallbackData.session.access_token, fallbackData.session.refresh_token, undefined, {
+              fromSupabaseSession: true,
+            });
             return;
           }
           if (isMounted) {
@@ -319,6 +384,32 @@ const AuthCallbackViewInner: React.FC = () => {
           }
           return;
         }
+      }
+
+      // Priority C: Fallback to Existing active session (only when URL carries no explicit token/code)
+      try {
+        const { data: existingData } = await supabase.auth.getSession();
+        if (existingData?.session && isMounted) {
+          logger.info("[AuthCallback] Existing Supabase session resolved");
+          await completeAuth(
+            existingData.session.access_token,
+            existingData.session.refresh_token,
+            existingData.session.user
+              ? {
+                  id: existingData.session.user.id,
+                  email: existingData.session.user.email || "",
+                  name:
+                    existingData.session.user.user_metadata?.full_name ||
+                    existingData.session.user.user_metadata?.display_name ||
+                    existingData.session.user.email?.split("@")[0] ||
+                    "Learner",
+                }
+              : null,
+            { fromSupabaseSession: true },
+          );
+        }
+      } catch (err) {
+        logger.warn("[AuthCallback] Initial getSession lookup notice", err);
       }
     };
 

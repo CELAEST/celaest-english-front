@@ -112,4 +112,16 @@ describe("StorageLifecycleService - Safe LocalStorage Hygiene", () => {
     // Lawyer questions should be kept
     expect(localStorage.getItem("celaest:interview:ai_questions:v2:lawyer:b1")).not.toBeNull();
   });
+
+  it("preserves onboarding completion flags when preserveOnboarding option is passed on passive session expiration", () => {
+    localStorage.setItem("lingua_access_token", "expired-jwt");
+    localStorage.setItem("lingua_onboarding_completed", "true");
+    localStorage.setItem("lingua_onboarding_completed_user-123", "true");
+
+    StorageLifecycleService.purgeOnLogout({ preserveOnboarding: true });
+
+    expect(localStorage.getItem("lingua_access_token")).toBeNull();
+    expect(localStorage.getItem("lingua_onboarding_completed")).toBe("true");
+    expect(localStorage.getItem("lingua_onboarding_completed_user-123")).toBe("true");
+  });
 });

@@ -51,19 +51,19 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
       screen.getByText(/Tu redacción permanece 100% intacta en el editor/i),
     ).toBeInTheDocument();
 
-    // Verify all 6 providers are available via their buttons
-    expect(screen.getByRole("button", { name: /Groq/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Grok/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /OpenAI/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Claude/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Gemini/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /DeepSeek/i })).toBeInTheDocument();
+    // Verify ONLY Groq is rendered (no multi-provider picker)
+    expect(screen.getAllByText(/Groq/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("button", { name: /Grok/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /OpenAI/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Claude/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Gemini/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /DeepSeek/i })).not.toBeInTheDocument();
 
     // Verify bottom action
     expect(screen.getByRole("button", { name: /Reanudar Ahora/i })).toBeInTheDocument();
   });
 
-  it("switches provider when clicking a provider button and updates input placeholder", () => {
+  it("displays Groq placeholder and hides alternative AI providers", () => {
     render(
       <AiInfrastructureRecoveryModal
         isOpen={true}
@@ -74,18 +74,9 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
       />,
     );
 
-    // Click Claude
-    const claudeBtn = screen.getByRole("button", { name: /Claude/i });
-    fireEvent.click(claudeBtn);
-
-    // Input placeholder should reflect Claude
-    const input = screen.getByPlaceholderText(/Pega tu clave sk-ant-/i);
+    const input = screen.getByPlaceholderText(/Pega tu clave gsk_/i);
     expect(input).toBeInTheDocument();
-
-    // Click Gemini
-    const geminiBtn = screen.getByRole("button", { name: /Gemini/i });
-    fireEvent.click(geminiBtn);
-    expect(screen.getByPlaceholderText(/Pega tu clave AIza/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Proveedor de inferencia:/i)).not.toBeInTheDocument();
   });
 
   it("toggles the inline help guide without clipping when clicking the info button", () => {
@@ -112,7 +103,10 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
     expect(screen.queryByText(/¿Cómo obtener tu clave de Groq\?/i)).not.toBeInTheDocument();
   });
 
-  it("verifies and activates a valid key, persisting to vault and triggering resume", async () => {
+  it("verifies and activates a valid key, persisting to vault at index 0, disabling central core, and triggering resume", async () => {
+    await providerKeyVault.saveKey("groq", "gsk_stale_key_0");
+    await providerKeyVault.setCentralCoreEnabled(true);
+
     render(
       <AiInfrastructureRecoveryModal
         isOpen={true}
@@ -131,10 +125,11 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
       fireEvent.click(activateBtn);
     });
 
-    // Wait for key to be persisted into vault
+    // Wait for key to be persisted as primary key (index 0) and central core disabled
     await waitFor(async () => {
       const savedKey = await providerKeyVault.getKey("groq");
       expect(savedKey).toBe("gsk_test_valid_key_12345");
+      expect(await providerKeyVault.isCentralCoreEnabled()).toBe(false);
     });
 
     // Wait for the automatic resume timeout

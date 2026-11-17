@@ -46,46 +46,6 @@ const PROVIDERS: ProviderOption[] = [
     url: "https://console.groq.com/keys",
     isFree: true,
   },
-  {
-    id: "grok",
-    name: "Grok",
-    badge: "$25 Gratis",
-    placeholder: "xai-...",
-    url: "https://console.x.ai/",
-    isFree: true,
-  },
-  {
-    id: "openai",
-    name: "OpenAI",
-    badge: "GPT-4o",
-    placeholder: "sk-proj-...",
-    url: "https://platform.openai.com/api-keys",
-    isFree: false,
-  },
-  {
-    id: "anthropic",
-    name: "Claude",
-    badge: "3.5 Sonnet",
-    placeholder: "sk-ant-...",
-    url: "https://console.anthropic.com/settings/keys",
-    isFree: false,
-  },
-  {
-    id: "gemini",
-    name: "Gemini",
-    badge: "Flash Gratis",
-    placeholder: "AIza...",
-    url: "https://aistudio.google.com/apikey",
-    isFree: true,
-  },
-  {
-    id: "deepseek",
-    name: "DeepSeek",
-    badge: "V3",
-    placeholder: "sk-...",
-    url: "https://platform.deepseek.com/api_keys",
-    isFree: false,
-  },
 ];
 
 export const AiEngineErrorsLuxuryStudio: React.FC = () => {

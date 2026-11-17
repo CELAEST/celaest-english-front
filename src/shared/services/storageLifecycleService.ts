@@ -103,17 +103,19 @@ export class StorageLifecycleService {
   }
 
   /**
-   * Purges transient feature state on logout (keeps device preferences and encrypted keys)
+   * Purges transient feature state on logout (keeps device preferences and encrypted keys).
+   * Pass `{ preserveOnboarding: true }` on passive JWT expiration so returning users do not get locked in onboarding.
    */
-  public static purgeOnLogout(): void {
+  public static purgeOnLogout(options?: { preserveOnboarding?: boolean }): void {
     if (typeof window === "undefined" || typeof localStorage === "undefined") return;
+    const preserveOnboarding = options?.preserveOnboarding === true;
 
     const keysToRemove = [
       "lingua_access_token",
       "lingua_refresh_token",
       "lingua_auth_user",
       "lingua_user",
-      "lingua_onboarding_completed",
+      ...(preserveOnboarding ? [] : ["lingua_onboarding_completed"]),
       "celaest:active_profession",
       "celaest:cefrLevel",
       "celaest:writing:cefrLevel",
@@ -147,7 +149,8 @@ export class StorageLifecycleService {
           k.includes("provider-key") ||
           k.includes("provider-config") ||
           k.includes("active-provider") ||
-          k.includes("mentor_voice")
+          k.includes("mentor_voice") ||
+          (preserveOnboarding && k.startsWith("lingua_onboarding_completed_"))
         ) {
           continue;
         }

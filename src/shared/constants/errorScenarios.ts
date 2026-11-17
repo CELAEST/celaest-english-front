@@ -143,9 +143,9 @@ export const ERROR_DATA: Record<AiApiErrorType, ErrorScenarioData> = {
     codeName: "CLUSTER_OUTAGE",
     humanHeadline: "El servidor de IA está en mantenimiento temporal",
     humanSubtext:
-      "El proveedor está actualizando sus sistemas. Puedes cambiar de proveedor con 1 clic para continuar ya mismo sin esperar.",
+      "El motor de Groq está procesando alta demanda en este momento. Puedes reanudar en segundos o conectar tu clave gratuita de Groq.",
     reassurance:
-      "No necesitas volver a hablar ni escribir; tu respuesta se evaluará con el nuevo proveedor.",
+      "No necesitas volver a hablar ni escribir; tu respuesta sigue guardada.",
     cooldownDefault: 15,
     bufferWords: 55,
     dial1Label: "TU PRÁCTICA",

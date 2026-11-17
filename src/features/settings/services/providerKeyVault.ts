@@ -6,6 +6,7 @@
 
 import { AiProviderId } from "../../../domain/entities/AiProvider";
 import { EncryptedLocalStorageVault } from "../../../infrastructure/adapters/storage/EncryptedLocalStorageVault";
+import { PROVIDER_KEYS_CHANGED_EVENT } from "../../../shared/constants/storageEvents";
 
 function getCurrentUserId(): string | null {
   if (typeof window === "undefined" || typeof localStorage === "undefined") return null;
@@ -36,6 +37,15 @@ function getActiveProviderKey(): string {
 
 const USE_CENTRAL_CORE_KEY = "celaest:use-central-core";
 
+function notifyProviderKeysChanged(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(PROVIDER_KEYS_CHANGED_EVENT));
+  } catch {
+    // ignore event dispatch errors in restricted environments
+  }
+}
+
 export interface StoredProviderKeyEntry {
   apiKey?: string;
   apiKeys?: string[];
@@ -47,19 +57,7 @@ export interface StoredProviderConfig {
   defaultModel?: string;
 }
 
-export const CLOUD_BYOK_PROVIDERS: readonly AiProviderId[] = [
-  "groq",
-  "gemini",
-  "openai",
-  "anthropic",
-  "grok",
-  "deepseek",
-  "openrouter",
-  "perplexity",
-  "huggingface",
-  "qwen",
-  "meta",
-];
+export const CLOUD_BYOK_PROVIDERS: readonly AiProviderId[] = ["groq"];
 
 export interface ResolvedProviderContext {
   providerId: AiProviderId;
@@ -88,12 +86,14 @@ export const providerKeyVault = {
     const clean = apiKey.trim();
     if (!clean) return;
     const existing = await this.getKeys(providerId);
-    const updated = existing.includes(clean) ? existing : [...existing, clean];
+    // Always promote the newly saved/activated key to index 0 so subsequent requests use it immediately.
+    const updated = [clean, ...existing.filter((k) => k !== clean)];
     await EncryptedLocalStorageVault.setItem(`${getKeyPrefix()}${providerId}`, {
-      apiKey: updated[0] || clean,
+      apiKey: clean,
       apiKeys: updated,
       savedAt: new Date().toISOString(),
     });
+    notifyProviderKeysChanged();
   },
 
   async saveKeys(providerId: AiProviderId, keys: string[]): Promise<void> {
@@ -103,10 +103,20 @@ export const providerKeyVault = {
       apiKeys: cleanKeys,
       savedAt: new Date().toISOString(),
     });
+    notifyProviderKeysChanged();
   },
 
   async addKey(providerId: AiProviderId, apiKey: string): Promise<void> {
-    await this.saveKey(providerId, apiKey);
+    const clean = apiKey.trim();
+    if (!clean) return;
+    const existing = await this.getKeys(providerId);
+    const updated = existing.includes(clean) ? existing : [...existing, clean];
+    await EncryptedLocalStorageVault.setItem(`${getKeyPrefix()}${providerId}`, {
+      apiKey: updated[0] || clean,
+      apiKeys: updated,
+      savedAt: new Date().toISOString(),
+    });
+    notifyProviderKeysChanged();
   },
 
   async migrateSessionToUser(targetUserId?: string): Promise<void> {
@@ -165,6 +175,7 @@ export const providerKeyVault = {
       }
       EncryptedLocalStorageVault.removeItem(sessionActiveKey);
     }
+    notifyProviderKeysChanged();
   },
 
   async getKeys(providerId: AiProviderId): Promise<string[]> {
@@ -214,6 +225,17 @@ export const providerKeyVault = {
   },
 
   async resolveConfiguredProvider(): Promise<ResolvedProviderContext> {
+    const groqKeys = await this.getKeys("groq");
+    if (groqKeys.length > 0) {
+      return {
+        providerId: "groq",
+        apiKey: groqKeys[0] ?? null,
+        keys: groqKeys,
+        config: await this.getConfig("groq"),
+        hasAnyKey: true,
+      };
+    }
+
     const activeId = await this.getActiveProviderId();
     if (activeId) {
       const activeKeys = await this.getKeys(activeId);
@@ -228,25 +250,11 @@ export const providerKeyVault = {
       }
     }
 
-    for (const pid of CLOUD_BYOK_PROVIDERS) {
-      const keys = await this.getKeys(pid);
-      if (keys.length > 0) {
-        return {
-          providerId: pid,
-          apiKey: keys[0] ?? null,
-          keys,
-          config: await this.getConfig(pid),
-          hasAnyKey: true,
-        };
-      }
-    }
-
-    const fallbackId: AiProviderId = activeId || "groq";
     return {
-      providerId: fallbackId,
+      providerId: "groq",
       apiKey: null,
       keys: [],
-      config: await this.getConfig(fallbackId),
+      config: await this.getConfig("groq"),
       hasAnyKey: false,
     };
   },
@@ -287,6 +295,7 @@ export const providerKeyVault = {
 
   async removeKey(providerId: AiProviderId): Promise<void> {
     EncryptedLocalStorageVault.removeItem(`${getKeyPrefix()}${providerId}`);
+    notifyProviderKeysChanged();
   },
 
   async saveConfig(providerId: AiProviderId, config: StoredProviderConfig): Promise<void> {

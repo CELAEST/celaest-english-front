@@ -143,5 +143,17 @@ describe("SettingsView — real flow, verified authentication & contracts", () =
       expect(screen.queryByRole("heading", { name: "¿Cerrar sesión?" })).not.toBeInTheDocument();
     });
   });
+
+  it("displays ONLY Groq in AI configuration and hides all alternative AI providers", async () => {
+    render(<SettingsView userName="Camila" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByText("MOTOR DE IA · GROQ")).toBeInTheDocument();
+    expect(screen.getAllByText(/^Groq$/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/^OpenAI$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Anthropic$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Google Gemini$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^DeepSeek$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Grok \(xAI\)/i)).not.toBeInTheDocument();
+  });
 });
 

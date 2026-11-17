@@ -5,7 +5,7 @@ export interface OnboardingBeginnerCheckStepProps {
   profile: LearnerProfileData;
   onSelectBeginner: (profession: string) => void;
   onSelectExperienced: () => void;
-  onPrev: () => void;
+  onPrev?: (() => void) | undefined;
 }
 
 const STARTING_TRACKS = [
@@ -99,16 +99,20 @@ export const OnboardingBeginnerCheckStep: React.FC<OnboardingBeginnerCheckStepPr
 
           {/* Navigation Controls */}
           <div className="flex items-center justify-between pt-2 animate-[fadeSlideUp_0.4s_ease-out_0.24s_both]">
-            <button
-              onClick={onPrev}
-              type="button"
-              className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Volver
-            </button>
+            {onPrev ? (
+              <button
+                onClick={onPrev}
+                type="button"
+                className="flex items-center text-xs sm:text-sm font-light text-[#9999B5] hover:text-white hover:-translate-x-0.5 transition-all cursor-pointer"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver
+              </button>
+            ) : (
+              <div />
+            )}
 
             <button
               type="button"

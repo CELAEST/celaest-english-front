@@ -1,8 +1,10 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { act, render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { useLinguaEntitlement } from "../useLinguaEntitlement";
+import { useAiUseCaseModals } from "../useAiUseCaseModals";
 import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
+import { HttpClient } from "../../../infrastructure/http/HttpClient";
 import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { providerKeyVault } from "../../../features/settings/services/providerKeyVault";
 import { LinguaMarketplacePaywallModal } from "../../../features/workspace/components/LinguaMarketplacePaywallModal";
@@ -267,6 +269,138 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onOpenPaywall).toHaveBeenCalledTimes(1);
+  });
+
+  it("LinguaByokRequiredModal auto-aligns provider to gemini when pasting an AIza key to avoid mismatch", async () => {
+    const saveKeySpy = vi.spyOn(providerKeyVault, "saveKey").mockResolvedValue();
+    const setActiveSpy = vi.spyOn(providerKeyVault, "saveActiveProviderId").mockResolvedValue();
+    const setCentralSpy = vi.spyOn(providerKeyVault, "setCentralCoreEnabled").mockResolvedValue();
+    const onConfigured = vi.fn();
+
+    render(
+      <LinguaByokRequiredModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onConfigured={onConfigured}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("gsk_...");
+    fireEvent.change(input, { target: { value: "AIzaSyAutoAlignedGeminiKey99" } });
+
+    const saveButton = screen.getByRole("button", { name: /Guardar y Activar IA/i });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(saveKeySpy).toHaveBeenCalledWith("gemini", "AIzaSyAutoAlignedGeminiKey99");
+      expect(setActiveSpy).toHaveBeenCalledWith("gemini");
+      expect(setCentralSpy).toHaveBeenCalledWith(false);
+      expect(onConfigured).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("useAiUseCaseModals closes open BYOK modal automatically when providerKeyVault saves a key", async () => {
+    localStorage.clear();
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValue({
+      ...DEFAULT_FREE_ENTITLEMENT,
+      hasAccess: true,
+      accessType: "purchase",
+      status: "active",
+      aiCloudIncluded: false,
+    });
+
+    const ModalControllerHarness: React.FC = () => {
+      const ctrl = useAiUseCaseModals("pathway");
+      return (
+        <div>
+          <span data-testid="byok-open">{String(ctrl.byokOpen)}</span>
+          <button type="button" onClick={() => ctrl.openByokModal("promo_byok")}>
+            open
+          </button>
+        </div>
+      );
+    };
+
+    render(<ModalControllerHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "open" }));
+    expect(screen.getByTestId("byok-open").textContent).toBe("true");
+
+    await act(async () => {
+      await providerKeyVault.saveKey("groq", "gsk_sync_event_key_1");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("byok-open").textContent).toBe("false");
+    });
+  });
+
+  it("deduplicates concurrent hook mounts into a single getEntitlement call (anti-burst)", async () => {
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    let resolveFetch!: (val: typeof DEFAULT_FREE_ENTITLEMENT) => void;
+    const pendingPromise = new Promise<typeof DEFAULT_FREE_ENTITLEMENT>((resolve) => {
+      resolveFetch = resolve;
+    });
+    const spy = vi
+      .spyOn(ApiEntitlementRepository, "getEntitlement")
+      .mockReturnValue(pendingPromise);
+
+    render(
+      <>
+        <Harness />
+        <Harness />
+        <Harness />
+        <Harness />
+        <Harness />
+      </>,
+    );
+
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFetch({
+        ...DEFAULT_FREE_ENTITLEMENT,
+        hasAccess: true,
+        accessType: "purchase",
+        status: "active",
+        aiCloudIncluded: true,
+      });
+      await pendingPromise;
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("access").every((el) => el.textContent === "true")).toBe(true);
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("caches ApiEntitlementRepository.getEntitlement across repeated calls within TTL unless forced", async () => {
+    ApiEntitlementRepository.invalidateEntitlementCache();
+    const httpSpy = vi.spyOn(HttpClient, "get").mockResolvedValue({
+      has_access: true,
+      access_type: "purchase",
+      status: "active",
+      ai_cloud_included: true,
+    });
+
+    const [a, b, c] = await Promise.all([
+      ApiEntitlementRepository.getEntitlement("lingua"),
+      ApiEntitlementRepository.getEntitlement("lingua"),
+      ApiEntitlementRepository.getEntitlement("lingua"),
+    ]);
+
+    expect(a.hasAccess).toBe(true);
+    expect(b.hasAccess).toBe(true);
+    expect(c.hasAccess).toBe(true);
+    expect(httpSpy).toHaveBeenCalledTimes(1);
+
+    // Subsequent call within TTL reuses cache without hitting HttpClient again
+    await ApiEntitlementRepository.getEntitlement("lingua");
+    expect(httpSpy).toHaveBeenCalledTimes(1);
+
+    // Explicit force=true bypasses TTL cache
+    await ApiEntitlementRepository.getEntitlement("lingua", { force: true });
+    expect(httpSpy).toHaveBeenCalledTimes(2);
   });
 });
 

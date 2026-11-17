@@ -33,8 +33,31 @@ interface RawCheckoutResponse {
   currency?: string;
 }
 
+const ENTITLEMENT_CACHE_TTL_MS = 5 * 60 * 1000;
+const entitlementCache = new Map<string, { data: ProductEntitlement; fetchedAt: number }>();
+const inFlightEntitlements = new Map<string, Promise<ProductEntitlement>>();
+
+if (typeof window !== "undefined") {
+  const clearCache = () => {
+    entitlementCache.clear();
+  };
+  window.addEventListener("celaest:auth-changed", clearCache);
+  window.addEventListener("celaest:unauthorized", clearCache);
+}
+
 export class ApiEntitlementRepository {
-  static async getEntitlement(slug = "lingua"): Promise<ProductEntitlement> {
+  static invalidateEntitlementCache(slug?: string): void {
+    if (slug) {
+      entitlementCache.delete(slug);
+    } else {
+      entitlementCache.clear();
+    }
+  }
+
+  static async getEntitlement(
+    slug = "lingua",
+    options?: { force?: boolean },
+  ): Promise<ProductEntitlement> {
     if (import.meta.env.DEV) {
       const user = localStorage.getItem("lingua_auth_user");
       if (user?.includes("dev-user-local")) {
@@ -55,31 +78,56 @@ export class ApiEntitlementRepository {
         };
       }
     }
-    const raw = await HttpClient.get<RawProductEntitlement>(
-      `${ENV.celaestBackUrl}/user/my/entitlements/${encodeURIComponent(slug)}`,
-    );
-    return {
-      hasAccess: Boolean(raw?.has_access),
-      accessType: raw?.access_type ?? "none",
-      productId: raw?.product_id ?? DEFAULT_FREE_ENTITLEMENT.productId,
-      productSlug: raw?.product_slug ?? slug,
-      productName: raw?.product_name ?? DEFAULT_FREE_ENTITLEMENT.productName,
-      productType: raw?.product_type ?? "saas",
-      externalUrl: raw?.external_url,
-      basePrice:
-        typeof raw?.base_price === "number"
-          ? raw.base_price
-          : DEFAULT_FREE_ENTITLEMENT.basePrice,
-      currency: raw?.currency || DEFAULT_FREE_ENTITLEMENT.currency,
-      minPlanTier: raw?.min_plan_tier ?? 1,
-      licenseId: raw?.license_id,
-      licenseKey: raw?.license_key,
-      status: raw?.status ?? "none",
-      planTier: raw?.plan_tier ?? 0,
-      aiCloudIncluded: Boolean(raw?.ai_cloud_included),
-      limits: raw?.limits,
-      expiresAt: raw?.expires_at,
-    };
+
+    const force = Boolean(options?.force);
+    const cached = entitlementCache.get(slug);
+    if (!force && cached && Date.now() - cached.fetchedAt < ENTITLEMENT_CACHE_TTL_MS) {
+      return cached.data;
+    }
+
+    const pending = inFlightEntitlements.get(slug);
+    if (!force && pending) {
+      return pending;
+    }
+
+    const fetchPromise = (async (): Promise<ProductEntitlement> => {
+      const raw = await HttpClient.get<RawProductEntitlement>(
+        `${ENV.celaestBackUrl}/user/my/entitlements/${encodeURIComponent(slug)}`,
+      );
+      const resolved: ProductEntitlement = {
+        hasAccess: Boolean(raw?.has_access),
+        accessType: raw?.access_type ?? "none",
+        productId: raw?.product_id ?? DEFAULT_FREE_ENTITLEMENT.productId,
+        productSlug: raw?.product_slug ?? slug,
+        productName: raw?.product_name ?? DEFAULT_FREE_ENTITLEMENT.productName,
+        productType: raw?.product_type ?? "saas",
+        externalUrl: raw?.external_url,
+        basePrice:
+          typeof raw?.base_price === "number"
+            ? raw.base_price
+            : DEFAULT_FREE_ENTITLEMENT.basePrice,
+        currency: raw?.currency || DEFAULT_FREE_ENTITLEMENT.currency,
+        minPlanTier: raw?.min_plan_tier ?? 1,
+        licenseId: raw?.license_id,
+        licenseKey: raw?.license_key,
+        status: raw?.status ?? "none",
+        planTier: raw?.plan_tier ?? 0,
+        aiCloudIncluded: Boolean(raw?.ai_cloud_included),
+        limits: raw?.limits,
+        expiresAt: raw?.expires_at,
+      };
+      entitlementCache.set(slug, { data: resolved, fetchedAt: Date.now() });
+      return resolved;
+    })();
+
+    inFlightEntitlements.set(slug, fetchPromise);
+    try {
+      return await fetchPromise;
+    } finally {
+      if (inFlightEntitlements.get(slug) === fetchPromise) {
+        inFlightEntitlements.delete(slug);
+      }
+    }
   }
 
   static async createCheckoutSession(
@@ -106,6 +154,7 @@ export class ApiEntitlementRepository {
   static async verifyCheckoutSession(
     sessionId: string,
   ): Promise<{ status: string }> {
+    entitlementCache.clear();
     return HttpClient.get<{ status: string }>(
       `${ENV.celaestBackUrl}/user/marketplace/checkout/verify/${encodeURIComponent(sessionId)}`,
     );

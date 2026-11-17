@@ -9,8 +9,17 @@ import { ApiEntitlementRepository } from "../../infrastructure/repositories/ApiE
 import { ENV } from "../constants/env";
 
 const ENTITLEMENT_SYNC_EVENT = "celaest:entitlement-synced";
+const ENTITLEMENT_STALE_MS = 5 * 60 * 1000;
+const ENTITLEMENT_ERROR_COOLDOWN_MS = 30 * 1000;
+
 let cachedEntitlement: ProductEntitlement = DEFAULT_FREE_ENTITLEMENT;
 let hasFetchedInitial = false;
+let lastSyncedAt = 0;
+let lastFailedAt = 0;
+let inFlightSync: Promise<ProductEntitlement> | null = null;
+let syncSeq = 0;
+let subscriberCount = 0;
+let teardownCoordinator: (() => void) | null = null;
 
 export function getCachedLinguaEntitlement(): ProductEntitlement {
   return cachedEntitlement;
@@ -26,26 +35,45 @@ function broadcastEntitlement(next: ProductEntitlement) {
   }
 }
 
-export function useLinguaEntitlement() {
-  const [entitlement, setEntitlement] = useState<ProductEntitlement>(
-    cachedEntitlement,
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(!hasFetchedInitial);
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState<boolean>(false);
+async function syncLinguaEntitlement(options?: { force?: boolean }): Promise<ProductEntitlement> {
+  const force = Boolean(options?.force);
 
-  const refreshEntitlement = useCallback(async () => {
-    if (!SupabaseAuthAdapter.getInstance().isAuthenticated()) {
-      broadcastEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      setEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
-      setIsLoading(false);
-      return DEFAULT_FREE_ENTITLEMENT;
+  if (!SupabaseAuthAdapter.getInstance().isAuthenticated()) {
+    lastSyncedAt = 0;
+    lastFailedAt = 0;
+    ApiEntitlementRepository.invalidateEntitlementCache("lingua");
+    broadcastEntitlement(DEFAULT_FREE_ENTITLEMENT);
+    await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
+    return DEFAULT_FREE_ENTITLEMENT;
+  }
+
+  const now = Date.now();
+  const isTestEnv = import.meta.env.MODE === "test";
+  if (!force && !isTestEnv) {
+    if (hasFetchedInitial && lastSyncedAt > 0 && now - lastSyncedAt < ENTITLEMENT_STALE_MS) {
+      return cachedEntitlement;
     }
-    setIsLoading(true);
+    if (lastFailedAt > 0 && now - lastFailedAt < ENTITLEMENT_ERROR_COOLDOWN_MS) {
+      return cachedEntitlement;
+    }
+  }
+
+  if (!force && inFlightSync) {
+    return inFlightSync;
+  }
+
+  const syncToken = ++syncSeq;
+  const runPromise = (async (): Promise<ProductEntitlement> => {
     try {
-      const resolved = await ApiEntitlementRepository.getEntitlement("lingua");
+      const resolved = force
+        ? await ApiEntitlementRepository.getEntitlement("lingua", { force: true })
+        : await ApiEntitlementRepository.getEntitlement("lingua");
+      if (syncSeq === syncToken) {
+        inFlightSync = null;
+      }
+      lastSyncedAt = Date.now();
+      lastFailedAt = 0;
       broadcastEntitlement(resolved);
-      setEntitlement(resolved);
       const isEligibleForCloud =
         resolved.hasAccess &&
         resolved.aiCloudIncluded &&
@@ -53,13 +81,84 @@ export function useLinguaEntitlement() {
         resolved.status !== "revoked" &&
         resolved.status !== "suspended" &&
         resolved.status !== "cancelled";
-      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(isEligibleForCloud)).catch(() => {});
+      void Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(isEligibleForCloud)).catch(() => {});
       return resolved;
     } catch {
+      if (syncSeq === syncToken) {
+        inFlightSync = null;
+      }
+      lastFailedAt = Date.now();
       broadcastEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      setEntitlement(DEFAULT_FREE_ENTITLEMENT);
-      await Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
+      void Promise.resolve(providerKeyVault.setCentralCoreEnabled?.(false)).catch(() => {});
       return DEFAULT_FREE_ENTITLEMENT;
+    }
+  })();
+
+  inFlightSync = runPromise;
+  return await runPromise;
+}
+
+function retainCoordinator(): () => void {
+  subscriberCount++;
+  if (subscriberCount === 1 && typeof window !== "undefined") {
+    const handleAuthChanged = () => {
+      lastSyncedAt = 0;
+      lastFailedAt = 0;
+      ApiEntitlementRepository.invalidateEntitlementCache("lingua");
+      if (SupabaseAuthAdapter.getInstance().isAuthenticated()) {
+        void syncLinguaEntitlement({ force: true });
+      } else {
+        void syncLinguaEntitlement();
+      }
+    };
+    const handleFocus = () => {
+      if (
+        document.visibilityState === "visible" &&
+        SupabaseAuthAdapter.getInstance().isAuthenticated()
+      ) {
+        void syncLinguaEntitlement();
+      }
+    };
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState === "visible" &&
+        SupabaseAuthAdapter.getInstance().isAuthenticated()
+      ) {
+        void syncLinguaEntitlement();
+      }
+    }, ENTITLEMENT_STALE_MS);
+
+    window.addEventListener("celaest:auth-changed", handleAuthChanged);
+    window.addEventListener("focus", handleFocus);
+    teardownCoordinator = () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("celaest:auth-changed", handleAuthChanged);
+      window.removeEventListener("focus", handleFocus);
+      teardownCoordinator = null;
+    };
+  }
+
+  return () => {
+    subscriberCount = Math.max(0, subscriberCount - 1);
+    if (subscriberCount === 0 && teardownCoordinator) {
+      teardownCoordinator();
+    }
+  };
+}
+
+export function useLinguaEntitlement() {
+  const [entitlement, setEntitlement] = useState<ProductEntitlement>(
+    cachedEntitlement,
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(!hasFetchedInitial);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState<boolean>(false);
+
+  const refreshEntitlement = useCallback(async (force = true) => {
+    if (!hasFetchedInitial) setIsLoading(true);
+    try {
+      const resolved = await syncLinguaEntitlement({ force });
+      setEntitlement(resolved);
+      return resolved;
     } finally {
       setIsLoading(false);
     }
@@ -68,10 +167,12 @@ export function useLinguaEntitlement() {
   useEffect(() => {
     let active = true;
     const init = async () => {
+      let checkoutReturned = false;
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get("session_id");
         if (sessionId) {
+          checkoutReturned = true;
           try {
             await ApiEntitlementRepository.verifyCheckoutSession(sessionId);
           } catch {
@@ -85,15 +186,14 @@ export function useLinguaEntitlement() {
           window.history.replaceState({}, "", cleanUrl);
         }
       }
-      if (active) await refreshEntitlement();
+      const resolved = await syncLinguaEntitlement({ force: checkoutReturned });
+      if (active) {
+        setEntitlement(resolved);
+        setIsLoading(false);
+      }
     };
     void init();
 
-    const handleAuthOrFocus = () => {
-      if (active && SupabaseAuthAdapter.getInstance().isAuthenticated()) {
-        void refreshEntitlement();
-      }
-    };
     const handleSynced = (e: Event) => {
       const custom = e as CustomEvent<ProductEntitlement>;
       if (active && custom.detail) {
@@ -101,34 +201,19 @@ export function useLinguaEntitlement() {
         setIsLoading(false);
       }
     };
-    const intervalId =
-      typeof window !== "undefined"
-        ? window.setInterval(() => {
-            if (
-              active &&
-              document.visibilityState === "visible" &&
-              SupabaseAuthAdapter.getInstance().isAuthenticated()
-            ) {
-              void refreshEntitlement();
-            }
-          }, 20000)
-        : undefined;
-
     if (typeof window !== "undefined") {
-      window.addEventListener("celaest:auth-changed", handleAuthOrFocus);
-      window.addEventListener("focus", handleAuthOrFocus);
       window.addEventListener(ENTITLEMENT_SYNC_EVENT, handleSynced);
     }
+    const releaseCoordinator = retainCoordinator();
+
     return () => {
       active = false;
-      if (intervalId !== undefined) window.clearInterval(intervalId);
+      releaseCoordinator();
       if (typeof window !== "undefined") {
-        window.removeEventListener("celaest:auth-changed", handleAuthOrFocus);
-        window.removeEventListener("focus", handleAuthOrFocus);
         window.removeEventListener(ENTITLEMENT_SYNC_EVENT, handleSynced);
       }
     };
-  }, [refreshEntitlement]);
+  }, []);
 
   const startDirectCheckout = useCallback(
     async (couponCode?: string) => {

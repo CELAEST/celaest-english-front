@@ -221,6 +221,74 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
       expect(mockAudioContext.decodeAudioData).toHaveBeenCalled();
       expect(onStart).toHaveBeenCalled();
     });
+
+    it("returns false immediately when native AudioContext stays suspended after resume() so autoplay block can propagate", async () => {
+      const startFn = vi.fn();
+      class FakeNativeAudioContext {
+        state: AudioContextState = "suspended";
+        resume = vi.fn().mockResolvedValue(undefined);
+        decodeAudioData = vi.fn();
+        createBufferSource = vi.fn().mockReturnValue({ start: startFn });
+      }
+      const originalAudioContext = window.AudioContext;
+      Object.defineProperty(window, "AudioContext", {
+        writable: true,
+        configurable: true,
+        value: FakeNativeAudioContext,
+      });
+
+      try {
+        const suspendedCtx = new FakeNativeAudioContext();
+        vi.spyOn(MobileAudioUnlocker, "getAudioContext").mockReturnValue(
+          suspendedCtx as unknown as AudioContext,
+        );
+
+        const fakeBlob = new Blob(["fake"], { type: "audio/mpeg" });
+        const onStart = vi.fn();
+        const onEnd = vi.fn();
+        const activeId = SpeechSynthesisService.getActivePlaybackId();
+
+        const played = await MobileAudioUnlocker.playNeuralBuffer(
+          fakeBlob,
+          { rate: 1.0 },
+          activeId,
+          onStart,
+          onEnd,
+        );
+
+        expect(played).toBe(false);
+        expect(suspendedCtx.resume).toHaveBeenCalledTimes(1);
+        expect(suspendedCtx.decodeAudioData).not.toHaveBeenCalled();
+        expect(startFn).not.toHaveBeenCalled();
+        expect(onStart).not.toHaveBeenCalled();
+
+        // Also simulate Chrome's W3C behavior where ctx.resume() never settles without a gesture
+        const hangingCtx = {
+          state: "suspended" as AudioContextState,
+          resume: vi.fn().mockImplementation(() => new Promise(() => {})),
+          decodeAudioData: vi.fn(),
+        };
+        vi.spyOn(MobileAudioUnlocker, "getAudioContext").mockReturnValue(
+          hangingCtx as unknown as AudioContext,
+        );
+        const hangingPlayed = await MobileAudioUnlocker.playNeuralBuffer(
+          fakeBlob,
+          { rate: 1.0 },
+          activeId,
+          onStart,
+          onEnd,
+        );
+        expect(hangingPlayed).toBe(false);
+        expect(hangingCtx.resume).toHaveBeenCalledTimes(1);
+        expect(hangingCtx.decodeAudioData).not.toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(window, "AudioContext", {
+          writable: true,
+          configurable: true,
+          value: originalAudioContext,
+        });
+      }
+    });
   });
 
   describe("5. Aria / Christopher Isolation from Pathway Mode", () => {
@@ -277,6 +345,73 @@ describe("Mobile & Production Rigorous Audit Suite", () => {
       getCacheSpy.mockRestore();
       logSpy.mockRestore();
       playSpy.mockRestore();
+    });
+  });
+
+  describe("6. Production Origin & CDN 404 Audio Resilience", () => {
+    it("routes /audio/pathway/common/* directly to same-origin even when ENV.audioBaseUrl is set, while preserving CDN for level assets", async () => {
+      const { resolveAudioUrl, resolveSameOriginAudioFallback } = await import(
+        "../../../../shared/utils/audioUrl"
+      );
+      const envMut = ENV as unknown as { audioBaseUrl: string };
+      const origBase = envMut.audioBaseUrl;
+      envMut.audioBaseUrl = "https://cdn.celaest.com";
+
+      try {
+        expect(resolveAudioUrl("/audio/pathway/common/intro_welcome.mp3")).toBe(
+          "/audio/pathway/common/intro_welcome.mp3",
+        );
+        expect(resolveAudioUrl("/audio/pathway/a1/base_01/formula.rule.mp3")).toBe(
+          "https://cdn.celaest.com/audio/pathway/a1/base_01/formula.rule.mp3",
+        );
+        expect(
+          resolveSameOriginAudioFallback(
+            "/audio/pathway/a1/base_01/formula.rule.mp3",
+            "https://cdn.celaest.com/audio/pathway/a1/base_01/formula.rule.mp3",
+          ),
+        ).toBe("/audio/pathway/a1/base_01/formula.rule.mp3");
+        expect(
+          resolveSameOriginAudioFallback(
+            "/audio/pathway/common/intro_welcome.mp3",
+            "/audio/pathway/common/intro_welcome.mp3",
+          ),
+        ).toBeNull();
+      } finally {
+        envMut.audioBaseUrl = origBase;
+      }
+    });
+
+    it("falls back automatically to same-origin path in prefetchStatic if remote CDN returns 404", async () => {
+      const envMut = ENV as unknown as { audioBaseUrl: string };
+      const origBase = envMut.audioBaseUrl;
+      envMut.audioBaseUrl = "https://cdn.celaest.com";
+
+      const origCreateObjectUrl = URL.createObjectURL;
+      URL.createObjectURL = vi
+        .fn()
+        .mockReturnValue("blob:http://localhost/origin-fallback") as typeof URL.createObjectURL;
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const u = String(input);
+        if (u.startsWith("https://cdn.celaest.com/")) {
+          return new Response(null, { status: 404 });
+        }
+        return new Response(new Blob(["mp3"]), { status: 200 });
+      });
+
+      try {
+        const target = "/audio/pathway/a2/base_a2_99/missing-on-cdn.mp3";
+        SpeechSynthesisService.prefetchStatic(target);
+        await new Promise((res) => setTimeout(res, 20));
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+        expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(
+          "https://cdn.celaest.com/audio/pathway/a2/base_a2_99/missing-on-cdn.mp3",
+        );
+        expect(String(fetchSpy.mock.calls[1]?.[0])).toBe(target);
+      } finally {
+        envMut.audioBaseUrl = origBase;
+        URL.createObjectURL = origCreateObjectUrl;
+        fetchSpy.mockRestore();
+      }
     });
   });
 });

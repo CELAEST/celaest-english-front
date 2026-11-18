@@ -1,6 +1,6 @@
 import { ENV } from "../../../shared/constants/env";
 import { logger } from "../../../shared/utils/logger";
-import { resolveAudioUrl } from "../../../shared/utils/audioUrl";
+import { resolveAudioUrl, resolveSameOriginAudioFallback } from "../../../shared/utils/audioUrl";
 import {
   readingAudioPrefetcher,
   FlagshipVoiceId,
@@ -177,8 +177,17 @@ export class SpeechSynthesisService {
   public static prefetchStatic(url?: string): void {
     if (!url || this.staticBlobCache.has(url) || this.staticBlobPending.has(url)) return;
     const targetUrl = resolveAudioUrl(url);
-    const pending = fetch(targetUrl, { cache: "force-cache" })
-      .then((res) => (res.ok ? res.blob() : null))
+    const sameOriginFallback = resolveSameOriginAudioFallback(url, targetUrl);
+    const fetchBlob = async (candidate: string): Promise<Blob | null> => {
+      try {
+        const res = await fetch(candidate, { cache: "force-cache" });
+        return res.ok ? await res.blob() : null;
+      } catch {
+        return null;
+      }
+    };
+    const pending = fetchBlob(targetUrl)
+      .then((blob) => (blob || !sameOriginFallback ? blob : fetchBlob(sameOriginFallback)))
       .then((blob) => {
         if (!blob) return null;
         if (this.staticBlobCache.size > 80) {
@@ -199,19 +208,12 @@ export class SpeechSynthesisService {
     this.staticBlobPending.set(url, pending);
   }
 
-  /** Fuente lista para reproducir: blob completo si ya está, o el mp3 con timeout corto. */
-  private static async resolveStaticSource(url: string, timeoutMs = 1200): Promise<string> {
+  /** Fuente lista para reproducir sin bloquear el gesto táctil del usuario. */
+  private static resolveStaticSourceSyncOrBackground(url: string): string {
     const cached = this.staticBlobCache.get(url);
     if (cached) return cached;
     this.prefetchStatic(url);
-    const targetUrl = resolveAudioUrl(url);
-    const pending = this.staticBlobPending.get(url);
-    if (!pending) return targetUrl;
-    const blobUrl = await Promise.race([
-      pending,
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
-    ]);
-    return blobUrl || targetUrl;
+    return resolveAudioUrl(url);
   }
 
   /**
@@ -276,15 +278,145 @@ export class SpeechSynthesisService {
       }
     }
     const audioSource = staticLocalAudio
-      ? await this.resolveStaticSource(staticLocalAudio)
+      ? this.resolveStaticSourceSyncOrBackground(staticLocalAudio)
       : cached
       ? cached.blobUrl
       : `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(textToSpeak)}&voice=${encodeURIComponent(
           voiceId,
         )}&rate=%2B0%25&volume=%2B100%25`;
 
+    const originFallback = staticLocalAudio
+      ? resolveSameOriginAudioFallback(staticLocalAudio, audioSource)
+      : null;
+    let triedOriginFallback = false;
+    let hasEnded = false;
+    let recoveryPromise: Promise<void> | null = null;
+
+    const isStale = () => this.activePlaybackId !== playbackId || hasEnded;
+
+    const handleEnd = () => {
+      if (isStale()) return;
+      hasEnded = true;
+      this.currentAudio = null;
+      SpeechSynthesisService.notifyPlayback(false);
+      if (options.onEnd) options.onEnd();
+    };
+
+    const finishWithError = (err: unknown) => {
+      if (isStale()) return;
+      hasEnded = true;
+      this.currentAudio = null;
+      SpeechSynthesisService.notifyPlayback(false);
+      logger.warn("[SpeechSynthesisService] Direct & buffer audio play failed. Skipping synthetic browser TTS.");
+      if (options.onError) options.onError(err);
+      else if (options.onEnd) options.onEnd();
+    };
+
+    const tryNeuralBuffer = async (source: string | Blob): Promise<boolean> => {
+      if (isStale()) return false;
+      try {
+        return await MobileAudioUnlocker.playNeuralBuffer(
+          source,
+          options,
+          () => !isStale(),
+          () => {
+            if (!isStale()) {
+              SpeechSynthesisService.notifyPlayback(true);
+              if (options.onStart) options.onStart();
+            }
+          },
+          handleEnd,
+        );
+      } catch (webAudioErr) {
+        logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
+        return false;
+      }
+    };
+
+    let mediaEl: HTMLAudioElement | null = null;
+    const detachAudioListeners = (el: HTMLAudioElement | null) => {
+      if (!el) return;
+      el.onplay = null;
+      el.onended = null;
+      el.onerror = null;
+      el.onpause = null;
+    };
+
+    const tryOriginRecovery = async (): Promise<boolean> => {
+      if (isStale() || !originFallback || triedOriginFallback || !mediaEl) return false;
+      triedOriginFallback = true;
+      try {
+        mediaEl.src = originFallback;
+        if (isStale()) return false;
+        this.currentAudio = mediaEl;
+        await mediaEl.play();
+        if (isStale()) {
+          try {
+            mediaEl.pause();
+            mediaEl.currentTime = 0;
+          } catch {}
+          if (this.currentAudio === mediaEl) this.currentAudio = null;
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const recoverFromFailure = (err: unknown, allowOriginRetry: boolean): Promise<void> => {
+      if (recoveryPromise) return recoveryPromise;
+      recoveryPromise = (async () => {
+        if (isStale()) return;
+        if (allowOriginRetry && (await tryOriginRecovery())) return;
+        if (isStale()) return;
+        detachAudioListeners(mediaEl);
+        if (mediaEl) {
+          try {
+            mediaEl.pause();
+            mediaEl.currentTime = 0;
+          } catch {}
+          if (this.currentAudio === mediaEl) {
+            this.currentAudio = null;
+          }
+        }
+        SpeechSynthesisService.notifyPlayback(false);
+        let resolvedBlob: Blob | null = cached ? cached.blob : null;
+        if (!resolvedBlob && !staticLocalAudio && allowOriginRetry) {
+          try {
+            const fetchedItem = await readingAudioPrefetcher.prefetchText(textToSpeak, voiceId);
+            if (isStale()) return;
+            if (fetchedItem?.blob) {
+              resolvedBlob = fetchedItem.blob;
+            }
+          } catch {
+            // ignore prefetch recovery error
+          }
+        }
+        const fallbackSource = resolvedBlob
+          ? resolvedBlob
+          : triedOriginFallback && originFallback
+          ? originFallback
+          : audioSource;
+        if (await tryNeuralBuffer(fallbackSource)) return;
+        if (
+          allowOriginRetry &&
+          !options.preventSyntheticFallback &&
+          voiceId !== "liam" &&
+          typeof window !== "undefined" &&
+          "speechSynthesis" in window
+        ) {
+          await this.speakFallback(textToSpeak, options, playbackId);
+          return;
+        }
+        finishWithError(err);
+      })();
+      return recoveryPromise;
+    };
+
     try {
       const audio = new Audio();
+      mediaEl = audio;
       // @ts-ignore
       audio.playsInline = true;
       try {
@@ -301,95 +433,33 @@ export class SpeechSynthesisService {
       }
       this.currentAudio = audio;
 
-      let hasEnded = false;
-      const handleEnd = () => {
-        if (this.activePlaybackId !== playbackId) return;
-        if (hasEnded) return;
-        hasEnded = true;
-        this.currentAudio = null;
-        SpeechSynthesisService.notifyPlayback(false);
-        if (options.onEnd) options.onEnd();
-      };
-
       audio.onplay = () => {
-        if (this.activePlaybackId !== playbackId) return;
+        if (isStale()) return;
         SpeechSynthesisService.notifyPlayback(true);
         if (options.onStart) options.onStart();
       };
 
       audio.onended = handleEnd;
 
-      audio.onerror = async (e) => {
-        if (this.activePlaybackId !== playbackId) return;
-        SpeechSynthesisService.notifyPlayback(false);
-        logger.warn("[SpeechSynthesisService] Direct audio stream error, falling back to Web Audio buffer playback:", e);
-        try {
-          const played = await MobileAudioUnlocker.playNeuralBuffer(
-            cached ? cached.blob : audioSource,
-            options,
-            () => this.activePlaybackId === playbackId,
-            () => {
-              if (this.activePlaybackId === playbackId) {
-                SpeechSynthesisService.notifyPlayback(true);
-                if (options.onStart) options.onStart();
-              }
-            },
-            () => {
-              if (this.activePlaybackId === playbackId) {
-                SpeechSynthesisService.notifyPlayback(false);
-                if (options.onEnd) options.onEnd();
-              }
-            },
-          );
-          if (played) return;
-        } catch {}
-        this.currentAudio = null;
-        logger.warn("[SpeechSynthesisService] Neural playback failed. Skipping synthetic browser TTS to preserve neural voice purity.");
-        if (options.onError) options.onError(e);
-        else if (options.onEnd) options.onEnd();
+      audio.onerror = (e) => {
+        if (isStale()) return;
+        logger.warn("[SpeechSynthesisService] Direct audio stream error, falling back safely:", e);
+        void recoverFromFailure(e, true);
       };
 
-      // Pre-buffer only in Pathway mode; other features call audio.play() directly inside user gestures.
-      if (isPathwayMode && audio.readyState < 3) {
-        await new Promise<void>((resolve) => {
-          let settled = false;
-          const done = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            audio.removeEventListener("canplaythrough", done);
-            resolve();
-          };
-          const timer = setTimeout(done, 600);
-          audio.addEventListener("canplaythrough", done, { once: true });
-        });
-      }
       await audio.play();
-    } catch (err: any) {
-      if (this.activePlaybackId !== playbackId) return;
-      logger.warn("[SpeechSynthesisService] HTMLAudioElement play interrupted or blocked, falling back to Web Audio buffer playback:", err);
-      this.currentAudio = null;
-
-      try {
-        const played = await MobileAudioUnlocker.playNeuralBuffer(
-          cached ? cached.blob : audioSource,
-          options,
-          () => this.activePlaybackId === playbackId,
-          () => {
-            if (this.activePlaybackId === playbackId && options.onStart) options.onStart();
-          },
-          () => {
-            if (this.activePlaybackId === playbackId && options.onEnd) options.onEnd();
-          },
-        );
-        if (played) return;
-      } catch (webAudioErr) {
-        logger.warn("[SpeechSynthesisService] Web Audio buffer playback failed:", webAudioErr);
+      if (isStale() && this.currentAudio === audio) {
+        detachAudioListeners(audio);
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {}
+        this.currentAudio = null;
       }
-
-      logger.warn("[SpeechSynthesisService] Direct & buffer audio play failed. Skipping synthetic browser TTS.");
-      if (options.onError) options.onError(err);
-      else if (options.onEnd) options.onEnd();
+    } catch (err: any) {
+      if (isStale()) return;
+      logger.warn("[SpeechSynthesisService] HTMLAudioElement play interrupted or blocked, falling back safely:", err);
+      await recoverFromFailure(err, err?.name !== "NotAllowedError");
     }
   }
 
@@ -653,6 +723,9 @@ export class SpeechSynthesisService {
     };
 
     try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
       window.speechSynthesis.speak(utterance);
     } catch (speakErr) {
       logger.warn("speechSynthesis.speak threw:", speakErr);
@@ -819,9 +892,28 @@ export class MobileAudioUnlocker {
     if (!ctx) return false;
 
     if (ctx.state === "suspended") {
+      // Real Chrome leaves ctx.resume() pending forever when no user gesture occurred;
+      // race against a short timeout so autoplay blocks propagate instead of freezing UI on PAUSA.
+      let resumeSettledInTime = false;
       try {
-        await ctx.resume();
-      } catch {}
+        resumeSettledInTime = await Promise.race([
+          ctx.resume().then(() => true),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 120)),
+        ]);
+      } catch {
+        resumeSettledInTime = true;
+      }
+      const AudioCtxCtor =
+        typeof window !== "undefined"
+          ? window.AudioContext ||
+            (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+          : undefined;
+      if (
+        !resumeSettledInTime ||
+        (ctx.state === "suspended" && AudioCtxCtor && ctx instanceof AudioCtxCtor)
+      ) {
+        return false;
+      }
     }
 
     let audioBuffer: AudioBuffer | undefined;
@@ -939,16 +1031,22 @@ export class MobileAudioUnlocker {
     if (typeof window === "undefined") return;
 
     const unlockHandler = () => {
-      this.unlock();
-      if (this.isUnlocked) {
-        window.removeEventListener("pointerdown", unlockHandler, true);
-        window.removeEventListener("touchstart", unlockHandler, true);
-        window.removeEventListener("keydown", unlockHandler, true);
+      if (!this.isUnlocked) {
+        this.unlock();
+        return;
+      }
+      // On macOS & iOS Safari, getUserMedia / tab switches can transition AudioContext back to "suspended" or "interrupted".
+      // Re-awaken synchronously inside subsequent user clicks/taps so voice playback never drops.
+      const state = this.audioCtx?.state as string | undefined;
+      if (this.audioCtx && (state === "suspended" || state === "interrupted")) {
+        void this.audioCtx.resume().catch(() => {});
       }
     };
 
     window.addEventListener("pointerdown", unlockHandler, { passive: true, capture: true });
     window.addEventListener("touchstart", unlockHandler, { passive: true, capture: true });
+    window.addEventListener("touchend", unlockHandler, { passive: true, capture: true });
+    window.addEventListener("click", unlockHandler, { passive: true, capture: true });
     window.addEventListener("keydown", unlockHandler, { passive: true, capture: true });
   }
 }

@@ -191,6 +191,16 @@ const MicHardwareRecoveryModalInner: React.FC<MicHardwareRecoveryModalProps> = (
       analyser.smoothingTimeConstant = 0.4;
       const source = audioCtx.createMediaStreamSource(stream);
       source.connect(analyser);
+      if (typeof audioCtx.createGain === "function" && audioCtx.destination) {
+        try {
+          const silentGain = audioCtx.createGain();
+          silentGain.gain.value = 0;
+          analyser.connect(silentGain);
+          silentGain.connect(audioCtx.destination);
+        } catch {
+          // ignore silent sink connection error
+        }
+      }
 
       setAnalyserNode(analyser);
       setPermissionState("granted");

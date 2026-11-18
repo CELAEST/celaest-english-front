@@ -9,7 +9,10 @@ import {
   isContinuityPhoneMicLabel,
   acquireOptimalMicStream,
   setPreferredMicDeviceId,
+  measureAnalyserVoiceEnergy,
+  DESKTOP_SPEECH_ENERGY_THRESHOLD,
 } from "../audioCaptureService";
+import { PcmWavRecorder } from "../pcmWavRecorder";
 import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 
 describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
@@ -968,6 +971,120 @@ describe("AudioCaptureService — Multi-Tier Whisper Transcription", () => {
       expect(aacRes?.text).toBe("Hello from Safari on Mac.");
 
       expect(capturedNames).toEqual(["speech.mp4", "speech.m4a"]);
+    });
+
+    it("captures 16 kHz mono RIFF WAV via PcmWavRecorder for Safari live interim & stop fallback without mid-stream MP4 400 errors", async () => {
+      let capturedHandler: ((ev: AudioProcessingEvent) => void) | null = null;
+      const mockCtx = {
+        sampleRate: 48000,
+        destination: {},
+        createMediaStreamSource: vi.fn(() => ({ connect: vi.fn(), disconnect: vi.fn() })),
+        createGain: vi.fn(() => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() })),
+        createScriptProcessor: vi.fn(() => {
+          const node = {
+            onaudioprocess: null as ((ev: AudioProcessingEvent) => void) | null,
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+          };
+          Object.defineProperty(node, "onaudioprocess", {
+            get: () => capturedHandler,
+            set: (fn) => {
+              capturedHandler = fn;
+            },
+          });
+          return node;
+        }),
+      } as unknown as AudioContext;
+
+      const pcm = new PcmWavRecorder();
+      const started = pcm.start(mockCtx, {} as MediaStream);
+      expect(started).toBe(true);
+      expect(capturedHandler).not.toBeNull();
+
+      // Simulate ~0.35s of voiced 48kHz PCM frames (4 frames of 4096 samples)
+      const frame = new Float32Array(4096);
+      for (let i = 0; i < frame.length; i++) {
+        frame[i] = Math.sin(i * 0.1) * 0.08;
+      }
+      for (let k = 0; k < 4; k++) {
+        capturedHandler!({
+          inputBuffer: { getChannelData: () => frame },
+        } as unknown as AudioProcessingEvent);
+      }
+
+      expect(pcm.hasDetectedVoice()).toBe(true);
+      expect(pcm.consumeVoicedActivity()).toBe(true);
+
+      const wavBlob = pcm.stop();
+      expect(wavBlob).not.toBeNull();
+      expect(wavBlob!.type).toBe("audio/wav");
+      expect(wavBlob!.size).toBeGreaterThan(10000);
+
+      // Verify sniffAudioContainer in transcribeAudio identifies the generated RIFF WAV header
+      vi.spyOn(providerKeyVault, "getKeys").mockImplementation(async (p) =>
+        p === "groq" ? ["gsk_test_wav_mac"] : [],
+      );
+      let uploadedFileName = "";
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockImplementation(async (_url, init?: RequestInit) => {
+          const body = init?.body as FormData | undefined;
+          const file = body?.get("file") as File | undefined;
+          uploadedFileName = file?.name || "";
+          return {
+            ok: true,
+            json: async () => ({ text: "Live WAV from Safari.", language: "en", duration: 0.4 }),
+          };
+        }),
+      );
+
+      const res = await AudioCaptureService.transcribeAudio(wavBlob!);
+      expect(res?.text).toBe("Live WAV from Safari.");
+      expect(uploadedFileName).toBe("speech.wav");
+    });
+
+    it("does not mark all AI providers as failed when Whisper returns HTTP 400 on a partial mid-stream slice", async () => {
+      vi.spyOn(providerKeyVault, "getKeys").mockImplementation(async (p) =>
+        p === "groq" ? ["gsk_test_400"] : [],
+      );
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => "could not decode media",
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const partialMp4 = new Uint8Array(600);
+      partialMp4.set([0x66, 0x74, 0x79, 0x70], 4); // "ftyp"
+      const res = await AudioCaptureService.transcribeAudio(new Blob([partialMp4], { type: "audio/mp4" }));
+
+      expect(res).toBeNull();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(AudioCaptureService.didLastTranscribeFailAllProviders()).toBe(false);
+    });
+
+    it("detects voice via vocal-formant peaks and WebKit time-domain RMS while keeping flat room noise below threshold", () => {
+      // 1. Flat room noise floor (all bins = 2) -> stays below threshold (0.0078 < 0.012)
+      const silentAnalyser = {
+        frequencyBinCount: 64,
+        getByteFrequencyData: (arr: Uint8Array) => arr.fill(2),
+        getByteTimeDomainData: (arr: Uint8Array) => arr.fill(128),
+      } as unknown as AnalyserNode;
+      expect(measureAnalyserVoiceEnergy(silentAnalyser)).toBeLessThan(DESKTOP_SPEECH_ENERGY_THRESHOLD);
+
+      // 2. WebKit Safari dead-FFT analyser (frequency bins = 0) but active time-domain PCM waveform
+      const webkitTimeOnlyAnalyser = {
+        frequencyBinCount: 64,
+        getByteFrequencyData: (arr: Uint8Array) => arr.fill(0),
+        getByteTimeDomainData: (arr: Uint8Array) => {
+          for (let i = 0; i < arr.length; i++) {
+            arr[i] = i % 2 === 0 ? 136 : 120; // +/- 8 around 128 (~0.0625 RMS)
+          }
+        },
+      } as unknown as AnalyserNode;
+      expect(measureAnalyserVoiceEnergy(webkitTimeOnlyAnalyser)).toBeGreaterThanOrEqual(
+        DESKTOP_SPEECH_ENERGY_THRESHOLD,
+      );
     });
   });
 

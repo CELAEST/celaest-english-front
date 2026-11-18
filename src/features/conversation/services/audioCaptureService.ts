@@ -19,6 +19,7 @@ import {
 } from "./audioHardwareSelector";
 import { transcribeWithGeminiEdge } from "./geminiAudioFallback";
 import { MobileLiveStreamEngine } from "./mobileLiveStreamEngine";
+import { connectAnalyserAliveSink, PcmWavRecorder } from "./pcmWavRecorder";
 import { detectLiveSpanishOrFiller } from "./speechIntelligibilityGuard";
 
 export {
@@ -215,6 +216,7 @@ export class AudioCaptureService {
 
   // Enterprise Adaptive Phrase-Chunked Whisper streaming, Mobile Utterance Engine & Desktop VAD fields
   private static mobileStreamEngine: MobileLiveStreamEngine | null = null;
+  private static pcmRecorder: PcmWavRecorder | null = null;
   private static lastTranscribeAllProvidersFailed: boolean = false;
   public static backendSTTUnavailable: boolean = false;
   private static lastFailedMobileKeyFingerprint: string | null = null;
@@ -354,6 +356,7 @@ export class AudioCaptureService {
             this.analyser.fftSize = 128;
             this.analyser.smoothingTimeConstant = 0.72;
             source.connect(this.analyser);
+            connectAnalyserAliveSink(this.audioContext, this.analyser);
           } catch (ctxErr) {
             logger.warn("Passive mobile AudioContext notice:", ctxErr);
           }
@@ -430,6 +433,7 @@ export class AudioCaptureService {
         this.analyser.fftSize = 128;
         this.analyser.smoothingTimeConstant = 0.72;
         source.connect(this.analyser);
+        connectAnalyserAliveSink(this.audioContext, this.analyser);
       } catch (err) {
         logger.warn("Error connecting external microphone stream to AudioContext:", err);
       }
@@ -470,7 +474,9 @@ export class AudioCaptureService {
       sum += dataArray[i];
     }
     const avg = sum / dataArray.length;
-    return Math.min(1, avg / 128);
+    const vocalEnergy = measureAnalyserVoiceEnergy(this.analyser);
+    const pcmRms = this.pcmRecorder?.getLatestRms() ?? 0;
+    return Math.min(1, Math.max(avg / 128, vocalEnergy * 1.4, pcmRms * 3.2));
   }
 
   /**
@@ -512,9 +518,20 @@ export class AudioCaptureService {
       this.mobileStreamEngine.stopImmediate();
       this.mobileStreamEngine = null;
     }
+    if (this.pcmRecorder) {
+      this.pcmRecorder.stop();
+      this.pcmRecorder = null;
+    }
 
     if (!isMobile && this.audioContext && this.audioContext.state === "suspended") {
       void this.audioContext.resume().catch(() => {});
+    }
+
+    if (this.micStream && this.audioContext) {
+      const pcm = new PcmWavRecorder();
+      if (pcm.start(this.audioContext, this.micStream)) {
+        this.pcmRecorder = pcm;
+      }
     }
 
     // 1. Dual-Stream Audio Capture: Start MediaRecorder unconditionally across all devices (Desktop, iOS Safari, Android Chrome).
@@ -544,6 +561,31 @@ export class AudioCaptureService {
         logger.warn("MediaRecorder start notice:", recErr);
       }
     }
+
+    const getLiveInterimBlob = (): Blob | null => {
+      const mime = this.mediaRecorder?.mimeType || preferredMimeType || "audio/webm";
+      const isMp4Container = mime.toLowerCase().includes("mp4") || mime.toLowerCase().includes("aac");
+      if ((isMp4Container || this.recordedChunks.length === 0) && this.pcmRecorder) {
+        const wavBlob = this.pcmRecorder.exportWavBlob();
+        if (wavBlob && wavBlob.size > 400) {
+          return wavBlob;
+        }
+      }
+      if (
+        this.recordedChunks.length === 0 &&
+        this.mediaRecorder &&
+        this.mediaRecorder.state === "recording" &&
+        typeof this.mediaRecorder.requestData === "function"
+      ) {
+        try {
+          this.mediaRecorder.requestData();
+        } catch {
+          // ignore
+        }
+      }
+      if (this.recordedChunks.length === 0) return null;
+      return new Blob(this.recordedChunks, { type: mime });
+    };
 
     this.isListening = true;
     this.confirmedHistory = (options.initialTranscript || "").trim();
@@ -593,11 +635,7 @@ export class AudioCaptureService {
           initialTranscript: options.initialTranscript,
           roleName: options.roleName,
           question: options.question,
-          getRecordedBlob: () => {
-            if (this.recordedChunks.length === 0) return null;
-            const mime = this.mediaRecorder?.mimeType || preferredMimeType || "audio/webm";
-            return new Blob(this.recordedChunks, { type: mime });
-          },
+          getRecordedBlob: () => getLiveInterimBlob(),
           getAnalyser: () => this.analyser,
           mergePhrases: mergePhrasesCleanly,
           transcribeFn: (blob, ctx) => AudioCaptureService.transcribeAudio(blob, ctx),
@@ -633,9 +671,10 @@ export class AudioCaptureService {
       this.vadInterval = setInterval(() => {
         if (!this.isListening || this.webSpeechEmittedInSession) return;
         const energy = measureAnalyserVoiceEnergy(this.analyser);
-        if (energy >= DESKTOP_SPEECH_ENERGY_THRESHOLD) {
+        const hasPcmVoice = Boolean(this.pcmRecorder?.consumeVoicedActivity());
+        if (energy >= DESKTOP_SPEECH_ENERGY_THRESHOLD || hasPcmVoice) {
           this.voicedFramesDetected += 1;
-          if (this.voicedFramesDetected >= 2) {
+          if (this.voicedFramesDetected >= 2 || hasPcmVoice) {
             this.hadVoicedSpeechInSession = true;
           }
         }
@@ -650,51 +689,52 @@ export class AudioCaptureService {
         );
         const hasConfirmedVoice = shouldForceAiInterim
           ? analyserRunning
-            ? this.voicedFramesDetected >= 1 || this.recordedChunks.length >= 6
+            ? this.voicedFramesDetected >= 1 ||
+              Boolean(this.pcmRecorder?.hasDetectedVoice()) ||
+              this.recordedChunks.length >= 4
             : true
-          : this.voicedFramesDetected >= 2 || (!analyserRunning && this.recordedChunks.length >= 6);
+          : this.voicedFramesDetected >= 2 ||
+            Boolean(this.pcmRecorder?.hasDetectedVoice()) ||
+            (!analyserRunning && this.recordedChunks.length >= 4);
         if (!hasConfirmedVoice) return;
 
-        if (this.recordedChunks.length > 0 && !this.isTranscribingInterim) {
-          const mime = this.mediaRecorder?.mimeType || getBestAudioMimeType() || "audio/webm";
-          const interimBlob = new Blob(this.recordedChunks, { type: mime });
-          if (interimBlob.size > 400) {
-            this.voicedFramesDetected = 0;
-            this.isTranscribingInterim = true;
-            const initialPrefix = (options.initialTranscript || "").trim();
-            void AudioCaptureService.transcribeAudio(interimBlob, {
-              roleName: options.roleName,
-              question: options.question,
-            })
-              .then((res) => {
-                if (!this.isListening || this.webSpeechEmittedInSession) return;
-                if (res && res.text.trim()) {
-                  const segmentText = res.text.trim();
-                  const combined = initialPrefix
-                    ? mergePhrasesCleanly(initialPrefix, segmentText)
-                    : segmentText;
-                  const liveCheck = detectLiveSpanishOrFiller(combined);
-                  if (liveCheck.isSpanishOrFiller) {
-                    this.isListening = false;
-                    if (options.onSpanishDetected) {
-                      options.onSpanishDetected(
-                        liveCheck.message ||
-                          "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista.",
-                      );
-                    }
-                    return;
+        const interimBlob = getLiveInterimBlob();
+        if (interimBlob && !this.isTranscribingInterim && interimBlob.size > 400) {
+          this.voicedFramesDetected = 0;
+          this.isTranscribingInterim = true;
+          const initialPrefix = (options.initialTranscript || "").trim();
+          void AudioCaptureService.transcribeAudio(interimBlob, {
+            roleName: options.roleName,
+            question: options.question,
+          })
+            .then((res) => {
+              if (!this.isListening || this.webSpeechEmittedInSession) return;
+              if (res && res.text.trim()) {
+                const segmentText = res.text.trim();
+                const combined = initialPrefix
+                  ? mergePhrasesCleanly(initialPrefix, segmentText)
+                  : segmentText;
+                const liveCheck = detectLiveSpanishOrFiller(combined);
+                if (liveCheck.isSpanishOrFiller) {
+                  this.isListening = false;
+                  if (options.onSpanishDetected) {
+                    options.onSpanishDetected(
+                      liveCheck.message ||
+                        "Detectamos que estás hablando en español. El micrófono se ha pausado. Por favor habla en inglés para practicar tu entrevista.",
+                    );
                   }
-                  this.latestTranscript = combined;
-                  options.onTranscript(combined, false);
+                  return;
                 }
-              })
-              .catch(() => {
-                // ignore interim error
-              })
-              .finally(() => {
-                this.isTranscribingInterim = false;
-              });
-          }
+                this.latestTranscript = combined;
+                options.onTranscript(combined, false);
+              }
+            })
+            .catch(() => {
+              // ignore interim error
+            })
+            .finally(() => {
+              this.isTranscribingInterim = false;
+            });
         }
       }, 1800);
     }
@@ -819,10 +859,8 @@ export class AudioCaptureService {
 
           if (errCode === "network") {
             consecutiveNetworkErrors += 1;
-            if (consecutiveNetworkErrors >= 2) {
-              // Safari/Brave/Arc o firewall bloquean el endpoint de Google Speech: delegar al fallback Whisper.
-              this.webSpeechBlocked = true;
-            }
+            // Safari/Brave/Arc o firewall bloquean el endpoint de Google Speech: activar fallback Whisper de inmediato.
+            this.webSpeechBlocked = true;
             return;
           }
 
@@ -842,8 +880,12 @@ export class AudioCaptureService {
             return;
           }
 
-          // Mobile audio-capture collision recovery
+          // Mobile/macOS audio-capture collision recovery
           if (errCode === "audio-capture" && this.isListening) {
+            if (AudioCaptureService.hasLiveMicStream()) {
+              this.webSpeechBlocked = true;
+              return;
+            }
             if (this.restartTimeout) clearTimeout(this.restartTimeout);
             this.restartTimeout = setTimeout(() => {
               if (this.isListening) {
@@ -866,15 +908,21 @@ export class AudioCaptureService {
             this.confirmedHistory = this.latestTranscript.trim();
           }
 
+          if (!this.webSpeechEmittedInSession && AudioCaptureService.hasLiveMicStream()) {
+            // Web Speech cerró sin emitir palabras (típico en macOS Safari/Brave/Arc o mic virtual):
+            // desbloquear transcripción en vivo por Whisper y evitar bucle de reinicios agresivos si ya falló.
+            this.webSpeechBlocked = true;
+          }
+
           // Auto-restart: maintain uninterrupted live dictation across natural pauses
-          if (this.isListening && consecutiveNetworkErrors < 2) {
+          if (this.isListening && consecutiveNetworkErrors < 1 && !this.webSpeechBlocked) {
             if (this.restartTimeout) {
               clearTimeout(this.restartTimeout);
             }
             // Allow 120ms on mobile for Android Audio Server to cycle between utterances cleanly
             const restartDelay = isMobile ? 120 : 60;
             this.restartTimeout = setTimeout(() => {
-              if (this.isListening && consecutiveNetworkErrors < 2) {
+              if (this.isListening && consecutiveNetworkErrors < 1 && !this.webSpeechBlocked) {
                 try {
                   recognizer.start();
                 } catch {
@@ -970,6 +1018,10 @@ export class AudioCaptureService {
         // ignore
       }
     }
+    const pcmHadVoice = Boolean(this.pcmRecorder?.hasDetectedVoice());
+    const wavFallbackBlob = this.pcmRecorder ? this.pcmRecorder.stop() : null;
+    this.pcmRecorder = null;
+
     if (this.interimInterval) {
       clearInterval(this.interimInterval);
       this.interimInterval = null;
@@ -983,7 +1035,8 @@ export class AudioCaptureService {
       clearTimeout(this.restartTimeout);
       this.restartTimeout = null;
     }
-    const hadVoicedSpeech = this.hadVoicedSpeechInSession || this.voicedFramesDetected >= 1;
+    const hadVoicedSpeech =
+      this.hadVoicedSpeechInSession || this.voicedFramesDetected >= 1 || pcmHadVoice;
     this.hadVoicedSpeechInSession = false;
     this.voicedFramesDetected = 0;
     this.webSpeechEmittedInSession = false;
@@ -1008,10 +1061,23 @@ export class AudioCaptureService {
         : 0;
     this.recordingStartTime = 0;
 
+    const selectOptimalBlob = (rawBlob: Blob | null, mime: string): Blob | null => {
+      const isMp4 = mime.toLowerCase().includes("mp4") || mime.toLowerCase().includes("aac");
+      if (isMp4 && wavFallbackBlob && wavFallbackBlob.size >= 1600) {
+        return wavFallbackBlob;
+      }
+      if ((!rawBlob || rawBlob.size < 300) && wavFallbackBlob && wavFallbackBlob.size >= 300) {
+        return wavFallbackBlob;
+      }
+      return rawBlob;
+    };
+
     if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") {
-      if (this.recordedChunks.length > 0) {
-        const mime = getBestAudioMimeType() || "audio/webm";
-        const blob = new Blob(this.recordedChunks, { type: mime });
+      const mime = getBestAudioMimeType() || "audio/webm";
+      const rawBlob =
+        this.recordedChunks.length > 0 ? new Blob(this.recordedChunks, { type: mime }) : null;
+      const blob = selectOptimalBlob(rawBlob, mime);
+      if (blob) {
         const url = URL.createObjectURL(blob);
         this.lastAudioUrl = url;
         return {
@@ -1037,8 +1103,8 @@ export class AudioCaptureService {
       const activeRecorder = this.mediaRecorder;
       if (!activeRecorder) {
         resolve({
-          audioBlob: null,
-          audioUrl: null,
+          audioBlob: wavFallbackBlob,
+          audioUrl: wavFallbackBlob ? URL.createObjectURL(wavFallbackBlob) : null,
           durationSeconds,
           hadVoicedSpeech,
           confirmedMobileTranscript,
@@ -1059,7 +1125,8 @@ export class AudioCaptureService {
         }
         try {
           const mime = activeRecorder.mimeType || getBestAudioMimeType() || "audio/webm";
-          const blob = new Blob(this.recordedChunks, { type: mime });
+          const rawBlob = new Blob(this.recordedChunks, { type: mime });
+          const blob = selectOptimalBlob(rawBlob, mime) ?? rawBlob;
           const url = URL.createObjectURL(blob);
           this.lastAudioUrl = url;
           this.mediaRecorder = null;
@@ -1075,8 +1142,8 @@ export class AudioCaptureService {
           logger.warn("Error creating audio blob:", err);
           this.mediaRecorder = null;
           resolve({
-            audioBlob: null,
-            audioUrl: null,
+            audioBlob: wavFallbackBlob,
+            audioUrl: wavFallbackBlob ? URL.createObjectURL(wavFallbackBlob) : null,
             durationSeconds,
             hadVoicedSpeech,
             confirmedMobileTranscript,
@@ -1263,6 +1330,10 @@ export class AudioCaptureService {
           } else {
             const errBody = await groqResp.text().catch(() => "");
             logger.warn(`[AudioCaptureService] Groq Whisper returned ${groqResp.status}:`, errBody);
+            if (groqResp.status === 400) {
+              // HTTP 400 significa que un fragmento parcial aún no tiene contenedor completo (no es caída de proveedor/API).
+              return null;
+            }
           }
         } catch (keyErr) {
           logger.warn("[AudioCaptureService] Direct Groq key error:", keyErr);
@@ -1441,6 +1512,10 @@ export class AudioCaptureService {
     if (this.mobileStreamEngine) {
       this.mobileStreamEngine.stopImmediate();
       this.mobileStreamEngine = null;
+    }
+    if (this.pcmRecorder) {
+      this.pcmRecorder.stop();
+      this.pcmRecorder = null;
     }
     if (this.interimInterval) {
       clearInterval(this.interimInterval);

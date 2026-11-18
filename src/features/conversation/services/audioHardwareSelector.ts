@@ -204,8 +204,48 @@ export function measureAnalyserVoiceEnergy(analyser: AnalyserNode | null): numbe
   if (endBin <= startBin) return 0;
 
   let sum = 0;
+  let maxVal = 0;
+  const vocalEndBin = Math.min(endBin, startBin + 6);
+  let vocalSum = 0;
+
   for (let i = startBin; i < endBin; i++) {
-    sum += dataArray[i] ?? 0;
+    const val = dataArray[i] ?? 0;
+    sum += val;
+    if (val > maxVal) maxVal = val;
+    if (i < vocalEndBin) vocalSum += val;
   }
-  return Math.min(1, sum / (endBin - startBin) / 255);
+
+  const avgBin = sum / (endBin - startBin);
+  let energy = avgBin / 255;
+
+  // When human speech formants (~375Hz-2.2kHz) peak above the high-frequency floor (common on MacBook/AirPods mics),
+  // prevent empty upper bins (7..19) from diluting real vocal energy, while keeping flat noise floors unchanged.
+  if (vocalEndBin > startBin && maxVal > avgBin * 1.8) {
+    const vocalAvg = vocalSum / (vocalEndBin - startBin) / 255;
+    energy = Math.max(energy, vocalAvg * 1.25);
+  }
+
+  // Fallback/complement with time-domain PCM waveform RMS when supported by the browser (essential on WebKit Safari)
+  const timeDomainFn = (
+    analyser as AnalyserNode & { getByteTimeDomainData?: (array: Uint8Array) => void }
+  ).getByteTimeDomainData;
+  if (typeof timeDomainFn === "function") {
+    try {
+      const timeData = new Uint8Array(binCount);
+      timeDomainFn.call(analyser, timeData);
+      let sqSum = 0;
+      for (let i = 0; i < binCount; i++) {
+        const centered = ((timeData[i] ?? 128) - 128) / 128;
+        sqSum += centered * centered;
+      }
+      const rms = Math.sqrt(sqSum / binCount);
+      if (rms >= 0.006) {
+        energy = Math.max(energy, rms * 1.6);
+      }
+    } catch {
+      // ignore time-domain read error
+    }
+  }
+
+  return Math.min(1, energy);
 }

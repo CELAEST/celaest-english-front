@@ -440,21 +440,15 @@ export function usePathwayStageSession(
     }
 
     const entryToken = stepTokenRef.current;
-    // En macOS Safari, getUserMedia y AudioContext.resume() pierden la activación del gesto si hay un await largo antes.
-    // Desbloquear y pre-adquirir el micrófono de forma inmediata al pulsar el botón, antes de reproducir el modelo.
+    // Desbloquear síncronamente salida y entrada Web Audio dentro del gesto (0ms, sin await previo) para macOS/iOS Safari.
     AudioCaptureService.unlockAudioInputContextSync?.();
-    let preAcquiredMic = AudioCaptureService.hasLiveMicStream();
-    if (!preAcquiredMic) {
-      preAcquiredMic = await AudioCaptureService.initMicrophone();
-      if (stepTokenRef.current !== entryToken) return;
-    }
-
     SpeechSynthesisService.stop();
     setSpeakingText(null);
     setPronunciationResult(null);
     setSpokenTranscript("");
 
-    // El modelo nativo suena antes de abrir la escucha, manteniendo el permiso del micrófono ya otorgado.
+    // El modelo nativo se inicia síncronamente dentro del clic (evita que un await getUserMedia previo
+    // consuma la activación de gesto de HTMLAudioElement.play() o enmutezca CoreAudio en Mac).
     if (speechProfile) {
       const modelText = speechMomentText(speechProfile, "speak.model");
       if (modelText) {
@@ -466,9 +460,7 @@ export function usePathwayStageSession(
     }
     if (stepTokenRef.current !== entryToken) return;
 
-    const ready = AudioCaptureService.hasLiveMicStream()
-      ? true
-      : await AudioCaptureService.initMicrophone();
+    const ready = await AudioCaptureService.initMicrophone();
     if (stepTokenRef.current !== entryToken) return;
     if (!ready && !AudioCaptureService.isSpeechRecognitionSupported()) {
       setMicUnavailable(true);

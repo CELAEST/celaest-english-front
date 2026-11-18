@@ -144,7 +144,7 @@ export class SupabaseAuthAdapter implements IAuthService {
         const token = localStorage.getItem(ACCESS_TOKEN_KEY);
         const remainingMs = getJwtExpiresInMs(token);
         const needsProactiveRefresh =
-          remainingMs !== null && remainingMs <= 5 * 60 * 1000;
+          !token || (remainingMs !== null && remainingMs <= 15 * 60 * 1000);
         if (needsProactiveRefresh && this.hasRecoverableRefreshSource()) {
           void this.refresh();
         }
@@ -203,10 +203,10 @@ export class SupabaseAuthAdapter implements IAuthService {
     }
 
     const remainingMs = getJwtExpiresInMs(token);
-    // Refresh 5 minutes before expiration; if less than 5m left, wait 10s. Default to 45m if no exp field.
+    // Refresh 15 minutes before expiration; if less than 15m left, wait 10s. Default to 45m if no exp field.
     let delayMs = 45 * 60 * 1000;
     if (remainingMs !== null) {
-      delayMs = Math.max(10 * 1000, remainingMs - 5 * 60 * 1000);
+      delayMs = Math.max(10 * 1000, remainingMs - 15 * 60 * 1000);
     }
 
     this.refreshTimerId = setTimeout(async () => {
@@ -560,7 +560,7 @@ export class SupabaseAuthAdapter implements IAuthService {
           clearTimeout(timeoutId);
         }
       }
-      await supabase.auth.signOut().catch(() => {});
+      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
     } catch (e) {
       logger.warn("[AuthAdapter] Logout request error", e);
     } finally {

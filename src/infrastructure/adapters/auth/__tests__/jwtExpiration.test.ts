@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { isJwtExpired, getJwtExpiresInMs, SupabaseAuthAdapter } from "../SupabaseAuthAdapter";
+import { HttpClient } from "../../../http/HttpClient";
 import { renderHook, act } from "@testing-library/react";
 import { useOnboardingFlow } from "../../../../features/onboarding/hooks/useOnboardingFlow";
 
@@ -133,6 +134,66 @@ describe("JWT Expiration & Auto-Redirect to Login Guard", () => {
     it("returns 0 for already expired tokens", () => {
       const token = createTestJwt(-100);
       expect(getJwtExpiresInMs(token)).toBe(0);
+    });
+  });
+
+  describe("HttpClient 401 Cross-Service SSO Resilience", () => {
+    it("preserves unexpired SSO JWT in localStorage on downstream 401 so first-time users are not forced to sign in again", async () => {
+      const activeOtpToken = createTestJwt(3600);
+      localStorage.setItem("lingua_access_token", activeOtpToken);
+      localStorage.setItem(
+        "lingua_auth_user",
+        JSON.stringify({ id: "user-123", email: "learner@celaest.com", name: "Learner" }),
+      );
+      HttpClient.setAuthToken(activeOtpToken);
+
+      const unauthorizedSpy = vi.fn();
+      window.addEventListener("celaest:unauthorized", unauthorizedSpy);
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ error: { message: "Invalid token", code: "UNAUTHORIZED" } }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      try {
+        await expect(HttpClient.get("/user/profile")).rejects.toThrow();
+        expect(localStorage.getItem("lingua_access_token")).toBe(activeOtpToken);
+        expect(unauthorizedSpy).not.toHaveBeenCalled();
+
+        // Onboarding flow must start authenticated (api-key), NEVER "auth" (Sign In to Your Mentor)
+        const { result } = renderHook(() => useOnboardingFlow());
+        expect(result.current.step).not.toBe("auth");
+      } finally {
+        window.removeEventListener("celaest:unauthorized", unauthorizedSpy);
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it("clears token and dispatches celaest:unauthorized when JWT is actually expired on 401", async () => {
+      const expiredToken = createTestJwt(-300);
+      localStorage.setItem("lingua_access_token", expiredToken);
+      HttpClient.setAuthToken(expiredToken);
+
+      const unauthorizedSpy = vi.fn();
+      window.addEventListener("celaest:unauthorized", unauthorizedSpy);
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ error: { message: "Token expired", code: "JWT_EXPIRED" } }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      try {
+        await expect(HttpClient.get("/user/profile")).rejects.toThrow();
+        expect(localStorage.getItem("lingua_access_token")).toBeNull();
+        expect(unauthorizedSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        window.removeEventListener("celaest:unauthorized", unauthorizedSpy);
+        fetchSpy.mockRestore();
+      }
     });
   });
 });

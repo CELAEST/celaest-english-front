@@ -86,7 +86,8 @@ const AuthCallbackViewInner: React.FC = () => {
     const initialHashParams = parseHashParams(window.location.hash);
     const initialHashAccessToken = initialHashParams["access_token"] || "";
     const initialHashRefreshToken =
-      initialHashParams["refresh_token"] || initialHashAccessToken;
+      initialHashParams["refresh_token"] ||
+      (initialHashAccessToken ? `sso:${initialHashAccessToken}` : "");
     const initialSearchParams = new URLSearchParams(window.location.search);
     const initialCode = initialSearchParams.get("code");
     const hasExplicitUrlAuth = Boolean(initialHashAccessToken || initialCode);
@@ -122,6 +123,7 @@ const AuthCallbackViewInner: React.FC = () => {
         if (
           !options?.fromSupabaseSession &&
           activeRefreshToken &&
+          !activeRefreshToken.startsWith("sso:") &&
           activeRefreshToken !== activeAccessToken
         ) {
           try {

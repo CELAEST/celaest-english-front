@@ -314,7 +314,7 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
 
       expect(result).toBe('{"recovered": true}');
       expect(modelsRequested).toContain("custom-deprecated-model");
-      expect(modelsRequested).toContain("openai/gpt-oss-20b");
+      expect(modelsRequested).toContain("openai/gpt-oss-120b");
     });
 
     it("auto-cascades to next key in provider pool when first key hits rate limit (429)", async () => {
@@ -408,6 +408,44 @@ describe("directClientAiService - Multi-Provider Diagnostic & Resilience", () =>
       // Second attempt (auto-recovery) omits strict response_format and expands tokens to 8192
       expect(capturedRequests[1].response_format).toBeUndefined();
       expect(capturedRequests[1].max_tokens).toBe(8192);
+    });
+
+    it("cascades Gemini 404 model_not_found to gemini-2.5-flash and persists working model", async () => {
+      await providerKeyVault.saveKey("gemini", "AIzaSy-cascade-key");
+      await providerKeyVault.saveActiveProviderId("gemini");
+
+      const calledUrls: string[] = [];
+      global.fetch = vi.fn(async (url: any) => {
+        calledUrls.push(String(url));
+        if (String(url).includes("gemini-3.6-flash")) {
+          return {
+            ok: false,
+            status: 404,
+            text: async () =>
+              JSON.stringify({
+                error: { code: 404, message: "models/gemini-3.6-flash is not found" },
+              }),
+          } as any;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: "Software Engineer" }] } }],
+          }),
+        } as any;
+      });
+
+      const result = await directClientAiService.chatCompletion({
+        systemPrompt: "Normalize",
+        userPrompt: "Ingeniero de software",
+        providerId: "gemini",
+      });
+
+      expect(result).toBe("Software Engineer");
+      expect(calledUrls.some((u) => u.includes("gemini-2.5-flash:generateContent"))).toBe(true);
+      const updatedConfig = await providerKeyVault.getConfig("gemini");
+      expect(updatedConfig?.defaultModel).toBe("gemini-2.5-flash");
     });
   });
 

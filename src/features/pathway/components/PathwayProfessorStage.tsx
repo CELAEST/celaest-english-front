@@ -29,6 +29,7 @@ export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
   step,
   isActive,
   isSpeakingAudio,
+  isRecordingMic,
   isMobileUnified = false,
   mobileContext,
   onPlaySample,
@@ -52,6 +53,7 @@ export const PathwayProfessorStage: React.FC<PathwayProfessorStageProps> = ({
             preset="tutor-stage"
             isActive={isActive}
             onTapProfessor={() => {
+              if (isRecordingMic || s.isAskingOpen) return;
               if (s.speech.sampleAudioText) {
                 onPlaySample(s.speech.sampleAudioText);
               } else {

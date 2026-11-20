@@ -30,7 +30,9 @@ export const OnboardingProviderGrid: React.FC<OnboardingProviderGridProps> = ({
           </div>
           <div className="text-left">
             <div className="text-sm font-medium text-white tracking-tight">{groq.name}</div>
-            <div className="text-[11px] text-white/55 font-light">Motor de inferencia ultra-rápido (~85 ms)</div>
+            <div className="text-[11px] text-white/55 font-light">
+              Motor de inferencia ultra-rápido (~85 ms)
+            </div>
           </div>
         </div>
         <span className="text-[10px] font-bold tracking-tight bg-gradient-to-r from-[#FF7A00] to-[#FFD600] bg-clip-text text-transparent uppercase">

@@ -26,23 +26,88 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
     vi.restoreAllMocks();
   });
 
-  it("includes software UI orientation exactly once, and suppresses it in subsequent lectures", () => {
+  it("keeps buildLectureScript pure, preserves intro across mid-orientation cancellation/autoplay-block, and marks seen only after ORIENTATION completes", async () => {
     expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(false);
 
+    // 1. Building the script repeatedly (e.g. StrictMode / pre-play hydration) MUST NOT burn the flag
     const script1 = PathwayLectureEngine.buildLectureScript(dummyNode);
-    expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
+    expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(false);
     const orientationSegs = script1.segments.filter((s) => s.beat === "ORIENTATION");
-    expect(orientationSegs.length).toBe(3);
+    expect(orientationSegs.length).toBe(4);
     expect(orientationSegs[0]?.text).toContain("Liam");
     expect(orientationSegs[1]?.text).toContain("patrones estructurales");
-    expect(orientationSegs[2]?.text).toContain("primera lección");
+    expect(orientationSegs[2]?.text).toContain("guía de estudio");
     expect(orientationSegs[2]?.subtitleSpanish).toContain("Guía de Estudio");
     expect(orientationSegs[2]?.subtitleSpanish).toContain("14 bloques");
-    expect(orientationSegs[2]?.subtitleSpanish).toContain("Preguntar");
+    expect(orientationSegs[2]?.guideShowcase).toBe("structure-then-phonetics");
+    expect(orientationSegs[3]?.text).toContain("primera lección");
 
-    const script2 = PathwayLectureEngine.buildLectureScript(dummyNode);
-    expect(script2.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
-    expect(script2.segments[0]?.beat).toBe("FORMULA");
+    const scriptRebuild = PathwayLectureEngine.buildLectureScript(dummyNode);
+    expect(scriptRebuild.segments.filter((s) => s.beat === "ORIENTATION").length).toBe(4);
+
+    // 2. Cancelling mid-orientation MUST keep isSoftwareIntroSeen() = false
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(SpeechSynthesisService, "prefetch").mockImplementation(() => Promise.resolve({} as any));
+      let segEndCallbacks: Array<() => void> = [];
+      vi.spyOn(SpeechSynthesisService, "speak").mockImplementation((_text, opts) => {
+        if (opts?.onEnd) segEndCallbacks.push(opts.onEnd);
+        return Promise.resolve();
+      });
+
+      const stopPartial = await PathwayLectureEngine.playLecture(dummyNode, () => {}, () => {}, "liam");
+      expect(segEndCallbacks.length).toBe(1);
+      segEndCallbacks[0]!(); // finish segment 0 of ORIENTATION only
+      await vi.advanceTimersByTimeAsync(350);
+      stopPartial(); // cancel during segment 1
+      expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(false);
+
+      // 3. Completing all 3 ORIENTATION segments marks seen and splices refreshed post-orientation node
+      segEndCallbacks = [];
+      const spokenTexts: string[] = [];
+      const hydratedNode: PathwayNode = {
+        ...dummyNode,
+        id: "db-hydrated-uuid-1",
+        orderIndex: 1,
+        title: seed[1]!.title,
+        competencyFocus: seed[1]!.competencyFocus,
+        blueprint: seed[1]!.blueprint,
+        lessonPayload: seed[1]!.lessonPayload,
+      };
+      vi.spyOn(SpeechSynthesisService, "speak").mockImplementation((text, opts) => {
+        spokenTexts.push(text);
+        if (opts?.onEnd) setTimeout(() => opts.onEnd?.(), 10);
+        return Promise.resolve();
+      });
+
+      const stopFull = await PathwayLectureEngine.playLecture(
+        dummyNode,
+        () => {},
+        () => {},
+        "liam",
+        undefined,
+        undefined,
+        {
+          onOrientationCompleted: () => PathwayLectureEngine.buildLectureScript(hydratedNode),
+        },
+      );
+
+      // Advance past all 3 ORIENTATION segments + segment 3 (hydrated FORMULA)
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
+      const expectedHydratedScript = PathwayLectureEngine.buildLectureScript(hydratedNode);
+      const hydratedFormulaText = expectedHydratedScript.segments.find((s) => s.beat === "FORMULA")?.text;
+      expect(hydratedFormulaText).toBeTruthy();
+      expect(spokenTexts).toContain(hydratedFormulaText);
+      stopFull();
+
+      // 4. Subsequent builds omit ORIENTATION and begin straight at FORMULA
+      const scriptAfterSeen = PathwayLectureEngine.buildLectureScript(dummyNode);
+      expect(scriptAfterSeen.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
+      expect(scriptAfterSeen.segments[0]?.beat).toBe("FORMULA");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("orchestrates FORMULA -> TRAP -> TRAP_CHECK (pause checkpoint) -> EXAMPLES -> BUILD", () => {
@@ -175,5 +240,45 @@ describe("PathwayLectureEngine & Choreographed Live Classroom", () => {
     SpeechSynthesisService.stop();
     expect(onEnd).toHaveBeenCalledTimes(1);
     stop();
+  });
+
+  it("stops cleanly right after ORIENTATION when stopAfterOrientation is true so FORMULA waits for user click", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(SpeechSynthesisService, "prefetch").mockImplementation(() => Promise.resolve({} as any));
+      const spokenTexts: string[] = [];
+      vi.spyOn(SpeechSynthesisService, "speak").mockImplementation((text, opts) => {
+        spokenTexts.push(text);
+        if (opts?.onEnd) setTimeout(() => opts.onEnd?.(), 10);
+        return Promise.resolve();
+      });
+
+      const onOrientationCompleted = vi.fn();
+      const onEnd = vi.fn();
+
+      const stop = await PathwayLectureEngine.playLecture(
+        dummyNode,
+        () => {},
+        onEnd,
+        "liam",
+        undefined,
+        undefined,
+        {
+          stopAfterOrientation: true,
+          onOrientationCompleted,
+        },
+      );
+
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
+      expect(onOrientationCompleted).toHaveBeenCalledTimes(1);
+      expect(onEnd).toHaveBeenCalledTimes(1);
+      expect(spokenTexts.length).toBe(4);
+      expect(spokenTexts[2]).toContain("guía de estudio");
+      expect(spokenTexts[3]).toContain("primera lección");
+      stop();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

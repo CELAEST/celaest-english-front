@@ -7,7 +7,11 @@ import { providerKeyVault } from "../../../settings/services/providerKeyVault";
 vi.mock("../../../settings/services/providerConnectivity", () => ({
   probeProviderConnection: vi.fn(async (_providerId: string, key: string) => {
     if (key.includes("invalid")) {
-      return { ok: false, latencyMs: null, message: "Clave no válida o incompleta. Revisa que no falten caracteres." };
+      return {
+        ok: false,
+        latencyMs: null,
+        message: "Clave no válida o incompleta. Revisa que no falten caracteres.",
+      };
     }
     return { ok: true, latencyMs: 85, message: "Connected" };
   }),
@@ -133,9 +137,12 @@ describe("AiInfrastructureRecoveryModal - Responsive & Real Use Cases", () => {
     });
 
     // Wait for the automatic resume timeout
-    await waitFor(() => {
-      expect(onResumeMock).toHaveBeenCalled();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(onResumeMock).toHaveBeenCalled();
+      },
+      { timeout: 2000 },
+    );
   });
 
   it("shows error feedback when an invalid key is provided", async () => {

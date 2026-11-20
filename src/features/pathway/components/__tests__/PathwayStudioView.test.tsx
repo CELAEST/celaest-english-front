@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import {fireEvent, render, screen,} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { SpeechSynthesisService } from "../../../conversation/services/speechSynthesisService";
 import { PathwayStudioView } from "../PathwayStudioView";
 
@@ -202,5 +202,106 @@ describe("PathwayStudioView — 1-on-1 Professor Live Class (Desktop & Unified M
       stopSpy.mockRestore();
       SpeechSynthesisService.setMuted(false);
     }
+  });
+
+  it("shows Mentor Liam orientation without FORMULA flash on first load and waits on 'Comenzar Clase' when intro already seen", async () => {
+    Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1280 });
+    window.dispatchEvent(new Event("resize"));
+
+    // 1. Fresh entry: ORIENTATION card appears with Liam welcome copy (no FORMULA headline leak)
+    const speakSpy = vi.spyOn(SpeechSynthesisService, "speak").mockImplementation(() => Promise.resolve());
+    const { unmount } = render(
+      <PathwayStudioView roleName="Engineer" userLevel="A1" learningGoal="Fluency" />,
+    );
+    expect(screen.getByText(/¡Hola! Soy Liam, tu mentor/i)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /1 Fórmula/i })).toHaveAttribute("aria-selected", "false");
+    unmount();
+
+    // 2. Returning entry: stays completely silent on mount until clicking "Comenzar Clase"
+    speakSpy.mockClear();
+    localStorage.setItem("celaest:tutor:software_explained:v2", "1");
+    render(<PathwayStudioView roleName="Engineer" userLevel="A1" learningGoal="Fluency" />);
+    const startBtn = screen.getByRole("button", { name: /Comenzar clase/i });
+    expect(startBtn).toHaveTextContent(/Comenzar Clase/i);
+
+    await new Promise((res) => setTimeout(res, 250));
+    expect(speakSpy).not.toHaveBeenCalled();
+
+    fireEvent.click(startBtn);
+    expect(speakSpy).toHaveBeenCalled();
+    speakSpy.mockRestore();
+  });
+
+  it("opens Guía dynamically (Estructura -> Alfabeto Fonético) during intro_guide, closes it afterward without stopping speech, then starts class after intro_method", async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1280 });
+    window.dispatchEvent(new Event("resize"));
+    localStorage.clear();
+
+    const speakQueue: Array<{ text: string; onEnd?: (() => void) | undefined }> = [];
+    const speakSpy = vi.spyOn(SpeechSynthesisService, "speak").mockImplementation((text, opts) => {
+      speakQueue.push({ text, onEnd: opts?.onEnd });
+      return Promise.resolve();
+    });
+    vi.spyOn(SpeechSynthesisService, "prefetch").mockImplementation(() => Promise.resolve({} as any));
+    const stopSpy = vi.spyOn(SpeechSynthesisService, "stop").mockImplementation(() => {});
+
+    const { unmount } = render(
+      <PathwayStudioView roleName="Engineer" userLevel="A1" learningGoal="Fluency" />,
+    );
+
+    // 1. Trigger 120ms auto intro -> Seg 0 (intro_welcome)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(speakQueue.length).toBe(1);
+    stopSpy.mockClear();
+
+    // 2. Finish Seg 0 -> Seg 1 (intro_philosophy)
+    await act(async () => {
+      speakQueue[0]!.onEnd?.();
+      await vi.advanceTimersByTimeAsync(350);
+    });
+    expect(speakQueue.length).toBe(2);
+
+    // 3. Finish Seg 1 -> Seg 2 (intro_guide): Guide MUST open on Estructura without killing Liam
+    await act(async () => {
+      speakQueue[1]!.onEnd?.();
+      await vi.advanceTimersByTimeAsync(350);
+    });
+    expect(speakQueue.length).toBe(3);
+    expect(speakQueue[2]!.text).toContain("guía de estudio");
+    expect(screen.getByRole("tab", { name: /^Estructura$/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Alfabeto Fonético$/i })).toHaveAttribute("aria-selected", "false");
+    expect(stopSpy).not.toHaveBeenCalled();
+
+    // 4. At ~5.5s during intro_guide: switches dynamically to Alfabeto Fonético
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5600);
+    });
+    expect(screen.getByRole("tab", { name: /^Alfabeto Fonético$/i })).toHaveAttribute("aria-selected", "true");
+
+    // 5. End of intro_guide: closes Guide cleanly and proceeds to Seg 3 (intro_method) WITHOUT global SpeechSynthesisService.stop()
+    await act(async () => {
+      speakQueue[2]!.onEnd?.();
+      await vi.advanceTimersByTimeAsync(350);
+    });
+    expect(screen.queryByRole("tab", { name: /^Estructura$/i })).not.toBeInTheDocument();
+    expect(stopSpy).not.toHaveBeenCalled();
+    expect(speakQueue.length).toBe(4);
+    expect(speakQueue[3]!.text).toContain("primera lección");
+
+    // 6. End of intro_method: transitions directly to giving the Class (FORMULA)!
+    await act(async () => {
+      speakQueue[3]!.onEnd?.();
+      await vi.advanceTimersByTimeAsync(350);
+    });
+    expect(speakQueue.length).toBe(5);
+    expect(speakQueue[4]!.text).toContain("El reto de esta base es");
+
+    unmount();
+    speakSpy.mockRestore();
+    stopSpy.mockRestore();
+    vi.useRealTimers();
   });
 });

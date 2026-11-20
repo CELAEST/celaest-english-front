@@ -62,8 +62,10 @@ export const DesktopLiveRuleStage: React.FC<DesktopLiveRuleStageProps> = ({
         )}
         {activeBeat === "ORIENTATION" && (
           <LiveBoardOrientationScene
+            introStage={liveBoard?.introStage}
             subtitleSpanish={liveBoard?.subtitleSpanish}
             onContinueToFormula={() => liveBoard?.onSelectBeat("FORMULA")}
+            onOpenGuide={handleOpenGuide}
           />
         )}
         {activeBeat === "FORMULA" && (

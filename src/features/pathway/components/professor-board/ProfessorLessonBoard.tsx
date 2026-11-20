@@ -105,7 +105,17 @@ export const ProfessorLessonBoard: React.FC<ProfessorLessonBoardProps> = ({
               mobileContext={mobileContext} liveBoard={liveBoard}
               onFinishTyping={finish} onPlaySample={onPlaySample} onDismissQaOverride={onDismissQaOverride}
             />
-            <LessonBoardActions isDictating={isDictating} isSpeakingAudio={isSpeakingAudio} canPlaySample={Boolean(speech.sampleAudioText)} isAskingOpen={isAskingOpen} isAutoplayWaiting={isAutoplayWaiting} onToggleLecture={onToggleLecture} onToggleAsking={onToggleAsking} onPlaySample={() => speech.sampleAudioText && onPlaySample(speech.sampleAudioText)} />
+            <LessonBoardActions
+              isDictating={isDictating}
+              isSpeakingAudio={isSpeakingAudio}
+              canPlaySample={Boolean(speech.sampleAudioText)}
+              isAskingOpen={isAskingOpen}
+              isAutoplayWaiting={isAutoplayWaiting}
+              isOrientation={step === "RULE" && liveBoard?.activeBeat === "ORIENTATION"}
+              onToggleLecture={onToggleLecture}
+              onToggleAsking={onToggleAsking}
+              onPlaySample={() => speech.sampleAudioText && onPlaySample(speech.sampleAudioText)}
+            />
             {showRuleBuildCta && onSwitchToPractice && (
               <div className="pt-1 border-t border-white/[0.06] lg:hidden">
                 <LessonBoardPracticeCta onClick={onSwitchToPractice} />

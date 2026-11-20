@@ -15,11 +15,12 @@ export interface UseProfessorStageStateOptions {
   onStepChange?: ((step: PathwayStepId, options?: { skipAudio?: boolean }) => void) | undefined;
   onAiError?: ((err: unknown, retryFn: () => void, previewText?: string) => void) | undefined;
   initialOpenAsking?: boolean | undefined;
+  onAutoGuideSectionChange?: ((section: "structure" | "phonetics" | null) => void) | undefined;
 }
 
 export function useProfessorStageState({
   node, step, cefrLevel, isActive, hasBlockingOverlay = false, isSpeakingAudio, isRecordingMic, isEvaluatingVoice = false, isBuildCorrect, hasBuildMistake, isConquered,
-  onPlaySample, onStepChange, onAiError, initialOpenAsking,
+  onPlaySample, onStepChange, onAiError, initialOpenAsking, onAutoGuideSectionChange,
 }: UseProfessorStageStateOptions) {
   const [mode, setMode] = useState<ProfessorBoardMode>("lesson");
   const [isAskingOpen, setIsAskingOpen] = useState(Boolean(initialOpenAsking));
@@ -29,6 +30,7 @@ export function useProfessorStageState({
   const [isAiAudioPlaying, setIsAiAudioPlaying] = useState<boolean>(() => SpeechSynthesisService.isAiPlaying());
   const cancelQARef = useRef<(() => void) | null>(null);
   const prevAskingOpenRef = useRef<boolean>(Boolean(initialOpenAsking));
+  const hasAskedInQaRef = useRef<boolean>(false);
 
   useEffect(() => {
     return SpeechSynthesisService.subscribePlaybackState(setIsAiAudioPlaying);
@@ -40,7 +42,7 @@ export function useProfessorStageState({
   };
 
   const choreography = useLiveClassChoreography({
-    node, step, cefrLevel, isActive, hasBlockingOverlay, initialOpenAsking, onStepChange,
+    node, step, cefrLevel, isActive, hasBlockingOverlay, initialOpenAsking, onStepChange, onAutoGuideSectionChange,
     onBeforeLectureStart: () => { clearQaOnly(); setMode("lesson"); },
   });
 
@@ -49,16 +51,22 @@ export function useProfessorStageState({
     const wasOpen = prevAskingOpenRef.current;
     prevAskingOpenRef.current = isAskingOpen;
     if (isAskingOpen) {
+      hasAskedInQaRef.current = false;
       choreography.stopAllLecture();
       if (!wasOpen && !hasBlockingOverlay && UNIVERSAL_PHRASES.qa_open?.text) {
         void SpeechSynthesisService.speak(UNIVERSAL_PHRASES.qa_open.text, {
           lang: "es", voice: "liam", rate: 0.96, preventSyntheticFallback: true,
         });
       }
-    } else if (wasOpen && step === "RULE" && !hasBlockingOverlay && UNIVERSAL_PHRASES.qa_close?.text) {
-      void SpeechSynthesisService.speak(UNIVERSAL_PHRASES.qa_close.text, {
-        lang: "es", voice: "liam", rate: 0.96, preventSyntheticFallback: true,
-      });
+    } else if (wasOpen) {
+      if (hasAskedInQaRef.current && step === "RULE" && !hasBlockingOverlay && UNIVERSAL_PHRASES.qa_close?.text) {
+        void SpeechSynthesisService.speak(UNIVERSAL_PHRASES.qa_close.text, {
+          lang: "es", voice: "liam", rate: 0.96, preventSyntheticFallback: true,
+        });
+      } else {
+        SpeechSynthesisService.stop();
+      }
+      hasAskedInQaRef.current = false;
     }
   }, [isAskingOpen]);
   useEffect(() => { setMode("lesson"); clearQaOnly(); }, [step, node.id]);
@@ -67,6 +75,7 @@ export function useProfessorStageState({
     MobileAudioUnlocker.unlock();
     choreography.stopAllLecture();
     clearQaOnly();
+    hasAskedInQaRef.current = true;
     setIsAskingOpen(true);
     setIsAskingQA(true);
     try {
@@ -168,11 +177,13 @@ export function useProfessorStageState({
     trapPhase: choreography.lectureSegment?.trapPhase,
     isWaitingTrapCheck: choreography.isWaitingTrapCheck, trapCheckPassed: choreography.trapCheckPassed,
     isSpeakingEnglishSegment: choreography.isDictating && choreography.lectureSegment?.language === "en",
+    introStage: choreography.lectureSegment?.beat === "ORIENTATION" ? choreography.lectureSegment.introStage : undefined,
     liveSubtitleSpanish: choreography.lectureSegment?.subtitleSpanish,
     isAskingOpen, setIsAskingOpen, isAskingQA, setIsAskingQA, animState, speech, suggestedQuestions, isShowingExamples, isAnsweringVoice,
     hasQaOverride: Boolean(isAskingQA || qaAnswer),
     clearQaAnswer: clearQaOnly,
     stopAllLecture: choreography.stopAllLecture,
+    cancelAutoGuideDemo: choreography.cancelAutoGuideDemo,
     handleToggleLecture: choreography.handleToggleLecture,
     handleSelectBeat: choreography.handleSelectBeat,
     handleSelectFormulaCase: choreography.handleSelectFormulaCase,

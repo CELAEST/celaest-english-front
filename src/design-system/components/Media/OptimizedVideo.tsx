@@ -79,6 +79,9 @@ const OptimizedVideoInternal = forwardRef<HTMLVideoElement, OptimizedVideoProps>
     // Resolve sources
     const finalWebm = webmSrc ?? (src ? (src.endsWith(".webm") ? src : `${src.replace(/\.(mp4|webm)$/, "")}.webm`) : undefined);
     const finalMp4 = mp4Src ?? (src ? (src.endsWith(".mp4") ? src : `${src.replace(/\.(mp4|webm)$/, "")}.mp4`) : undefined);
+    const finalPoster =
+      poster ??
+      (finalWebm?.includes("/assets/begin1") ? "/assets/begin1-poster.webp" : undefined);
 
     const tryPlay = useCallback(() => {
       const v = internalRef.current;
@@ -185,7 +188,7 @@ const OptimizedVideoInternal = forwardRef<HTMLVideoElement, OptimizedVideoProps>
     return (
       <video
         ref={internalRef}
-        poster={poster}
+        poster={finalPoster}
         autoPlay={autoPlay}
         muted={muted}
         loop={loop}

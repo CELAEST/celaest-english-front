@@ -35,7 +35,7 @@ export const PathwayAnatomyModal: React.FC<PathwayAnatomyModalProps> = ({
     if (isOpen) {
       setSection(initialSection);
     } else {
-      PhoneticAudioService.stop();
+      PhoneticAudioService.stopLocalOnly();
       setSpeakingText(null);
     }
   }, [isOpen, initialSection]);
@@ -49,7 +49,7 @@ export const PathwayAnatomyModal: React.FC<PathwayAnatomyModalProps> = ({
 
   useEffect(
     () => () => {
-      PhoneticAudioService.stop();
+      PhoneticAudioService.stopLocalOnly();
     },
     [],
   );
@@ -63,13 +63,13 @@ export const PathwayAnatomyModal: React.FC<PathwayAnatomyModalProps> = ({
   };
 
   const handleSelectSection = (nextSection: GuideSection) => {
-    PhoneticAudioService.stop();
+    PhoneticAudioService.stopLocalOnly();
     setSpeakingText(null);
     setSection(nextSection);
   };
 
   const handleClose = () => {
-    PhoneticAudioService.stop();
+    PhoneticAudioService.stopLocalOnly();
     setSpeakingText(null);
     onClose();
   };
@@ -102,7 +102,7 @@ export const PathwayAnatomyModal: React.FC<PathwayAnatomyModalProps> = ({
       bodyClassName="space-y-4 px-4 sm:px-6 py-2 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
     >
       {section === "structure" ? (
-        <>
+        <div key="guide-structure" className="space-y-4 animate-[fadeIn_0.22s_ease-out_both]">
           <AnatomyMissionBanner />
           <AnatomyProgressHeader
             activePillar={activePillar}
@@ -132,9 +132,9 @@ export const PathwayAnatomyModal: React.FC<PathwayAnatomyModalProps> = ({
               />
             </>
           )}
-        </>
+        </div>
       ) : (
-        <PhoneticsGuideView />
+        <PhoneticsGuideView key="guide-phonetics" />
       )}
     </AppModal>
   );

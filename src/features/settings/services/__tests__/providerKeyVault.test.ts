@@ -26,6 +26,15 @@ describe("providerKeyVault — Multi-Key Pool & Encryption at Rest", () => {
     expect(keys).toEqual(["gsk_first", "gsk_second"]);
   });
 
+  it("promotes newly saved key via saveKey to index 0 ahead of previous keys", async () => {
+    await providerKeyVault.saveKey("groq", "gsk_old_rate_limited");
+    await providerKeyVault.saveKey("groq", "gsk_new_fresh_key");
+
+    const keys = await providerKeyVault.getKeys("groq");
+    expect(keys).toEqual(["gsk_new_fresh_key", "gsk_old_rate_limited"]);
+    expect(await providerKeyVault.getKey("groq")).toBe("gsk_new_fresh_key");
+  });
+
   it("removes a specific key by index from the pool", async () => {
     await providerKeyVault.saveKeys("gemini", ["key_a", "key_b", "key_c"]);
     await providerKeyVault.removeKeyAtIndex("gemini", 1); // remove "key_b"

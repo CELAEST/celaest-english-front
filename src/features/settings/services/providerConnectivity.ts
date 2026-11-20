@@ -176,19 +176,41 @@ export const probeProviderConnection = async (
     const errBody = await res.text().catch(() => "");
     const lowerBody = errBody.toLowerCase();
 
-    // Fallback: If chat/completions failed because the requested model doesn't exist, probe GET /models
-    if ((res.status === 400 || res.status === 404) && (lowerBody.includes("model") || lowerBody.includes("does not exist"))) {
+    // Fallback: If completion failed because the requested model doesn't exist, probe GET /models
+    if ((res.status === 400 || res.status === 404) && (lowerBody.includes("model") || lowerBody.includes("does not exist") || lowerBody.includes("not found"))) {
       try {
         const base = endpoint.replace(/\/+$/, "");
-        const modelsRes = await fetch(`${base}/models`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-          signal: controller.signal,
-        });
+        const modelsRes =
+          providerId === "gemini"
+            ? await fetch(`${base}/models?key=${encodeURIComponent(apiKey)}`, {
+                signal: controller.signal,
+              })
+            : await fetch(`${base}/models`, {
+                headers: { Authorization: `Bearer ${apiKey}` },
+                signal: controller.signal,
+              });
         if (modelsRes.ok) {
           const modelsData = await modelsRes.json().catch(() => null);
           let discovered: string | undefined;
           let avail: string[] | undefined;
-          if (Array.isArray(modelsData?.data)) {
+          if (providerId === "gemini" && Array.isArray(modelsData?.models)) {
+            avail = modelsData.models
+              .filter(
+                (m: any) =>
+                  Array.isArray(m?.supportedGenerationMethods) &&
+                  m.supportedGenerationMethods.includes("generateContent"),
+              )
+              .map((m: any) => String(m?.name || "").replace(/^models\//, ""))
+              .filter(Boolean);
+            const geminiRank = [
+              "gemini-3.6-flash",
+              "gemini-2.5-flash",
+              "gemini-2.0-flash",
+              "gemini-1.5-flash",
+              "gemini-2.5-pro",
+            ];
+            discovered = geminiRank.find((id) => avail?.includes(id)) || avail?.[0] || "gemini-2.5-flash";
+          } else if (Array.isArray(modelsData?.data)) {
             avail = modelsData.data.map((m: any) => m?.id).filter(Boolean);
             if (providerId === "groq") {
               const groqRank = [

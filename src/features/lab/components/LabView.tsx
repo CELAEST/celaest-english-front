@@ -1,6 +1,7 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
 import { PathwayHeaderEnterpriseShowcase } from "./PathwayHeaderEnterpriseShowcase";
+import { OrientationSceneShowcase } from "./OrientationSceneShowcase";
 import { PracticeCtaShowcase } from "./PracticeCtaShowcase";
 import { CyberVisorFaceStudioShowcase } from "./CyberVisorFaceStudioShowcase";
 import { CleanSkeletonStudioShowcase } from "./CleanSkeletonStudioShowcase";
@@ -48,6 +49,11 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
         {/* SECTION 00.PATHWAY_HEADER_STUDIO: Enterprise Pathway Header Laboratory */}
         <div className="flex flex-col space-y-4">
           <PathwayHeaderEnterpriseShowcase />
+        </div>
+
+        {/* SECTION 00.ORIENTATION_STUDIO: Clean Zero-Box Orientation Stage */}
+        <div className="flex flex-col space-y-4">
+          <OrientationSceneShowcase />
         </div>
 
         {/* SECTION 00.PRACTICE_CTA_STUDIO: Anti-AI & Zero-Box Practice CTA Suite */}

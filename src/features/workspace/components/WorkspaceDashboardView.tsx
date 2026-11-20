@@ -6,6 +6,7 @@ import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { LinguaMarketplacePaywallModal } from "./LinguaMarketplacePaywallModal";
 import { LinguaByokRequiredModal } from "./LinguaByokRequiredModal";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
+import { PROVIDER_KEYS_CHANGED_EVENT } from "../../../shared/constants/storageEvents";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
@@ -88,12 +89,34 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const [byokOpen, setByokOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isByokMode) {
-      void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
-        if (!hasKey) setByokOpen(true);
-      });
+    if (activeTab === "pathway" || activeTab === "settings") {
+      // PathwayStudioView owns its own AiUseCaseModalsHost & blocking overlay synchronization;
+      // deferring to Pathway avoids rendering two stacked LinguaByokRequiredModal portals.
+      setByokOpen(false);
+      return;
     }
-  }, [isByokMode]);
+    if (!isByokMode) {
+      setByokOpen(false);
+      return;
+    }
+    let cancelled = false;
+    const syncByokPrompt = () => {
+      void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
+        if (!cancelled) setByokOpen(!hasKey);
+      });
+    };
+    syncByokPrompt();
+    if (typeof window !== "undefined") {
+      window.addEventListener(PROVIDER_KEYS_CHANGED_EVENT, syncByokPrompt);
+      return () => {
+        cancelled = true;
+        window.removeEventListener(PROVIDER_KEYS_CHANGED_EVENT, syncByokPrompt);
+      };
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isByokMode, activeTab]);
 
   const handleHomeVideoLoaded = React.useCallback(() => {
     setIsHomeVideoLoaded(true);
@@ -642,7 +665,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           onRefreshEntitlement={() => void refreshEntitlement()}
         />
         <LinguaByokRequiredModal
-          isOpen={byokOpen}
+          isOpen={activeTab !== "pathway" && activeTab !== "settings" && byokOpen}
           mode={isByokMode ? "promo_byok" : "trial_choice"}
           onClose={() => setByokOpen(false)}
           onConfigured={() => setByokOpen(false)}

@@ -160,4 +160,44 @@ describe("providerConnectivity — Real-World Multi-Provider Error Handling (Ant
     expect(result.message).toContain("No se pudo conectar con el servidor. Revisa tu conexión a internet");
     expect(result.message).not.toContain("CORS");
   });
+
+  it("discovers available Gemini model via /models?key=... when initial model returns 404", async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).includes(":generateContent")) {
+        return {
+          ok: false,
+          status: 404,
+          text: async () =>
+            JSON.stringify({
+              error: { code: 404, message: "models/gemini-3.6-flash is not found" },
+            }),
+        } as any;
+      }
+      expect(String(url)).toContain("/models?key=AIzaSy-valid-key");
+      expect(init?.headers).toBeUndefined();
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          models: [
+            {
+              name: "models/gemini-2.5-flash",
+              supportedGenerationMethods: ["generateContent"],
+            },
+          ],
+        }),
+      } as any;
+    });
+    global.fetch = fetchMock as any;
+
+    const result = await probeProviderConnection(
+      "gemini",
+      "AIzaSy-valid-key",
+      "https://generativelanguage.googleapis.com/v1beta",
+      "gemini-3.6-flash",
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.discoveredModel).toBe("gemini-2.5-flash");
+  });
 });

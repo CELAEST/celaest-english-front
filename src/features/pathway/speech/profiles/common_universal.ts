@@ -36,6 +36,13 @@ export const commonUniversalSpeechProfile: BaseSpeechProfile = {
       pauseAfterMs: PAUSE.standard,
     },
     {
+      id: "intro_guide",
+      beat: "DIALOG",
+      language: "es",
+      text: "Arriba tienes la guía de estudio. Ábrela cuando quieras para consultar los 14 bloques de inglés y el alfabeto fonético con audios reales.",
+      pauseAfterMs: PAUSE.standard,
+    },
+    {
       id: "intro_method",
       beat: "DIALOG",
       language: "es",

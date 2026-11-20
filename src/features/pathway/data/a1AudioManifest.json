@@ -1265,6 +1265,8 @@
   "Tu micrófono sigue cerrado. Concede el permiso en el navegador o continúa sin voz.": "/audio/pathway/a1/base_25/mic.error.mp3",
   "¡Hola! Soy Liam, tu mentor personal en CELAEST. Sin importar en qué nivel estés comenzando hoy, en este curso no vamos a memorizar gramática aburrida.": "/audio/pathway/common/intro_welcome.mp3",
   "Tu cerebro aprende inglés interiorizando patrones estructurales, cazando las trampas donde solemos tropezar los hispanohablantes, y activando tu voz desde el primer día.": "/audio/pathway/common/intro_philosophy.mp3",
+  "Arriba tienes la guía de estudio. Ábrela cuando quieras para consultar los 14 bloques de inglés y el alfabeto fonético con audios reales.": "/audio/pathway/common/intro_guide.mp3",
+  "Arriba tienes la guía de estudio. Ábrela cuando quieras para consultar los catorce bloques de inglés y el alfabeto fonético con audios reales.": "/audio/pathway/common/intro_guide.mp3",
   "En cada base trabajaremos juntos: primero entenderás la regla en la pizarra, luego cazaremos la trampa común, armarás la frase y la dirás en voz alta. ¿Listo para pensar en inglés? Vamos con tu primera lección.": "/audio/pathway/common/intro_method.mp3",
   "En cada base trabajaremos juntos, primero entenderás la regla en la pizarra, luego cazaremos la trampa común, armarás la frase y la dirás en voz alta. ¿Listo para pensar en inglés? Vamos con tu primera lección.": "/audio/pathway/common/intro_method.mp3",
   "¡Qué gusto verte de nuevo! Vamos a retomar justo donde lo dejamos para consolidar tu fluidez.": "/audio/pathway/common/welcome_returning.mp3",

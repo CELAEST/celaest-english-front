@@ -176,10 +176,10 @@ describe("Cobertura de voz del Pathway", () => {
     expect(unique).toEqual([]);
   });
 
-  it("todas las 14 frases universales apuntan exactamente al audio correcto y existen en disco", () => {
+  it("todas las 15 frases universales apuntan exactamente al audio correcto y existen en disco", () => {
     const root = process.cwd();
     const phrases = Object.values(UNIVERSAL_PHRASES);
-    expect(phrases.length).toBe(14);
+    expect(phrases.length).toBe(15);
     for (const phrase of phrases) {
       const mapped = hasAudio(phrase.text);
       expect(mapped, `Sin entrada en manifiesto para "${phrase.id}": ${phrase.text}`).toBe(phrase.audioUrl);

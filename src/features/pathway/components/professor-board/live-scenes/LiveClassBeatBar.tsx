@@ -17,7 +17,7 @@ const LIVE_BEATS: Array<{ id: LiveClassBeatId; label: string }> = [
 
 export const LiveClassBeatBar: React.FC<LiveClassBeatBarProps> = React.memo(
   ({ activeBeat, trapCheckPassed, isWaitingTrapCheck, onSelectBeat }) => {
-    const normalizedActive = activeBeat === "ORIENTATION" ? "FORMULA" : activeBeat;
+    const normalizedActive = activeBeat;
 
     return (
       <div

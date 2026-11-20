@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /assets/
+Disallow: /api/
+
+User-agent: Googlebot
+Allow: /
+Allow: /assets/
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /assets/
+
+User-agent: Googlebot-Video
+Allow: /
+Allow: /assets/
+
+User-agent: Google-Favicon
+Allow: /
+
+Sitemap: https://celaest.com/sitemap.xml

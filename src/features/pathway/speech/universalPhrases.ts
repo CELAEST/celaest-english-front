@@ -33,6 +33,13 @@ export const UNIVERSAL_PHRASES: Record<string, UniversalPhrase> = {
     audioUrl: "/audio/pathway/common/intro_philosophy.mp3",
     subtitle: "Aprenderás interiorizando patrones, cazando trampas del español y activando tu voz desde el día 1.",
   },
+  intro_guide: {
+    id: "intro_guide",
+    category: "intro",
+    text: "Arriba tienes la guía de estudio. Ábrela cuando quieras para consultar los 14 bloques de inglés y el alfabeto fonético con audios reales.",
+    audioUrl: "/audio/pathway/common/intro_guide.mp3",
+    subtitle: "Guía de Estudio: 14 bloques estructurales y Alfabeto Fonético completo con audios reales.",
+  },
   intro_method: {
     id: "intro_method",
     category: "intro",

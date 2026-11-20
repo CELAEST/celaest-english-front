@@ -10,6 +10,8 @@ export type LiveClassBeatId =
   | "TRAP_CHECK"
   | "EXAMPLES";
 
+export type OrientationIntroStage = "welcome" | "philosophy" | "guide" | "method";
+
 export interface LectureSegment {
   language: "es" | "en";
   text: string;
@@ -22,6 +24,8 @@ export interface LectureSegment {
   targetStep?: PathwayStepId | undefined;
   formulaRevealCount?: number | undefined;
   trapPhase?: 0 | 1 | 2 | undefined;
+  introStage?: OrientationIntroStage | undefined;
+  guideShowcase?: "structure-then-phonetics" | undefined;
 }
 
 export interface BuildLectureScriptOptions {
@@ -32,7 +36,10 @@ export interface BuildLectureScriptOptions {
 export interface PlayLectureOptions {
   script?: PathwayLectureScript | undefined;
   startFromIndex?: number | undefined;
+  stopAfterOrientation?: boolean | undefined;
   onPauseForCheck?: ((beat: LiveClassBeatId, resumeIndex: number) => void) | undefined;
+  onSegmentEnd?: ((segmentIndex: number, segment: LectureSegment) => void) | undefined;
+  onOrientationCompleted?: (() => PathwayLectureScript | null | undefined) | undefined;
 }
 
 export interface PathwayLectureScript {
@@ -116,14 +123,16 @@ export class PathwayLectureEngine {
     if (!hasSeenSoftware) {
       const introWelcome = UNIVERSAL_PHRASES.intro_welcome!;
       const introPhilosophy = UNIVERSAL_PHRASES.intro_philosophy!;
+      const introGuide = UNIVERSAL_PHRASES.intro_guide!;
       const introMethod = UNIVERSAL_PHRASES.intro_method!;
       segments.push(
         {
           language: "es",
           text: introWelcome.text,
           subtitleSpanish: introWelcome.subtitle,
-          badgeLabel: "1. BIENVENIDA & GUÍA DE ESTUDIO",
+          badgeLabel: "1. BIENVENIDA & MÉTODO",
           beat: "ORIENTATION",
+          introStage: "welcome",
           targetStep: "RULE",
         },
         {
@@ -132,18 +141,29 @@ export class PathwayLectureEngine {
           subtitleSpanish: introPhilosophy.subtitle,
           badgeLabel: "2. MÉTODO NEUROCOGNITIVO",
           beat: "ORIENTATION",
+          introStage: "philosophy",
+          targetStep: "RULE",
+        },
+        {
+          language: "es",
+          text: introGuide.text,
+          subtitleSpanish: introGuide.subtitle,
+          badgeLabel: "3. GUÍA DE ESTUDIO & FONÉTICA",
+          beat: "ORIENTATION",
+          introStage: "guide",
+          guideShowcase: "structure-then-phonetics",
           targetStep: "RULE",
         },
         {
           language: "es",
           text: introMethod.text,
-          subtitleSpanish: "Pizarra interactiva, Guía de Estudio arriba (14 bloques + fonética) y botón Preguntar siempre listo.",
-          badgeLabel: "3. TU GUÍA DE CLASE",
+          subtitleSpanish: introMethod.subtitle,
+          badgeLabel: "4. TU PRIMERA LECCIÓN",
           beat: "ORIENTATION",
+          introStage: "method",
           targetStep: "RULE",
         },
       );
-      this.markSoftwareIntroSeen();
     } else if (options?.includeReturningWelcome) {
       const returningPhrase = UNIVERSAL_PHRASES.welcome_returning!;
       segments.push({
@@ -654,14 +674,19 @@ export class PathwayLectureEngine {
     const currentSessionId = this.activeSessionId;
 
     const script = options?.script ?? this.buildLectureScript(node);
-    const startIdx = Math.max(0, Math.min(options?.startFromIndex ?? 0, script.segments.length));
+    const activeSegments = [...script.segments];
+    let lastOrientationIdx = activeSegments.reduce(
+      (last, seg, idx) => (seg.beat === "ORIENTATION" ? idx : last),
+      -1,
+    );
+    const startIdx = Math.max(0, Math.min(options?.startFromIndex ?? 0, activeSegments.length));
     let isCancelled = false;
     let isDispatchingSpeak = false;
     let resolveCurrentSegment: (() => void) | null = null;
     let unregisterExternalStop: (() => void) | null = null;
 
-    if (startIdx < script.segments.length) {
-      const firstSeg = script.segments[startIdx]!;
+    if (startIdx < activeSegments.length) {
+      const firstSeg = activeSegments[startIdx]!;
       const firstVoice = firstSeg.language === "en" ? "liam" : spanishVoice;
       void SpeechSynthesisService.prefetch(firstSeg.text, firstVoice);
     }
@@ -676,6 +701,7 @@ export class PathwayLectureEngine {
     };
 
     const stop = () => {
+      if (isCancelled) return;
       cleanupSession();
       SpeechSynthesisService.stop();
       onEnd();
@@ -689,22 +715,23 @@ export class PathwayLectureEngine {
 
     const run = async () => {
       try {
-        for (let i = startIdx; i < script.segments.length; i++) {
+        for (let i = startIdx; i < activeSegments.length; i++) {
           if (isCancelled || this.activeSessionId !== currentSessionId) break;
 
-          const segment = script.segments[i]!;
+          const segment = activeSegments[i]!;
           if (segment.targetStep && onStepTrigger) {
             onStepTrigger(segment.targetStep);
           }
           onProgress(i, segment);
 
           // Prioritized lookahead: prefetch strictly the NEXT segment in background while current segment speaks
-          if (i + 1 < script.segments.length) {
-            const nextSeg = script.segments[i + 1]!;
+          if (i + 1 < activeSegments.length) {
+            const nextSeg = activeSegments[i + 1]!;
             const nextVoice = nextSeg.language === "en" ? "liam" : spanishVoice;
             void SpeechSynthesisService.prefetch(nextSeg.text, nextVoice);
           }
 
+          let didSegmentComplete = false;
           await new Promise<void>((resolve) => {
             if (isCancelled || this.activeSessionId !== currentSessionId) {
               resolve();
@@ -712,15 +739,18 @@ export class PathwayLectureEngine {
             }
 
             let segmentSettled = false;
-            const completeSegment = () => {
+            const completeSegment = (completedNormally = false) => {
               if (segmentSettled) return;
               segmentSettled = true;
-              if (resolveCurrentSegment === completeSegment) {
+              didSegmentComplete =
+                completedNormally && !isCancelled && this.activeSessionId === currentSessionId;
+              if (resolveCurrentSegment === cancelResolve) {
                 resolveCurrentSegment = null;
               }
               resolve();
             };
-            resolveCurrentSegment = completeSegment;
+            const cancelResolve = () => completeSegment(false);
+            resolveCurrentSegment = cancelResolve;
 
             const handlePlayError = (err: any) => {
               const isAutoplay =
@@ -735,10 +765,10 @@ export class PathwayLectureEngine {
                 } else {
                   onEnd();
                 }
-                completeSegment();
+                cancelResolve();
                 return;
               }
-              completeSegment();
+              cancelResolve();
             };
 
             isDispatchingSpeak = true;
@@ -749,7 +779,7 @@ export class PathwayLectureEngine {
                   voice: "liam",
                   rate: 0.95,
                   preventSyntheticFallback: true,
-                  onEnd: completeSegment,
+                  onEnd: () => completeSegment(true),
                   onError: handlePlayError,
                 });
               } else {
@@ -758,7 +788,7 @@ export class PathwayLectureEngine {
                   voice: spanishVoice,
                   rate: 0.96,
                   preventSyntheticFallback: true,
-                  onEnd: completeSegment,
+                  onEnd: () => completeSegment(true),
                   onError: handlePlayError,
                 });
               }
@@ -766,6 +796,30 @@ export class PathwayLectureEngine {
               isDispatchingSpeak = false;
             }
           });
+
+          if (!isCancelled && this.activeSessionId === currentSessionId) {
+            options?.onSegmentEnd?.(i, segment);
+          }
+
+          if (
+            didSegmentComplete &&
+            !isCancelled &&
+            this.activeSessionId === currentSessionId &&
+            i === lastOrientationIdx
+          ) {
+            this.markSoftwareIntroSeen();
+            const refreshed = options?.onOrientationCompleted?.();
+            if (options?.stopAfterOrientation) {
+              cleanupSession();
+              onEnd();
+              return;
+            }
+            if (refreshed?.segments?.length) {
+              const refreshedTail = refreshed.segments.filter((s) => s.beat !== "ORIENTATION");
+              activeSegments.splice(i + 1, activeSegments.length - (i + 1), ...refreshedTail);
+              lastOrientationIdx = -1;
+            }
+          }
 
           if (
             !isCancelled &&
@@ -779,7 +833,7 @@ export class PathwayLectureEngine {
           }
 
           // Cognitive Breathing Cadence (Ley 5 del Master Standard)
-          if (!isCancelled && this.activeSessionId === currentSessionId && i < script.segments.length - 1) {
+          if (!isCancelled && this.activeSessionId === currentSessionId && i < activeSegments.length - 1) {
             const isEnglishModel = segment.language === "en";
             const isCaseIntro = segment.formulaRevealCount === 1;
             const isTrapIntro = segment.trapPhase === 0;
@@ -801,6 +855,11 @@ export class PathwayLectureEngine {
     void run();
 
     return stop;
+  }
+
+  /** Invalida timers/loops de cátedra pendientes sin cortar el audio que otra etapa (BUILD/SPEAK) ya inició. */
+  public static cancelPendingLoop(): void {
+    this.activeSessionId++;
   }
 
   public static stopLecture(): void {

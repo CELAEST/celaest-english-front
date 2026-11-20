@@ -1,6 +1,6 @@
 import React from "react";
 import { PathwayLessonPayload } from "../../../../../domain/entities/LearningPathway";
-import { LiveClassBeatId } from "../../../services/PathwayLectureEngine";
+import { LiveClassBeatId, OrientationIntroStage } from "../../../services/PathwayLectureEngine";
 import { LiveBoardExamplesScene } from "./LiveBoardExamplesScene";
 import { LiveBoardFormulaScene } from "./LiveBoardFormulaScene";
 import { LiveBoardTrapCheckScene } from "./LiveBoardTrapCheckScene";
@@ -19,6 +19,7 @@ export interface MobileLiveRuleStageProps {
   isSpeakingEnglish: boolean;
   speakingSampleText: string | null;
   trapCheckPassed: boolean;
+  introStage?: OrientationIntroStage | undefined;
   subtitleSpanish?: string | undefined;
   onSelectBeat: (beat: LiveClassBeatId) => void;
   onSelectFormulaCase: (index: number) => void;
@@ -29,12 +30,13 @@ export interface MobileLiveRuleStageProps {
 export const MobileLiveRuleStage: React.FC<MobileLiveRuleStageProps> = ({
   lesson, nodeOrderIndex, activeBeat, activeFormulaCaseIndex, activeExampleIndex,
   formulaRevealCount, trapPhase, isDictating,
-  isSpeakingEnglish, speakingSampleText, trapCheckPassed, subtitleSpanish,
+  isSpeakingEnglish, speakingSampleText, trapCheckPassed, introStage, subtitleSpanish,
   onSelectBeat, onSelectFormulaCase, onAnswerTrapCheck, onPlaySample,
 }) => {
   if (activeBeat === "ORIENTATION") {
     return (
       <LiveBoardOrientationScene
+        introStage={introStage}
         subtitleSpanish={subtitleSpanish}
         onContinueToFormula={() => onSelectBeat("FORMULA")}
       />

@@ -32,7 +32,21 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
 }) => {
   const isDesktop = useIsDesktopViewport();
   const [curriculumOpen, setCurriculumOpen] = useState(false);
-  const [guideSection, setGuideSection] = useState<GuideSection | null>(null);
+  const [guideState, setGuideState] = useState<{ section: GuideSection | null; isAutoDemo: boolean }>({
+    section: null,
+    isAutoDemo: false,
+  });
+  const guideSection = guideState.section;
+  const setGuideSection = (section: GuideSection | null) =>
+    setGuideState({ section, isAutoDemo: false });
+  const handleAutoGuideSectionChange = (section: GuideSection | null) =>
+    setGuideState((prev) =>
+      section === null
+        ? prev.isAutoDemo
+          ? { section: null, isAutoDemo: false }
+          : prev
+        : { section, isAutoDemo: true },
+    );
   const [tourOpen, setTourOpen] = useState(false);
   const {
     controller: modalController,
@@ -52,7 +66,12 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
     isByokMode,
   } = modalController;
   const hasBlockingOverlay = Boolean(
-    curriculumOpen || guideSection !== null || paywallOpen || byokOpen || tourOpen || recoveryState.isOpen,
+    curriculumOpen ||
+      (guideState.section !== null && !guideState.isAutoDemo) ||
+      paywallOpen ||
+      byokOpen ||
+      tourOpen ||
+      recoveryState.isOpen,
   );
   const { pathway, activeNode, activeNodeIndex, isGeneratingAi, selectNode, personalizeWithAi, completeActiveNode } = useLearningPathway({ profession: roleName, cefrLevel: userLevel, learningGoal });
 
@@ -60,15 +79,18 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
   useEffect(() => { warmProfessorModelCache(); }, []);
   useEffect(() => {
     if (hasBlockingOverlay || guideSection === null) {
-      PhoneticAudioService.stop();
+      PhoneticAudioService.stopLocalOnly();
     }
   }, [hasBlockingOverlay, guideSection]);
   useEffect(() => {
-    if (isByokMode) {
-      void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
-        if (!hasKey) openByokModal("promo_byok");
-      });
-    }
+    if (!isByokMode) return;
+    let cancelled = false;
+    void providerKeyVault.hasAnyConfiguredKey().then((hasKey) => {
+      if (!cancelled && !hasKey) openByokModal("promo_byok");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isByokMode, openByokModal]);
   useEffect(() => {
     if (entitlement.hasAccess) { closePaywall(); return; }
@@ -111,6 +133,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
     isBuildCorrect: session.isBuildCorrect, hasBuildMistake: session.hasBuildMistake,
     isConquered, onPlaySample: session.playAudio, onStepChange: session.setStep,
     onAiError: handleAiFailure, initialOpenAsking: false,
+    onAutoGuideSectionChange: handleAutoGuideSectionChange,
   });
 
   const handlePersonalizeAi = () => {
@@ -129,6 +152,7 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
     isWaitingTrapCheck: professorState.isWaitingTrapCheck,
     trapCheckPassed: professorState.trapCheckPassed,
     isSpeakingEnglish: professorState.isSpeakingEnglishSegment,
+    introStage: professorState.introStage,
     subtitleSpanish: professorState.liveSubtitleSpanish,
     onSelectBeat: professorState.handleSelectBeat,
     onSelectFormulaCase: professorState.handleSelectFormulaCase,
@@ -168,7 +192,14 @@ export const PathwayStudioView: React.FC<PathwayStudioViewProps> = ({
         className="order-2 flex-1 lg:flex-none"
       />
       <PathwayCurriculumSheet open={curriculumOpen} pathway={pathway} activeNodeId={activeNode.id} isGeneratingAi={isGeneratingAi} onClose={() => setCurriculumOpen(false)} onSelectNode={handleSelectNodeGated} onPersonalizeAi={handlePersonalizeAi} />
-      <PathwayAnatomyModal isOpen={guideSection !== null} onClose={() => setGuideSection(null)} initialSection={guideSection || "structure"} />
+      <PathwayAnatomyModal
+        isOpen={guideSection !== null}
+        onClose={() => {
+          professorState.cancelAutoGuideDemo();
+          setGuideSection(null);
+        }}
+        initialSection={guideSection || "structure"}
+      />
       <AiUseCaseModalsHost controller={modalController} />
       <AppEcosystemTour
         isOpen={tourOpen}

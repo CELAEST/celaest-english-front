@@ -149,6 +149,15 @@ export function buildProfessorSpeech(ctx: ProfessorSpeechContext): ProfessorSpee
   if (step === "BUILD") return buildStepSpeech(ctx);
   if (step !== "RULE") return speakStepSpeech(ctx);
 
+  if (ctx.activeBeat === "ORIENTATION") {
+    return {
+      eyebrow: "Bienvenida & Guía",
+      headline: "¡Hola! Soy Liam, tu mentor",
+      text: getSoftwareGuideOrientationText(),
+      sampleAudioText: null,
+    };
+  }
+
   if (ctx.activeBeat === "TRAP_CHECK") {
     return {
       eyebrow: `${baseLabel} · Reto en Vivo`,

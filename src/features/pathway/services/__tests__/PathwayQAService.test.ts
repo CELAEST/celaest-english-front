@@ -32,16 +32,20 @@ describe("Pathway Master Lecture & Super Tutor — Pedagogical Quality Gate", ()
     localStorage.clear();
   });
 
-  it("builds a 3-step universal orientation on first visit, then enters lesson directly on subsequent visits", () => {
-    // 1. First visit: 3-step universal intro (intro_welcome, intro_philosophy, intro_method) + live choreography
+  it("builds a 4-step universal orientation on first visit, then enters lesson directly on subsequent visits", () => {
+    // 1. First visit: 4-step universal intro (intro_welcome, intro_philosophy, intro_guide, intro_method) + live choreography
+    // Building script alone does NOT mark seen prematurely before orientation finishes playing
     const firstLecture = PathwayLectureEngine.buildLectureScript(node);
     expect(firstLecture.headline).toContain("Mentoría");
     const orientationBeats = firstLecture.segments.filter((s) => s.beat === "ORIENTATION");
-    expect(orientationBeats.length).toBe(3);
+    expect(orientationBeats.length).toBe(4);
+    expect(orientationBeats[2]?.guideShowcase).toBe("structure-then-phonetics");
     expect(firstLecture.segments[0]?.badgeLabel).toContain("1. BIENVENIDA");
-    expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
+    expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(false);
 
-    // 2. Segunda visita: sin orientación, entra directo a la clase
+    // 2. Segunda visita (tras completar o saltar orientación): entra directo a la clase
+    PathwayLectureEngine.markSoftwareIntroSeen();
+    expect(PathwayLectureEngine.isSoftwareIntroSeen()).toBe(true);
     const secondLecture = PathwayLectureEngine.buildLectureScript(node);
     expect(secondLecture.segments.some((s) => s.beat === "ORIENTATION")).toBe(false);
 

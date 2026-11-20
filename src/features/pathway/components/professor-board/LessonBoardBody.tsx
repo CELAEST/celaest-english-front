@@ -1,7 +1,7 @@
 import React from "react";
 import { BridgeModuleTarget, PathwayLessonPayload, PathwayStepId } from "../../../../domain/entities/LearningPathway";
 import { usePathwayStageSession } from "../../hooks/usePathwayStageSession";
-import { LiveClassBeatId } from "../../services/PathwayLectureEngine";
+import { LiveClassBeatId, OrientationIntroStage } from "../../services/PathwayLectureEngine";
 import { LessonTypedText } from "./LessonTypedText";
 import { LessonVisualExamples } from "./LessonVisualExamples";
 import { MobileLiveRuleStage } from "./live-scenes/MobileLiveRuleStage";
@@ -26,6 +26,7 @@ export interface LiveBoardState {
   isWaitingTrapCheck: boolean;
   trapCheckPassed: boolean;
   isSpeakingEnglish: boolean;
+  introStage?: OrientationIntroStage | undefined;
   subtitleSpanish?: string | undefined;
   onSelectBeat: (beat: LiveClassBeatId) => void;
   onSelectFormulaCase: (index: number) => void;
@@ -77,7 +78,7 @@ export const LessonBoardBody: React.FC<LessonBoardBodyProps> = ({
           trapPhase={liveBoard.trapPhase}
           isDictating={liveBoard.isDictating}
           isSpeakingEnglish={liveBoard.isSpeakingEnglish} speakingSampleText={speakingSampleText}
-          trapCheckPassed={liveBoard.trapCheckPassed} subtitleSpanish={liveBoard.subtitleSpanish}
+          trapCheckPassed={liveBoard.trapCheckPassed} introStage={liveBoard.introStage} subtitleSpanish={liveBoard.subtitleSpanish}
           onSelectBeat={liveBoard.onSelectBeat} onSelectFormulaCase={liveBoard.onSelectFormulaCase}
           onAnswerTrapCheck={liveBoard.onAnswerTrapCheck} onPlaySample={onPlaySample}
         />

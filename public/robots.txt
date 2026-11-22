@@ -18,4 +18,5 @@ Allow: /assets/
 User-agent: Google-Favicon
 Allow: /
 
+Sitemap: https://lingua.celaest.com/sitemap.xml
 Sitemap: https://celaest.com/sitemap.xml

@@ -138,13 +138,29 @@ async function serveRangeAwareMedia(request, env, pathname) {
   });
 }
 
-function withSecurityHeaders(response) {
+const ICON_LINK_HEADER =
+  '</favicon-v2.ico>; rel="icon"; type="image/x-icon", </icon-48-v2.png>; rel="icon"; type="image/png"; sizes="48x48", </icon-192-v2.png>; rel="icon"; type="image/png"; sizes="192x192"';
+
+const STATIC_EXT_REGEX =
+  /\.(png|jpe?g|svg|xml|txt|json|js|css|ico|map|webp|woff2?)$/i;
+
+function withSecurityHeaders(response, { contentType, noindex = false } = {}) {
   const headers = new Headers(response.headers);
   headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Permissions-Policy", "microphone=(self), camera=(), geolocation=()");
+  if (contentType) {
+    headers.set("Content-Type", contentType);
+  }
+  const effectiveType = headers.get("content-type") || "";
+  if (effectiveType.includes("text/html")) {
+    headers.set("Link", ICON_LINK_HEADER);
+  }
+  if (noindex || response.status === 404) {
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -158,14 +174,54 @@ const worker = {
 
     if (url.hostname === "lingua.celaest.com" && url.protocol === "http:") {
       url.protocol = "https:";
-      return Response.redirect(url.toString(), 301);
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: url.toString(),
+          Link: ICON_LINK_HEADER,
+        },
+      });
+    }
+
+    if (
+      url.pathname === "/$" ||
+      url.pathname === "/&" ||
+      url.pathname === "/%24" ||
+      url.pathname === "/%26"
+    ) {
+      return withSecurityHeaders(
+        new Response("Not Found", { status: 404 }),
+        { contentType: "text/plain; charset=utf-8", noindex: true },
+      );
+    }
+
+    if (url.pathname === "/sitemap.xml") {
+      const res = await env.ASSETS.fetch(request);
+      return withSecurityHeaders(res, {
+        contentType: "application/xml; charset=utf-8",
+      });
+    }
+
+    if (url.pathname === "/robots.txt") {
+      const res = await env.ASSETS.fetch(request);
+      return withSecurityHeaders(res, {
+        contentType: "text/plain; charset=utf-8",
+      });
     }
 
     if (/\.(mp4|webm|m4v|mov|mp3|ogg|wav|m4a)$/i.test(url.pathname)) {
       return withSecurityHeaders(await serveRangeAwareMedia(request, env, url.pathname));
     }
 
-    return withSecurityHeaders(await env.ASSETS.fetch(request));
+    const assetResponse = await env.ASSETS.fetch(request);
+    if (assetResponse.status === 404 && STATIC_EXT_REGEX.test(url.pathname)) {
+      return withSecurityHeaders(
+        new Response("Not Found", { status: 404 }),
+        { contentType: "text/plain; charset=utf-8", noindex: true },
+      );
+    }
+
+    return withSecurityHeaders(assetResponse);
   },
 };
 

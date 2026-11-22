@@ -138,6 +138,20 @@ async function serveRangeAwareMedia(request, env, pathname) {
   });
 }
 
+function withSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "microphone=(self), camera=(), geolocation=()");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -148,10 +162,10 @@ const worker = {
     }
 
     if (/\.(mp4|webm|m4v|mov|mp3|ogg|wav|m4a)$/i.test(url.pathname)) {
-      return serveRangeAwareMedia(request, env, url.pathname);
+      return withSecurityHeaders(await serveRangeAwareMedia(request, env, url.pathname));
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await env.ASSETS.fetch(request));
   },
 };
 

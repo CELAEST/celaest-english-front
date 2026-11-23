@@ -27,9 +27,9 @@ function originOf(url: string | undefined, fallback: string): string {
  */
 function createSecurityPolicy(mode: string, command: string): string {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiOrigin = originOf(env.VITE_API_URL, "https://celaest-english-back.onrender.com");
+  const apiOrigin = originOf(env.VITE_API_URL, "https://celaest-english-back-8xpa.onrender.com");
   const celaestBackOrigin = originOf(env.VITE_CELAEST_BACK_URL, "https://celaest-back.onrender.com");
-  const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "https://celaest-core.onrender.com");
+  const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "https://celaest-core-c4o7.onrender.com");
   const isDev = command === "serve";
 
   const connectSrc = [
@@ -38,8 +38,8 @@ function createSecurityPolicy(mode: string, command: string): string {
     celaestBackOrigin,
     coreAiOrigin,
     "https://*.onrender.com",
-    "https://celaest-english-back.onrender.com",
-    "https://celaest-core.onrender.com",
+    "https://celaest-english-back-8xpa.onrender.com",
+    "https://celaest-core-c4o7.onrender.com",
     "https://celaest-back.onrender.com",
     "https://cdn.celaest.com",
     "https://*.r2.dev",
@@ -79,7 +79,7 @@ function createSecurityPolicy(mode: string, command: string): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com data:",
     "img-src 'self' data: blob:",
-    `media-src 'self' blob: data: https://*.onrender.com https://celaest-english-back.onrender.com http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
+    `media-src 'self' blob: data: https://*.onrender.com https://celaest-english-back-8xpa.onrender.com http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
     `connect-src ${connectSrc.join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",
@@ -132,7 +132,7 @@ export default defineConfig(({ command, mode }) => ({
         ws: true,
       },
       "/core-ai": {
-        target: "https://celaest-core.onrender.com",
+        target: "https://celaest-core-c4o7.onrender.com",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/core-ai/, "/api/v1"),
       },

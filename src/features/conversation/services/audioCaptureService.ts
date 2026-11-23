@@ -1426,12 +1426,12 @@ export class AudioCaptureService {
     }
 
     if (!isLocalhost || isVitest) {
-      const defaultBackTranscribe = "https://celaest-english-back.onrender.com/api/v1/interview/transcribe";
+      const defaultBackTranscribe = "https://celaest-english-back-8xpa.onrender.com/api/v1/interview/transcribe";
       if (!candidateEndpoints.includes(defaultBackTranscribe)) {
         candidateEndpoints.push(defaultBackTranscribe);
       }
 
-      const publicBackTranscribe = "https://celaest-english-back.onrender.com/ai/audio/transcribe";
+      const publicBackTranscribe = "https://celaest-english-back-8xpa.onrender.com/ai/audio/transcribe";
       if (!candidateEndpoints.includes(publicBackTranscribe)) {
         candidateEndpoints.push(publicBackTranscribe);
       }

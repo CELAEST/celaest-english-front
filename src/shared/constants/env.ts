@@ -28,8 +28,8 @@ const isLocalhost =
     window.location.hostname.endsWith(".localhost") ||
     window.location.hostname.startsWith("192.168."));
 
-const defaultProdApiUrl = "https://celaest-english-back.onrender.com/api/v1";
-const defaultProdCoreAiUrl = "https://celaest-core.onrender.com/api/v1";
+const defaultProdApiUrl = "https://celaest-english-back-8xpa.onrender.com/api/v1";
+const defaultProdCoreAiUrl = "https://celaest-core-c4o7.onrender.com/api/v1";
 const defaultProdCelaestBackUrl = "https://celaest-back.onrender.com/api/v1";
 const defaultProdMarketplaceUrl = "https://dashboard.celaest.com/?tab=marketplace";
 const defaultProdAudioBaseUrl = "https://cdn.celaest.com";

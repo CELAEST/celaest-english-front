@@ -19,7 +19,7 @@ export interface AiRecoveryModalState {
 }
 
 export function useAiUseCaseModals(contextType: "writing" | "reading" | "speaking" | "pathway" | "general" = "general") {
-  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, isByokMode, refreshEntitlement, startDirectCheckout, isCheckoutLoading } = useLinguaEntitlement();
+  const { entitlement, isLoading: isEntitlementLoading, canAccessNode, isByokMode, refreshEntitlement, startDirectCheckout, isCheckoutLoading, checkoutError } = useLinguaEntitlement();
   const [byokOpen, setByokOpen] = useState(false);
   const [byokMode, setByokMode] = useState<ByokModalMode>("promo_byok");
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -148,8 +148,12 @@ export function useAiUseCaseModals(contextType: "writing" | "reading" | "speakin
     runDismissIfPending();
   }, [runDismissIfPending]);
 
+  const isTrial =
+    entitlement.hasAccess &&
+    (entitlement.status === "trial" || entitlement.accessType === "trial");
+
   return {
-    contextType, entitlement, isEntitlementLoading, canAccessNode, refreshEntitlement, isByokMode, isCheckoutLoading, startDirectCheckout, isRefreshingPaywall,
+    contextType, entitlement, isEntitlementLoading, canAccessNode, refreshEntitlement, isByokMode, isTrial, aiRequestsLimit: entitlement.aiRequestsLimit, isCheckoutLoading, checkoutError, startDirectCheckout, isRefreshingPaywall,
     byokOpen, byokMode, paywallOpen, paywallEntitlement: paywallEntitlement ?? entitlement, paywallFeature, recovery,
     openByokModal, openPaywallModal, handleAiFailure, handleRefreshPaywall,
     closeByok, closePaywall, closeRecovery,

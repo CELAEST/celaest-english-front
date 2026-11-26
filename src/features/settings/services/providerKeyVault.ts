@@ -8,6 +8,8 @@ import { AiProviderId } from "../../../domain/entities/AiProvider";
 import { EncryptedLocalStorageVault } from "../../../infrastructure/adapters/storage/EncryptedLocalStorageVault";
 import { PROVIDER_KEYS_CHANGED_EVENT } from "../../../shared/constants/storageEvents";
 
+export { PROVIDER_KEYS_CHANGED_EVENT };
+
 function getCurrentUserId(): string | null {
   if (typeof window === "undefined" || typeof localStorage === "undefined") return null;
   try {

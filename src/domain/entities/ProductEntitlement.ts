@@ -30,6 +30,9 @@ export interface ProductEntitlement {
   status: EntitlementStatus;
   planTier: number;
   aiCloudIncluded: boolean;
+  aiRequestsUsed?: number | undefined;
+  aiRequestsLimit?: number | undefined;
+  quotaExhausted?: boolean | undefined;
   limits?: Record<string, unknown> | undefined;
   expiresAt?: string | undefined;
 }

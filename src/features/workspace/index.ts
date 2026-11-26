@@ -15,3 +15,4 @@ export * from "./components/WeeklyProgressCard";
 export * from "./components/JourneyTimelineCard";
 export * from "./components/LinguaMarketplacePaywallModal";
 export * from "./components/LinguaByokRequiredModal";
+export * from "./components/LinguaTrialStatusBadge";

@@ -22,6 +22,9 @@ interface RawProductEntitlement {
   status?: ProductEntitlement["status"];
   plan_tier?: number;
   ai_cloud_included?: boolean;
+  ai_requests_used?: number;
+  ai_requests_limit?: number;
+  quota_exhausted?: boolean;
   limits?: Record<string, unknown>;
   expires_at?: string;
 }
@@ -113,6 +116,11 @@ export class ApiEntitlementRepository {
         status: raw?.status ?? "none",
         planTier: raw?.plan_tier ?? 0,
         aiCloudIncluded: Boolean(raw?.ai_cloud_included),
+        aiRequestsUsed:
+          typeof raw?.ai_requests_used === "number" ? raw.ai_requests_used : undefined,
+        aiRequestsLimit:
+          typeof raw?.ai_requests_limit === "number" ? raw.ai_requests_limit : undefined,
+        quotaExhausted: Boolean(raw?.quota_exhausted),
         limits: raw?.limits,
         expiresAt: raw?.expires_at,
       };

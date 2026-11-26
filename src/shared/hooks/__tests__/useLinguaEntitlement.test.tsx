@@ -377,4 +377,133 @@ describe("useLinguaEntitlement & LinguaMarketplacePaywallModal", () => {
     await ApiEntitlementRepository.getEntitlement("lingua", { force: true });
     expect(httpSpy).toHaveBeenCalledTimes(2);
   });
+
+  it("activates full 15-day WELCOME trial with 200 Cloud AI requests and falls back to BYOK when quota is exhausted", async () => {
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    const centralCoreSpy = vi.spyOn(providerKeyVault, "setCentralCoreEnabled").mockResolvedValue();
+    const futureExpiry = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+
+    vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValueOnce({
+      ...DEFAULT_FREE_ENTITLEMENT,
+      hasAccess: true,
+      accessType: "trial",
+      status: "trial",
+      aiCloudIncluded: true,
+      aiRequestsUsed: 12,
+      aiRequestsLimit: 200,
+      quotaExhausted: false,
+      expiresAt: futureExpiry,
+    });
+
+    const TrialHarness: React.FC = () => {
+      const { isTrial, trialDaysRemaining, isByokMode, canAccessNode, isLoading } = useLinguaEntitlement();
+      if (isLoading) return <div data-testid="loading">loading</div>;
+      return (
+        <div>
+          <span data-testid="is-trial">{String(isTrial)}</span>
+          <span data-testid="days">{String(trialDaysRemaining)}</span>
+          <span data-testid="byok">{String(isByokMode)}</span>
+          <span data-testid="node1">{String(canAccessNode(1))}</span>
+        </div>
+      );
+    };
+
+    const { unmount } = render(<TrialHarness />);
+    await waitFor(() => {
+      expect(screen.getByTestId("is-trial").textContent).toBe("true");
+    });
+    expect(screen.getByTestId("days").textContent).toBe("15");
+    expect(screen.getByTestId("byok").textContent).toBe("false");
+    expect(screen.getByTestId("node1").textContent).toBe("true");
+    expect(centralCoreSpy).toHaveBeenCalledWith(true);
+    unmount();
+
+    centralCoreSpy.mockClear();
+    vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValueOnce({
+      ...DEFAULT_FREE_ENTITLEMENT,
+      hasAccess: true,
+      accessType: "trial",
+      status: "trial",
+      aiCloudIncluded: true,
+      aiRequestsUsed: 200,
+      aiRequestsLimit: 200,
+      quotaExhausted: true,
+      expiresAt: futureExpiry,
+    });
+
+    render(<TrialHarness />);
+    await waitFor(() => {
+      expect(screen.getByTestId("byok").textContent).toBe("true");
+    });
+    expect(centralCoreSpy).toHaveBeenCalledWith(false);
+  });
+
+  it("triggers 1-click WELCOME trial checkout from LinguaMarketplacePaywallModal", () => {
+    const onCheckout = vi.fn();
+    render(
+      <LinguaMarketplacePaywallModal
+        isOpen={true}
+        entitlement={{
+          ...DEFAULT_FREE_ENTITLEMENT,
+          hasAccess: false,
+          status: "none",
+          productName: "CELAEST Lingua AI",
+        }}
+        onClose={vi.fn()}
+        onCheckout={onCheckout}
+      />,
+    );
+
+    const welcomeBtn = screen.getByRole("button", { name: /Probar 15 días gratis/i });
+    fireEvent.click(welcomeBtn);
+    expect(onCheckout).toHaveBeenCalledWith("WELCOME");
+
+    render(
+      <LinguaByokRequiredModal
+        isOpen={true}
+        mode="quota_exceeded"
+        isTrial={true}
+        aiRequestsLimit={200}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Cuota de Prueba IA Completada/i)).toBeTruthy();
+    expect(screen.getByText(/200 peticiones IA de tu trial WELCOME/i)).toBeTruthy();
+  });
+
+  it("exposes clear errorMessage on paywall when startDirectCheckout hits 409 COUPON_ALREADY_USED", async () => {
+    vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
+    vi.spyOn(ApiEntitlementRepository, "getEntitlement").mockResolvedValue({
+      ...DEFAULT_FREE_ENTITLEMENT,
+      hasAccess: false,
+      status: "none",
+      productId: "lingua-prod-1",
+    });
+    vi.spyOn(ApiEntitlementRepository, "createCheckoutSession").mockRejectedValueOnce(
+      new Error("409 COUPON_ALREADY_USED"),
+    );
+
+    const ErrorHarness: React.FC = () => {
+      const { entitlement, startDirectCheckout, checkoutError } = useLinguaEntitlement();
+      return (
+        <LinguaMarketplacePaywallModal
+          isOpen={true}
+          entitlement={entitlement}
+          errorMessage={checkoutError}
+          onClose={vi.fn()}
+          onCheckout={(code) => void startDirectCheckout(code)}
+        />
+      );
+    };
+
+    render(<ErrorHarness />);
+    const cta = await waitFor(() =>
+      screen.getByRole("button", { name: /Probar 15 días gratis/i }),
+    );
+    fireEvent.click(cta);
+
+    await waitFor(() => {
+      expect(screen.getByText(/ya utilizó la prueba gratuita WELCOME anteriormente/i)).toBeTruthy();
+    });
+  });
 });

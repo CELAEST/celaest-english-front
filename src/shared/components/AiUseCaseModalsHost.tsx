@@ -20,6 +20,8 @@ export const AiUseCaseModalsHost: React.FC<AiUseCaseModalsHostProps> = ({
       <LinguaByokRequiredModal
         isOpen={controller.byokOpen}
         mode={controller.byokMode}
+        isTrial={controller.isTrial}
+        aiRequestsLimit={controller.aiRequestsLimit}
         onClose={controller.closeByok}
         onConfigured={controller.handleByokConfigured}
         onOpenPaywall={controller.handleOpenPaywallFromByok}
@@ -31,6 +33,7 @@ export const AiUseCaseModalsHost: React.FC<AiUseCaseModalsHostProps> = ({
         featureName={controller.paywallFeature}
         isCheckoutLoading={controller.isCheckoutLoading}
         isRefreshing={controller.isRefreshingPaywall}
+        errorMessage={controller.checkoutError}
         onClose={controller.closePaywall}
         onCheckout={controller.startDirectCheckout}
         onRefreshEntitlement={() => void controller.handleRefreshPaywall()}

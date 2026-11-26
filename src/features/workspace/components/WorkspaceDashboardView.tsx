@@ -5,8 +5,11 @@ import { WorkspaceOrbCallouts } from "./WorkspaceOrbCallouts";
 import { WorkspacePromptBar } from "./WorkspacePromptBar";
 import { LinguaMarketplacePaywallModal } from "./LinguaMarketplacePaywallModal";
 import { LinguaByokRequiredModal } from "./LinguaByokRequiredModal";
-import { providerKeyVault } from "../../settings/services/providerKeyVault";
-import { PROVIDER_KEYS_CHANGED_EVENT } from "../../../shared/constants/storageEvents";
+import { LinguaTrialStatusBadge } from "./LinguaTrialStatusBadge";
+import {
+  PROVIDER_KEYS_CHANGED_EVENT,
+  providerKeyVault,
+} from "../../settings/services/providerKeyVault";
 import { ErrorBoundary } from "../../../shared/components/ErrorBoundary";
 import { useCurrentUser } from "../../../shared/hooks/useCurrentUser";
 import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
@@ -28,15 +31,11 @@ const PathwayStudioView = lazy(() =>
 const WritingPracticeView = lazy(() =>
   import("../../writing").then((m) => ({ default: m.WritingPracticeView })),
 );
-const MemoryView = lazy(() =>
-  import("../../memory").then((m) => ({ default: m.MemoryView })),
-);
+const MemoryView = lazy(() => import("../../memory").then((m) => ({ default: m.MemoryView })));
 const SettingsView = lazy(() =>
   import("../../settings").then((m) => ({ default: m.SettingsView })),
 );
-const LabView = lazy(() =>
-  import("../../lab").then((m) => ({ default: m.LabView })),
-);
+const LabView = lazy(() => import("../../lab").then((m) => ({ default: m.LabView })));
 
 // Intelligent Skeletons adapted 1:1 to each feature anatomy (zero generic spinners)
 import { PathwaySkeleton } from "../../pathway/components/PathwaySkeleton";
@@ -69,8 +68,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   defaultTab = import.meta.env.DEV ? "workspace" : "pathway",
   onNavigate,
 }) => {
-  const initialTab =
-    !import.meta.env.DEV && defaultTab === "workspace" ? "pathway" : defaultTab;
+  const initialTab = !import.meta.env.DEV && defaultTab === "workspace" ? "pathway" : defaultTab;
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([initialTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
@@ -79,9 +77,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     entitlement,
     isLoading: isEntitlementLoading,
     hasFullAccess,
+    isTrial,
+    trialDaysRemaining,
     refreshEntitlement,
     startDirectCheckout,
     isCheckoutLoading,
+    checkoutError,
     isByokMode,
   } = useLinguaEntitlement();
   const [paywallOpen, setPaywallOpen] = useState<boolean>(false);
@@ -239,7 +240,12 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
     preferenceStyle: settings.preferenceStyle,
     dailyFocus: settings.dailyFocus,
     profession: userProfession,
-  } as { learningGoal?: string; preferenceStyle?: string; dailyFocus?: string; profession?: string };
+  } as {
+    learningGoal?: string;
+    preferenceStyle?: string;
+    dailyFocus?: string;
+    profession?: string;
+  };
 
   const [memoryInitialCategory, setMemoryInitialCategory] = useState<string | undefined>();
 
@@ -285,7 +291,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 
   const handleLogout = React.useCallback(async () => {
     try {
-      const { SupabaseAuthAdapter } = await import("../../../infrastructure/adapters/auth/SupabaseAuthAdapter");
+      const { SupabaseAuthAdapter } =
+        await import("../../../infrastructure/adapters/auth/SupabaseAuthAdapter");
       await SupabaseAuthAdapter.getInstance().logout();
     } catch (e) {
       console.error("Logout error", e);
@@ -323,7 +330,9 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       <div
         aria-hidden="true"
         className={`absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#030208] transition-opacity duration-300 ${
-          activeTab === "workspace" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+          activeTab === "workspace"
+            ? "opacity-100 visible"
+            : "opacity-0 invisible pointer-events-none"
         }`}
       >
         <video
@@ -365,7 +374,9 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       />
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
-      <main className={`flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden ${activeTab === "workspace" ? "bg-transparent" : "bg-[#000001]"}`}>
+      <main
+        className={`flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden ${activeTab === "workspace" ? "bg-transparent" : "bg-[#000001]"}`}
+      >
         {mountedTabs.has("interview") && (
           <div
             key="interview"
@@ -376,12 +387,16 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             <ErrorBoundary
               fallback={
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#000001] p-8 text-center">
-                  <p className="text-sm text-white/70">Interview se recuperó de un error. Limpia el caché local y reintenta.</p>
+                  <p className="text-sm text-white/70">
+                    Interview se recuperó de un error. Limpia el caché local y reintenta.
+                  </p>
                   <button
                     onClick={() => {
                       try {
                         clearPersistedInterview(user?.id);
-                        localStorage.removeItem("celaest:interview:ai_questions:v2:" + activeUserLevel);
+                        localStorage.removeItem(
+                          "celaest:interview:ai_questions:v2:" + activeUserLevel,
+                        );
                       } catch {}
                       window.location.reload();
                     }}
@@ -413,7 +428,9 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             <ErrorBoundary
               fallback={
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#000001] p-8 text-center">
-                  <p className="text-sm text-white/70">Writing se recuperó de un error inesperado.</p>
+                  <p className="text-sm text-white/70">
+                    Writing se recuperó de un error inesperado.
+                  </p>
                   <button
                     onClick={() => handleBackToWorkspace()}
                     className="rounded-full bg-[#8B5CF6] px-5 py-2 text-sm text-white cursor-pointer"
@@ -446,7 +463,9 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             <ErrorBoundary
               fallback={
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#000001] p-8 text-center">
-                  <p className="text-sm text-white/70">Foundations Guide se recuperó de un error inesperado.</p>
+                  <p className="text-sm text-white/70">
+                    Foundations Guide se recuperó de un error inesperado.
+                  </p>
                   <button
                     onClick={() => handleBackToWorkspace()}
                     className="rounded-full bg-[#8B5CF6] px-5 py-2 text-sm text-white cursor-pointer"
@@ -481,7 +500,9 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             <ErrorBoundary
               fallback={
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#000001] p-8 text-center">
-                  <p className="text-sm text-white/70">Reading se recuperó de un error inesperado.</p>
+                  <p className="text-sm text-white/70">
+                    Reading se recuperó de un error inesperado.
+                  </p>
                   <button
                     onClick={() => handleBackToWorkspace()}
                     className="rounded-full bg-[#8B5CF6] px-5 py-2 text-sm text-white cursor-pointer"
@@ -654,19 +675,35 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             </div>
           )}
 
+        {isTrial && (
+          <div className="fixed bottom-4 right-4 z-30 pointer-events-auto">
+            <LinguaTrialStatusBadge
+              daysRemaining={trialDaysRemaining}
+              requestsUsed={entitlement.aiRequestsUsed}
+              requestsLimit={entitlement.aiRequestsLimit}
+              onUpgradeClick={() => {
+                setPaywallFeature(undefined);
+                setPaywallOpen(true);
+              }}
+            />
+          </div>
+        )}
         <LinguaMarketplacePaywallModal
           isOpen={paywallOpen}
           entitlement={entitlement}
           featureName={paywallFeature}
           isCheckoutLoading={isCheckoutLoading}
           isRefreshing={isEntitlementLoading}
+          errorMessage={checkoutError}
           onClose={() => setPaywallOpen(false)}
           onCheckout={(code) => void startDirectCheckout(code)}
           onRefreshEntitlement={() => void refreshEntitlement()}
         />
         <LinguaByokRequiredModal
           isOpen={activeTab !== "pathway" && activeTab !== "settings" && byokOpen}
-          mode={isByokMode ? "promo_byok" : "trial_choice"}
+          mode={entitlement.quotaExhausted ? "quota_exceeded" : isByokMode ? "promo_byok" : "trial_choice"}
+          isTrial={isTrial}
+          aiRequestsLimit={entitlement.aiRequestsLimit}
           onClose={() => setByokOpen(false)}
           onConfigured={() => setByokOpen(false)}
           onOpenPaywall={() => setPaywallOpen(true)}

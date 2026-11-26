@@ -8,7 +8,9 @@ export interface LinguaByokRequiredModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfigured?: () => void;
-  mode?: "promo_byok" | "trial_choice" | "quota_exceeded";
+  mode?: "promo_byok" | "trial_choice" | "quota_exceeded" | "recovery_byok";
+  isTrial?: boolean;
+  aiRequestsLimit?: number | undefined;
   onOpenPaywall?: () => void;
 }
 
@@ -17,6 +19,8 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
   onClose,
   onConfigured,
   mode = "promo_byok",
+  isTrial = false,
+  aiRequestsLimit,
   onOpenPaywall,
 }) => {
   const provider: AiProviderId = "groq";
@@ -84,16 +88,25 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
 
   const isTrialChoice = mode === "trial_choice";
   const isQuotaExceeded = mode === "quota_exceeded";
+  const trialLimit = typeof aiRequestsLimit === "number" && aiRequestsLimit > 0 ? aiRequestsLimit : 200;
   return (
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
       size="sm"
       icon={<KeyRound className="w-4 h-4 text-[var(--text-accent)]" />}
-      title={isQuotaExceeded ? "Cuota Mensual Completada" : "Motor Groq (Modo BYOK)"}
+      title={
+        isQuotaExceeded
+          ? isTrial
+            ? "Cuota de Prueba IA Completada"
+            : "Cuota Mensual Completada"
+          : "Motor Groq (Modo BYOK)"
+      }
       subtitle={
         isQuotaExceeded
-          ? "Límite mensual de IA Cloud alcanzado"
+          ? isTrial
+            ? `Completaste las ${trialLimit} peticiones IA de tu trial WELCOME`
+            : "Límite mensual de IA Cloud alcanzado"
           : isTrialChoice
             ? "Prueba Gratuita (Base 01)"
             : "Licencia Promocional Activa"
@@ -103,7 +116,9 @@ export const LinguaByokRequiredModal: React.FC<LinguaByokRequiredModalProps> = (
       <div className="space-y-3.5 select-none text-xs">
         <p className="text-[var(--text-secondary)] font-light leading-relaxed">
           {isQuotaExceeded
-            ? "Alcanzaste el límite mensual de respuestas en la nube de tu plan. Conecta tu clave gratuita de Groq para continuar sin límites de inmediato, o revisa los planes disponibles."
+            ? isTrial
+              ? `Has usado las ${trialLimit} respuestas en la nube incluidas en tu prueba gratuita de 15 días. Conecta tu clave gratuita de Groq para continuar sin límites de inmediato, o activa Lingua Pro.`
+              : "Alcanzaste el límite mensual de respuestas en la nube de tu plan. Conecta tu clave gratuita de Groq para continuar sin límites de inmediato, o revisa los planes disponibles."
             : isTrialChoice
               ? "Estás en la prueba gratuita. Conecta tu clave gratuita de Groq para usar el tutor de IA sin costo adicional, o activa Lingua Pro con IA Cloud incluida."
               : "Tu cupón incluye acceso a todo el contenido. Para generar respuestas de IA sin costo adicional, ingresa tu clave gratuita de Groq."}

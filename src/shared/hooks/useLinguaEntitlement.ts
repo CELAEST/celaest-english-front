@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_FREE_ENTITLEMENT,
   ProductEntitlement,
@@ -7,6 +7,7 @@ import { providerKeyVault } from "../../features/settings/services/providerKeyVa
 import { SupabaseAuthAdapter } from "../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { ApiEntitlementRepository } from "../../infrastructure/repositories/ApiEntitlementRepository";
 import { ENV } from "../constants/env";
+import { trackConversionEvent } from "../../infrastructure/monitoring/analytics";
 
 const ENTITLEMENT_SYNC_EVENT = "celaest:entitlement-synced";
 const ENTITLEMENT_STALE_MS = 5 * 60 * 1000;
@@ -77,6 +78,7 @@ async function syncLinguaEntitlement(options?: { force?: boolean }): Promise<Pro
       const isEligibleForCloud =
         resolved.hasAccess &&
         resolved.aiCloudIncluded &&
+        resolved.quotaExhausted !== true &&
         resolved.status !== "expired" &&
         resolved.status !== "revoked" &&
         resolved.status !== "suspended" &&
@@ -152,6 +154,7 @@ export function useLinguaEntitlement() {
   );
   const [isLoading, setIsLoading] = useState<boolean>(!hasFetchedInitial);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<boolean>(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const refreshEntitlement = useCallback(async (force = true) => {
     if (!hasFetchedInitial) setIsLoading(true);
@@ -168,11 +171,13 @@ export function useLinguaEntitlement() {
     let active = true;
     const init = async () => {
       let checkoutReturned = false;
+      let returnedSessionId = "";
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get("session_id");
         if (sessionId) {
           checkoutReturned = true;
+          returnedSessionId = sessionId;
           try {
             await ApiEntitlementRepository.verifyCheckoutSession(sessionId);
           } catch {
@@ -181,12 +186,20 @@ export function useLinguaEntitlement() {
           params.delete("session_id");
           params.delete("success");
           params.delete("product_id");
+          params.delete("trial");
           const query = params.toString();
           const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
           window.history.replaceState({}, "", cleanUrl);
         }
       }
       const resolved = await syncLinguaEntitlement({ force: checkoutReturned });
+      if (checkoutReturned && resolved.hasAccess) {
+        trackConversionEvent("purchase", {
+          transaction_id: returnedSessionId,
+          product_id: resolved.productId || "lingua",
+          app: "lingua",
+        });
+      }
       if (active) {
         setEntitlement(resolved);
         setIsLoading(false);
@@ -218,6 +231,7 @@ export function useLinguaEntitlement() {
   const startDirectCheckout = useCallback(
     async (couponCode?: string) => {
       setIsCheckoutLoading(true);
+      setCheckoutError(null);
       try {
         const returnUrl =
           typeof window !== "undefined" ? window.location.origin : "";
@@ -228,12 +242,32 @@ export function useLinguaEntitlement() {
             couponCode,
           );
           if (session.checkoutUrl && typeof window !== "undefined") {
+            trackConversionEvent("begin_checkout", {
+              product_id: entitlement.productId,
+              app: "lingua",
+            });
             window.location.assign(session.checkoutUrl);
             return;
           }
         }
         if (typeof window !== "undefined") {
           window.open(ENV.marketplaceDashboardUrl, "_blank", "noopener,noreferrer");
+        }
+      } catch (err) {
+        const msg = String(err).toLowerCase();
+        if (
+          msg.includes("409") ||
+          msg.includes("already") ||
+          msg.includes("coupon_already_used") ||
+          msg.includes("usado")
+        ) {
+          setCheckoutError(
+            "Tu cuenta ya utilizó la prueba gratuita WELCOME anteriormente.",
+          );
+        } else {
+          setCheckoutError(
+            "No se pudo iniciar el checkout. Inténtalo de nuevo.",
+          );
         }
       } finally {
         setIsCheckoutLoading(false);
@@ -247,15 +281,31 @@ export function useLinguaEntitlement() {
     [entitlement.hasAccess],
   );
 
+  const isTrial =
+    entitlement.hasAccess &&
+    (entitlement.status === "trial" || entitlement.accessType === "trial");
+
+  const trialDaysRemaining = useMemo(() => {
+    if (!isTrial || !entitlement.expiresAt) return null;
+    const msLeft = new Date(entitlement.expiresAt).getTime() - Date.now();
+    if (!Number.isFinite(msLeft) || msLeft <= 0) return 0;
+    return Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+  }, [isTrial, entitlement.expiresAt]);
+
   return {
     entitlement,
     isLoading,
     hasFullAccess: entitlement.hasAccess,
-    isByokMode: entitlement.hasAccess && !entitlement.aiCloudIncluded,
+    isTrial,
+    trialDaysRemaining,
+    isByokMode:
+      entitlement.hasAccess &&
+      (!entitlement.aiCloudIncluded || Boolean(entitlement.quotaExhausted)),
     canAccessNode,
     refreshEntitlement,
     startDirectCheckout,
     isCheckoutLoading,
+    checkoutError,
   };
 }
 

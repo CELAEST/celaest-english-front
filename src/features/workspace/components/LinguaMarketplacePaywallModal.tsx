@@ -7,6 +7,7 @@ import { ENV } from "../../../shared/constants/env";
 export interface LinguaMarketplacePaywallModalProps {
   isOpen: boolean; entitlement: ProductEntitlement; featureName?: string | undefined;
   isCheckoutLoading?: boolean | undefined; isRefreshing?: boolean | undefined;
+  errorMessage?: string | null | undefined;
   onClose: () => void; onCheckout: (couponCode?: string) => void; onRefreshEntitlement?: (() => void) | undefined;
 }
 
@@ -17,24 +18,45 @@ const INCLUDED_CAPABILITIES = [
 ];
 
 export const LinguaMarketplacePaywallModal: React.FC<LinguaMarketplacePaywallModalProps> = ({
-  isOpen, entitlement, featureName, isCheckoutLoading = false, isRefreshing = false, onClose, onCheckout, onRefreshEntitlement,
+  isOpen, entitlement, featureName, isCheckoutLoading = false, isRefreshing = false, errorMessage = null, onClose, onCheckout, onRefreshEntitlement,
 }) => {
   const [coupon, setCoupon] = useState("");
   const isExpired = entitlement.status === "expired";
+  const isActiveTrial =
+    entitlement.hasAccess &&
+    (entitlement.status === "trial" || entitlement.accessType === "trial");
   const isRevoked = entitlement.status === "revoked" || entitlement.status === "suspended" || entitlement.status === "cancelled";
-  const statusLabel = isRevoked ? "Licencia revocada o suspendida" : isExpired ? "Suscripción vencida" : "Licencia CELAEST Marketplace";
-  const titleText = isRevoked ? "Acceso Restringido" : isExpired ? "Tu Licencia ha Expirado" : (featureName ? `Desbloquea ${featureName}` : `Desbloquea ${entitlement.productName || "Lingua Completo"}`);
+  const canClaimWelcomeTrial = !entitlement.hasAccess && (!entitlement.status || entitlement.status === "none");
+  const statusLabel = isRevoked
+    ? "Licencia revocada o suspendida"
+    : isExpired
+      ? "Prueba o suscripción finalizada"
+      : isActiveTrial
+        ? "Prueba gratuita WELCOME activa"
+        : "Licencia CELAEST Marketplace";
+  const titleText = isRevoked
+    ? "Acceso Restringido"
+    : isExpired
+      ? "Tu Licencia ha Expirado"
+      : isActiveTrial
+        ? "Actualiza a Lingua Completo"
+        : (featureName ? `Desbloquea ${featureName}` : `Desbloquea ${entitlement.productName || "Lingua Completo"}`);
   const desc = isRevoked
     ? "Tu licencia fue revocada o suspendida. Reactívala o adquiere una nueva en CELAEST Marketplace para continuar."
     : isExpired
-      ? `Tu periodo de acceso finalizó${entitlement.expiresAt ? ` el ${new Date(entitlement.expiresAt).toLocaleDateString()}` : ""}. Renueva para retomar tu progreso.`
-      : featureName ? `Activa tu licencia para desbloquear ${featureName} y todas las herramientas avanzadas.` : "Completaste la Base 01 de prueba. Adquiere tu licencia para desbloquear todas las bases y módulos.";
+      ? `Tu periodo de acceso finalizó${entitlement.expiresAt ? ` el ${new Date(entitlement.expiresAt).toLocaleDateString()}` : ""}. Activa tu licencia completa para retomar todas tus bases y progreso.`
+      : isActiveTrial
+        ? "Tu prueba gratuita de 15 días está activa. Cuando estés listo, desbloquea acceso definitivo con IA Cloud ampliada."
+        : featureName ? `Activa tu licencia para desbloquear ${featureName} y todas las herramientas avanzadas.` : "Completaste la Base 01 de prueba. Reclama 15 días gratis con WELCOME o adquiere tu licencia completa.";
 
   const hasCoupon = coupon.trim().length > 0;
   const btnText = isCheckoutLoading ? (hasCoupon ? "Canjeando cupón..." : "Conectando...") : hasCoupon ? "Canjear cupón y desbloquear" : isExpired || isRevoked ? "Renovar Acceso Ahora" : "Desbloquear Acceso Ahora";
 
   const footerNode = (
     <div className="flex flex-col gap-2.5">
+      {errorMessage && (
+        <span className="text-[11px] text-[var(--status-danger)] font-mono">{errorMessage}</span>
+      )}
       <button
         type="button" disabled={isCheckoutLoading} onClick={() => onCheckout(coupon.trim() || undefined)}
         style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-button-glow)" }}
@@ -70,9 +92,25 @@ export const LinguaMarketplacePaywallModal: React.FC<LinguaMarketplacePaywallMod
             </div>
           ))}
         </div>
+        {canClaimWelcomeTrial && (
+          <button
+            type="button"
+            disabled={isCheckoutLoading}
+            onClick={() => onCheckout("WELCOME")}
+            className="w-full rounded-xl border border-[var(--accent-violet-400)] bg-[var(--surface-2)] px-3.5 py-2.5 text-left transition-all hover:border-[var(--accent-violet-500)] cursor-pointer disabled:opacity-50"
+          >
+            <div className="flex items-center justify-between text-xs font-medium text-[var(--text-primary)]">
+              <span>Probar 15 días gratis (cupón WELCOME)</span>
+              <span className="font-mono text-[10px] text-[var(--text-accent)] uppercase">$0 · Sin tarjeta</span>
+            </div>
+            <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 font-light">
+              Todas las bases desbloqueadas + 200 peticiones IA incluidas.
+            </p>
+          </button>
+        )}
         <div className="flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-0)]/80 px-3 py-2">
           <Tag className="w-3.5 h-3.5 text-[var(--accent-violet-400)] shrink-0" />
-          <input type="text" value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="¿Tienes un cupón? (ej. PROMO100)" className="bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] font-mono outline-none flex-1 uppercase tracking-wider" />
+          <input type="text" value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="¿Tienes un cupón? (ej. WELCOME o PROMO100)" className="bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] font-mono outline-none flex-1 uppercase tracking-wider" />
           {coupon && (<button type="button" onClick={() => setCoupon("")} className="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] cursor-pointer">Limpiar</button>)}
         </div>
         <div className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] bg-[var(--surface-0)]/80 px-4 py-2.5">

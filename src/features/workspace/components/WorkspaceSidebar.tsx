@@ -10,6 +10,7 @@ export interface WorkspaceSidebarProps {
   activeItem?: string;
   onSelectNav?: (route: string) => void;
   hasAccess?: boolean;
+  cinemaDimmed?: boolean;
 }
 
 const GATED_ITEMS = new Set(["interview", "writing", "reading"]);
@@ -410,11 +411,14 @@ const MobileBottomDock: React.FC<{
   activeItem: string;
   onSelectNav?: ((route: string) => void) | undefined;
   accentVariant?: string | undefined;
-}> = ({ navItems, activeItem, onSelectNav, accentVariant = "bauhaus_geometry" }) => {
+  cinemaDimmed?: boolean | undefined;
+}> = ({ navItems, activeItem, onSelectNav, accentVariant = "bauhaus_geometry", cinemaDimmed = false }) => {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-1.5 sm:px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none"
+      className={`lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-1.5 sm:px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none transition-all duration-300 ${
+        cinemaDimmed ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
+      }`}
       style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
     >
       {navItems.map((item) => {
@@ -467,7 +471,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   activeItem = import.meta.env.DEV ? "workspace" : "pathway",
   onSelectNav,
   hasAccess = true,
+  cinemaDimmed = false,
 }) => {
+  const cinemaRailClass = cinemaDimmed
+    ? "opacity-20 hover:opacity-100 transition-opacity duration-500"
+    : "opacity-100 transition-opacity duration-300";
   const [isHovered, setIsHovered] = useState(false);
   const [activeVariant, setActiveVariant] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -572,7 +580,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   if (activeVariant === "architectural_monolith") {
     return (
       <>
-        <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
+        <div className={`hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center ${cinemaRailClass}`}>
         <motion.aside
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -693,6 +701,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         activeItem={activeItem}
         onSelectNav={onSelectNav}
         accentVariant="architectural_monolith"
+        cinemaDimmed={cinemaDimmed}
       />
     </>
     );
@@ -704,7 +713,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   if (activeVariant === "swiss_editorial") {
     return (
       <>
-        <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
+        <div className={`hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center ${cinemaRailClass}`}>
         <motion.aside
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -828,6 +837,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         activeItem={activeItem}
         onSelectNav={onSelectNav}
         accentVariant="swiss_editorial"
+        cinemaDimmed={cinemaDimmed}
       />
     </>
     );
@@ -846,7 +856,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   // =========================================================================
   return (
     <>
-      <div className="hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center">
+      <div className={`hidden lg:flex relative shrink-0 my-auto ml-6 sm:ml-10 lg:ml-12 z-50 w-[72px] h-auto min-h-[540px] max-h-[calc(100vh-48px)] items-center ${cinemaRailClass}`}>
       <motion.aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -978,6 +988,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       activeItem={activeItem}
       onSelectNav={onSelectNav}
       accentVariant="bauhaus_geometry"
+      cinemaDimmed={cinemaDimmed}
     />
   </>
   );

@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProfessorAnimState } from "../../../design-system/components/Professor3D/professorTypes";
+import { ApiError } from "../../../infrastructure/http/ApiError";
 import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
 import { AudioCaptureService } from "../../conversation/services/audioCaptureService";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { BilingualVoicePipeline } from "../services/bilingualVoicePipeline";
+import { FastMicVadRecorder } from "../services/fastMicVadRecorder";
 import {
   CoachProfileContext,
   generateCoachReply,
   generateOpeningTurn,
   generateSessionTakeaways,
 } from "../services/liveCoachAiService";
+import { LiveCoachWsClient, LiveWsServerEvent } from "../services/liveCoachWsClient";
+import { RealtimeAudioPlayer } from "../services/realtimeAudioPlayer";
 import { ConversationTurn, LiveCallPhase, LiveSessionSummary } from "../types";
-
-const SILENCE_COMMIT_MS = 1350;
 
 export function mapPhaseToProfessorState(phase: LiveCallPhase): ProfessorAnimState {
   switch (phase) {
@@ -31,159 +33,223 @@ export function mapPhaseToProfessorState(phase: LiveCallPhase): ProfessorAnimSta
   }
 }
 
-export function useLiveRobotConversation(profile: CoachProfileContext) {
+export function useLiveRobotConversation(profile: CoachProfileContext, isViewActive = true) {
   const modalController = useAiUseCaseModals("speaking");
   const { handleAiFailure, isByokMode, openByokModal } = modalController;
 
   const [phase, setPhase] = useState<LiveCallPhase>("idle");
-  const [liveCaption, setLiveCaption] = useState<string>("");
-  const [userDraft, setUserDraft] = useState<string>("");
   const [micLevel, setMicLevel] = useState<number>(0);
   const [summary, setSummary] = useState<LiveSessionSummary | null>(null);
   const [micModalOpen, setMicModalOpen] = useState<boolean>(false);
 
   const callActiveRef = useRef<boolean>(false);
-  const committingRef = useRef<boolean>(false);
   const turnsRef = useRef<ConversationTurn[]>([]);
-  const draftRef = useRef<string>("");
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const meterIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const voicedFramesRef = useRef<number>(0);
-  const silentSinceRef = useRef<number>(0);
   const profileRef = useRef<CoachProfileContext>(profile);
   profileRef.current = profile;
 
-  const clearTimers = useCallback(() => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
+  const wsClientRef = useRef<LiveCoachWsClient | null>(null);
+  const audioPlayerRef = useRef<RealtimeAudioPlayer | null>(null);
+  const vadRecorderRef = useRef<FastMicVadRecorder | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  if (!wsClientRef.current) wsClientRef.current = new LiveCoachWsClient();
+  if (!audioPlayerRef.current) audioPlayerRef.current = new RealtimeAudioPlayer();
+  if (!vadRecorderRef.current) vadRecorderRef.current = new FastMicVadRecorder();
+
+  // Pre-warm Go WebSocket connection on mount/tab-focus so "Iniciar" has 0ms handshake delay
+  useEffect(() => {
+    if (isViewActive) {
+      wsClientRef.current?.prewarm();
     }
-    if (meterIntervalRef.current) {
-      clearInterval(meterIntervalRef.current);
-      meterIntervalRef.current = null;
-    }
+  }, [isViewActive]);
+
+  const enterListeningState = useCallback(() => {
+    if (!callActiveRef.current) return;
+    setPhase("user_listening");
+    vadRecorderRef.current?.setMode("listening");
   }, []);
 
-  const beginListeningRef = useRef<() => void>(() => {});
-
-  const commitUserTurn = useCallback(async () => {
-    if (!callActiveRef.current || committingRef.current) return;
-    committingRef.current = true;
-    clearTimers();
+  const teardownHardware = useCallback(() => {
+    callActiveRef.current = false;
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
     setMicLevel(0);
+    audioPlayerRef.current?.stop();
+    vadRecorderRef.current?.stop();
+    BilingualVoicePipeline.stop();
+    AudioCaptureService.stop();
+    AudioCaptureService.releaseMicStream();
+  }, []);
 
-    let finalSpoken = draftRef.current.trim();
-    const captured = await AudioCaptureService.stopAndGetAudio().catch(() => null);
-    if (!finalSpoken && captured?.audioBlob && captured.hadVoicedSpeech) {
-      setPhase("thinking");
-      const stt = await AudioCaptureService.transcribeAudio(captured.audioBlob).catch(() => null);
-      finalSpoken = stt?.text?.trim() || "";
-    }
-    if (captured?.audioUrl) {
-      try {
-        URL.revokeObjectURL(captured.audioUrl);
-      } catch {}
-    }
+  useEffect(() => {
+    const player = audioPlayerRef.current!;
+    const ws = wsClientRef.current!;
 
-    if (!callActiveRef.current) {
-      committingRef.current = false;
-      return;
-    }
+    player.setOnTurnDrained(() => {
+      if (callActiveRef.current) {
+        enterListeningState();
+      }
+    });
 
-    if (!finalSpoken) {
-      committingRef.current = false;
-      beginListeningRef.current();
-      return;
-    }
-
-    const userTurn: ConversationTurn = {
-      id: `u_${Date.now()}`,
-      role: "user",
-      text: finalSpoken,
-      timestamp: Date.now(),
-    };
-    turnsRef.current = [...turnsRef.current, userTurn];
-    setUserDraft("");
-    draftRef.current = "";
-    setPhase("thinking");
-
-    try {
-      const reply = await generateCoachReply(
-        profileRef.current,
-        turnsRef.current.slice(0, -1),
-        finalSpoken,
-      );
-      if (!callActiveRef.current) return;
-      turnsRef.current = [
-        ...turnsRef.current,
-        { id: `c_${Date.now()}`, role: "coach", text: reply, timestamp: Date.now() },
-      ];
-      setPhase("robot_speaking");
-      await BilingualVoicePipeline.speakFluid(reply, (s) => setLiveCaption(s));
-      committingRef.current = false;
-      if (callActiveRef.current) beginListeningRef.current();
-    } catch (err) {
-      committingRef.current = false;
-      callActiveRef.current = false;
-      setPhase("idle");
-      void handleAiFailure(err, () => {}, { featureName: "Conversación en Vivo con Liam" });
-    }
-  }, [clearTimers, handleAiFailure]);
-
-  const beginListening = useCallback(() => {
-    if (!callActiveRef.current) return;
-    committingRef.current = false;
-    draftRef.current = "";
-    setUserDraft("");
-    voicedFramesRef.current = 0;
-    silentSinceRef.current = 0;
-    setPhase("user_listening");
-
-    AudioCaptureService.startRecognition({
-      lang: "en-US",
-      roleName: profileRef.current.profession,
-      onTranscript: (text) => {
-        if (!callActiveRef.current || committingRef.current) return;
-        const clean = text.trim();
-        draftRef.current = clean;
-        setUserDraft(clean);
-        if (clean.length > 0) {
-          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-          silenceTimerRef.current = setTimeout(() => {
-            void commitUserTurn();
-          }, SILENCE_COMMIT_MS);
-        }
+    ws.setHandlers({
+      onBinaryAudio: (buf) => {
+        if (!callActiveRef.current) return;
+        setPhase("robot_speaking");
+        vadRecorderRef.current?.setMode("robot_speaking");
+        player.onBinaryFrame(buf);
       },
-      onEnd: () => {
-        if (!callActiveRef.current || committingRef.current) return;
-        if (draftRef.current.trim().length > 0) {
-          void commitUserTurn();
-        } else {
-          setTimeout(() => {
-            if (callActiveRef.current && !committingRef.current) beginListeningRef.current();
-          }, 180);
+      onJsonEvent: (ev: LiveWsServerEvent) => {
+        if (!callActiveRef.current) return;
+
+        switch (ev.type) {
+          case "phase":
+            if (ev.phase === "thinking") {
+              setPhase("thinking");
+              vadRecorderRef.current?.setMode("thinking");
+            } else if (ev.phase === "speaking") {
+              setPhase("robot_speaking");
+              vadRecorderRef.current?.setMode("robot_speaking");
+            } else if (ev.phase === "listening" && !player.isPlaying) {
+              enterListeningState();
+            }
+            break;
+
+          case "user_transcript":
+            if (ev.text && ev.text.trim()) {
+              turnsRef.current = [
+                ...turnsRef.current,
+                { id: `u_${Date.now()}`, role: "user", text: ev.text.trim(), timestamp: Date.now() },
+              ];
+            }
+            break;
+
+          case "clause_start":
+            if (ev.turnId && ev.clauseId) {
+              setPhase("robot_speaking");
+              vadRecorderRef.current?.setMode("robot_speaking");
+              player.onClauseStart(ev.turnId, ev.clauseId);
+            }
+            break;
+
+          case "clause_end":
+            if (ev.turnId && ev.clauseId) {
+              player.onClauseEnd(ev.turnId, ev.clauseId);
+            }
+            break;
+
+          case "turn_done":
+            if (ev.fullText && ev.fullText.trim()) {
+              turnsRef.current = [
+                ...turnsRef.current,
+                {
+                  id: `c_${Date.now()}`,
+                  role: "coach",
+                  text: ev.fullText.trim(),
+                  timestamp: Date.now(),
+                },
+              ];
+            }
+            if (ev.turnId) {
+              player.onTurnDone(ev.turnId);
+            } else if (!player.isPlaying) {
+              enterListeningState();
+            }
+            break;
+
+          case "interrupted":
+            player.stop();
+            enterListeningState();
+            break;
+
+          case "error": {
+            ws.sendInterrupt();
+            teardownHardware();
+            setPhase("idle");
+            const status =
+              ev.code === "AI_QUOTA_EXCEEDED"
+                ? 429
+                : ev.code === "AI_BYOK_REQUIRED" || ev.code === "AI_TRIAL_ACCESS_REQUIRED"
+                  ? 402
+                  : 503;
+            const apiErr = new ApiError(
+              ev.message || "Error en conversación en vivo",
+              status,
+              ev.code,
+              { code: ev.code },
+            );
+            void handleAiFailure(apiErr, () => {}, { featureName: "Conversación en Vivo con Liam" });
+            break;
+          }
         }
       },
     });
 
-    if (meterIntervalRef.current) clearInterval(meterIntervalRef.current);
-    meterIntervalRef.current = setInterval(() => {
-      if (!callActiveRef.current || committingRef.current) return;
-      const vol = AudioCaptureService.getMicVolume();
-      setMicLevel(vol);
-      if (vol > 0.06) {
-        voicedFramesRef.current += 1;
-        silentSinceRef.current = 0;
-      } else if (voicedFramesRef.current >= 5 && !draftRef.current.trim()) {
-        if (silentSinceRef.current === 0) silentSinceRef.current = Date.now();
-        else if (Date.now() - silentSinceRef.current >= 1450) {
-          void commitUserTurn();
-        }
-      }
-    }, 120);
-  }, [commitUserTurn]);
+    return () => {
+      player.setOnTurnDrained(null);
+      ws.setHandlers(null);
+    };
+  }, [enterListeningState, handleAiFailure, teardownHardware]);
 
-  beginListeningRef.current = beginListening;
+  const runHttpFallbackLoop = useCallback(async () => {
+    try {
+      const opening = await generateOpeningTurn(profileRef.current);
+      if (!callActiveRef.current) return;
+      turnsRef.current = [
+        { id: `c_${Date.now()}`, role: "coach", text: opening, timestamp: Date.now() },
+      ];
+      setPhase("robot_speaking");
+      await BilingualVoicePipeline.speakFluid(opening);
+      if (!callActiveRef.current) return;
+
+      const listenOnce = () => {
+        if (!callActiveRef.current) return;
+        setPhase("user_listening");
+        let draft = "";
+        AudioCaptureService.startRecognition({
+          lang: "en-US",
+          roleName: profileRef.current.profession,
+          onTranscript: (txt) => {
+            draft = txt.trim();
+            if (!draft) return;
+            if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+            fallbackTimerRef.current = setTimeout(async () => {
+              if (!callActiveRef.current || !draft) return;
+              const spoken = draft;
+              draft = "";
+              AudioCaptureService.stop();
+              turnsRef.current = [
+                ...turnsRef.current,
+                { id: `u_${Date.now()}`, role: "user", text: spoken, timestamp: Date.now() },
+              ];
+              setPhase("thinking");
+              const reply = await generateCoachReply(
+                profileRef.current,
+                turnsRef.current.slice(0, -1),
+                spoken,
+              );
+              if (!callActiveRef.current) return;
+              turnsRef.current = [
+                ...turnsRef.current,
+                { id: `c_${Date.now()}`, role: "coach", text: reply, timestamp: Date.now() },
+              ];
+              setPhase("robot_speaking");
+              await BilingualVoicePipeline.speakFluid(reply);
+              if (callActiveRef.current) listenOnce();
+            }, 650);
+          },
+          onEnd: () => {},
+        });
+      };
+
+      listenOnce();
+    } catch (err) {
+      teardownHardware();
+      setPhase("idle");
+      void handleAiFailure(err, () => {}, { featureName: "Conversación en Vivo con Liam" });
+    }
+  }, [handleAiFailure, teardownHardware]);
 
   const startCall = useCallback(async () => {
     if (callActiveRef.current) return;
@@ -199,75 +265,80 @@ export function useLiveRobotConversation(profile: CoachProfileContext) {
     AudioCaptureService.unlockAudioInputContextSync();
     setSummary(null);
 
+    const wsConnected = await wsClientRef.current!.ensureConnected(2200);
+
+    if (wsConnected) {
+      const micStarted = await vadRecorderRef.current!.start({
+        onVolume: (lvl) => setMicLevel(lvl),
+        onUtteranceReady: (blob) => {
+          if (!callActiveRef.current) return;
+          setPhase("thinking");
+          vadRecorderRef.current?.setMode("thinking");
+          wsClientRef.current?.sendAudioBlob(blob);
+        },
+        onBargeIn: () => {
+          if (!callActiveRef.current) return;
+          audioPlayerRef.current?.stop();
+          wsClientRef.current?.sendInterrupt();
+          setPhase("user_listening");
+        },
+      });
+
+      if (!micStarted) {
+        setMicModalOpen(true);
+        return;
+      }
+
+      callActiveRef.current = true;
+      turnsRef.current = [];
+      setPhase("connecting");
+      vadRecorderRef.current!.setMode("thinking");
+
+      const sent = await wsClientRef.current!.sendStart(profileRef.current);
+      if (!sent) {
+        await runHttpFallbackLoop();
+      }
+      return;
+    }
+
+    // Fallback when WebSocket upgrade is unavailable (e.g. local test environment)
     const micOk = await AudioCaptureService.initMicrophone();
     if (!micOk) {
       setMicModalOpen(true);
       return;
     }
-
     callActiveRef.current = true;
     turnsRef.current = [];
     setPhase("connecting");
-    setLiveCaption("");
-
-    try {
-      const opening = await generateOpeningTurn(profileRef.current);
-      if (!callActiveRef.current) return;
-      turnsRef.current = [
-        { id: `c_${Date.now()}`, role: "coach", text: opening, timestamp: Date.now() },
-      ];
-      setPhase("robot_speaking");
-      await BilingualVoicePipeline.speakFluid(opening, (s) => setLiveCaption(s));
-      if (callActiveRef.current) beginListening();
-    } catch (err) {
-      callActiveRef.current = false;
-      setPhase("idle");
-      AudioCaptureService.releaseMicStream();
-      void handleAiFailure(err, () => void startCall(), {
-        featureName: "Conversación en Vivo con Liam",
-      });
-    }
-  }, [beginListening, handleAiFailure, isByokMode, openByokModal]);
+    await runHttpFallbackLoop();
+  }, [isByokMode, openByokModal, runHttpFallbackLoop]);
 
   const stopCall = useCallback(async () => {
-    callActiveRef.current = false;
-    committingRef.current = false;
-    clearTimers();
-    setMicLevel(0);
-    setUserDraft("");
-    BilingualVoicePipeline.stop();
-    AudioCaptureService.stop();
-    AudioCaptureService.releaseMicStream();
+    wsClientRef.current?.sendInterrupt();
+    teardownHardware();
 
     const snapshot = [...turnsRef.current];
     const hasUserTurns = snapshot.some((t) => t.role === "user" && t.text.trim().length > 0);
     setPhase("idle");
-    setLiveCaption("");
-    if (!hasUserTurns) {
-      return;
-    }
+    if (!hasUserTurns) return;
 
     const recap = await generateSessionTakeaways(profileRef.current, snapshot).catch(() => null);
-    if (!callActiveRef.current && recap) {
+    if (recap && !callActiveRef.current) {
       setSummary(recap);
     }
-  }, [clearTimers]);
+  }, [teardownHardware]);
 
   useEffect(() => {
     return () => {
-      callActiveRef.current = false;
-      clearTimers();
-      BilingualVoicePipeline.stop();
-      AudioCaptureService.cleanup();
+      teardownHardware();
+      wsClientRef.current?.close();
     };
-  }, [clearTimers]);
+  }, [teardownHardware]);
 
   return {
     phase,
     isCallActive: phase !== "idle" && phase !== "summarizing",
     professorState: mapPhaseToProfessorState(phase),
-    liveCaption,
-    userDraft,
     micLevel,
     summary,
     dismissSummary: () => setSummary(null),

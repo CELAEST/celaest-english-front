@@ -4,4 +4,7 @@ export * from "./components/LiveCallPrimaryButton";
 export * from "./components/LiveSessionSummaryCard";
 export * from "./hooks/useLiveRobotConversation";
 export * from "./services/bilingualVoicePipeline";
+export * from "./services/fastMicVadRecorder";
 export * from "./services/liveCoachAiService";
+export * from "./services/liveCoachWsClient";
+export * from "./services/realtimeAudioPlayer";

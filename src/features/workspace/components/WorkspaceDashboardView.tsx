@@ -71,6 +71,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
 }) => {
   const initialTab = !import.meta.env.DEV && defaultTab === "workspace" ? "live" : defaultTab;
   const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const [isLiveCallActive, setIsLiveCallActive] = useState<boolean>(false);
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([initialTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -365,16 +366,15 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         <div className="absolute inset-0 bg-gradient-to-b from-[#030208]/35 via-transparent to-[#030208]/85 pointer-events-none" />
       </div>
 
-      {/* 2. Left Sidebar Navigation (Hidden when inside immersive full-screen Live Robot) */}
-      {activeTab !== "live" && (
-        <WorkspaceSidebar
-          userName={activeUserName}
-          userLevel={activeUserLevel}
-          activeItem={activeTab}
-          onSelectNav={handleSelectNav}
-          hasAccess={hasFullAccess}
-        />
-      )}
+      {/* 2. Left Sidebar Navigation (Floating icon rail with automatic Cinema Mode dim during active voice call) */}
+      <WorkspaceSidebar
+        userName={activeUserName}
+        userLevel={activeUserLevel}
+        activeItem={activeTab}
+        onSelectNav={handleSelectNav}
+        hasAccess={hasFullAccess}
+        cinemaDimmed={activeTab === "live" && isLiveCallActive}
+      />
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
       <main
@@ -393,7 +393,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
               profession={userProfession}
               learningGoal={settings.learningGoal || "Professional Communication & Fluency"}
               isActive={activeTab === "live"}
-              onExit={() => handleSelectNav("pathway")}
+              onCallActiveChange={setIsLiveCallActive}
             />
           </div>
         )}

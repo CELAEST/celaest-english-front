@@ -8,7 +8,7 @@ import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/Supab
 import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
 import { DEFAULT_FREE_ENTITLEMENT } from "../../../domain/entities/ProductEntitlement";
 
-describe("LinguaLiveRobotView — Immersive First Feature", () => {
+describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
@@ -34,8 +34,8 @@ describe("LinguaLiveRobotView — Immersive First Feature", () => {
     ]);
   });
 
-  it("renders full-screen Robot with single Iniciar/Parar button and clean exit trigger", async () => {
-    const onExit = vi.fn();
+  it("renders centered Robot with Iniciar/Parar and triggers Cinema Mode active state", async () => {
+    const onCallActiveChange = vi.fn();
     vi.spyOn(AudioCaptureService, "initMicrophone").mockResolvedValue(true);
     vi.spyOn(AudioCaptureService, "startRecognition").mockReturnValue(null);
     vi.spyOn(BilingualVoicePipeline, "speakFluid").mockResolvedValue();
@@ -43,7 +43,14 @@ describe("LinguaLiveRobotView — Immersive First Feature", () => {
       "Hey there! What are you working on today?",
     );
 
-    render(<LinguaLiveRobotView userName="Esteban" userLevel="B1" onExit={onExit} />);
+    const { rerender } = render(
+      <LinguaLiveRobotView
+        userName="Esteban"
+        userLevel="B1"
+        isActive={true}
+        onCallActiveChange={onCallActiveChange}
+      />,
+    );
 
     expect(screen.getByTestId("professor-3d-stage")).toBeTruthy();
     const startBtn = screen.getByRole("button", { name: /Iniciar/i });
@@ -52,8 +59,21 @@ describe("LinguaLiveRobotView — Immersive First Feature", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Parar/i })).toBeTruthy();
     });
+    expect(onCallActiveChange).toHaveBeenCalledWith(true);
 
-    fireEvent.click(screen.getByRole("button", { name: /Salir a módulos/i }));
-    expect(onExit).toHaveBeenCalledTimes(1);
+    // Navigating to another module via sidebar (isActive=false) cleanly stops the call
+    rerender(
+      <LinguaLiveRobotView
+        userName="Esteban"
+        userLevel="B1"
+        isActive={false}
+        onCallActiveChange={onCallActiveChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Iniciar/i })).toBeTruthy();
+    });
+    expect(onCallActiveChange).toHaveBeenLastCalledWith(false);
   });
 });

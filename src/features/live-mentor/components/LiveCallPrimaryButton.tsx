@@ -16,15 +16,15 @@ export const LiveCallPrimaryButton: React.FC<LiveCallPrimaryButtonProps> = ({
   onStop,
 }) => {
   const isActive = phase !== "idle" && phase !== "summarizing";
-  const ringScale = phase === "user_listening" ? 1 + Math.min(0.28, micLevel * 1.35) : 1;
+  const ringScale = phase === "user_listening" ? 1 + Math.min(0.32, micLevel * 1.45) : 1;
 
   return (
-    <div className="relative z-20 flex items-center justify-center pb-6 sm:pb-8 select-none">
+    <div className="relative z-20 flex items-center justify-center shrink-0 select-none">
       <div className="relative flex items-center justify-center">
         {phase === "user_listening" && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-full transition-transform duration-100"
+            className="pointer-events-none absolute inset-0 rounded-full transition-transform duration-75"
             style={{
               transform: `scale(${ringScale})`,
               background: "var(--accent-violet-subtle)",
@@ -36,7 +36,7 @@ export const LiveCallPrimaryButton: React.FC<LiveCallPrimaryButtonProps> = ({
         <button
           type="button"
           onClick={isActive ? onStop : onStart}
-          className="relative h-12 px-7 rounded-full font-medium text-xs tracking-[0.14em] uppercase inline-flex items-center justify-center gap-2.5 transition-all active:scale-[0.97] cursor-pointer"
+          className="relative h-12 px-8 rounded-full font-medium text-xs tracking-[0.16em] uppercase inline-flex items-center justify-center gap-2.5 transition-all active:scale-[0.97] cursor-pointer"
           style={
             isActive
               ? {
@@ -46,7 +46,7 @@ export const LiveCallPrimaryButton: React.FC<LiveCallPrimaryButtonProps> = ({
                 }
               : {
                   background: "var(--gradient-primary)",
-                  boxShadow: "0 0 30px var(--accent-violet-glow)",
+                  boxShadow: "0 0 32px var(--accent-violet-glow)",
                   color: "var(--text-primary)",
                 }
           }

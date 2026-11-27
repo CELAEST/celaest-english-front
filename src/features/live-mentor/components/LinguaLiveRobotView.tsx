@@ -1,5 +1,4 @@
-import React, { useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, { useEffect, useMemo } from "react";
 import { ProfessorStageCanvas } from "../../../design-system/components/Professor3D/ProfessorStageCanvas";
 import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
 import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
@@ -14,7 +13,7 @@ export interface LinguaLiveRobotViewProps {
   profession?: string;
   learningGoal?: string;
   isActive?: boolean;
-  onExit?: () => void;
+  onCallActiveChange?: (active: boolean) => void;
 }
 
 export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
@@ -23,9 +22,9 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
   profession = "Professional",
   learningGoal = "Professional Communication & Fluency",
   isActive = true,
-  onExit,
+  onCallActiveChange,
 }) => {
-  React.useEffect(() => {
+  useEffect(() => {
     warmProfessorModelCache();
   }, []);
 
@@ -46,40 +45,39 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
     micModalOpen,
     closeMicModal,
     modalController,
-  } = useLiveRobotConversation(profile);
+  } = useLiveRobotConversation(profile, isActive);
 
-  const handleExit = () => {
-    if (isCallActive) {
+  useEffect(() => {
+    onCallActiveChange?.(isCallActive);
+  }, [isCallActive, onCallActiveChange]);
+
+  useEffect(() => {
+    if (!isActive && isCallActive) {
       void stopCall();
     }
-    onExit?.();
-  };
+  }, [isActive, isCallActive, stopCall]);
 
   return (
     <div
-      className="relative h-dvh w-full overflow-hidden flex flex-col justify-between select-none"
+      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center gap-4 sm:gap-6 pb-20 lg:pb-2 select-none"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
-      {onExit && (
-        <button
-          type="button"
-          onClick={handleExit}
-          aria-label="Salir a módulos"
-          title="Ir a módulos"
-          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30 h-9 w-9 rounded-full flex items-center justify-center opacity-45 hover:opacity-100 transition-opacity cursor-pointer"
-          style={{ color: "var(--text-primary)" }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-      )}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 45%, var(--accent-violet-subtle) 0%, transparent 56%)",
+        }}
+      />
 
-      <section className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
-        <div className="w-[min(94vw,78dvh)] h-[min(94vw,78dvh)] sm:w-[min(88vw,82dvh)] sm:h-[min(88vw,82dvh)] flex items-center justify-center">
+      <section className="relative z-10 flex items-center justify-center shrink-0">
+        <div className="w-[min(78vw,46dvh)] h-[min(78vw,46dvh)] sm:w-[min(62vw,52dvh)] sm:h-[min(62vw,52dvh)] lg:w-[min(56dvh,490px)] lg:h-[min(56dvh,490px)] xl:w-[min(58dvh,530px)] xl:h-[min(58dvh,530px)] flex items-center justify-center">
           <ProfessorStageCanvas
             state={professorState}
             preset="tutor-stage"
             isActive={isActive}
-            className="w-full h-full scale-[1.12] sm:scale-[1.18]"
+            className="w-full h-full"
           />
         </div>
       </section>

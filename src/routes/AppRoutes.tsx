@@ -20,6 +20,9 @@ const OnboardingView = lazy(() =>
 const WorkspaceDashboardView = lazy(() =>
   import("../features/workspace").then((m) => ({ default: m.WorkspaceDashboardView })),
 );
+const LinguaLiveRobotView = lazy(() =>
+  import("../features/live-mentor").then((m) => ({ default: m.LinguaLiveRobotView })),
+);
 const AuthCallbackView = lazy(() =>
   import("../features/auth/components/AuthCallbackView").then((m) => ({
     default: m.AuthCallbackView,
@@ -168,6 +171,21 @@ function WorkspaceWrapper() {
 
   const displayName = settings.name || user?.name || "Learner";
   const displayLevel = settings.cefrLevel || "B1";
+  const displayProfession = settings.profession || "Professional";
+  const displayGoal = settings.learningGoal || "Professional Communication & Fluency";
+  const useClassicShell = new URLSearchParams(location.search).get("classic") === "1";
+
+  if (!useClassicShell) {
+    return (
+      <LinguaLiveRobotView
+        userName={displayName}
+        userLevel={displayLevel}
+        profession={displayProfession}
+        learningGoal={displayGoal}
+        onSignOut={() => navigate(ROUTES.ONBOARDING, { replace: true })}
+      />
+    );
+  }
 
   return (
     <WorkspaceDashboardView

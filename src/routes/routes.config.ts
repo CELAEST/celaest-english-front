@@ -5,6 +5,7 @@
 
 export const ROUTES = {
   HOME: "/",
+  LIVE: "/live",
   WORKSPACE: "/workspace",
   PATHWAY: "/pathway",
   READING: "/reading",

@@ -19,6 +19,44 @@ const GATED_ITEMS = new Set(["interview", "writing", "reading"]);
 // Pure Vector Architecture, 1.5px Balanced Stroke, Uncrowded Negative Space
 // ============================================================================
 
+export const CyberLiveRobotIcon = ({
+  isActive,
+  className = "w-5 h-5 shrink-0",
+  size = 20,
+  strokeWidth = 1.75,
+}: {
+  isActive?: boolean;
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    style={{ width: `${size}px`, height: `${size}px` }}
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect
+      x="2.2"
+      y="3.8"
+      width="11.6"
+      height="8.6"
+      rx="3.2"
+      fill={isActive ? "currentColor" : "none"}
+      fillOpacity={isActive ? 0.25 : 0}
+    />
+    <line x1="8" y1="1.8" x2="8" y2="3.8" />
+    <circle cx="5.8" cy="8.1" r="0.9" fill="currentColor" stroke="none" />
+    <circle cx="10.2" cy="8.1" r="0.9" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 export const CyberWorkspaceIcon = ({
   isActive,
   className = "w-5 h-5 shrink-0",
@@ -358,7 +396,8 @@ const CelaestLogoMark: React.FC<{ className?: string }> = ({ className = "w-5 h-
 
 // Mobile Floating Glass Bottom Dock (Visible only on viewports < lg)
 const prefetchTabRoute = (id: string) => {
-  if (id === "pathway") void import("../../pathway");
+  if (id === "live") void import("../../live-mentor");
+  else if (id === "pathway") void import("../../pathway");
   else if (id === "writing") void import("../../writing");
   else if (id === "memory") void import("../../memory");
   else if (id === "settings") void import("../../settings");
@@ -462,6 +501,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   }, []);
 
   const navItems = [
+    {
+      id: "live",
+      label: "LIVE COACH",
+      renderIcon: (active: boolean) => <CyberLiveRobotIcon isActive={active} />,
+    },
     ...(import.meta.env.DEV
       ? [
           {
@@ -559,14 +603,15 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "BRIEF" }] : []),
-                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "PATHWAY" },
-                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "VAULT" },
-                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "VOICE" },
-                { id: "reading", num: import.meta.env.DEV ? "05" : "04", label: "PAGES" },
-                { id: "writing", num: import.meta.env.DEV ? "06" : "05", label: "QUILL" },
-                ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "FORGE" }] : []),
-                { id: "settings", num: import.meta.env.DEV ? "08" : "06", label: "SYSTEM" },
+                { id: "live", num: "01", label: "LIVE" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "02", label: "BRIEF" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "03" : "02", label: "PATHWAY" },
+                { id: "memory", num: import.meta.env.DEV ? "04" : "03", label: "VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "05" : "04", label: "VOICE" },
+                { id: "reading", num: import.meta.env.DEV ? "06" : "05", label: "PAGES" },
+                { id: "writing", num: import.meta.env.DEV ? "07" : "06", label: "QUILL" },
+                ...(import.meta.env.DEV ? [{ id: "lab", num: "08", label: "FORGE" }] : []),
+                { id: "settings", num: import.meta.env.DEV ? "09" : "07", label: "SYSTEM" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (
@@ -690,14 +735,15 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "WORKSPACE" }] : []),
-                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "MASTERY PATH" },
-                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "MEMORY VAULT" },
-                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "INTERVIEW" },
-                { id: "reading", num: import.meta.env.DEV ? "05" : "04", label: "READING" },
-                { id: "writing", num: import.meta.env.DEV ? "06" : "05", label: "WRITING STUDIO" },
-                ...(import.meta.env.DEV ? [{ id: "lab", num: "07", label: "DESIGN LAB" }] : []),
-                { id: "settings", num: import.meta.env.DEV ? "08" : "06", label: "SETTINGS" },
+                { id: "live", num: "01", label: "LIVE COACH" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "02", label: "WORKSPACE" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "03" : "02", label: "MASTERY PATH" },
+                { id: "memory", num: import.meta.env.DEV ? "04" : "03", label: "MEMORY VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "05" : "04", label: "INTERVIEW" },
+                { id: "reading", num: import.meta.env.DEV ? "06" : "05", label: "READING" },
+                { id: "writing", num: import.meta.env.DEV ? "07" : "06", label: "WRITING STUDIO" },
+                ...(import.meta.env.DEV ? [{ id: "lab", num: "08", label: "DESIGN LAB" }] : []),
+                { id: "settings", num: import.meta.env.DEV ? "09" : "07", label: "SETTINGS" },
               ].map((item) => {
                 const isActive = activeItem === item.id;
                 return (

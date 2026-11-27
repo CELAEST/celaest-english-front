@@ -20,9 +20,6 @@ const OnboardingView = lazy(() =>
 const WorkspaceDashboardView = lazy(() =>
   import("../features/workspace").then((m) => ({ default: m.WorkspaceDashboardView })),
 );
-const LinguaLiveRobotView = lazy(() =>
-  import("../features/live-mentor").then((m) => ({ default: m.LinguaLiveRobotView })),
-);
 const AuthCallbackView = lazy(() =>
   import("../features/auth/components/AuthCallbackView").then((m) => ({
     default: m.AuthCallbackView,
@@ -30,19 +27,7 @@ const AuthCallbackView = lazy(() =>
 );
 
 function RouteFallback() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-[#000003]"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading"
-    >
-      <span
-        className="h-10 w-10 animate-pulse rounded-full bg-accent-violet-500/70"
-        aria-hidden="true"
-      />
-    </div>
-  );
+  return <div className="min-h-screen w-full bg-[#000003]" />;
 }
 
 /**
@@ -80,12 +65,12 @@ function OnboardingRoute() {
   // If user is authenticated AND has completed onboarding, navigate immediately to default route
   useEffect(() => {
     if (!isReset && hasToken && isUserCompleted) {
-      navigate(ROUTES.PATHWAY, { replace: true });
+      navigate(ROUTES.LIVE, { replace: true });
     }
   }, [isReset, hasToken, isUserCompleted, navigate]);
 
   if (!isReset && hasToken && isUserCompleted) {
-    return <Navigate to={ROUTES.PATHWAY} replace />;
+    return <Navigate to={ROUTES.LIVE} replace />;
   }
 
   return (
@@ -94,7 +79,7 @@ function OnboardingRoute() {
         if (uid) localStorage.setItem(`lingua_onboarding_completed_${uid}`, "true");
         if (uemail) localStorage.setItem(`lingua_onboarding_completed_${uemail}`, "true");
         localStorage.setItem("lingua_onboarding_completed", "true");
-        navigate(ROUTES.PATHWAY, { replace: true });
+        navigate(ROUTES.LIVE, { replace: true });
       }}
     />
   );
@@ -151,7 +136,7 @@ function WorkspaceWrapper() {
   const getTabFromPath = (pathname: string) => {
     const clean = pathname.replace(/^\//, "");
     if (!clean) {
-      return "pathway";
+      return "live";
     }
     return clean;
   };
@@ -163,7 +148,7 @@ function WorkspaceWrapper() {
       // Intentional navigation to onboarding only permitted if logging out
       navigate(ROUTES.ONBOARDING);
     } else if (route === "workspace") {
-      navigate(import.meta.env.DEV ? ROUTES.WORKSPACE : ROUTES.PATHWAY);
+      navigate(import.meta.env.DEV ? ROUTES.WORKSPACE : ROUTES.LIVE);
     } else {
       navigate(`/${route}`);
     }
@@ -171,21 +156,6 @@ function WorkspaceWrapper() {
 
   const displayName = settings.name || user?.name || "Learner";
   const displayLevel = settings.cefrLevel || "B1";
-  const displayProfession = settings.profession || "Professional";
-  const displayGoal = settings.learningGoal || "Professional Communication & Fluency";
-  const useClassicShell = new URLSearchParams(location.search).get("classic") === "1";
-
-  if (!useClassicShell) {
-    return (
-      <LinguaLiveRobotView
-        userName={displayName}
-        userLevel={displayLevel}
-        profession={displayProfession}
-        learningGoal={displayGoal}
-        onSignOut={() => navigate(ROUTES.ONBOARDING, { replace: true })}
-      />
-    );
-  }
 
   return (
     <WorkspaceDashboardView

@@ -1,13 +1,11 @@
 import React, { useMemo } from "react";
+import { ArrowLeft } from "lucide-react";
 import { ProfessorStageCanvas } from "../../../design-system/components/Professor3D/ProfessorStageCanvas";
 import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
-import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/SupabaseAuthAdapter";
 import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
-import { useLinguaEntitlement } from "../../../shared/hooks/useLinguaEntitlement";
 import { MicHardwareRecoveryModal } from "../../conversation/components/MicHardwareRecoveryModal";
 import { useLiveRobotConversation } from "../hooks/useLiveRobotConversation";
 import { LiveCallPrimaryButton } from "./LiveCallPrimaryButton";
-import { LiveRobotTopBar } from "./LiveRobotTopBar";
 import { LiveSessionSummaryCard } from "./LiveSessionSummaryCard";
 
 export interface LinguaLiveRobotViewProps {
@@ -15,7 +13,8 @@ export interface LinguaLiveRobotViewProps {
   userLevel?: string;
   profession?: string;
   learningGoal?: string;
-  onSignOut?: () => void;
+  isActive?: boolean;
+  onExit?: () => void;
 }
 
 export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
@@ -23,13 +22,13 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
   userLevel = "B1",
   profession = "Professional",
   learningGoal = "Professional Communication & Fluency",
-  onSignOut,
+  isActive = true,
+  onExit,
 }) => {
   React.useEffect(() => {
     warmProfessorModelCache();
   }, []);
 
-  const { isTrial, trialDaysRemaining, entitlement } = useLinguaEntitlement();
   const profile = useMemo(
     () => ({ userName, cefrLevel: userLevel, profession, learningGoal }),
     [userName, userLevel, profession, learningGoal],
@@ -37,9 +36,8 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
 
   const {
     phase,
+    isCallActive,
     professorState,
-    liveCaption,
-    userDraft,
     micLevel,
     summary,
     dismissSummary,
@@ -50,44 +48,39 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
     modalController,
   } = useLiveRobotConversation(profile);
 
-  const handleSignOut = () => {
-    void SupabaseAuthAdapter.getInstance().logout().finally(() => {
-      onSignOut?.();
-    });
+  const handleExit = () => {
+    if (isCallActive) {
+      void stopCall();
+    }
+    onExit?.();
   };
 
-  const activeText = phase === "user_listening" && userDraft ? userDraft : liveCaption;
-
   return (
-    <main
-      className="relative h-dvh w-full overflow-hidden flex flex-col justify-between"
+    <div
+      className="relative h-dvh w-full overflow-hidden flex flex-col justify-between select-none"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
-      <LiveRobotTopBar
-        isTrial={isTrial}
-        trialDaysRemaining={trialDaysRemaining}
-        aiRequestsUsed={entitlement.aiRequestsUsed}
-        aiRequestsLimit={entitlement.aiRequestsLimit}
-        isByokMode={modalController.isByokMode}
-        onOpenPaywall={() => modalController.openPaywallModal()}
-        onOpenByok={() => modalController.openByokModal("promo_byok")}
-        onSignOut={handleSignOut}
-      />
+      {onExit && (
+        <button
+          type="button"
+          onClick={handleExit}
+          aria-label="Salir a módulos"
+          title="Ir a módulos"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30 h-9 w-9 rounded-full flex items-center justify-center opacity-45 hover:opacity-100 transition-opacity cursor-pointer"
+          style={{ color: "var(--text-primary)" }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+      )}
 
-      <section className="relative flex-1 min-h-0 flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-[420px] sm:max-w-[480px] aspect-square max-h-[58dvh]">
-          <ProfessorStageCanvas state={professorState} preset="tutor-stage" isActive={true} />
-        </div>
-
-        <div className="min-h-[3.25rem] max-w-xl px-4 text-center flex items-center justify-center">
-          {activeText && (
-            <p
-              className="text-sm sm:text-base font-light leading-relaxed line-clamp-2"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {activeText}
-            </p>
-          )}
+      <section className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
+        <div className="w-[min(94vw,78dvh)] h-[min(94vw,78dvh)] sm:w-[min(88vw,82dvh)] sm:h-[min(88vw,82dvh)] flex items-center justify-center">
+          <ProfessorStageCanvas
+            state={professorState}
+            preset="tutor-stage"
+            isActive={isActive}
+            className="w-full h-full scale-[1.12] sm:scale-[1.18]"
+          />
         </div>
       </section>
 
@@ -115,6 +108,6 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
         }}
       />
       <AiUseCaseModalsHost controller={modalController} />
-    </main>
+    </div>
   );
 };

@@ -241,17 +241,16 @@ export function useLiveRobotConversation(profile: CoachProfileContext) {
 
     const snapshot = [...turnsRef.current];
     const hasUserTurns = snapshot.some((t) => t.role === "user" && t.text.trim().length > 0);
+    setPhase("idle");
+    setLiveCaption("");
     if (!hasUserTurns) {
-      setPhase("idle");
-      setLiveCaption("");
       return;
     }
 
-    setPhase("summarizing");
     const recap = await generateSessionTakeaways(profileRef.current, snapshot).catch(() => null);
-    setSummary(recap);
-    setPhase("idle");
-    setLiveCaption("");
+    if (!callActiveRef.current && recap) {
+      setSummary(recap);
+    }
   }, [clearTimers]);
 
   useEffect(() => {

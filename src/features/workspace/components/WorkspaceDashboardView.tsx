@@ -24,6 +24,7 @@ import { clearPersistedInterview } from "../../conversation/services/interviewPe
 
 import { InterviewPracticeView } from "../../conversation/components/InterviewPracticeView";
 import { ReadingPracticeView } from "../../reading";
+import { LinguaLiveRobotView } from "../../live-mentor";
 
 const PathwayStudioView = lazy(() =>
   import("../../pathway").then((m) => ({ default: m.PathwayStudioView })),
@@ -65,10 +66,10 @@ export interface WorkspaceDashboardViewProps {
 export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewProps> = ({
   userName = "",
   userLevel = "",
-  defaultTab = import.meta.env.DEV ? "workspace" : "pathway",
+  defaultTab = import.meta.env.DEV ? "workspace" : "live",
   onNavigate,
 }) => {
-  const initialTab = !import.meta.env.DEV && defaultTab === "workspace" ? "pathway" : defaultTab;
+  const initialTab = !import.meta.env.DEV && defaultTab === "workspace" ? "live" : defaultTab;
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [mountedTabs, setMountedTabs] = useState<Set<string>>(() => new Set([initialTab]));
   const [isHomeVideoLoaded, setIsHomeVideoLoaded] = useState<boolean>(false);
@@ -90,7 +91,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
   const [byokOpen, setByokOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (activeTab === "pathway" || activeTab === "settings") {
+    if (activeTab === "live" || activeTab === "pathway" || activeTab === "settings") {
       // PathwayStudioView owns its own AiUseCaseModalsHost & blocking overlay synchronization;
       // deferring to Pathway avoids rendering two stacked LinguaByokRequiredModal portals.
       setByokOpen(false);
@@ -364,19 +365,39 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         <div className="absolute inset-0 bg-gradient-to-b from-[#030208]/35 via-transparent to-[#030208]/85 pointer-events-none" />
       </div>
 
-      {/* 2. Left Sidebar Navigation (Always Visible) */}
-      <WorkspaceSidebar
-        userName={activeUserName}
-        userLevel={activeUserLevel}
-        activeItem={activeTab}
-        onSelectNav={handleSelectNav}
-        hasAccess={hasFullAccess}
-      />
+      {/* 2. Left Sidebar Navigation (Hidden when inside immersive full-screen Live Robot) */}
+      {activeTab !== "live" && (
+        <WorkspaceSidebar
+          userName={activeUserName}
+          userLevel={activeUserLevel}
+          activeItem={activeTab}
+          onSelectNav={handleSelectNav}
+          hasAccess={hasFullAccess}
+        />
+      )}
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
       <main
         className={`flex-1 flex flex-col justify-between h-full relative z-10 overflow-hidden ${activeTab === "workspace" ? "bg-transparent" : "bg-[#000001]"}`}
       >
+        {mountedTabs.has("live") && (
+          <div
+            key="live"
+            className={`w-full h-full bg-[#000001] ${activeTab === "live" ? "block" : "hidden"}`}
+            aria-hidden={activeTab !== "live"}
+            {...(activeTab !== "live" ? ({ inert: "" } as Record<string, unknown>) : {})}
+          >
+            <LinguaLiveRobotView
+              userName={activeUserName || "Professional"}
+              userLevel={activeUserLevel}
+              profession={userProfession}
+              learningGoal={settings.learningGoal || "Professional Communication & Fluency"}
+              isActive={activeTab === "live"}
+              onExit={() => handleSelectNav("pathway")}
+            />
+          </div>
+        )}
+
         {mountedTabs.has("interview") && (
           <div
             key="interview"
@@ -675,7 +696,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
             </div>
           )}
 
-        {isTrial && (
+        {isTrial && activeTab !== "live" && (
           <div className="fixed bottom-4 right-4 z-30 pointer-events-auto">
             <LinguaTrialStatusBadge
               daysRemaining={trialDaysRemaining}
@@ -700,7 +721,7 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
           onRefreshEntitlement={() => void refreshEntitlement()}
         />
         <LinguaByokRequiredModal
-          isOpen={activeTab !== "pathway" && activeTab !== "settings" && byokOpen}
+          isOpen={activeTab !== "live" && activeTab !== "pathway" && activeTab !== "settings" && byokOpen}
           mode={entitlement.quotaExhausted ? "quota_exceeded" : isByokMode ? "promo_byok" : "trial_choice"}
           isTrial={isTrial}
           aiRequestsLimit={entitlement.aiRequestsLimit}

@@ -14,7 +14,7 @@ export interface FastVadCallbacks {
 const VAD_POLL_MS = 60;
 const POST_SPEECH_SILENCE_MS = 520;
 const SPEECH_ENERGY_THRESHOLD = 0.045;
-const BARGE_IN_ENERGY_THRESHOLD = 0.095;
+const BARGE_IN_ENERGY_THRESHOLD = 0.16;
 const MIN_VOICED_FRAMES = 3;
 const MIN_BARGE_IN_FRAMES = 4;
 

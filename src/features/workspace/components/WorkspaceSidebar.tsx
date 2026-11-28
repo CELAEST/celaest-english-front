@@ -423,6 +423,7 @@ const MobileBottomDock: React.FC<{
     >
       {navItems.map((item) => {
         const isActive = activeItem === item.id;
+        const isHeroCenter = item.id === "live";
         const activeBgClass =
           accentVariant === "architectural_monolith"
             ? "bg-gradient-to-r from-amber-600 to-amber-700 shadow-[0_0_16px_rgba(217,119,6,0.4)]"
@@ -444,15 +445,23 @@ const MobileBottomDock: React.FC<{
               prefetchTabRoute(item.id);
             }}
             onFocus={() => prefetchTabRoute(item.id)}
-            className={`relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl transition-all duration-150 cursor-pointer ${
-              isActive ? "text-white" : "text-zinc-400 hover:text-white"
+            className={`relative flex items-center justify-center rounded-2xl transition-all duration-150 cursor-pointer ${
+              isHeroCenter
+                ? `-mt-3 w-12 h-12 border ${
+                    isActive
+                      ? "text-white border-violet-400/50 shadow-[0_0_24px_rgba(112,72,232,0.55)]"
+                      : "text-white/90 bg-[#120d26] border-violet-400/35 shadow-[0_0_18px_rgba(112,72,232,0.3)]"
+                  }`
+                : `w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${
+                    isActive ? "text-white" : "text-zinc-400 hover:text-white"
+                  }`
             }`}
           >
             {isActive && (
               <motion.div
                 layoutId="activeMobileNavBlock"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                className={`absolute inset-0 rounded-xl z-0 ${activeBgClass}`}
+                className={`absolute inset-0 z-0 ${isHeroCenter ? "rounded-2xl" : "rounded-xl"} ${activeBgClass}`}
               />
             )}
             <div className="relative z-10 flex items-center justify-center">
@@ -509,11 +518,6 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   }, []);
 
   const navItems = [
-    {
-      id: "live",
-      label: "LIVE COACH",
-      renderIcon: (active: boolean) => <CyberLiveRobotIcon isActive={active} />,
-    },
     ...(import.meta.env.DEV
       ? [
           {
@@ -537,6 +541,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       id: "interview",
       label: "INTERVIEW",
       renderIcon: (active: boolean) => <CyberInterviewIcon isActive={active} />,
+    },
+    {
+      id: "live",
+      label: "LIVE COACH",
+      renderIcon: (active: boolean) => <CyberLiveRobotIcon isActive={active} />,
     },
     {
       id: "reading",
@@ -611,11 +620,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                { id: "live", num: "01", label: "LIVE" },
-                ...(import.meta.env.DEV ? [{ id: "workspace", num: "02", label: "BRIEF" }] : []),
-                { id: "pathway", num: import.meta.env.DEV ? "03" : "02", label: "PATHWAY" },
-                { id: "memory", num: import.meta.env.DEV ? "04" : "03", label: "VAULT" },
-                { id: "interview", num: import.meta.env.DEV ? "05" : "04", label: "VOICE" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "BRIEF" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "PATHWAY" },
+                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "VOICE" },
+                { id: "live", num: import.meta.env.DEV ? "05" : "04", label: "LIVE" },
                 { id: "reading", num: import.meta.env.DEV ? "06" : "05", label: "PAGES" },
                 { id: "writing", num: import.meta.env.DEV ? "07" : "06", label: "QUILL" },
                 ...(import.meta.env.DEV ? [{ id: "lab", num: "08", label: "FORGE" }] : []),
@@ -744,11 +753,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
             <nav className="flex flex-col space-y-1.5 relative w-full">
               {[
-                { id: "live", num: "01", label: "LIVE COACH" },
-                ...(import.meta.env.DEV ? [{ id: "workspace", num: "02", label: "WORKSPACE" }] : []),
-                { id: "pathway", num: import.meta.env.DEV ? "03" : "02", label: "MASTERY PATH" },
-                { id: "memory", num: import.meta.env.DEV ? "04" : "03", label: "MEMORY VAULT" },
-                { id: "interview", num: import.meta.env.DEV ? "05" : "04", label: "INTERVIEW" },
+                ...(import.meta.env.DEV ? [{ id: "workspace", num: "01", label: "WORKSPACE" }] : []),
+                { id: "pathway", num: import.meta.env.DEV ? "02" : "01", label: "MASTERY PATH" },
+                { id: "memory", num: import.meta.env.DEV ? "03" : "02", label: "MEMORY VAULT" },
+                { id: "interview", num: import.meta.env.DEV ? "04" : "03", label: "INTERVIEW" },
+                { id: "live", num: import.meta.env.DEV ? "05" : "04", label: "LIVE COACH" },
                 { id: "reading", num: import.meta.env.DEV ? "06" : "05", label: "READING" },
                 { id: "writing", num: import.meta.env.DEV ? "07" : "06", label: "WRITING STUDIO" },
                 ...(import.meta.env.DEV ? [{ id: "lab", num: "08", label: "DESIGN LAB" }] : []),

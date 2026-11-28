@@ -8,7 +8,7 @@ import { SupabaseAuthAdapter } from "../../../infrastructure/adapters/auth/Supab
 import { ApiEntitlementRepository } from "../../../infrastructure/repositories/ApiEntitlementRepository";
 import { DEFAULT_FREE_ENTITLEMENT } from "../../../domain/entities/ProductEntitlement";
 
-describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
+describe("LinguaLiveRobotView — Native Stage & Cinema Mode", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(SupabaseAuthAdapter.getInstance(), "isAuthenticated").mockReturnValue(true);
@@ -34,7 +34,7 @@ describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
     ]);
   });
 
-  it("renders centered Robot with Iniciar/Parar and triggers Cinema Mode active state", async () => {
+  it("renders luxury backdrop + enlarged Robot with Iniciar/Parar and triggers Cinema Mode active state", async () => {
     const onCallActiveChange = vi.fn();
     vi.spyOn(AudioCaptureService, "initMicrophone").mockResolvedValue(true);
     vi.spyOn(AudioCaptureService, "startRecognition").mockReturnValue(null);
@@ -43,7 +43,7 @@ describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
       "Hey there! What are you working on today?",
     );
 
-    const { rerender } = render(
+    const { rerender, container } = render(
       <LinguaLiveRobotView
         userName="Esteban"
         userLevel="B1"
@@ -53,6 +53,8 @@ describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
     );
 
     expect(screen.getByTestId("professor-3d-stage")).toBeTruthy();
+    expect(container.querySelector('img[src="/assets/workspace_room_bg.webp"]')).toBeTruthy();
+
     const startBtn = screen.getByRole("button", { name: /Iniciar/i });
     fireEvent.click(startBtn);
 
@@ -61,7 +63,6 @@ describe("LinguaLiveRobotView — Golden-Ratio Stage & Cinema Mode", () => {
     });
     expect(onCallActiveChange).toHaveBeenCalledWith(true);
 
-    // Navigating to another module via sidebar (isActive=false) cleanly stops the call
     rerender(
       <LinguaLiveRobotView
         userName="Esteban"

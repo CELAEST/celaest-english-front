@@ -168,9 +168,74 @@ function withSecurityHeaders(response, { contentType, noindex = false } = {}) {
   });
 }
 
+function isSpanishText(raw) {
+  if (!raw) return false;
+  if (/[¿¡áéíóúÁÉÍÓÚñÑ]/.test(raw)) return true;
+  return /\b(hola|que|qué|como|cómo|para|pero|estoy|vamos|puedes|bueno|dime|algo|muy|bien|claro|trabajar|practicar|hoy|ingles|español)\b/i.test(
+    raw,
+  );
+}
+
+async function handleEdgeTts(request, env) {
+  if (!env || !env.AI || typeof env.AI.run !== "function") {
+    return new Response(JSON.stringify({ error: "Workers AI binding unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+  const text = typeof body?.text === "string" ? body.text.trim().slice(0, 500) : "";
+  if (!text) {
+    return new Response(JSON.stringify({ error: "text is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+  const useSpanish = body?.lang === "es" || isSpanishText(text);
+  const model = useSpanish ? "@cf/deepgram/aura-2-es" : "@cf/deepgram/aura-2-en";
+  const speaker = useSpanish ? "javier" : "orion";
+
+  try {
+    const aiResp = await env.AI.run(
+      model,
+      { text, speaker },
+      { returnRawResponse: true },
+    );
+    if (!aiResp || !aiResp.ok) {
+      return new Response(JSON.stringify({ error: "Edge TTS upstream unavailable" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
+    const headers = new Headers(aiResp.headers);
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "audio/mpeg");
+    }
+    headers.set("Cache-Control", "no-store");
+    return new Response(aiResp.body, { status: 200, headers });
+  } catch {
+    return new Response(JSON.stringify({ error: "Edge TTS execution failed" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+}
+
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/edge-tts" && request.method === "POST") {
+      return withSecurityHeaders(await handleEdgeTts(request, env));
+    }
 
     if (url.hostname === "lingua.celaest.com" && url.protocol === "http:") {
       url.protocol = "https:";

@@ -107,10 +107,11 @@ export class RealtimeAudioPlayer {
   }
 
   public onBinaryFrame(rawBuffer: ArrayBuffer): void {
-    if (rawBuffer.byteLength <= 8) return;
+    if (rawBuffer.byteLength <= 9) return;
     const view = new DataView(rawBuffer);
-    const turnId = view.getUint32(0, false);
-    const clauseId = view.getUint32(4, false);
+    if (view.getUint8(0) !== 0x01) return;
+    const turnId = view.getUint32(1, false);
+    const clauseId = view.getUint32(5, false);
 
     if (this.activeTurnId !== 0 && turnId !== this.activeTurnId) {
       return;
@@ -119,7 +120,7 @@ export class RealtimeAudioPlayer {
       this.activeTurnId = turnId;
     }
 
-    const mp3Chunk = new Uint8Array(rawBuffer, 8);
+    const mp3Chunk = new Uint8Array(rawBuffer, 9);
     let target =
       this.playingBucket?.turnId === turnId && this.playingBucket.clauseId === clauseId
         ? this.playingBucket

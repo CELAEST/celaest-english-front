@@ -32,14 +32,20 @@ function createSecurityPolicy(mode: string, command: string): string {
   const coreAiOrigin = originOf(env.VITE_CORE_AI_URL, "https://celaest-core-c4o7.onrender.com");
   const isDev = command === "serve";
 
+  const apiWsOrigin = apiOrigin.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
+
   const connectSrc = [
     "'self'",
     apiOrigin,
+    apiWsOrigin,
     celaestBackOrigin,
     coreAiOrigin,
     "https://*.onrender.com",
+    "wss://*.onrender.com",
     "https://celaest-english-back-8xpa.onrender.com",
+    "wss://celaest-english-back-8xpa.onrender.com",
     "https://celaest-core-c4o7.onrender.com",
+    "wss://celaest-core-c4o7.onrender.com",
     "https://celaest-back.onrender.com",
     "https://cdn.celaest.com",
     "https://*.r2.dev",
@@ -64,6 +70,12 @@ function createSecurityPolicy(mode: string, command: string): string {
     "https://*.unpkg.com",
     "https://raw.githubusercontent.com",
     "https://*.githubusercontent.com",
+    "https://www.googletagmanager.com",
+    "https://www.google-analytics.com",
+    "https://*.google-analytics.com",
+    "https://analytics.google.com",
+    "https://*.analytics.google.com",
+    "https://www.facebook.com",
     "blob:",
     "data:",
   ];
@@ -74,11 +86,11 @@ function createSecurityPolicy(mode: string, command: string): string {
 
   return [
     "default-src 'self'",
-    `script-src ${isDev ? "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:" : "'self' 'wasm-unsafe-eval' blob: https://static.cloudflareinsights.com"}`,
+    `script-src ${isDev ? "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https:" : "'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net"}`,
     "worker-src 'self' blob: data:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com data:",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
     `media-src 'self' blob: data: https://*.onrender.com https://celaest-english-back-8xpa.onrender.com http://localhost:* http://127.0.0.1:* ${isDev ? "http:" : ""} https://translate.google.com https:`,
     `connect-src ${connectSrc.join(" ")}`,
     "object-src 'none'",

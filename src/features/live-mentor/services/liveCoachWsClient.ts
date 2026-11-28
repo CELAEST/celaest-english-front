@@ -16,6 +16,7 @@ export interface LiveWsServerEvent {
     | "interrupted"
     | "error"
     | "pong";
+  mode?: "native_audio" | "pipeline";
   phase?: "listening" | "thinking" | "speaking";
   turnId?: number;
   clauseId?: number;
@@ -156,6 +157,14 @@ export class LiveCoachWsClient {
       }),
     );
     return true;
+  }
+
+  public sendPcm16Chunk(pcmBytes: Uint8Array): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || pcmBytes.byteLength === 0) return;
+    const frame = new Uint8Array(1 + pcmBytes.byteLength);
+    frame[0] = 0x02;
+    frame.set(pcmBytes, 1);
+    this.ws.send(frame.buffer);
   }
 
   public sendAudioBlob(blob: Blob): void {

@@ -6,6 +6,7 @@ import { MicHardwareRecoveryModal } from "../../conversation/components/MicHardw
 import { useLiveRobotConversation } from "../hooks/useLiveRobotConversation";
 import { LiveCallPrimaryButton } from "./LiveCallPrimaryButton";
 import { LiveSessionSummaryCard } from "./LiveSessionSummaryCard";
+import { LiveStageBackdrop } from "./LiveStageBackdrop";
 
 export interface LinguaLiveRobotViewProps {
   userName?: string;
@@ -38,6 +39,7 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
     isCallActive,
     professorState,
     micLevel,
+    speakerLevel,
     summary,
     dismissSummary,
     startCall,
@@ -59,35 +61,30 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
 
   return (
     <div
-      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center gap-4 sm:gap-6 pb-20 lg:pb-2 select-none"
+      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center pb-20 lg:pb-6 select-none"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 45%, var(--accent-violet-subtle) 0%, transparent 56%)",
-        }}
-      />
+      <LiveStageBackdrop phase={phase} micLevel={micLevel} speakerLevel={speakerLevel} />
 
       <section className="relative z-10 flex items-center justify-center shrink-0">
-        <div className="w-[min(78vw,46dvh)] h-[min(78vw,46dvh)] sm:w-[min(62vw,52dvh)] sm:h-[min(62vw,52dvh)] lg:w-[min(56dvh,490px)] lg:h-[min(56dvh,490px)] xl:w-[min(58dvh,530px)] xl:h-[min(58dvh,530px)] flex items-center justify-center">
+        <div className="w-[min(96vw,64dvh)] h-[min(96vw,64dvh)] sm:w-[min(78vw,68dvh)] sm:h-[min(78vw,68dvh)] lg:w-[min(70vw,74dvh)] lg:h-[min(70vw,74dvh)] max-w-[680px] max-h-[680px] flex items-center justify-center">
           <ProfessorStageCanvas
             state={professorState}
             preset="tutor-stage"
             isActive={isActive}
-            className="w-full h-full"
+            className="w-full h-full scale-[1.08] sm:scale-[1.06]"
           />
         </div>
       </section>
 
-      <LiveCallPrimaryButton
-        phase={phase}
-        micLevel={micLevel}
-        onStart={() => void startCall()}
-        onStop={() => void stopCall()}
-      />
+      <div className="relative z-20 -mt-3 sm:-mt-5">
+        <LiveCallPrimaryButton
+          phase={phase}
+          micLevel={micLevel}
+          onStart={() => void startCall()}
+          onStop={() => void stopCall()}
+        />
+      </div>
 
       {summary && (
         <LiveSessionSummaryCard

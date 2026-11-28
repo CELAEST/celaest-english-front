@@ -1,5 +1,5 @@
 import { ENV } from "../../../shared/constants/env";
-import { sanitizeSpeechForVoice, SpeechSynthesisService } from "../../conversation/services/speechSynthesisService";
+import { sanitizeSpeechForVoice } from "../../conversation/services/speechSynthesisService";
 
 export const BILINGUAL_MENTOR_VOICE = "en-US-AndrewMultilingualNeural";
 
@@ -13,10 +13,31 @@ export function splitConversationalSentences(raw: string): string[] {
   return parts.length > 0 ? parts : [cleaned];
 }
 
-function buildStreamUrl(sentence: string, voice = BILINGUAL_MENTOR_VOICE): string {
+function buildBackendStreamUrl(sentence: string, voice = BILINGUAL_MENTOR_VOICE): string {
   return `${ENV.apiUrl}/tts/stream?text=${encodeURIComponent(sentence)}&voice=${encodeURIComponent(
     voice,
   )}&rate=%2B2%25&volume=%2B100%25`;
+}
+
+async function fetchEdgeWorkerAudio(sentence: string, signal: AbortSignal): Promise<Blob | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/edge-tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: sentence }),
+      signal,
+    });
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("audio") && !contentType.includes("octet-stream")) {
+      return null;
+    }
+    const blob = await res.blob();
+    return blob && blob.size > 0 && !signal.aborted ? blob : null;
+  } catch {
+    return null;
+  }
 }
 
 async function prefetchSentenceBlobUrl(
@@ -24,7 +45,14 @@ async function prefetchSentenceBlobUrl(
   signal: AbortSignal,
 ): Promise<string | null> {
   try {
-    const res = await fetch(buildStreamUrl(sentence), { signal });
+    // Tier 1: Ultra-low-latency Cloudflare Edge Workers AI Male Voice (orion/javier)
+    const edgeBlob = await fetchEdgeWorkerAudio(sentence, signal);
+    if (edgeBlob && !signal.aborted) {
+      return URL.createObjectURL(edgeBlob);
+    }
+
+    // Tier 2: Pure-Go Neural Male Bilingual stream (AndrewMultilingualNeural)
+    const res = await fetch(buildBackendStreamUrl(sentence), { signal });
     if (!res.ok) return null;
     const blob = await res.blob();
     if (!blob || blob.size === 0 || signal.aborted) return null;
@@ -34,6 +62,11 @@ async function prefetchSentenceBlobUrl(
   }
 }
 
+/**
+ * Tier-3 HTTP fallback speech pipeline:
+ * - Strictly single active HTMLAudioElement (never invokes robotic window.speechSynthesis)
+ * - Parallel sentence prefetch across Edge Worker Aura-2 Male & Go Neural Male
+ */
 export class BilingualVoicePipeline {
   private static abortCtrl: AbortController | null = null;
   private static activeUrls = new Set<string>();
@@ -49,6 +82,7 @@ export class BilingualVoicePipeline {
         this.currentAudio.onended = null;
         this.currentAudio.onerror = null;
         this.currentAudio.pause();
+        this.currentAudio.removeAttribute("src");
       } catch {
         // ignore
       }
@@ -62,7 +96,6 @@ export class BilingualVoicePipeline {
       }
     }
     this.activeUrls.clear();
-    SpeechSynthesisService.stop();
   }
 
   public static async speakFluid(
@@ -76,7 +109,6 @@ export class BilingualVoicePipeline {
     const ctrl = new AbortController();
     this.abortCtrl = ctrl;
 
-    // Prefetch all sentences in parallel so sentence 2+ play with 0ms gap
     const prefetches = sentences.map((s) => prefetchSentenceBlobUrl(s, ctrl.signal));
 
     for (let i = 0; i < sentences.length; i++) {
@@ -91,20 +123,10 @@ export class BilingualVoicePipeline {
 
       if (blobUrl) {
         this.activeUrls.add(blobUrl);
-        const played = await this.playBlobUrl(blobUrl, ctrl.signal);
+        await this.playBlobUrl(blobUrl, ctrl.signal);
         this.activeUrls.delete(blobUrl);
         URL.revokeObjectURL(blobUrl);
-        if (played) continue;
       }
-
-      // Fallback through SpeechSynthesisService if fetch failed
-      await new Promise<void>((resolve) => {
-        void SpeechSynthesisService.speak(sentence, {
-          voice: BILINGUAL_MENTOR_VOICE,
-          onEnd: () => resolve(),
-          onError: () => resolve(),
-        });
-      });
     }
   }
 

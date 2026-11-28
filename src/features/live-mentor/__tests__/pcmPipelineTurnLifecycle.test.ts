@@ -92,4 +92,62 @@ describe("useLiveRobotConversation — Charon PCM 0x03 turn lifecycle", () => {
     expect(result.current.phase).toBe("user_listening");
     expect(vadModes[vadModes.length - 1]).toBe("listening");
   });
+
+  it("native_audio waits for queued PCM drain before listening and opens micModalOpen if hardware mic is muted", async () => {
+    let mutedCb: (() => void) | undefined;
+    let isPcmPending = true;
+    vi.spyOn(PcmAudioEngine.prototype, "hasPendingOrPlaying", "get").mockImplementation(() => isPcmPending);
+    vi.spyOn(PcmAudioEngine.prototype, "startMicCapture").mockImplementation(async (_onChunk, _onLvl, onMuted) => {
+      mutedCb = onMuted;
+      return true;
+    });
+    const markCompleteSpy = vi
+      .spyOn(PcmAudioEngine.prototype, "markTurnComplete")
+      .mockImplementation(() => {
+        // Wait until explicit drain signal below
+      });
+
+    const { result } = renderHook(() =>
+      useLiveRobotConversation(
+        {
+          userName: "Esteban",
+          cefrLevel: "A1",
+          profession: "Developer",
+          learningGoal: "Daily Conversation",
+        },
+        true,
+      ),
+    );
+
+    await act(async () => {
+      await result.current.startCall();
+    });
+    await act(async () => {
+      wsHandlers!.onJsonEvent({ type: "ready", mode: "native_audio" });
+    });
+
+    // Server sends turn_done while PCM chunks are still queued -> must wait for drain
+    act(() => {
+      const pcmFrame = new Uint8Array([0x03, 0x10, 0x20, 0x30, 0x40]);
+      wsHandlers!.onBinaryAudio(pcmFrame.buffer);
+      wsHandlers!.onJsonEvent({ type: "turn_done", fullText: "Hola Esteban!" });
+    });
+
+    expect(markCompleteSpy).toHaveBeenCalledTimes(1);
+    expect(result.current.phase).toBe("robot_speaking");
+
+    // Once PcmAudioEngine finishes playing queued audio, it fires onDrained -> user_listening
+    act(() => {
+      isPcmPending = false;
+      pcmDrainCb?.();
+    });
+    expect(result.current.phase).toBe("user_listening");
+
+    // OS/hardware mute detected -> cleanly stops call and opens recovery modal
+    act(() => {
+      mutedCb?.();
+    });
+    expect(result.current.micModalOpen).toBe(true);
+    expect(result.current.phase).toBe("idle");
+  });
 });

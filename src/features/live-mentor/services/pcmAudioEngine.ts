@@ -41,6 +41,7 @@ export class PcmAudioEngine {
   private micSource: MediaStreamAudioSourceNode | null = null;
   private micProcessor: ScriptProcessorNode | null = null;
   private aliveSink: GainNode | null = null;
+  private muteCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   private playbackAnalyser: AnalyserNode | null = null;
   private freqBins: Uint8Array<ArrayBuffer> | null = null;
@@ -101,6 +102,7 @@ export class PcmAudioEngine {
   public async startMicCapture(
     onPcm16Chunk: (bytes: Uint8Array) => void,
     onMicLevel: (level: number) => void,
+    onMicMuted?: () => void,
   ): Promise<boolean> {
     this.stopMicOnly();
 
@@ -114,6 +116,21 @@ export class PcmAudioEngine {
 
     const ctx = await this.ensureContext();
     this.micStream = stream;
+
+    const track = stream.getAudioTracks()[0];
+    const scheduleMuteCheck = () => {
+      if (!track || !track.muted || this.muteCheckTimer) return;
+      this.muteCheckTimer = setTimeout(() => {
+        this.muteCheckTimer = null;
+        if (this.micStream === stream && track.muted) {
+          onMicMuted?.();
+        }
+      }, 1500);
+    };
+    if (track) {
+      scheduleMuteCheck();
+      track.onmute = () => scheduleMuteCheck();
+    }
     this.micSource = ctx.createMediaStreamSource(stream);
     const proc = ctx.createScriptProcessor(2048, 1, 1);
     const analyser = ctx.createAnalyser();
@@ -223,6 +240,10 @@ export class PcmAudioEngine {
   }
 
   private stopMicOnly(): void {
+    if (this.muteCheckTimer) {
+      clearTimeout(this.muteCheckTimer);
+      this.muteCheckTimer = null;
+    }
     if (this.micProcessor) {
       this.micProcessor.onaudioprocess = null;
       try {

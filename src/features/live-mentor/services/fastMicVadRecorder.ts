@@ -6,6 +6,7 @@ export interface FastVadCallbacks {
   onVolume: (level: number) => void;
   onUtteranceReady: (audioBlob: Blob) => void;
   onBargeIn: () => void;
+  onMicMuted?: () => void;
 }
 
 const TARGET_SAMPLE_RATE = 16000;
@@ -44,6 +45,7 @@ export class FastMicVadRecorder {
 
   private mode: "idle" | "listening" | "robot_speaking" | "thinking" = "idle";
   private callbacks: FastVadCallbacks | null = null;
+  private muteCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   private preSpeechRing: Int16Array[] = [];
   private utteranceChunks: Int16Array[] = [];
@@ -88,6 +90,21 @@ export class FastMicVadRecorder {
     }
 
     this.stream = acquired;
+
+    const track = acquired.getAudioTracks()[0];
+    const scheduleMuteCheck = () => {
+      if (!track || !track.muted || this.muteCheckTimer) return;
+      this.muteCheckTimer = setTimeout(() => {
+        this.muteCheckTimer = null;
+        if (this.stream === acquired && track.muted) {
+          this.callbacks?.onMicMuted?.();
+        }
+      }, 1500);
+    };
+    if (track) {
+      scheduleMuteCheck();
+      track.onmute = () => scheduleMuteCheck();
+    }
 
     try {
       this.unlockAudioContextSync();
@@ -153,6 +170,10 @@ export class FastMicVadRecorder {
   }
 
   private stopCaptureNodesOnly(): void {
+    if (this.muteCheckTimer) {
+      clearTimeout(this.muteCheckTimer);
+      this.muteCheckTimer = null;
+    }
     this.resetUtteranceBuffer();
     this.preSpeechRing = [];
     this.bargeInFrames = 0;

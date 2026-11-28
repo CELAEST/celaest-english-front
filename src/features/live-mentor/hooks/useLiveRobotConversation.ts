@@ -165,7 +165,17 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
             if (!callActiveRef.current || modeRef.current !== "native_audio") return;
             wsClientRef.current?.sendPcm16Chunk(pcmBytes);
           },
-          (lvl) => setMicLevel(lvl),
+          (lvl) => {
+            setMicLevel(lvl);
+            if (lvl > 0.06) armSilenceWatchdog();
+          },
+          () => {
+            if (!callActiveRef.current) return;
+            wsClientRef.current?.sendInterrupt();
+            teardownHardware();
+            setPhase("idle");
+            setMicModalOpen(true);
+          },
         );
         if (!ok) {
           wsClientRef.current?.sendInterrupt();
@@ -202,6 +212,13 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
           wsClientRef.current?.sendInterrupt();
           enterListeningState();
         },
+        onMicMuted: () => {
+          if (!callActiveRef.current) return;
+          wsClientRef.current?.sendInterrupt();
+          teardownHardware();
+          setPhase("idle");
+          setMicModalOpen(true);
+        },
       });
       if (!micStarted) {
         wsClientRef.current?.sendInterrupt();
@@ -227,7 +244,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
       }
     });
     pcm.setOnDrained(() => {
-      if (callActiveRef.current && modeRef.current === "pipeline" && !player.isPlaying) {
+      if (!callActiveRef.current) return;
+      if (modeRef.current === "native_audio" || (modeRef.current === "pipeline" && !player.isPlaying)) {
         enterListeningState();
       }
     });
@@ -242,6 +260,10 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
           if (!usingPcmTurnRef.current) {
             usingPcmTurnRef.current = true;
             player.stop();
+          }
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
           }
           desiredPipelineModeRef.current = "robot_speaking";
           setPhase("robot_speaking");
@@ -294,6 +316,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
           case "user_transcript":
             if (ev.text && ev.text.trim()) {
               logger.info("[LiveCoach] Transcript:", ev.text.trim());
+              armSilenceWatchdog();
               turnsRef.current = [
                 ...turnsRef.current,
                 { id: `u_${Date.now()}`, role: "user", text: ev.text.trim(), timestamp: Date.now() },
@@ -332,7 +355,11 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
               ];
             }
             if (modeRef.current === "native_audio") {
-              enterListeningState();
+              if (pcm.hasPendingOrPlaying) {
+                pcm.markTurnComplete();
+              } else {
+                enterListeningState();
+              }
             } else if (usingPcmTurnRef.current || pcm.hasPendingOrPlaying) {
               player.stop();
               pcm.markTurnComplete();
@@ -383,7 +410,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
       pcm.setOnDrained(null);
       ws.setHandlers(null);
     };
-  }, [beginNegotiatedCapture, enterListeningState, handleAiFailure, teardownHardware]);
+  }, [armSilenceWatchdog, beginNegotiatedCapture, enterListeningState, handleAiFailure, teardownHardware]);
 
   const runHttpFallbackLoop = useCallback(async () => {
     try {

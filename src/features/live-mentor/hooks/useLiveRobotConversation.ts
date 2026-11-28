@@ -50,6 +50,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
   const callActiveRef = useRef<boolean>(false);
   const modeRef = useRef<"native_audio" | "pipeline" | null>(null);
   const desiredPipelineModeRef = useRef<"thinking" | "robot_speaking" | "listening">("thinking");
+  const usingPcmTurnRef = useRef<boolean>(false);
   const turnsRef = useRef<ConversationTurn[]>([]);
   const profileRef = useRef<CoachProfileContext>(profile);
   profileRef.current = profile;
@@ -134,6 +135,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
   const teardownHardware = useCallback(() => {
     callActiveRef.current = false;
     modeRef.current = null;
+    usingPcmTurnRef.current = false;
     clearSessionGuardTimers();
     if (fallbackTimerRef.current) {
       clearTimeout(fallbackTimerRef.current);
@@ -234,6 +236,11 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         const headerByte = new DataView(buf).getUint8(0);
         if (headerByte === 0x03) {
           // Mutually exclusive 24kHz PCM frame (Gemini Live OR Tier-2 Charon Lookahead)
+          // Clear any empty MP3 clause bucket created by clause_start so player.isPlaying never blocks listening
+          if (!usingPcmTurnRef.current) {
+            usingPcmTurnRef.current = true;
+            player.stop();
+          }
           desiredPipelineModeRef.current = "robot_speaking";
           setPhase("robot_speaking");
           if (modeRef.current === "pipeline") {
@@ -262,6 +269,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
           case "phase":
             if (ev.phase === "thinking") {
+              usingPcmTurnRef.current = false;
               desiredPipelineModeRef.current = "thinking";
               setPhase("thinking");
               if (modeRef.current === "pipeline") vadRecorderRef.current?.setMode("thinking");
@@ -271,6 +279,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
               if (modeRef.current === "pipeline") vadRecorderRef.current?.setMode("robot_speaking");
             } else if (ev.phase === "listening") {
               if (modeRef.current === "native_audio") {
+                if (!pcm.hasPendingOrPlaying) enterListeningState();
+              } else if (usingPcmTurnRef.current) {
                 if (!pcm.hasPendingOrPlaying) enterListeningState();
               } else if (!player.isPlaying && !pcm.hasPendingOrPlaying) {
                 enterListeningState();
@@ -289,14 +299,17 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
           case "clause_start":
             if (ev.turnId && ev.clauseId && modeRef.current === "pipeline") {
+              desiredPipelineModeRef.current = "robot_speaking";
               setPhase("robot_speaking");
               vadRecorderRef.current?.setMode("robot_speaking");
-              player.onClauseStart(ev.turnId, ev.clauseId);
+              if (!usingPcmTurnRef.current) {
+                player.onClauseStart(ev.turnId, ev.clauseId);
+              }
             }
             break;
 
           case "clause_end":
-            if (ev.turnId && ev.clauseId && modeRef.current === "pipeline") {
+            if (ev.turnId && ev.clauseId && modeRef.current === "pipeline" && !usingPcmTurnRef.current) {
               player.onClauseEnd(ev.turnId, ev.clauseId);
             }
             break;
@@ -315,7 +328,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
             }
             if (modeRef.current === "native_audio") {
               enterListeningState();
-            } else if (pcm.hasPendingOrPlaying) {
+            } else if (usingPcmTurnRef.current || pcm.hasPendingOrPlaying) {
+              player.stop();
               pcm.markTurnComplete();
             } else if (ev.turnId && player.isPlaying) {
               player.onTurnDone(ev.turnId);
@@ -421,7 +435,14 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
               if (callActiveRef.current) listenOnce();
             }, 650);
           },
-          onEnd: () => {},
+          onEnd: () => {
+            if (callActiveRef.current && !draft) {
+              if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+              fallbackTimerRef.current = setTimeout(() => {
+                if (callActiveRef.current) listenOnce();
+              }, 250);
+            }
+          },
         });
       };
 

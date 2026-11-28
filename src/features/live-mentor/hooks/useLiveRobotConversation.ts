@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ProfessorAnimState } from "../../../design-system/components/Professor3D/professorTypes";
 import { ApiError } from "../../../infrastructure/http/ApiError";
 import { useAiUseCaseModals } from "../../../shared/hooks/useAiUseCaseModals";
+import { logger } from "../../../shared/utils/logger";
 import { AudioCaptureService } from "../../conversation/services/audioCaptureService";
 import { MobileAudioUnlocker } from "../../conversation/services/speechSynthesisService";
 import { providerKeyVault } from "../../settings/services/providerKeyVault";
@@ -180,7 +181,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
       const micStarted = await vadRecorderRef.current!.start({
         onVolume: (lvl) => {
           setMicLevel(lvl);
-          if (lvl > 0.14) armSilenceWatchdog();
+          if (lvl > 0.08) armSilenceWatchdog();
         },
         onUtteranceReady: (blob) => {
           if (!callActiveRef.current || modeRef.current !== "pipeline") return;
@@ -188,6 +189,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
             clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = null;
           }
+          logger.info("[LiveCoach] Sending spoken WAV utterance", blob.size, "bytes");
           setPhase("thinking");
           desiredPipelineModeRef.current = "thinking";
           vadRecorderRef.current?.setMode("thinking");
@@ -263,6 +265,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         switch (ev.type) {
           case "ready":
             if (ev.mode === "native_audio" || ev.mode === "pipeline") {
+              logger.info("[LiveCoach] Session ready in mode:", ev.mode);
               void beginNegotiatedCapture(ev.mode);
             }
             break;
@@ -290,6 +293,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
           case "user_transcript":
             if (ev.text && ev.text.trim()) {
+              logger.info("[LiveCoach] Transcript:", ev.text.trim());
               turnsRef.current = [
                 ...turnsRef.current,
                 { id: `u_${Date.now()}`, role: "user", text: ev.text.trim(), timestamp: Date.now() },
@@ -316,6 +320,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
           case "turn_done":
             if (ev.fullText && ev.fullText.trim()) {
+              logger.info("[LiveCoach] Coach turn done:", ev.fullText.trim());
               turnsRef.current = [
                 ...turnsRef.current,
                 {
@@ -469,6 +474,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     MobileAudioUnlocker.unlock();
     AudioCaptureService.unlockAudioInputContextSync();
     pcmEngineRef.current?.unlockPlayback();
+    vadRecorderRef.current?.unlockAudioContextSync();
     desiredPipelineModeRef.current = "thinking";
     setSummary(null);
 

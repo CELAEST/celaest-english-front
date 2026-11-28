@@ -38,7 +38,9 @@
   --accent-violet-500: #7048e8; /* Primary Action Button & Orb Core */
   --accent-violet-600: #6038e0; /* Button Hover / Active state */
   --accent-violet-400: #8868f8; /* Highlight / Selection Ring */
+  --accent-violet-300: #c4b5fd; /* Live Coach Speaking Equalizer */
   --accent-violet-light: #b89cff; /* Soft Lavender Text / Icons */
+  --accent-cyan-500: #22d3ee; /* Live Coach Listening Equalizer */
   --accent-violet-glow: rgba(112, 72, 232, 0.45);
   --accent-violet-subtle: rgba(112, 72, 232, 0.12);
 

@@ -1,9 +1,6 @@
 import { isMobileDevice } from "../../conversation/services/audioCaptureService";
-import {
-  acquireOptimalMicStream,
-  measureAnalyserVoiceEnergy,
-} from "../../conversation/services/audioHardwareSelector";
-import { connectAnalyserAliveSink } from "../../conversation/services/pcmWavRecorder";
+import { acquireOptimalMicStream } from "../../conversation/services/audioHardwareSelector";
+import { encodeMonoPcm16ToWavBlob } from "../../conversation/services/pcmWavRecorder";
 
 export interface FastVadCallbacks {
   onVolume: (level: number) => void;
@@ -11,62 +8,72 @@ export interface FastVadCallbacks {
   onBargeIn: () => void;
 }
 
-const VAD_POLL_MS = 50;
-const POST_SPEECH_SILENCE_MS = 420;
-const SPEECH_ENERGY_THRESHOLD = 0.015;
-const BARGE_IN_ENERGY_THRESHOLD = 0.085;
-const MIN_VOICED_FRAMES = 3;
+const TARGET_SAMPLE_RATE = 16000;
+const PCM_SPEECH_RMS_THRESHOLD = 0.008;
+const BARGE_IN_RMS_THRESHOLD = 0.045;
 const MIN_BARGE_IN_FRAMES = 4;
+const PRE_SPEECH_RING_FRAMES = 6;
+const POST_SPEECH_SILENCE_MS = 500;
 const MAX_UTTERANCE_MS = 12000;
+const MIN_UTTERANCE_SAMPLES = 2400; // >= 150ms at 16 kHz
 
-function pickLowLatencyMimeType(): string {
-  if (typeof MediaRecorder === "undefined") return "";
-  const candidates = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/ogg;codecs=opus",
-    "audio/mp4",
-  ];
-  for (const mime of candidates) {
-    try {
-      if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(mime)) {
-        return mime;
-      }
-    } catch {
-      // ignore
-    }
+function downsampleToInt16(input: Float32Array, inputRate: number): Int16Array {
+  const ratio = inputRate > 0 ? inputRate / TARGET_SAMPLE_RATE : 3;
+  const outLength = Math.max(1, Math.floor(input.length / ratio));
+  const out = new Int16Array(outLength);
+  for (let i = 0; i < outLength; i++) {
+    const srcIdx = Math.min(input.length - 1, Math.floor(i * ratio));
+    const sample = Math.max(-1, Math.min(1, input[srcIdx] ?? 0));
+    out[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
   }
-  return "";
+  return out;
 }
 
 /**
- * Low-latency full-duplex microphone VAD & Opus utterance segmenter:
- * - Commits spoken turns after just 520ms of post-speech silence (vs 1350ms legacy)
- * - Continuously monitors echo-cancelled input while the robot speaks for <240ms Barge-In
- * - Keeps the hardware mic stream warm across turns with zero click/re-prompt delay
+ * Full-duplex 16kHz Mono PCM WAV VAD & Barge-In engine:
+ * - Unlocks AudioContext synchronously inside the user's click gesture
+ * - Captures continuous 16kHz Int16 PCM with a 6-frame (~500ms) pre-speech ring buffer so opening syllables are never clipped
+ * - Encodes self-contained 44-byte RIFF audio/wav blobs free of MediaRecorder Chrome/Safari framing bugs
  */
 export class FastMicVadRecorder {
   private stream: MediaStream | null = null;
   private audioCtx: AudioContext | null = null;
-  private analyser: AnalyserNode | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
-  private aliveSinkNode: GainNode | null = null;
+  private processorNode: ScriptProcessorNode | null = null;
+  private silentGainNode: GainNode | null = null;
 
-  private recorder: MediaRecorder | null = null;
-  private chunks: Blob[] = [];
-  private mimeType = "";
-
-  private timer: ReturnType<typeof setInterval> | null = null;
   private mode: "idle" | "listening" | "robot_speaking" | "thinking" = "idle";
+  private callbacks: FastVadCallbacks | null = null;
+
+  private preSpeechRing: Int16Array[] = [];
+  private utteranceChunks: Int16Array[] = [];
+  private utteranceSamples = 0;
+  private capturingUtterance = false;
   private voicedFrames = 0;
   private bargeInFrames = 0;
   private speechStartedAt = 0;
   private silentSince = 0;
-  private callbacks: FastVadCallbacks | null = null;
+
+  public unlockAudioContextSync(): void {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      AudioContext?: typeof AudioContext;
+      webkitAudioContext?: typeof AudioContext;
+    };
+    const Ctx = w.AudioContext || w.webkitAudioContext;
+    if (typeof Ctx !== "function") return;
+
+    if (!this.audioCtx || this.audioCtx.state === "closed") {
+      this.audioCtx = new Ctx();
+    }
+    if (this.audioCtx.state === "suspended") {
+      void this.audioCtx.resume().catch(() => {});
+    }
+  }
 
   public async start(callbacks: FastVadCallbacks): Promise<boolean> {
     const requestedMode = this.mode;
-    this.stop();
+    this.stopCaptureNodesOnly();
     this.mode = requestedMode;
     this.callbacks = callbacks;
 
@@ -81,31 +88,39 @@ export class FastMicVadRecorder {
     }
 
     this.stream = acquired;
-    this.mimeType = pickLowLatencyMimeType();
 
     try {
-      const Ctx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.audioCtx = new Ctx();
-      if (this.audioCtx.state === "suspended") {
-        await this.audioCtx.resume().catch(() => {});
+      this.unlockAudioContextSync();
+      const ctx = this.audioCtx;
+      if (!ctx || typeof ctx.createScriptProcessor !== "function") {
+        return false;
       }
-      this.sourceNode = this.audioCtx.createMediaStreamSource(acquired);
-      this.analyser = this.audioCtx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.45;
-      this.sourceNode.connect(this.analyser);
-      this.aliveSinkNode = connectAnalyserAliveSink(this.audioCtx, this.analyser);
-    } catch {
-      // Analyser fallback safe
-    }
+      if (ctx.state === "suspended") {
+        await ctx.resume().catch(() => {});
+      }
 
-    this.timer = setInterval(() => this.tickVad(), VAD_POLL_MS);
-    if (this.mode === "listening") {
-      this.beginSegmentRecorder();
+      const inputSampleRate = ctx.sampleRate || 48000;
+      const source = ctx.createMediaStreamSource(acquired);
+      const processor = ctx.createScriptProcessor(4096, 1, 1);
+      const silentGain = ctx.createGain();
+      silentGain.gain.value = 0;
+
+      processor.onaudioprocess = (ev: AudioProcessingEvent) => {
+        this.handleAudioFrame(ev.inputBuffer.getChannelData(0), inputSampleRate);
+      };
+
+      source.connect(processor);
+      processor.connect(silentGain);
+      silentGain.connect(ctx.destination);
+
+      this.sourceNode = source;
+      this.processorNode = processor;
+      this.silentGainNode = silentGain;
+      return true;
+    } catch {
+      this.stopCaptureNodesOnly();
+      return false;
     }
-    return true;
   }
 
   public setMode(nextMode: "idle" | "listening" | "robot_speaking" | "thinking"): void {
@@ -115,31 +130,49 @@ export class FastMicVadRecorder {
     this.bargeInFrames = 0;
 
     if (nextMode === "listening") {
-      // If transitioning from barge-in where recorder was already capturing user's interruption, keep it!
-      if (prev !== "robot_speaking" || !this.recorder || this.recorder.state !== "recording") {
-        this.voicedFrames = 0;
-        this.silentSince = 0;
-        this.beginSegmentRecorder();
+      if (prev !== "robot_speaking" || !this.capturingUtterance) {
+        this.resetUtteranceBuffer();
       }
     } else if (nextMode === "thinking" || nextMode === "idle") {
+      this.resetUtteranceBuffer();
+      this.preSpeechRing = [];
       this.callbacks?.onVolume(0);
+    } else if (nextMode === "robot_speaking") {
+      this.resetUtteranceBuffer();
     }
   }
 
   public stop(): void {
     this.mode = "idle";
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    this.stopCaptureNodesOnly();
+    if (this.audioCtx) {
+      void this.audioCtx.close().catch(() => {});
+      this.audioCtx = null;
     }
-    this.discardRecorder();
-    if (this.aliveSinkNode) {
+    this.callbacks = null;
+  }
+
+  private stopCaptureNodesOnly(): void {
+    this.resetUtteranceBuffer();
+    this.preSpeechRing = [];
+    this.bargeInFrames = 0;
+
+    if (this.processorNode) {
+      this.processorNode.onaudioprocess = null;
       try {
-        this.aliveSinkNode.disconnect();
+        this.processorNode.disconnect();
       } catch {
         // ignore
       }
-      this.aliveSinkNode = null;
+      this.processorNode = null;
+    }
+    if (this.silentGainNode) {
+      try {
+        this.silentGainNode.disconnect();
+      } catch {
+        // ignore
+      }
+      this.silentGainNode = null;
     }
     if (this.sourceNode) {
       try {
@@ -148,11 +181,6 @@ export class FastMicVadRecorder {
         // ignore
       }
       this.sourceNode = null;
-    }
-    this.analyser = null;
-    if (this.audioCtx) {
-      void this.audioCtx.close().catch(() => {});
-      this.audioCtx = null;
     }
     if (this.stream) {
       for (const t of this.stream.getTracks()) {
@@ -164,96 +192,36 @@ export class FastMicVadRecorder {
       }
       this.stream = null;
     }
-    this.callbacks = null;
   }
 
-  private beginSegmentRecorder(): void {
-    this.discardRecorder();
-    if (!this.stream || typeof MediaRecorder === "undefined") return;
-
-    try {
-      this.chunks = [];
-      const rec = this.mimeType
-        ? new MediaRecorder(this.stream, { mimeType: this.mimeType, audioBitsPerSecond: 32000 })
-        : new MediaRecorder(this.stream);
-      rec.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) {
-          this.chunks.push(ev.data);
-        }
-      };
-      rec.start(100);
-      this.recorder = rec;
-    } catch {
-      this.recorder = null;
-    }
-  }
-
-  private discardRecorder(): void {
-    if (!this.recorder) return;
-    try {
-      this.recorder.ondataavailable = null;
-      this.recorder.onstop = null;
-      if (this.recorder.state !== "inactive") {
-        this.recorder.stop();
-      }
-    } catch {
-      // ignore
-    }
-    this.recorder = null;
-    this.chunks = [];
-  }
-
-  private flushUtterance(): void {
-    const rec = this.recorder;
-    if (!rec) return;
-    this.recorder = null;
+  private resetUtteranceBuffer(): void {
+    this.capturingUtterance = false;
+    this.utteranceChunks = [];
+    this.utteranceSamples = 0;
     this.voicedFrames = 0;
+    this.speechStartedAt = 0;
     this.silentSince = 0;
-    const capturedChunks = this.chunks;
-    this.chunks = [];
-    const type = this.mimeType || rec.mimeType || "audio/webm";
-
-    const finalize = () => {
-      if (capturedChunks.length === 0) return;
-      const blob = new Blob(capturedChunks, { type });
-      if (blob.size >= 600) {
-        this.callbacks?.onUtteranceReady(blob);
-      }
-    };
-
-    if (rec.state === "inactive") {
-      finalize();
-      return;
-    }
-
-    rec.onstop = () => {
-      rec.ondataavailable = null;
-      rec.onstop = null;
-      finalize();
-    };
-    try {
-      rec.stop();
-    } catch {
-      finalize();
-    }
   }
 
-  private tickVad(): void {
-    if (!this.analyser || !this.callbacks) return;
-    const energy = measureAnalyserVoiceEnergy(this.analyser);
+  private handleAudioFrame(samples: Float32Array, inputSampleRate: number): void {
+    if (!this.callbacks || !samples || samples.length === 0) return;
+
+    let sumSq = 0;
+    for (let i = 0; i < samples.length; i++) {
+      const s = samples[i] ?? 0;
+      sumSq += s * s;
+    }
+    const rms = Math.sqrt(sumSq / samples.length);
+    const pcm16 = downsampleToInt16(samples, inputSampleRate);
 
     if (this.mode === "robot_speaking") {
       this.callbacks.onVolume(0);
-      if (energy >= BARGE_IN_ENERGY_THRESHOLD) {
+      this.pushRingFrame(pcm16);
+      if (rms >= BARGE_IN_RMS_THRESHOLD) {
         this.bargeInFrames += 1;
-        // Pre-start segment recorder on frame 2 so the very beginning of the user's interruption is captured!
-        if (this.bargeInFrames === 2 && (!this.recorder || this.recorder.state !== "recording")) {
-          this.voicedFrames = 2;
-          this.silentSince = 0;
-          this.beginSegmentRecorder();
-        }
         if (this.bargeInFrames >= MIN_BARGE_IN_FRAMES) {
           this.bargeInFrames = 0;
+          this.seedUtteranceFromRing(pcm16);
           this.mode = "listening";
           this.callbacks.onBargeIn();
         }
@@ -267,32 +235,68 @@ export class FastMicVadRecorder {
       return;
     }
 
-    this.callbacks.onVolume(energy);
+    const uiLevel = Math.min(1, rms * 10);
+    this.callbacks.onVolume(uiLevel);
 
-    if (energy >= SPEECH_ENERGY_THRESHOLD) {
-      if (!this.recorder || this.recorder.state !== "recording") {
-        this.beginSegmentRecorder();
-      }
-      if (this.voicedFrames === 0) {
-        this.speechStartedAt = Date.now();
-      }
-      this.voicedFrames += 1;
-      this.silentSince = 0;
-      if (this.speechStartedAt > 0 && Date.now() - this.speechStartedAt >= MAX_UTTERANCE_MS) {
-        this.speechStartedAt = 0;
-        this.flushUtterance();
+    if (!this.capturingUtterance) {
+      this.pushRingFrame(pcm16);
+      if (rms >= PCM_SPEECH_RMS_THRESHOLD) {
+        this.seedUtteranceFromRing(pcm16);
       }
       return;
     }
 
-    if (this.voicedFrames >= MIN_VOICED_FRAMES) {
+    this.utteranceChunks.push(pcm16);
+    this.utteranceSamples += pcm16.length;
+
+    if (rms >= PCM_SPEECH_RMS_THRESHOLD) {
+      this.voicedFrames += 1;
+      this.silentSince = 0;
+      if (this.speechStartedAt > 0 && Date.now() - this.speechStartedAt >= MAX_UTTERANCE_MS) {
+        this.flushPcmUtterance();
+      }
+      return;
+    }
+
+    if (this.voicedFrames >= 2) {
       const now = Date.now();
       if (this.silentSince === 0) {
         this.silentSince = now;
       } else if (now - this.silentSince >= POST_SPEECH_SILENCE_MS) {
-        this.speechStartedAt = 0;
-        this.flushUtterance();
+        this.flushPcmUtterance();
       }
+    } else if (this.speechStartedAt > 0 && Date.now() - this.speechStartedAt >= 600) {
+      // Transient click or tap noise without sustained speech
+      this.resetUtteranceBuffer();
     }
+  }
+
+  private pushRingFrame(pcm16: Int16Array): void {
+    this.preSpeechRing.push(pcm16);
+    if (this.preSpeechRing.length > PRE_SPEECH_RING_FRAMES) {
+      this.preSpeechRing.shift();
+    }
+  }
+
+  private seedUtteranceFromRing(currentFrame: Int16Array): void {
+    this.capturingUtterance = true;
+    this.utteranceChunks = [...this.preSpeechRing, currentFrame];
+    this.utteranceSamples = this.utteranceChunks.reduce((acc, c) => acc + c.length, 0);
+    this.preSpeechRing = [];
+    this.voicedFrames = 1;
+    this.speechStartedAt = Date.now();
+    this.silentSince = 0;
+  }
+
+  private flushPcmUtterance(): void {
+    const chunks = this.utteranceChunks;
+    const totalSamples = this.utteranceSamples;
+    this.resetUtteranceBuffer();
+
+    if (totalSamples < MIN_UTTERANCE_SAMPLES || chunks.length === 0) {
+      return;
+    }
+    const wavBlob = encodeMonoPcm16ToWavBlob(chunks, totalSamples, TARGET_SAMPLE_RATE);
+    this.callbacks?.onUtteranceReady(wavBlob);
   }
 }

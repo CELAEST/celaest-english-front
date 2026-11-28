@@ -18,6 +18,9 @@ import { PcmAudioEngine } from "../services/pcmAudioEngine";
 import { RealtimeAudioPlayer } from "../services/realtimeAudioPlayer";
 import { ConversationTurn, LiveCallPhase, LiveSessionSummary } from "../types";
 
+const MAX_LIVE_SESSION_MS = 15 * 60 * 1000;
+const IDLE_SILENCE_TIMEOUT_MS = 45 * 1000;
+
 export function mapPhaseToProfessorState(phase: LiveCallPhase): ProfessorAnimState {
   switch (phase) {
     case "connecting":
@@ -56,6 +59,9 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
   const vadRecorderRef = useRef<FastMicVadRecorder | null>(null);
   const pcmEngineRef = useRef<PcmAudioEngine | null>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxSessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopCallRef = useRef<() => Promise<void>>(async () => {});
   const speakerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   if (!wsClientRef.current) wsClientRef.current = new LiveCoachWsClient();
@@ -90,17 +96,43 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     };
   }, [phase]);
 
+  const clearSessionGuardTimers = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (maxSessionTimerRef.current) {
+      clearTimeout(maxSessionTimerRef.current);
+      maxSessionTimerRef.current = null;
+    }
+  }, []);
+
+  const armSilenceWatchdog = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (!callActiveRef.current) return;
+    silenceTimerRef.current = setTimeout(() => {
+      if (callActiveRef.current) {
+        void stopCallRef.current();
+      }
+    }, IDLE_SILENCE_TIMEOUT_MS);
+  }, []);
+
   const enterListeningState = useCallback(() => {
     if (!callActiveRef.current) return;
     setPhase("user_listening");
+    armSilenceWatchdog();
     if (modeRef.current === "pipeline") {
       vadRecorderRef.current?.setMode("listening");
     }
-  }, []);
+  }, [armSilenceWatchdog]);
 
   const teardownHardware = useCallback(() => {
     callActiveRef.current = false;
     modeRef.current = null;
+    clearSessionGuardTimers();
     if (fallbackTimerRef.current) {
       clearTimeout(fallbackTimerRef.current);
       fallbackTimerRef.current = null;
@@ -113,7 +145,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     BilingualVoicePipeline.stop();
     AudioCaptureService.stop();
     AudioCaptureService.releaseMicStream();
-  }, []);
+  }, [clearSessionGuardTimers]);
 
   const beginNegotiatedCapture = useCallback(
     async (mode: "native_audio" | "pipeline") => {
@@ -139,21 +171,29 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         return;
       }
 
-      // Tier-2 Go Pipeline mode
-      pcmEngineRef.current?.stopAll();
+      // Tier-2 Go Pipeline mode (streams 0x03 Charon PCM24k or 0x01 MP3 frames)
+      pcmEngineRef.current?.stopMicCaptureOnly();
       const micStarted = await vadRecorderRef.current!.start({
-        onVolume: (lvl) => setMicLevel(lvl),
+        onVolume: (lvl) => {
+          setMicLevel(lvl);
+          if (lvl > 0.14) armSilenceWatchdog();
+        },
         onUtteranceReady: (blob) => {
           if (!callActiveRef.current || modeRef.current !== "pipeline") return;
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
           setPhase("thinking");
           vadRecorderRef.current?.setMode("thinking");
           wsClientRef.current?.sendAudioBlob(blob);
         },
         onBargeIn: () => {
           if (!callActiveRef.current || modeRef.current !== "pipeline") return;
+          pcmEngineRef.current?.flushPlayback();
           audioPlayerRef.current?.stop();
           wsClientRef.current?.sendInterrupt();
-          setPhase("user_listening");
+          enterListeningState();
         },
       });
       if (!micStarted) {
@@ -165,7 +205,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
       }
       vadRecorderRef.current!.setMode("thinking");
     },
-    [teardownHardware],
+    [armSilenceWatchdog, enterListeningState, teardownHardware],
   );
 
   useEffect(() => {
@@ -174,7 +214,12 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     const ws = wsClientRef.current!;
 
     player.setOnTurnDrained(() => {
-      if (callActiveRef.current && modeRef.current === "pipeline") {
+      if (callActiveRef.current && modeRef.current === "pipeline" && !pcm.hasPendingOrPlaying) {
+        enterListeningState();
+      }
+    });
+    pcm.setOnDrained(() => {
+      if (callActiveRef.current && modeRef.current === "pipeline" && !player.isPlaying) {
         enterListeningState();
       }
     });
@@ -184,8 +229,11 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         if (!callActiveRef.current || buf.byteLength < 2) return;
         const headerByte = new DataView(buf).getUint8(0);
         if (headerByte === 0x03) {
-          // Mutually exclusive Gemini Live 24kHz PCM frame
+          // Mutually exclusive 24kHz PCM frame (Gemini Live OR Tier-2 Charon Lookahead)
           setPhase("robot_speaking");
+          if (modeRef.current === "pipeline") {
+            vadRecorderRef.current?.setMode("robot_speaking");
+          }
           pcm.enqueuePcm24k(new Uint8Array(buf, 1));
           return;
         }
@@ -215,8 +263,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
               if (modeRef.current === "pipeline") vadRecorderRef.current?.setMode("robot_speaking");
             } else if (ev.phase === "listening") {
               if (modeRef.current === "native_audio") {
-                if (!pcm.isPlaying) enterListeningState();
-              } else if (!player.isPlaying) {
+                if (!pcm.hasPendingOrPlaying) enterListeningState();
+              } else if (!player.isPlaying && !pcm.hasPendingOrPlaying) {
                 enterListeningState();
               }
             }
@@ -259,11 +307,17 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
             }
             if (modeRef.current === "native_audio") {
               enterListeningState();
-            } else if (ev.turnId) {
+            } else if (pcm.hasPendingOrPlaying) {
+              pcm.markTurnComplete();
+            } else if (ev.turnId && player.isPlaying) {
               player.onTurnDone(ev.turnId);
-            } else if (!player.isPlaying) {
+            } else {
               enterListeningState();
             }
+            break;
+
+          case "session_limit":
+            void stopCallRef.current();
             break;
 
           case "interrupted":
@@ -299,6 +353,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
     return () => {
       player.setOnTurnDrained(null);
+      pcm.setOnDrained(null);
       ws.setHandlers(null);
     };
   }, [beginNegotiatedCapture, enterListeningState, handleAiFailure, teardownHardware]);
@@ -386,12 +441,22 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     AudioCaptureService.unlockAudioInputContextSync();
     setSummary(null);
 
-    const wsConnected = await wsClientRef.current!.ensureConnected(2400);
+    const armMaxSessionLimit = () => {
+      if (maxSessionTimerRef.current) clearTimeout(maxSessionTimerRef.current);
+      maxSessionTimerRef.current = setTimeout(() => {
+        if (callActiveRef.current) {
+          void stopCallRef.current();
+        }
+      }, MAX_LIVE_SESSION_MS);
+    };
+
+    const wsConnected = await wsClientRef.current!.ensureConnected(6500);
     if (wsConnected) {
       callActiveRef.current = true;
       modeRef.current = null;
       turnsRef.current = [];
       setPhase("connecting");
+      armMaxSessionLimit();
 
       const sent = await wsClientRef.current!.sendStart(profileRef.current);
       if (sent) return;
@@ -401,6 +466,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     modeRef.current = null;
     turnsRef.current = [];
     setPhase("connecting");
+    armMaxSessionLimit();
     await runHttpFallbackLoop();
   }, [isByokMode, openByokModal, runHttpFallbackLoop]);
 
@@ -420,6 +486,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
       setSummary(recap);
     }
   }, [teardownHardware]);
+
+  stopCallRef.current = stopCall;
 
   useEffect(() => {
     return () => {

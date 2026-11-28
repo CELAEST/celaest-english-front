@@ -1,9 +1,15 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ProfessorStageCanvas } from "../../../design-system/components/Professor3D/ProfessorStageCanvas";
 import { warmProfessorModelCache } from "../../../design-system/components/Professor3D/professorModelCacheService";
 import { AiUseCaseModalsHost } from "../../../shared/components/AiUseCaseModalsHost";
 import { MicHardwareRecoveryModal } from "../../conversation/components/MicHardwareRecoveryModal";
+import {
+  getStoredLiveBackdrop,
+  LiveBackdropId,
+  setStoredLiveBackdrop,
+} from "../data/liveStageBackdrops";
 import { useLiveRobotConversation } from "../hooks/useLiveRobotConversation";
+import { LiveBackdropPicker } from "./LiveBackdropPicker";
 import { LiveCallPrimaryButton } from "./LiveCallPrimaryButton";
 import { LiveSessionSummaryCard } from "./LiveSessionSummaryCard";
 import { LiveStageBackdrop } from "./LiveStageBackdrop";
@@ -25,6 +31,8 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
   isActive = true,
   onCallActiveChange,
 }) => {
+  const [backdropId, setBackdropId] = useState<LiveBackdropId>(() => getStoredLiveBackdrop());
+
   useEffect(() => {
     warmProfessorModelCache();
   }, []);
@@ -59,22 +67,31 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
     }
   }, [isActive, isCallActive, stopCall]);
 
+  const handleSelectBackdrop = (id: LiveBackdropId) => {
+    setBackdropId(id);
+    setStoredLiveBackdrop(id);
+  };
+
   return (
     <div
-      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center gap-6 sm:gap-7 pb-20 lg:pb-6 select-none"
+      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-between pt-16 pb-[88px] px-4 lg:pt-8 lg:pb-10 lg:px-28 select-none"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
-      <LiveStageBackdrop phase={phase} micLevel={micLevel} speakerLevel={speakerLevel} />
+      <LiveStageBackdrop
+        backdropId={backdropId}
+        phase={phase}
+        micLevel={micLevel}
+        speakerLevel={speakerLevel}
+      />
 
-      <section className="relative z-10 flex items-center justify-center shrink-0">
-        <div
-          className="w-[min(88vw,52dvh)] h-[min(88vw,52dvh)] sm:w-[min(64vw,58dvh)] sm:h-[min(64vw,58dvh)] lg:w-[min(56vw,64dvh)] lg:h-[min(56vw,64dvh)] max-w-[580px] max-h-[580px] flex items-center justify-center"
-          style={{
-            WebkitMaskImage:
-              "linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%)",
-            maskImage: "linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%)",
-          }}
-        >
+      <LiveBackdropPicker
+        selectedId={backdropId}
+        onSelect={handleSelectBackdrop}
+        isCallActive={isCallActive}
+      />
+
+      <section className="relative z-10 flex-1 min-h-0 w-full flex items-center justify-center py-2 pointer-events-none">
+        <div className="h-full w-full max-w-[min(94vw,640px)] max-h-[min(100%,94vw)] sm:max-w-[min(82vw,680px)] sm:max-h-[min(100%,82vw)] lg:max-w-[min(72vw,820px)] lg:max-h-[min(100%,72vw)] flex items-center justify-center">
           <ProfessorStageCanvas
             state={professorState}
             preset="tutor-stage"
@@ -84,13 +101,15 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
         </div>
       </section>
 
-      <LiveCallPrimaryButton
-        phase={phase}
-        micLevel={micLevel}
-        speakerLevel={speakerLevel}
-        onStart={() => void startCall()}
-        onStop={() => void stopCall()}
-      />
+      <div className="relative z-20 shrink-0 pt-2 lg:pt-4">
+        <LiveCallPrimaryButton
+          phase={phase}
+          micLevel={micLevel}
+          speakerLevel={speakerLevel}
+          onStart={() => void startCall()}
+          onStop={() => void stopCall()}
+        />
+      </div>
 
       {summary && (
         <LiveSessionSummaryCard

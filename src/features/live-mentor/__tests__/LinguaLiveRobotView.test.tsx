@@ -56,6 +56,9 @@ describe("LinguaLiveRobotView — Native Stage & Cinema Mode", () => {
     expect(container.querySelector('img[src="/assets/live_stage_desktop.jpg"]')).toBeTruthy();
     expect(container.querySelector('img[src="/assets/live_stage_mobile.jpg"]')).toBeTruthy();
 
+    fireEvent.click(screen.getByRole("button", { name: /Horizonte Nórdico/i }));
+    expect(container.querySelector('[data-backdrop="nordic_dawn"]')).toBeTruthy();
+
     const startBtn = screen.getByRole("button", { name: /Iniciar/i });
     fireEvent.click(startBtn);
 

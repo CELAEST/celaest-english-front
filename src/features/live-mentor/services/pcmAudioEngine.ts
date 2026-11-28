@@ -45,7 +45,31 @@ export class PcmAudioEngine {
   private playbackAnalyser: AnalyserNode | null = null;
   private freqBins: Uint8Array<ArrayBuffer> | null = null;
   private activeSources = new Set<AudioBufferSourceNode>();
+  private pendingEnqueues = 0;
+  private turnEnded = false;
+  private onDrained: (() => void) | null = null;
   private nextPlayTime = 0;
+
+  public setOnDrained(cb: (() => void) | null): void {
+    this.onDrained = cb;
+  }
+
+  public stopMicCaptureOnly(): void {
+    this.stopMicOnly();
+  }
+
+  public get hasPendingOrPlaying(): boolean {
+    return this.activeSources.size > 0 || this.pendingEnqueues > 0;
+  }
+
+  public markTurnComplete(): void {
+    if (this.activeSources.size === 0 && this.pendingEnqueues === 0) {
+      this.turnEnded = false;
+      this.onDrained?.();
+      return;
+    }
+    this.turnEnded = true;
+  }
 
   private async ensureContext(): Promise<AudioContext> {
     if (!this.audioCtx || this.audioCtx.state === "closed") {
@@ -112,36 +136,50 @@ export class PcmAudioEngine {
 
   public enqueuePcm24k(pcmBytes: Uint8Array): void {
     if (pcmBytes.byteLength < 2) return;
-    void this.ensureContext().then((ctx) => {
-      const sampleCount = Math.floor(pcmBytes.byteLength / 2);
-      if (sampleCount <= 0) return;
+    this.turnEnded = false;
+    this.pendingEnqueues += 1;
+    void this.ensureContext()
+      .then((ctx) => {
+        const sampleCount = Math.floor(pcmBytes.byteLength / 2);
+        if (sampleCount <= 0) return;
 
-      const float32 = new Float32Array(sampleCount);
-      const view = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, sampleCount * 2);
-      for (let i = 0; i < sampleCount; i++) {
-        float32[i] = view.getInt16(i * 2, true) / 32768;
-      }
-
-      const buf = ctx.createBuffer(1, sampleCount, OUTPUT_SAMPLE_RATE);
-      buf.getChannelData(0).set(float32);
-
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(this.playbackAnalyser || ctx.destination);
-
-      const startAt = Math.max(ctx.currentTime + 0.015, this.nextPlayTime);
-      this.nextPlayTime = startAt + buf.duration;
-      this.activeSources.add(src);
-      src.onended = () => {
-        this.activeSources.delete(src);
-        try {
-          src.disconnect();
-        } catch {
-          // ignore
+        const float32 = new Float32Array(sampleCount);
+        const view = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, sampleCount * 2);
+        for (let i = 0; i < sampleCount; i++) {
+          float32[i] = view.getInt16(i * 2, true) / 32768;
         }
-      };
-      src.start(startAt);
-    });
+
+        const buf = ctx.createBuffer(1, sampleCount, OUTPUT_SAMPLE_RATE);
+        buf.getChannelData(0).set(float32);
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.playbackAnalyser || ctx.destination);
+
+        const startAt = Math.max(ctx.currentTime + 0.015, this.nextPlayTime);
+        this.nextPlayTime = startAt + buf.duration;
+        this.activeSources.add(src);
+        src.onended = () => {
+          this.activeSources.delete(src);
+          try {
+            src.disconnect();
+          } catch {
+            // ignore
+          }
+          if (this.activeSources.size === 0 && this.pendingEnqueues === 0 && this.turnEnded) {
+            this.turnEnded = false;
+            this.onDrained?.();
+          }
+        };
+        src.start(startAt);
+      })
+      .finally(() => {
+        this.pendingEnqueues = Math.max(0, this.pendingEnqueues - 1);
+        if (this.activeSources.size === 0 && this.pendingEnqueues === 0 && this.turnEnded) {
+          this.turnEnded = false;
+          this.onDrained?.();
+        }
+      });
   }
 
   public getSpeakerLevel(): number {
@@ -162,6 +200,7 @@ export class PcmAudioEngine {
 
   public flushPlayback(): void {
     this.nextPlayTime = 0;
+    this.turnEnded = false;
     for (const src of Array.from(this.activeSources)) {
       try {
         src.onended = null;

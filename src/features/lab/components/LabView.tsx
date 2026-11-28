@@ -1,5 +1,6 @@
 import React from "react";
 import { LabHeader } from "./LabHeader";
+import { LiveVoiceLabShowcase } from "./LiveVoiceLabShowcase";
 import { PathwayHeaderEnterpriseShowcase } from "./PathwayHeaderEnterpriseShowcase";
 import { OrientationSceneShowcase } from "./OrientationSceneShowcase";
 import { PracticeCtaShowcase } from "./PracticeCtaShowcase";
@@ -45,6 +46,9 @@ export const LabView: React.FC<LabViewProps> = ({ onBackToWorkspace }) => {
       <div className="w-full max-w-6xl flex flex-col space-y-10 pb-16">
         {/* Lab Header */}
         <LabHeader onBackToWorkspace={onBackToWorkspace} />
+
+        {/* SECTION 00.LIVE_VOICE_LAB: Ultra-Fast Bilingual Voice Audition & TTFA */}
+        <LiveVoiceLabShowcase />
 
         {/* SECTION 00.PATHWAY_HEADER_STUDIO: Enterprise Pathway Header Laboratory */}
         <div className="flex flex-col space-y-4">

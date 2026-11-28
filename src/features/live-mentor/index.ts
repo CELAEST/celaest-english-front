@@ -1,5 +1,7 @@
 export * from "./types";
+export * from "./data/liveStageBackdrops";
 export * from "./components/LinguaLiveRobotView";
+export * from "./components/LiveBackdropPicker";
 export * from "./components/LiveCallPrimaryButton";
 export * from "./components/LiveSessionSummaryCard";
 export * from "./components/LiveStageBackdrop";

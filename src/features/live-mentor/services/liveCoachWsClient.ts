@@ -15,6 +15,7 @@ export interface LiveWsServerEvent {
     | "clause_end"
     | "turn_done"
     | "interrupted"
+    | "session_limit"
     | "error"
     | "pong";
   mode?: "native_audio" | "pipeline";
@@ -60,13 +61,16 @@ export class LiveCoachWsClient {
   }
 
   public prewarm(): void {
+    if (typeof window !== "undefined" && typeof fetch === "function") {
+      void fetch(`${ENV.apiUrl}/health`, { mode: "cors" }).catch(() => {});
+    }
     if (typeof WebSocket === "undefined") return;
     const token = getAuthTokenSafe();
     if (!token) return;
-    void this.ensureConnected(2500);
+    void this.ensureConnected(6500);
   }
 
-  public async ensureConnected(timeoutMs = 3200): Promise<boolean> {
+  public async ensureConnected(timeoutMs = 6500): Promise<boolean> {
     if (typeof WebSocket === "undefined") return false;
     if (this.ws && this.ws.readyState === WebSocket.OPEN) return true;
     if (this.connectPromise) return this.connectPromise;

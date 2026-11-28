@@ -45,18 +45,35 @@ async function prefetchSentenceBlobUrl(
   signal: AbortSignal,
 ): Promise<string | null> {
   try {
-    // Tier 1: Ultra-low-latency Cloudflare Edge Workers AI Male Voice (orion/javier)
+    // Tier 1: Gemini 2.5 Flash TTS (Charon) — true intra-sentential EN+ES code-switching
+    const charonRes = await fetch(`${ENV.apiUrl}/tts/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: sentence, voice: "Charon", provider: "gemini" }),
+      signal,
+    }).catch(() => null);
+    if (charonRes && charonRes.ok) {
+      const charonBlob = await charonRes.blob();
+      if (charonBlob && charonBlob.size > 44 && !signal.aborted) {
+        return URL.createObjectURL(charonBlob);
+      }
+    }
+
+    // Tier 2: Pure-Go Neural Male Bilingual stream fallback
+    const res = await fetch(buildBackendStreamUrl(sentence), { signal });
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob && blob.size > 0 && !signal.aborted) {
+        return URL.createObjectURL(blob);
+      }
+    }
+
+    // Tier 3: Edge Workers AI fallback only if Go TTS is unreachable
     const edgeBlob = await fetchEdgeWorkerAudio(sentence, signal);
     if (edgeBlob && !signal.aborted) {
       return URL.createObjectURL(edgeBlob);
     }
-
-    // Tier 2: Pure-Go Neural Male Bilingual stream (AndrewMultilingualNeural)
-    const res = await fetch(buildBackendStreamUrl(sentence), { signal });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    if (!blob || blob.size === 0 || signal.aborted) return null;
-    return URL.createObjectURL(blob);
+    return null;
   } catch {
     return null;
   }

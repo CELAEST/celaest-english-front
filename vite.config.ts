@@ -143,6 +143,15 @@ export default defineConfig(({ command, mode }) => ({
         changeOrigin: true,
         ws: true,
       },
+      "/ws/live-coach": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/api/edge-tts": {
+        target: "https://lingua.celaest.com",
+        changeOrigin: true,
+      },
       "/core-ai": {
         target: "https://celaest-core-c4o7.onrender.com",
         changeOrigin: true,

@@ -367,14 +367,22 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
       </div>
 
       {/* 2. Left Sidebar Navigation (Floating icon rail with automatic Cinema Mode dim during active voice call) */}
-      <WorkspaceSidebar
-        userName={activeUserName}
-        userLevel={activeUserLevel}
-        activeItem={activeTab}
-        onSelectNav={handleSelectNav}
-        hasAccess={hasFullAccess}
-        cinemaDimmed={activeTab === "live" && isLiveCallActive}
-      />
+      <div
+        className={
+          activeTab === "live"
+            ? "lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:items-center lg:pointer-events-none lg:[&>*]:pointer-events-auto"
+            : "flex items-center shrink-0 z-50"
+        }
+      >
+        <WorkspaceSidebar
+          userName={activeUserName}
+          userLevel={activeUserLevel}
+          activeItem={activeTab}
+          onSelectNav={handleSelectNav}
+          hasAccess={hasFullAccess}
+          cinemaDimmed={activeTab === "live" && isLiveCallActive}
+        />
+      </div>
 
       {/* 3. Main Dynamic Content Canvas — keep-alive lazy mounting: tabs only mount on first visit, then stay alive in DOM */}
       <main

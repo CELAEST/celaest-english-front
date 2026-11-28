@@ -61,30 +61,36 @@ export const LinguaLiveRobotView: React.FC<LinguaLiveRobotViewProps> = ({
 
   return (
     <div
-      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center pb-20 lg:pb-6 select-none"
+      className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center gap-6 sm:gap-7 pb-20 lg:pb-6 select-none"
       style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
       <LiveStageBackdrop phase={phase} micLevel={micLevel} speakerLevel={speakerLevel} />
 
       <section className="relative z-10 flex items-center justify-center shrink-0">
-        <div className="w-[min(96vw,64dvh)] h-[min(96vw,64dvh)] sm:w-[min(78vw,68dvh)] sm:h-[min(78vw,68dvh)] lg:w-[min(70vw,74dvh)] lg:h-[min(70vw,74dvh)] max-w-[680px] max-h-[680px] flex items-center justify-center">
+        <div
+          className="w-[min(88vw,52dvh)] h-[min(88vw,52dvh)] sm:w-[min(64vw,58dvh)] sm:h-[min(64vw,58dvh)] lg:w-[min(56vw,64dvh)] lg:h-[min(56vw,64dvh)] max-w-[580px] max-h-[580px] flex items-center justify-center"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%)",
+            maskImage: "linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%)",
+          }}
+        >
           <ProfessorStageCanvas
             state={professorState}
             preset="tutor-stage"
             isActive={isActive}
-            className="w-full h-full scale-[1.08] sm:scale-[1.06]"
+            className="w-full h-full"
           />
         </div>
       </section>
 
-      <div className="relative z-20 -mt-3 sm:-mt-5">
-        <LiveCallPrimaryButton
-          phase={phase}
-          micLevel={micLevel}
-          onStart={() => void startCall()}
-          onStop={() => void stopCall()}
-        />
-      </div>
+      <LiveCallPrimaryButton
+        phase={phase}
+        micLevel={micLevel}
+        speakerLevel={speakerLevel}
+        onStart={() => void startCall()}
+        onStop={() => void stopCall()}
+      />
 
       {summary && (
         <LiveSessionSummaryCard

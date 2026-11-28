@@ -18,62 +18,55 @@ export const LiveStageBackdrop: React.FC<LiveStageBackdropProps> = ({
       : phase === "user_listening"
         ? micLevel
         : 0;
-  const auraScale = 1 + Math.min(0.24, activeEnergy * 0.45);
-  const auraOpacity =
+  const lightOpacity =
     phase === "robot_speaking"
-      ? 0.62 + activeEnergy * 0.35
+      ? 0.28 + activeEnergy * 0.25
       : phase === "user_listening"
-        ? 0.5 + activeEnergy * 0.35
-        : phase === "thinking" || phase === "connecting"
-          ? 0.45
-          : 0.34;
+        ? 0.24 + activeEnergy * 0.24
+        : 0.14;
 
-  const auraGradient =
-    phase === "robot_speaking"
-      ? "radial-gradient(circle, var(--accent-violet-glow) 0%, rgba(112, 72, 232, 0.14) 44%, transparent 72%)"
-      : phase === "user_listening"
-        ? "radial-gradient(circle, rgba(34, 211, 238, 0.28) 0%, var(--accent-violet-subtle) 46%, transparent 74%)"
-        : "radial-gradient(circle, var(--accent-violet-subtle) 0%, transparent 70%)";
+  const lightGradient =
+    phase === "user_listening"
+      ? "radial-gradient(ellipse at 50% 42%, rgba(56, 189, 248, 0.22) 0%, transparent 66%)"
+      : "radial-gradient(ellipse at 50% 42%, rgba(167, 139, 250, 0.22) 0%, transparent 66%)";
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden bg-[#050508]">
       <img
-        src="/assets/workspace_room_bg.webp"
+        src="/assets/live_stage_desktop.jpg"
         alt=""
         loading="eager"
         decoding="async"
-        className="w-full h-full object-cover object-center opacity-40 sm:opacity-45 scale-[1.03]"
+        className="hidden sm:block w-full h-full object-cover object-center opacity-90"
+      />
+      <img
+        src="/assets/live_stage_mobile.jpg"
+        alt=""
+        loading="eager"
+        decoding="async"
+        className="block sm:hidden w-full h-full object-cover object-center opacity-90"
       />
 
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 sm:hidden"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 44%, transparent 18%, rgba(3, 2, 10, 0.72) 72%, var(--bg-app) 100%)",
+            "radial-gradient(ellipse at 50% 44%, transparent 32%, rgba(5, 5, 8, 0.45) 78%, rgba(5, 5, 8, 0.85) 100%)",
         }}
       />
       <div
-        className="absolute inset-0"
+        className="hidden sm:block absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, rgba(3, 2, 10, 0.58) 0%, transparent 28%, transparent 66%, var(--bg-app) 98%)",
-        }}
-      />
-
-      <div
-        className="absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 w-[min(92vw,580px)] h-[min(92vw,580px)] rounded-full blur-3xl transition-transform duration-150"
-        style={{
-          transform: `scale(${auraScale})`,
-          opacity: auraOpacity,
-          background: auraGradient,
+            "radial-gradient(ellipse at 50% 44%, transparent 38%, rgba(5, 5, 10, 0.25) 78%, rgba(5, 5, 10, 0.62) 100%)",
         }}
       />
 
       <div
-        className="absolute left-1/2 bottom-[17%] sm:bottom-[15%] -translate-x-1/2 w-[min(76vw,440px)] h-12 rounded-full blur-2xl"
+        className="absolute left-1/2 top-[43%] -translate-x-1/2 -translate-y-1/2 w-[min(86vw,540px)] h-[min(86vw,540px)] rounded-full blur-3xl transition-opacity duration-300"
         style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(162, 127, 243, 0.28) 0%, transparent 72%)",
+          opacity: lightOpacity,
+          background: lightGradient,
         }}
       />
     </div>

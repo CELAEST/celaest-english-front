@@ -49,6 +49,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
   const turnsRef = useRef<ConversationTurn[]>([]);
   const profileRef = useRef<CoachProfileContext>(profile);
   profileRef.current = profile;
+  const startCallRef = useRef<() => Promise<void>>(async () => {});
 
   const wsClientRef = useRef<LiveCoachWsClient | null>(null);
   const audioPlayerRef = useRef<RealtimeAudioPlayer | null>(null);
@@ -287,7 +288,9 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
               ev.code,
               { code: ev.code },
             );
-            void handleAiFailure(apiErr, () => {}, { featureName: "Conversación en Vivo con Liam" });
+            void handleAiFailure(apiErr, () => void startCallRef.current(), {
+              featureName: "Conversación en Vivo con Liam",
+            });
             break;
           }
         }
@@ -363,7 +366,9 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     } catch (err) {
       teardownHardware();
       setPhase("idle");
-      void handleAiFailure(err, () => {}, { featureName: "Conversación en Vivo con Liam" });
+      void handleAiFailure(err, () => void startCallRef.current(), {
+        featureName: "Conversación en Vivo con Liam",
+      });
     }
   }, [handleAiFailure, teardownHardware]);
 
@@ -398,6 +403,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
     setPhase("connecting");
     await runHttpFallbackLoop();
   }, [isByokMode, openByokModal, runHttpFallbackLoop]);
+
+  startCallRef.current = startCall;
 
   const stopCall = useCallback(async () => {
     wsClientRef.current?.sendInterrupt();

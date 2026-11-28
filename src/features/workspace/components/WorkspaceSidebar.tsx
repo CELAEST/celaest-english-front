@@ -416,58 +416,61 @@ const MobileBottomDock: React.FC<{
   return (
     <nav
       aria-label="Mobile Navigation"
-      className={`lg:hidden fixed bottom-3 left-3 right-3 z-50 h-14 max-w-lg mx-auto bg-[#06060e]/92 backdrop-blur-xl border border-white/[0.08] rounded-2xl flex items-center justify-around px-1.5 sm:px-2 shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_24px_rgba(112,72,232,0.12)] select-none transition-all duration-300 ${
+      className={`lg:hidden fixed bottom-4 left-4 right-4 z-50 h-[54px] max-w-[400px] mx-auto bg-[#0B0B11]/90 backdrop-blur-2xl border border-white/[0.08] rounded-[20px] flex items-center justify-between px-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.8)] select-none transition-all duration-300 ${
         cinemaDimmed ? "opacity-0 pointer-events-none translate-y-4" : "opacity-100 translate-y-0"
       }`}
       style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
     >
       {navItems.map((item) => {
         const isActive = activeItem === item.id;
-        const isHeroCenter = item.id === "live";
-        const activeBgClass =
+        const isCenterLive = item.id === "live";
+        const activePillClass =
           accentVariant === "architectural_monolith"
-            ? "bg-gradient-to-r from-amber-600 to-amber-700 shadow-[0_0_16px_rgba(217,119,6,0.4)]"
-            : accentVariant === "swiss_editorial"
-              ? "bg-white/20 border border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.25)]"
-              : "bg-gradient-to-r from-[#7048e8] to-[#6038e0] shadow-[0_0_16px_rgba(112,72,232,0.4)]";
+            ? "bg-amber-400/90"
+            : isCenterLive
+              ? "bg-[#F4F4F6]"
+              : "bg-white/[0.12]";
 
         return (
-          <button
-            key={item.id}
-            aria-label={item.label}
-            onClick={() => {
-              MobileAudioUnlocker.unlock();
-              if (onSelectNav) onSelectNav(item.id);
-            }}
-            onMouseEnter={() => prefetchTabRoute(item.id)}
-            onTouchStart={() => {
-              MobileAudioUnlocker.unlock();
-              prefetchTabRoute(item.id);
-            }}
-            onFocus={() => prefetchTabRoute(item.id)}
-            className={`relative flex items-center justify-center rounded-2xl transition-all duration-150 cursor-pointer ${
-              isHeroCenter
-                ? `-mt-3 w-12 h-12 border ${
-                    isActive
-                      ? "text-white border-violet-400/50 shadow-[0_0_24px_rgba(112,72,232,0.55)]"
-                      : "text-white/90 bg-[#120d26] border-violet-400/35 shadow-[0_0_18px_rgba(112,72,232,0.3)]"
-                  }`
-                : `w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${
-                    isActive ? "text-white" : "text-zinc-400 hover:text-white"
-                  }`
-            }`}
-          >
-            {isActive && (
-              <motion.div
-                layoutId="activeMobileNavBlock"
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                className={`absolute inset-0 z-0 ${isHeroCenter ? "rounded-2xl" : "rounded-xl"} ${activeBgClass}`}
-              />
-            )}
-            <div className="relative z-10 flex items-center justify-center">
-              {item.renderIcon(isActive)}
-            </div>
-          </button>
+          <React.Fragment key={item.id}>
+            {isCenterLive && <span aria-hidden="true" className="w-[1px] h-4 bg-white/[0.08] shrink-0" />}
+            <button
+              aria-label={item.label}
+              onClick={() => {
+                MobileAudioUnlocker.unlock();
+                if (onSelectNav) onSelectNav(item.id);
+              }}
+              onMouseEnter={() => prefetchTabRoute(item.id)}
+              onTouchStart={() => {
+                MobileAudioUnlocker.unlock();
+                prefetchTabRoute(item.id);
+              }}
+              onFocus={() => prefetchTabRoute(item.id)}
+              className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-150 cursor-pointer ${
+                isActive
+                  ? isCenterLive && accentVariant !== "architectural_monolith"
+                    ? "text-[#09090B]"
+                    : accentVariant === "architectural_monolith"
+                      ? "text-[#09090B]"
+                      : "text-white"
+                  : isCenterLive
+                    ? "text-white/85 hover:text-white"
+                    : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeMobileNavBlock"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  className={`absolute inset-0 rounded-xl z-0 ${activePillClass}`}
+                />
+              )}
+              <div className="relative z-10 flex items-center justify-center">
+                {item.renderIcon(isActive)}
+              </div>
+            </button>
+            {isCenterLive && <span aria-hidden="true" className="w-[1px] h-4 bg-white/[0.08] shrink-0" />}
+          </React.Fragment>
         );
       })}
     </nav>
@@ -904,46 +907,50 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           <nav className="flex flex-col w-full space-y-1.5 relative">
             {navItems.map((item) => {
               const isActive = activeItem === item.id;
+              const isCenterLive = item.id === "live";
               return (
-                <button
-                  key={item.id}
-                  aria-label={item.label}
-                  onClick={() => onSelectNav && onSelectNav(item.id)}
-                  onMouseEnter={() => prefetchTabRoute(item.id)}
-                  onTouchStart={() => prefetchTabRoute(item.id)}
-                  onFocus={() => prefetchTabRoute(item.id)}
-                  className={`relative flex items-center w-full h-11 rounded-xl transition-colors duration-150 cursor-pointer group ${
-                    isActive ? "text-white font-medium" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {/* Sliding Active Indicator Block in CELAEST Electric Violet */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeCelaestNavBlock"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      className="absolute inset-0 bg-gradient-to-r from-[#7048e8] to-[#6038e0] shadow-[0_0_20px_rgba(112,72,232,0.35)] rounded-xl z-0"
-                    />
-                  )}
-
-                  {/* Icon Container: 44px x 44px - Icons fill with solid white when active */}
-                  <div className="w-11 h-11 flex items-center justify-center shrink-0 relative z-10 transition-transform duration-150 group-hover:scale-105">
-                    {item.renderIcon(isActive)}
-                  </div>
-
-                  {/* Clean Label: No tags, pure typographic clarity */}
-                  <div
-                    className={`flex items-center justify-between flex-1 -ml-0.5 relative z-10 transition-all duration-200 overflow-hidden ${
-                      isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
+                <React.Fragment key={item.id}>
+                  {isCenterLive && <div className="h-[1px] bg-white/[0.08] w-full my-1" />}
+                  <button
+                    aria-label={item.label}
+                    onClick={() => onSelectNav && onSelectNav(item.id)}
+                    onMouseEnter={() => prefetchTabRoute(item.id)}
+                    onTouchStart={() => prefetchTabRoute(item.id)}
+                    onFocus={() => prefetchTabRoute(item.id)}
+                    className={`relative flex items-center w-full h-11 rounded-xl transition-colors duration-150 cursor-pointer group ${
+                      isActive ? "text-white font-medium" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                     }`}
                   >
-                    <span className="text-xs uppercase tracking-[0.14em] font-light whitespace-nowrap flex items-center gap-1.5">
-                      {item.label}
-                      {GATED_ITEMS.has(item.id) && !hasAccess && (
-                        <Lock className="w-2.5 h-2.5 text-white/40 shrink-0" />
-                      )}
-                    </span>
-                  </div>
-                </button>
+                    {/* Sliding Active Indicator Block */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeCelaestNavBlock"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        className="absolute inset-0 bg-gradient-to-r from-[#7048e8] to-[#6038e0] shadow-[0_0_20px_rgba(112,72,232,0.35)] rounded-xl z-0"
+                      />
+                    )}
+
+                    {/* Icon Container: 44px x 44px - Icons fill with solid white when active */}
+                    <div className="w-11 h-11 flex items-center justify-center shrink-0 relative z-10 transition-transform duration-150 group-hover:scale-105">
+                      {item.renderIcon(isActive)}
+                    </div>
+
+                    {/* Clean Label: No tags, pure typographic clarity */}
+                    <div
+                      className={`flex items-center justify-between flex-1 -ml-0.5 relative z-10 transition-all duration-200 overflow-hidden ${
+                        isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
+                      }`}
+                    >
+                      <span className="text-xs uppercase tracking-[0.14em] font-light whitespace-nowrap flex items-center gap-1.5">
+                        {item.label}
+                        {GATED_ITEMS.has(item.id) && !hasAccess && (
+                          <Lock className="w-2.5 h-2.5 text-white/40 shrink-0" />
+                        )}
+                      </span>
+                    </div>
+                  </button>
+                  {isCenterLive && <div className="h-[1px] bg-white/[0.08] w-full my-1" />}
+                </React.Fragment>
               );
             })}
           </nav>

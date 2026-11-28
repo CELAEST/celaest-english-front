@@ -676,7 +676,8 @@ export const WorkspaceDashboardViewComponent: React.FC<WorkspaceDashboardViewPro
         )}
 
         {/* Fallback for other tabs */}
-        {activeTab !== "workspace" &&
+        {activeTab !== "live" &&
+          activeTab !== "workspace" &&
           activeTab !== "pathway" &&
           activeTab !== "interview" &&
           activeTab !== "writing" &&

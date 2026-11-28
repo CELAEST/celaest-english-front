@@ -53,7 +53,8 @@ describe("LinguaLiveRobotView — Native Stage & Cinema Mode", () => {
     );
 
     expect(screen.getByTestId("professor-3d-stage")).toBeTruthy();
-    expect(container.querySelector('img[src="/assets/workspace_room_bg.webp"]')).toBeTruthy();
+    expect(container.querySelector('img[src="/assets/live_stage_desktop.jpg"]')).toBeTruthy();
+    expect(container.querySelector('img[src="/assets/live_stage_mobile.jpg"]')).toBeTruthy();
 
     const startBtn = screen.getByRole("button", { name: /Iniciar/i });
     fireEvent.click(startBtn);

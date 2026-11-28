@@ -3,6 +3,7 @@ import {
   resolveProviderContextSafe,
 } from "../../../infrastructure/http/coreAiGatewayClient";
 import { ENV } from "../../../shared/constants/env";
+import { providerKeyVault } from "../../settings/services/providerKeyVault";
 import { CoachProfileContext } from "./liveCoachAiService";
 
 export interface LiveWsServerEvent {
@@ -140,14 +141,23 @@ export class LiveCoachWsClient {
     if (!ok || !this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
 
     const provCtx = await resolveProviderContextSafe();
-    const byok =
-      !provCtx.isCore && provCtx.apiKey
-        ? {
-            provider: provCtx.providerId,
-            apiKey: provCtx.apiKey,
-            model: provCtx.config?.defaultModel || "",
-          }
-        : undefined;
+    let userKey = provCtx.apiKey;
+    let userProvider = provCtx.providerId;
+    if (!userKey && typeof providerKeyVault.getKeys === "function") {
+      const groqKeys = await Promise.resolve(providerKeyVault.getKeys("groq")).catch(() => []);
+      if (groqKeys?.[0]) {
+        userKey = groqKeys[0];
+        userProvider = "groq";
+      }
+    }
+
+    const byok = userKey
+      ? {
+          provider: userProvider,
+          apiKey: userKey,
+          model: provCtx.config?.defaultModel || "",
+        }
+      : undefined;
 
     this.ws.send(
       JSON.stringify({

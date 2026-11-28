@@ -49,6 +49,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
   const callActiveRef = useRef<boolean>(false);
   const modeRef = useRef<"native_audio" | "pipeline" | null>(null);
+  const desiredPipelineModeRef = useRef<"thinking" | "robot_speaking" | "listening">("thinking");
   const turnsRef = useRef<ConversationTurn[]>([]);
   const profileRef = useRef<CoachProfileContext>(profile);
   profileRef.current = profile;
@@ -122,6 +123,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
   const enterListeningState = useCallback(() => {
     if (!callActiveRef.current) return;
+    desiredPipelineModeRef.current = "listening";
     setPhase("user_listening");
     armSilenceWatchdog();
     if (modeRef.current === "pipeline") {
@@ -185,6 +187,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
             silenceTimerRef.current = null;
           }
           setPhase("thinking");
+          desiredPipelineModeRef.current = "thinking";
           vadRecorderRef.current?.setMode("thinking");
           wsClientRef.current?.sendAudioBlob(blob);
         },
@@ -203,7 +206,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         setMicModalOpen(true);
         return;
       }
-      vadRecorderRef.current!.setMode("thinking");
+      if (!callActiveRef.current) return;
+      vadRecorderRef.current!.setMode(desiredPipelineModeRef.current);
     },
     [armSilenceWatchdog, enterListeningState, teardownHardware],
   );
@@ -230,6 +234,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         const headerByte = new DataView(buf).getUint8(0);
         if (headerByte === 0x03) {
           // Mutually exclusive 24kHz PCM frame (Gemini Live OR Tier-2 Charon Lookahead)
+          desiredPipelineModeRef.current = "robot_speaking";
           setPhase("robot_speaking");
           if (modeRef.current === "pipeline") {
             vadRecorderRef.current?.setMode("robot_speaking");
@@ -239,6 +244,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         }
         if (headerByte === 0x01) {
           // Mutually exclusive Tier-2 Go MP3 frame
+          desiredPipelineModeRef.current = "robot_speaking";
           setPhase("robot_speaking");
           vadRecorderRef.current?.setMode("robot_speaking");
           player.onBinaryFrame(buf);
@@ -256,9 +262,11 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
           case "phase":
             if (ev.phase === "thinking") {
+              desiredPipelineModeRef.current = "thinking";
               setPhase("thinking");
               if (modeRef.current === "pipeline") vadRecorderRef.current?.setMode("thinking");
             } else if (ev.phase === "speaking") {
+              desiredPipelineModeRef.current = "robot_speaking";
               setPhase("robot_speaking");
               if (modeRef.current === "pipeline") vadRecorderRef.current?.setMode("robot_speaking");
             } else if (ev.phase === "listening") {
@@ -382,7 +390,7 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
         setPhase("user_listening");
         let draft = "";
         AudioCaptureService.startRecognition({
-          lang: "en-US",
+          lang: /^(A1|A2|B1)$/i.test(profileRef.current.cefrLevel) ? "es-ES" : "en-US",
           roleName: profileRef.current.profession,
           onTranscript: (txt) => {
             draft = txt.trim();
@@ -439,6 +447,8 @@ export function useLiveRobotConversation(profile: CoachProfileContext, isViewAct
 
     MobileAudioUnlocker.unlock();
     AudioCaptureService.unlockAudioInputContextSync();
+    pcmEngineRef.current?.unlockPlayback();
+    desiredPipelineModeRef.current = "thinking";
     setSummary(null);
 
     const armMaxSessionLimit = () => {

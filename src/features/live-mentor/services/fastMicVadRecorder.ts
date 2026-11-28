@@ -11,12 +11,13 @@ export interface FastVadCallbacks {
   onBargeIn: () => void;
 }
 
-const VAD_POLL_MS = 60;
-const POST_SPEECH_SILENCE_MS = 520;
-const SPEECH_ENERGY_THRESHOLD = 0.045;
-const BARGE_IN_ENERGY_THRESHOLD = 0.16;
+const VAD_POLL_MS = 50;
+const POST_SPEECH_SILENCE_MS = 420;
+const SPEECH_ENERGY_THRESHOLD = 0.015;
+const BARGE_IN_ENERGY_THRESHOLD = 0.085;
 const MIN_VOICED_FRAMES = 3;
 const MIN_BARGE_IN_FRAMES = 4;
+const MAX_UTTERANCE_MS = 12000;
 
 function pickLowLatencyMimeType(): string {
   if (typeof MediaRecorder === "undefined") return "";
@@ -59,11 +60,14 @@ export class FastMicVadRecorder {
   private mode: "idle" | "listening" | "robot_speaking" | "thinking" = "idle";
   private voicedFrames = 0;
   private bargeInFrames = 0;
+  private speechStartedAt = 0;
   private silentSince = 0;
   private callbacks: FastVadCallbacks | null = null;
 
   public async start(callbacks: FastVadCallbacks): Promise<boolean> {
+    const requestedMode = this.mode;
     this.stop();
+    this.mode = requestedMode;
     this.callbacks = callbacks;
 
     let acquired: MediaStream | null = null;
@@ -98,6 +102,9 @@ export class FastMicVadRecorder {
     }
 
     this.timer = setInterval(() => this.tickVad(), VAD_POLL_MS);
+    if (this.mode === "listening") {
+      this.beginSegmentRecorder();
+    }
     return true;
   }
 
@@ -263,8 +270,18 @@ export class FastMicVadRecorder {
     this.callbacks.onVolume(energy);
 
     if (energy >= SPEECH_ENERGY_THRESHOLD) {
+      if (!this.recorder || this.recorder.state !== "recording") {
+        this.beginSegmentRecorder();
+      }
+      if (this.voicedFrames === 0) {
+        this.speechStartedAt = Date.now();
+      }
       this.voicedFrames += 1;
       this.silentSince = 0;
+      if (this.speechStartedAt > 0 && Date.now() - this.speechStartedAt >= MAX_UTTERANCE_MS) {
+        this.speechStartedAt = 0;
+        this.flushUtterance();
+      }
       return;
     }
 
@@ -273,6 +290,7 @@ export class FastMicVadRecorder {
       if (this.silentSince === 0) {
         this.silentSince = now;
       } else if (now - this.silentSince >= POST_SPEECH_SILENCE_MS) {
+        this.speechStartedAt = 0;
         this.flushUtterance();
       }
     }

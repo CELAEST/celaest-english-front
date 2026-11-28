@@ -54,6 +54,15 @@ export class PcmAudioEngine {
     this.onDrained = cb;
   }
 
+  public unlockPlayback(): void {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as { AudioContext?: unknown; webkitAudioContext?: unknown };
+    if (typeof w.AudioContext !== "function" && typeof w.webkitAudioContext !== "function") {
+      return;
+    }
+    void this.ensureContext().catch(() => {});
+  }
+
   public stopMicCaptureOnly(): void {
     this.stopMicOnly();
   }
